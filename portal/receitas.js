@@ -1,9 +1,9 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122g";
-import { sb, sessao } from "./estado.js?v=20261122g";
-import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto } from "./calculos.js?v=20261122g";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122g";
-import * as O from "./opcoes.js?v=20261122g";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122h";
+import { sb, sessao } from "./estado.js?v=20261122h";
+import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto } from "./calculos.js?v=20261122h";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122h";
+import * as O from "./opcoes.js?v=20261122h";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -363,8 +363,8 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
       p("eficiencia_pct", "Eficiência (%)", 0),
       p("fervura_min", "Fervura (min)", 0),
       p("evaporacao_l_h", "Evaporação (L/h)", 1),
-      p("perda_panela_l", "Perda na panela (L)", 1),
-      p("perda_tina_l", "Perda na tina (L)", 1),
+      p("perda_panela_l", "Perda na panela de fervura (L)", 1),
+      p("perda_tina_l", "Perda na panela de mostura (L)", 1),
       p("absorcao_grao_l_kg", "Absorção do grão (L/kg)", 2),
       p("relacao_agua_grao_l_kg", "Água/grão na mostura (L/kg)", 1),
       p("temp_grao_c", "Temperatura do grão (°C)", 1));

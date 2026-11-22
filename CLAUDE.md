@@ -125,7 +125,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122g.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122h. Na tela: "perda na panela de fervura" (`perda_panela_l`) e "perda na panela de mostura" (`perda_tina_l`); os nomes das colunas não mudaram.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.

@@ -1,8 +1,8 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122g";
-import { sb, sessao } from "./estado.js?v=20261122g";
-import * as O from "./opcoes.js?v=20261122g";
-import { corHexDeSrm } from "./calculos.js?v=20261122g";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122h";
+import { sb, sessao } from "./estado.js?v=20261122h";
+import * as O from "./opcoes.js?v=20261122h";
+import { corHexDeSrm } from "./calculos.js?v=20261122h";
 
 // Tipos de campo: texto | numero (casas) | cor (SRM no banco) | select (opcoes) | bool | area
 export const CADASTROS = {
@@ -114,11 +114,11 @@ export const CADASTROS = {
     campos: [
       { k: "nome", r: "Nome", t: "texto", obrig: true, largo: true },
       { k: "volume_lote_l", r: "Volume no fermentador (L)", t: "numero", casas: 1, obrig: true },
-      { k: "volume_panela_l", r: "Volume da panela (L)", t: "numero", casas: 1 },
+      { k: "volume_panela_l", r: "Volume da panela de fervura (L)", t: "numero", casas: 1 },
       { k: "eficiencia_pct", r: "Eficiência (%)", t: "numero", casas: 0, obrig: true },
       { k: "evaporacao_l_h", r: "Evaporação (L/h)", t: "numero", casas: 1, obrig: true },
-      { k: "perda_panela_l", r: "Perda na panela (L)", t: "numero", casas: 1 },
-      { k: "perda_tina_l", r: "Perda na tina (L)", t: "numero", casas: 1 },
+      { k: "perda_panela_l", r: "Perda na panela de fervura (L)", t: "numero", casas: 1 },
+      { k: "perda_tina_l", r: "Perda na panela de mostura (L)", t: "numero", casas: 1 },
       { k: "perda_fermentador_l", r: "Perda no fermentador (L)", t: "numero", casas: 1 },
       { k: "absorcao_grao_l_kg", r: "Absorção do grão (L/kg)", t: "numero", casas: 2 },
       { k: "relacao_agua_grao_l_kg", r: "Água/grão na mostura (L/kg)", t: "numero", casas: 1 },

@@ -1,10 +1,10 @@
 // ferramentas.js — calculadoras avulsas: água da mostura e priming (mesmas fórmulas do calculos.js).
-import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261122g";
-import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261122g";
-import { preferencias, salvarPreferencias } from "./estado.js?v=20261122g";
-import * as O from "./opcoes.js?v=20261122g";
+import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261122h";
+import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261122h";
+import { preferencias, salvarPreferencias } from "./estado.js?v=20261122h";
+import * as O from "./opcoes.js?v=20261122h";
 
-// Volume que o grão ocupa na tina (L por kg), para saber se a mostura cabe.
+// Volume que o grão ocupa na panela de mostura (L por kg), para saber se a mostura cabe.
 const VOLUME_GRAO_L_KG = 0.67;
 
 // Os valores ficam enquanto o portal estiver aberto (trocar de tela e voltar não apaga).
@@ -37,7 +37,7 @@ function cartaoAgua() {
     preencher(saida,
       linha("Água da mostura", `${numeroBR(litros, 1)} L`),
       linha("Temperatura da água", `${numeroBR(t, 1)} °C`),
-      linha("Volume da mostura na tina", `${numeroBR(litros + agua.graos_kg * VOLUME_GRAO_L_KG, 1)} L`));
+      linha("Volume da mostura na panela de mostura", `${numeroBR(litros + agua.graos_kg * VOLUME_GRAO_L_KG, 1)} L`));
   };
   const s = el("section", { class: "cartao" },
     el("h3", { text: "Água da mostura" }),
@@ -48,7 +48,7 @@ function cartaoAgua() {
       campo(agua, "grao_c", "Temperatura do grão (°C)", 1, "Normalmente a temperatura ambiente.", calcular),
       campo(agua, "alvo_c", "Temperatura da parada (°C)", 1, "A temperatura que a mostura deve atingir (ex.: 66 °C na sacarificação).", calcular)),
     saida,
-    el("p", { class: "nota", text: "Não conta o calor que a tina absorve: pré-aqueça a tina ou some 1 a 2 °C. Volume da mostura = água + 0,67 L por kg de grão." }));
+    el("p", { class: "nota", text: "Não conta o calor que a panela de mostura absorve: pré-aqueça a panela ou some 1 a 2 °C. Volume da mostura = água + 0,67 L por kg de grão." }));
   calcular();
   return s;
 }

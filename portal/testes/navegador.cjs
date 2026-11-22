@@ -169,7 +169,7 @@ async function site(rota) {
   await pagina.fill('dialog input[aria-label="Nome"]', "Panela 50 L");
   const vol = pagina.locator('dialog input[aria-label="Volume no fermentador (L)"]');
   await vol.fill("23");
-  await pagina.locator('dialog input[aria-label="Perda na panela (L)"]').fill("2");
+  await pagina.locator('dialog input[aria-label="Perda na panela de fervura (L)"]').fill("2");
   await pagina.screenshot({ path: `${SAIDA}/p2-cadastro-equipamento.png` });
   await pagina.click('dialog button[type="submit"]');
   await pagina.waitForSelector("td >> text=Panela 50 L");
@@ -211,7 +211,7 @@ async function site(rota) {
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122g");
+    const m = await import("./calculos.js?v=20261122h");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -227,7 +227,7 @@ async function site(rota) {
   verificar(textoPainel.includes("Eficiência real"), "OG medida mostra a eficiência real");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoSo4 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122g");
+    const m = await import("./calculos.js?v=20261122h");
     const total = Number(document.querySelector(".resultados").textContent.match(/Água total[^0-9]*?([0-9]+,[0-9]) L/)[1].replace(",", "."));
     return m.perfilAgua({ origem: { sulfato_ppm: 10, cloreto_ppm: 15 }, sais: [{ sal: "GESSO", gramas: 6 }], litros: total }).ions.sulfato_ppm;
   });
