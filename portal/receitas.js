@@ -1,12 +1,12 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect, campoQuantidade } from "./ui.js?v=20261122e";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122e";
-import { calcularReceita, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122e";
-import { abrirBusca } from "./busca.js?v=20261122e";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122e";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122e";
-import * as O from "./opcoes.js?v=20261122e";
-import { criarBarraVital } from "./vital.js?v=20261122e";
+import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect, campoQuantidade } from "./ui.js?v=20261122f";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122f";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122f";
+import { abrirBusca } from "./busca.js?v=20261122f";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122f";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122f";
+import * as O from "./opcoes.js?v=20261122f";
+import { criarBarraVital } from "./vital.js?v=20261122f";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -303,7 +303,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
       linha("Água de lavagem", `${numeroBR(v.agua_lavagem_l, 1)} L`));
     preencher(pNotas,
       estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : el("p", { class: "nota", text: "Escolha um estilo no topo para ver as faixas." }),
-      el("p", { class: "nota", text: "IBU só da fervura e do primeiro mosto (whirlpool e dry hop não entram no Tinseth)." }));
+      el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
     const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
     resumoLote.textContent = [
       `${numeroBR(r.volume_lote_l, 1)} L no fermentador`,
@@ -609,7 +609,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
     },
   });
 
-  const ISOMERIZA = new Set(["FERVURA", "PRIMEIRO_MOSTO"]);     // etapas que entram no IBU (Tinseth)
+  const DA_IBU = new Set(["FERVURA", "PRIMEIRO_MOSTO", "WHIRLPOOL"]);     // etapas que entram no IBU
   const lupulos = secaoLinhas("lupulos", "Lúpulos", {
     classe: "lup",
     vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
@@ -626,7 +626,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
       const tempo = el("span", { class: "ing-tempo" });
       const desenharTempo = () => {
         if (["FERVURA", "WHIRLPOOL", "MOSTURA"].includes(item.etapa)) {
-          preencher(tempo, campoNumero(item, "tempo_min", { ...campo, casas: 0, rotulo: "Tempo (min)", classe: "num curto" }), el("span", { class: "sufixo", text: "min" }));
+          preencher(tempo, campoNumero(item, "tempo_min", { ...campo, casas: 0, rotulo: "Tempo (min)", classe: "num curto" }), el("span", { class: "sufixo", text: "min" }),
+            item.etapa === "WHIRLPOOL" ? [campoNumero(item, "temperatura_c", { ...campo, casas: 0, rotulo: "Temperatura do whirlpool (°C)", classe: "num curto", placeholder: String(TEMPERATURA_WHIRLPOOL_PADRAO_C) }), el("span", { class: "sufixo", text: "°C" })] : null);
         } else if (item.etapa === "DRY_HOP") {
           preencher(tempo, el("span", { class: "sufixo", text: "dia" }), campoNumero(item, "dia", { ...campo, casas: 0, rotulo: "Dia", classe: "num curto" }));
         } else limpar(tempo);
@@ -651,9 +652,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
           rotular("Forma", campoSelect(item, "forma", O.FORMA_LUPULO, { ...campo, rotulo: "Forma" })),
           rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" }))],
         aoCalcular: (x) => {
-          const conta = ISOMERIZA.has(item.etapa);
+          const conta = DA_IBU.has(item.etapa);
           ibu.textContent = conta ? numeroBR(x.ibu, 1) : "—";
-          ibu.title = conta ? "" : "Tinseth não calcula IBU de whirlpool, dry hop, mostura e envase";
+          ibu.title = conta ? "" : "Dry hop, mostura e envase não dão amargor no cálculo";
           gl.textContent = numeroBR(x.g_l, 1);
         },
       };

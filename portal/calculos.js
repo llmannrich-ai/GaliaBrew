@@ -13,6 +13,7 @@ export const DENSIDADE_SACAROSE_KG_L = 1.587;
 export const ATENUACAO_PADRAO_PCT = 75;          // levedura sem atenuação informada
 export const FATOR_GRAO_FORA_MOSTURA = 0.6;      // grão só em infusão (receita de extrato) rende menos
 export const AJUSTE_PRIMEIRO_MOSTO = 1.1;        // lúpulo no primeiro mosto: +10% sobre a fervura inteira
+export const TEMPERATURA_WHIRLPOOL_PADRAO_C = 80; // whirlpool sem temperatura informada (o mesmo do Brewfather)
 const KG_PARA_LB = 1 / 0.45359237;
 const L_PARA_GAL = 1 / 3.785411784;
 const SG_MIN = 0.9;
@@ -102,6 +103,16 @@ export function ibuTinseth({ alfaPct, gramas, minutos, sgMosto, litros }) {
   return utilizacaoTinseth(sgMosto, minutos) * mgPorLitroAlfa;
 }
 
+/**
+ * Velocidade de isomerização do alfa ácido a `celsius`, relativa à fervura (100 °C = 1), pela equação de
+ * Arrhenius publicada por Malowicz (2009): k ∝ 2,39 × 10¹¹ × e^(−9773 / K). Usada no whirlpool:
+ * 90 °C ≈ 0,49; 85 °C ≈ 0,34; 80 °C ≈ 0,23; 70 °C ≈ 0,10.
+ */
+export function fatorIsomerizacao(celsius) {
+  if (!Number.isFinite(celsius)) return 0;
+  return Math.min(1, 2.39e11 * Math.exp(-9773 / (celsius + 273.15)));
+}
+
 /** Cor em SRM pela fórmula de Morey, a partir das MCU (Σ lb × °L ÷ galão). */
 export function srmMorey(mcu) {
   return mcu > 0 ? 1.4922 * mcu ** 0.6859 : 0;
@@ -183,15 +194,35 @@ export function calcularReceita(r) {
   };
   const sgPreFervura = sgNaPanela(fervuraMin);
 
-  // IBU (Tinseth): só o que isomeriza na fervura. Whirlpool, dry hop e envase = 0 (Tinseth não modela).
+  // IBU (Tinseth). Whirlpool: Tinseth pelos minutos do whirlpool, na gravidade do fim da fervura, × velocidade
+  // de isomerização na temperatura (Malowicz; sem temperatura = 80 °C). Os lúpulos da fervura continuam na panela
+  // durante o whirlpool: ganham a utilização de Tinseth entre t e t + whirlpool, × o mesmo fator. Whirlpool da
+  // receita = o mais longo; temperatura = média ponderada pelos gramas. Dry hop, mostura e envase = 0.
+  const tempWhirlpool = (h) => num(h.temperatura_c, TEMPERATURA_WHIRLPOOL_PADRAO_C) || TEMPERATURA_WHIRLPOOL_PADRAO_C;
+  const whirlpools = lupulos.filter((h) => h.etapa === "WHIRLPOOL" && num(h.tempo_min) > 0);
+  const minWhirlpool = whirlpools.reduce((m, h) => Math.max(m, num(h.tempo_min)), 0);
+  const gramasWhirlpool = whirlpools.reduce((s, h) => s + num(h.quantidade_g), 0);
+  const fatorWhirlpool = gramasWhirlpool > 0
+    ? fatorIsomerizacao(whirlpools.reduce((s, h) => s + tempWhirlpool(h) * num(h.quantidade_g), 0) / gramasWhirlpool)
+    : 0;
+  const sgFimFervura = sgNaPanela(0);
   const ibuPorItem = lupulos.map((h) => {
     let minutos = 0;
     let ajuste = 1;
+    let sgMosto = null;
     if (h.etapa === "FERVURA") minutos = Math.min(num(h.tempo_min), fervuraMin || num(h.tempo_min));
     else if (h.etapa === "PRIMEIRO_MOSTO") { minutos = fervuraMin; ajuste = AJUSTE_PRIMEIRO_MOSTO; }
-    const ibu = minutos > 0
-      ? ajuste * ibuTinseth({ alfaPct: num(h.alfa_pct), gramas: num(h.quantidade_g), minutos, sgMosto: sgMediaNaPanela(minutos), litros: lote })
-      : 0;
+    else if (h.etapa === "WHIRLPOOL") {
+      minutos = num(h.tempo_min);
+      ajuste = fatorIsomerizacao(tempWhirlpool(h));
+      sgMosto = sgFimFervura;
+    }
+    const lup = { alfaPct: num(h.alfa_pct), gramas: num(h.quantidade_g), litros: lote };
+    let ibu = minutos > 0 ? ajuste * ibuTinseth({ ...lup, minutos, sgMosto: sgMosto ?? sgMediaNaPanela(minutos) }) : 0;
+    if ((h.etapa === "FERVURA" || h.etapa === "PRIMEIRO_MOSTO") && minWhirlpool > 0) {
+      ibu += fatorWhirlpool * (ibuTinseth({ ...lup, minutos: minutos + minWhirlpool, sgMosto: sgFimFervura })
+        - ibuTinseth({ ...lup, minutos, sgMosto: sgFimFervura }));
+    }
     return { ibu, g_l: lote > 0 ? num(h.quantidade_g) / lote : 0 };
   });
   const ibu = ibuPorItem.reduce((s, x) => s + x.ibu, 0);
@@ -325,8 +356,11 @@ export function ajustarParaIBU(r, alvo, indice) {
   const ajustaveis = lupulosAjustaveis(r);
   if (!ajustaveis.length) return { ok: false, motivo: "SEM_AMARGOR" };
   const i = ajustaveis.some((a) => a.i === indice) ? indice : ajustaveis[0].i;
-  const ibuOutros = calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? 0 : num(h.quantidade_g)))).ibu;
-  const porGrama = calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? 1 : 0))).lupulos[i].ibu;
+  // IBU é linear nos gramas DESTE lúpulo com os outros fixos (inclusive a parte que ele ganha no whirlpool):
+  // mede com 0 g e com 1 g.
+  const ibuCom = (g) => calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? g : num(h.quantidade_g)))).ibu;
+  const ibuOutros = ibuCom(0);
+  const porGrama = ibuCom(1) - ibuOutros;
   if (!(porGrama > 0)) return { ok: false, motivo: "SEM_EFEITO", indice: i, ibuOutros };
   const gramas = (alvo - ibuOutros) / porGrama;
   if (gramas < 0) return { ok: false, motivo: "OUTROS_PASSAM", indice: i, ibuOutros };

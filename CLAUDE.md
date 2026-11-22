@@ -43,6 +43,22 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - `.github/workflows/pages.yml` — publicação do portal no GitHub Pages
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 - `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
+- `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
+- `.claude/skills/deploy/` — skill `/deploy` (22/11/2026, pedida pelo responsável): publicar SEMPRE por ela. Fila entre
+  sessões paralelas em `refs/fila/*` no origin (`fila.sh`), atualiza com a main, `conferir.sh` (nº de migração, `?v=`),
+  testes, push só avanço rápido na `main` e na branch padrão.
+
+## Importação do Brewfather (`ferramentas/brewfather/`, 22/11/2026)
+- `converter.mjs` (backup.json → jsonb do `salvar_receita`, recalcula com calculos.js e compara) e `importar.py`
+  (grava como o usuário: `request.jwt.claims` + `set local role authenticated`; simula sem `--gravar`; pula
+  `extras.brewfather_id` já importado). Senha do banco só em `GALIABREW_DB_SENHA`. Detalhes no README da pasta.
+- Datas: `criado_em`/`atualizado_em` vêm do Brewfather (`_created`/`_timestamp`). Como `salvar_receita` e o gatilho
+  `receitas_atualizado_em` gravam "agora", o importar.py volta ao papel postgres e ajusta as datas com o gatilho
+  desligado só na transação. As 102 receitas de 22/11/2026 foram corrigidas assim pelo MCP (datas de 2020 a 2026).
+- 22/11/2026: 102 receitas importadas para llmannrich (2 rascunhos vazios ignorados). Eficiência = `mashEfficiency`
+  do Brewfather; cor do malte vem em °L. OG de 100/102 em ±0,002. IBU (depois do whirlpool, 22/11/2026): pior diferença 18%, 80/101 dentro de 10%;
+  sobra ~9% abaixo nos lúpulos de fervura, variando por receita (4-14%), causa não identificada.
+- Pooler do banco: `aws-1-sa-east-1.pooler.supabase.com:5432`, usuário `postgres.hzomsyfujxakcuaaedmh`.
 
 ## Modelo de acesso (0001, 22/11/2026)
 - Cadastros (`estilos`, `fermentaveis`, `lupulos`, `leveduras`, `outros`, `aguas`): `dono` nulo = catálogo do
@@ -60,7 +76,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (16 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (18 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -68,7 +84,12 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   OG no volume pós-fervura (lote + perda da panela). FG pela levedura de MAIOR atenuação (sem valor: 75%), parte não
   fermentável (lactose) inteira na FG.
 - IBU (Tinseth) no volume do lote; gravidade = média da panela durante o tempo do lúpulo (o volume cai com a
-  evaporação); primeiro mosto = fervura inteira × 1,1; mostura, whirlpool, dry hop e envase = 0 (Tinseth não modela).
+  evaporação); primeiro mosto = fervura inteira × 1,1; mostura, dry hop e envase = 0.
+- Whirlpool (22/11/2026): Tinseth pelos minutos do whirlpool na gravidade do fim da fervura × fator de isomerização
+  de Malowicz 2,39e11 × e^(−9773/K) (90 °C 0,49; 85 °C 0,34; 80 °C 0,23); sem temperatura = 80 °C (como o Brewfather).
+  Lúpulos da fervura/primeiro mosto ganham [Tinseth(t + whirlpool) − Tinseth(t)] × fator (whirlpool da receita = o
+  mais longo; temperatura = média ponderada pelos gramas). Bate com o Brewfather (ele usa a mesma curva).
+- Fim de linha: `portal/vendor/** -text` no .gitattributes; com CRLF o hash do SRI muda e o portal não carrega.
 - Cor: Morey com °L = (SRM + 0,76) ÷ 1,3546 no volume pós-fervura. EBC = SRM × 1,97.
 - 0002: `fermentaveis.umidade_pct` (+ cópia em `receita_fermentaveis`): o rendimento da ficha do malte é base seca;
   sem a umidade a OG sai ~4% alta. `receitas.relacao_agua_grao_l_kg` e `perda_tina_l` (água da mostura × lavagem).
@@ -124,7 +145,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122e.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122f.
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
@@ -140,16 +161,32 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   pelo supabase_admin; o postgres não consegue revogar). Risco prático nulo: o schema `extensions` não é exposto pela API.
   Para remover: painel → Database → Extensions → http (desligar).
 
-## Login (decisões pendentes no painel do Supabase, não dá para fazer por SQL)
-- Recomendado: só por convite (Authentication → Sign In / Providers → desligar "Allow new users to sign up";
-  convidar em Authentication → Users → Invite). Confirmação de e-mail ligada. Senha mínima 10 caracteres.
-- O e-mail padrão do Supabase só envia para membros da org e com limite baixo por hora: para convidar outras pessoas
-  é preciso SMTP próprio (Authentication → Emails → SMTP; ex.: Resend ou Brevo, plano gratuito).
-- Site URL e Redirect URLs: preencher quando o portal tiver endereço.
+## Login (painel do Supabase, não dá para fazer por SQL)
+- DECIDIDO (22/11/2026): cadastro ABERTO ("Allow new users to sign up" ligado), para testes com amigos. A RLS protege
+  os dados. Confirmação de e-mail DESLIGADA (o e-mail padrão do Supabase só entrega para membros da org Versa, então
+  amigos não conseguiriam confirmar). Consequência: recuperação de senha só funciona para membros da org.
+  Senha mínima 10 caracteres.
+- Para recuperação de senha de todos (ou religar a confirmação): SMTP próprio (Authentication → Emails → SMTP; ex.:
+  Resend ou Brevo, plano gratuito).
+- Site URL e Redirect URLs = https://llmannrich-ai.github.io/GaliaBrew/ (feito pelo responsável em 22/11/2026).
 - Primeiro admin: depois de criar o próprio login, `update perfis set papel = 'admin' where user_id = ...` por SQL.
 
+## Situação em 22/11/2026 (fim da 1ª sessão)
+- No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
+  a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
+  supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0004 aplicadas.
+- A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
+- Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
+  branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
+- 22/11/2026: FASE 1 CONCLUÍDA (testada no iPhone; Site URL/Redirect configuradas; IBU com whirlpool).
+- Próximo: fase 2, na ordem recomendada:
+  (1) LOTE: brassagem ligada à receita, esperado × medido (volumes, densidades pré-fervura/OG/FG, temperaturas,
+  datas, notas) e eficiência/ABV/atenuação reais; (2) calculadoras: água da mostura e priming, depois refratômetro
+  e correção do densímetro; (3) escalar receita; (4) versões da receita (travar a receita usada no lote).
+
 ## Ordem de trabalho
-- Fase 1 (em andamento): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor
+- Fase 1 (CONCLUÍDA em 22/11/2026): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor
   de receita ✔ → publicação no GitHub Pages (workflow pronto; falta ligar o Pages) → catálogo ✔ (0004).
 - Fase 2: brassagem (lote esperado × medido, eficiência real), ferramentas (água de mostura, priming,
   refratômetro, correção do densímetro), escalar receita, versões da receita.

@@ -15,8 +15,9 @@ permissions:
   pages: write
   id-token: write
 
+# Um grupo por branch: o push na main (que não publica) não cancela a publicação da branch padrão.
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

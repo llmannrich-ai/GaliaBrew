@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   platoDeSg, sgDePlato, platoDeAcucar, abv, utilizacaoTinseth, ibuTinseth, srmMorey, ebcDeSrm,
-  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis,
+  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -85,7 +85,42 @@ test("Tinseth: utilização bate com a tabela publicada", () => {
   perto(ibuTinseth({ alfaPct: 6.4, gramas: 28.35, minutos: 60, sgMosto: 1.050, litros: 18.93 }), 22.1, 0.1);
 });
 
-test("IBU da receita: fervura conta, primeiro mosto +10%, whirlpool e dry hop não", () => {
+test("Fator de isomerização por temperatura (Malowicz)", () => {
+  perto(fatorIsomerizacao(100), 1, 0.02, "100 °C");
+  perto(fatorIsomerizacao(90), 0.49, 0.01, "90 °C");
+  perto(fatorIsomerizacao(85), 0.337, 0.005, "85 °C");
+  perto(fatorIsomerizacao(80), 0.229, 0.005, "80 °C");
+  assert.ok(fatorIsomerizacao(70) < 0.11);
+  assert.equal(fatorIsomerizacao(110), 1, "nunca passa de 1");
+});
+
+test("IBU do whirlpool: Tinseth × fator da temperatura; sem temperatura = 80 °C", () => {
+  const base = {
+    volume_lote_l: 20, perda_panela_l: 0, evaporacao_l_h: 0, eficiencia_pct: 75, fervura_min: 60,
+    fermentaveis: [{ tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 4.5, etapa: "MOSTURA", cor_srm: 2 }],
+    leveduras: [{ atenuacao_pct: 75 }],
+  };
+  const h = { alfa_pct: 10, quantidade_g: 25, etapa: "WHIRLPOOL", tempo_min: 30 };
+  const a85 = calcularReceita({ ...base, lupulos: [{ ...h, temperatura_c: 85 }] });
+  const tinseth = ibuTinseth({ alfaPct: 10, gramas: 25, minutos: 30, sgMosto: a85.og, litros: 20 });
+  perto(a85.ibu, tinseth * fatorIsomerizacao(85), 1e-6);
+  // Caso real do Brewfather (NEAPA 83a): 25 g a 10% por 30 min a 85 °C deu 7,7 IBU.
+  perto(a85.ibu, 7.7, 0.6, "perto do Brewfather");
+  const semTemp = calcularReceita({ ...base, lupulos: [{ ...h, temperatura_c: null }] });
+  perto(semTemp.ibu, tinseth * fatorIsomerizacao(80), 1e-6);
+  const semTempo = calcularReceita({ ...base, lupulos: [{ ...h, tempo_min: 0, temperatura_c: 90 }] });
+  assert.equal(semTempo.ibu, 0);
+  // Lúpulo da fervura continua isomerizando no whirlpool: Tinseth de t a t + whirlpool, × fator da temperatura.
+  const ferv = { alfa_pct: 13, quantidade_g: 30, etapa: "FERVURA", tempo_min: 5 };
+  const so = calcularReceita({ ...base, lupulos: [ferv] });
+  const com = calcularReceita({ ...base, lupulos: [ferv, { ...h, tempo_min: 10, temperatura_c: 90 }] });
+  const lup = { alfaPct: 13, gramas: 30, sgMosto: so.og, litros: 20 };
+  const extra = fatorIsomerizacao(90) * (ibuTinseth({ ...lup, minutos: 15 }) - ibuTinseth({ ...lup, minutos: 5 }));
+  perto(com.lupulos[0].ibu, so.lupulos[0].ibu + extra, 1e-6);
+  assert.ok(com.lupulos[0].ibu / so.lupulos[0].ibu > 1.5, "lúpulo de 5 min ganha muito num whirlpool de 10 min a 90 °C");
+});
+
+test("IBU da receita: fervura conta, primeiro mosto +10%, dry hop não", () => {
   const base = {
     volume_lote_l: 20, perda_panela_l: 0, evaporacao_l_h: 0, eficiencia_pct: 75, fervura_min: 60,
     fermentaveis: [{ tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 4.5, etapa: "MOSTURA", cor_srm: 2 }],
@@ -99,7 +134,7 @@ test("IBU da receita: fervura conta, primeiro mosto +10%, whirlpool e dry hop n�
   perto(fwh.ibu, esperado * 1.1, 1e-6);
   const semAmargor = calcularReceita({
     ...base,
-    lupulos: [{ ...h, etapa: "WHIRLPOOL", tempo_min: 20 }, { ...h, etapa: "DRY_HOP", dia: 3 }],
+    lupulos: [{ ...h, etapa: "DRY_HOP", dia: 3 }, { ...h, etapa: "ENVASE" }, { ...h, etapa: "MOSTURA", tempo_min: 60 }],
   });
   assert.equal(semAmargor.ibu, 0);
   // Com evaporação a panela começa mais diluída: utilização maior, IBU maior.
@@ -217,6 +252,11 @@ test("Chegar ao IBU: muda só o lúpulo de amargor (o de mais tempo)", () => {
   const t = ajustarParaIBU({ ...base, lupulos: [base.lupulos[0], { ...base.lupulos[1], travado: true }, base.lupulos[2]] }, 40);
   assert.equal(t.indice, 0);
   assert.equal(ajustarParaIBU({ ...base, lupulos: [base.lupulos[2]] }, 40).motivo, "SEM_AMARGOR");
+  // Com whirlpool na receita (o lúpulo da fervura ganha IBU no whirlpool também): ainda chega ao alvo.
+  const comWp = { ...base, lupulos: [...base.lupulos, { alfa_pct: 9, quantidade_g: 40, etapa: "WHIRLPOOL", tempo_min: 20, temperatura_c: 85 }] };
+  const w = ajustarParaIBU(comWp, 45);
+  assert.equal(w.indice, 1);
+  perto(w.ibu, 45, 0.1);
   // Os outros já passam do alvo.
   const o = ajustarParaIBU(base, 1, 1);
   assert.equal(o.motivo, "OUTROS_PASSAM");

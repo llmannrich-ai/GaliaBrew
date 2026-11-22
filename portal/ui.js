@@ -69,11 +69,11 @@ export function numeroBR(v, casas = 2, { milhar = false } = {}) {
 }
 
 /** Campo numérico com vírgula: guarda o número em obj[chave] (com conversão opcional para a tela). */
-export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, para = (x) => x, desabilitado = false, classe = "num", rotulo } = {}) {
+export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, para = (x) => x, desabilitado = false, classe = "num", rotulo, placeholder } = {}) {
   const valorTela = obj[chave] === null || obj[chave] === undefined ? "" : numeroBR(de(Number(obj[chave])), casas);
   const input = el("input", {
     type: "text", inputmode: "decimal", class: classe, value: valorTela, disabled: desabilitado,
-    "aria-label": rotulo,
+    "aria-label": rotulo, placeholder,
     on: {
       input: () => {
         const v = lerNumero(input.value);
