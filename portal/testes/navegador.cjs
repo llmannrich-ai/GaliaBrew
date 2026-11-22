@@ -266,7 +266,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
+    const m = await import("./calculos.js?v=20261122m");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -302,7 +302,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoSo4 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
+    const m = await import("./calculos.js?v=20261122m");
     const total = Number(document.querySelector(".painel-lote").textContent.match(/Água total[^0-9]*?([0-9]+,[0-9]) L/)[1].replace(",", "."));
     return m.perfilAgua({ origem: { sulfato_ppm: 10, cloreto_ppm: 15 }, sais: [{ sal: "GESSO", gramas: 6 }], litros: total }).ions.sulfato_ppm;
   });
@@ -316,7 +316,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
+    const m = await import("./calculos.js?v=20261122m");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -330,14 +330,14 @@ const erros = [];
   await pagina.waitForTimeout(100);
   verificar(await vital("og") === br(esperado.og, 3), "voltar a 4,8 kg volta a OG");
 
-  // Ajuste rápido: + (50 g), seta ↑ (50 g), Shift+↓ (500 g).
-  await pagina.click(`${linhaF} button.passo[aria-label="Mais 50 g"]`);
-  verificar(await qtd.inputValue() === "4,850", "botão + soma 50 g");
+  // Ajuste rápido: + (250 g), seta ↑ (250 g), Shift+↓ (2,5 kg).
+  await pagina.click(`${linhaF} button.passo[aria-label="Mais 250 g"]`);
+  verificar(await qtd.inputValue() === "5,050", "botão + soma 250 g");
   await qtd.focus();
   await pagina.keyboard.press("ArrowUp");
-  verificar(await qtd.inputValue() === "4,900", "seta ↑ soma 50 g");
+  verificar(await qtd.inputValue() === "5,300", "seta ↑ soma 250 g");
   await pagina.keyboard.press("Shift+ArrowDown");
-  verificar(await qtd.inputValue() === "4,400", "Shift+↓ tira 500 g");
+  verificar(await qtd.inputValue() === "2,800", "Shift+↓ tira 2,5 kg");
   await qtd.fill("4,8");
 
   // Segundo lúpulo pela busca (Saaz aparece em "Recentes"); mudar a etapa; arrastar; mover pelo teclado; remover.
@@ -397,7 +397,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
+    const m = await import("./calculos.js?v=20261122m");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -405,16 +405,8 @@ const erros = [];
   await pagina.keyboard.press("Control+z");
   verificar(await qtd.inputValue() === "4,800", "Ctrl+Z desfaz o ajuste inteiro");
 
-  // ---- E3: cadeado ----
-  await pagina.click(`${linhaF} button.ing-trava`);
-  verificar(await pagina.getAttribute(`${linhaF} button.ing-trava`, "aria-pressed") === "true", "cadeado trava o malte");
-  await pagina.click('[data-secao="fermentaveis"] button:has-text("Chegar à OG")');
-  await pagina.fill('dialog.alvo input[aria-label="OG desejada"]', "1,050");
-  verificar((await pagina.textContent(".alvo-previa")).includes("sem cadeado") && await pagina.isDisabled('dialog.alvo button:has-text("Aplicar")'),
-    "com o único malte no cadeado, o ajuste explica e não deixa aplicar");
-  await pagina.click('dialog.alvo button:has-text("Cancelar")');
-  await pagina.click(`${linhaF} button.ing-trava`);
-  verificar(await pagina.getAttribute(`${linhaF} button.ing-trava`, "aria-pressed") === "false", "cadeado solta");
+  // ---- sem cadeado (retirado em 22/11/2026) ----
+  verificar(await pagina.locator(".ing-trava").count() === 0, "linhas de ingrediente sem o botão de cadeado");
 
   // ---- E3: chegar ao IBU ----
   await pagina.click('.vital [data-metrica="ibu"] button.vital-val');
@@ -604,9 +596,9 @@ const erros = [];
   verificar(!(await cel.isVisible("header.topo")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
     "toque: no editor o menu geral some e a barra do app mostra voltar, nome, desfazer e Salvar");
   const qtdCel = cel.locator('input[aria-label="Qtd (kg)"]').first();
-  const maisF = '[data-secao="fermentaveis"] li.ing button.passo[aria-label="Mais 50 g"]';
+  const maisF = '[data-secao="fermentaveis"] li.ing button.passo[aria-label="Mais 250 g"]';
   await tocar(maisF);
-  verificar(await qtdCel.inputValue() === "4,850", "toque: um toque no + soma exatamente 50 g (sem contar duas vezes)");
+  verificar(await qtdCel.inputValue() === "5,050", "toque: um toque no + soma exatamente 250 g (sem contar duas vezes)");
   verificar(await cel.getAttribute(".barra-app .app-salvar", "class") === "app-salvar pendente", "toque: Salvar mostra o ponto de alteração pendente");
   await cel.waitForTimeout(900);
   const [mx, my] = await centro(maisF);
@@ -614,9 +606,9 @@ const erros = [];
   await cel.waitForTimeout(1300);
   await toque("touchEnd");
   const depoisSegurar = Number((await qtdCel.inputValue()).replace(",", "."));
-  verificar(depoisSegurar >= 4.85 + 0.05 * 8, `toque: segurar o + repete (${br(depoisSegurar, 3)} kg em 1,3 s)`);
+  verificar(depoisSegurar >= 5.05 + 0.25 * 8, `toque: segurar o + repete (${br(depoisSegurar, 3)} kg em 1,3 s)`);
   await tocar(".barra-app .app-desfazer");
-  verificar(await qtdCel.inputValue() === "4,850", "toque: ↶ da barra do app desfaz o segurar inteiro");
+  verificar(await qtdCel.inputValue() === "5,050", "toque: ↶ da barra do app desfaz o segurar inteiro");
   await tocar(".barra-app .app-desfazer");
   verificar(await qtdCel.inputValue() === "4,800", "toque: ↶ de novo desfaz o toque");
 
