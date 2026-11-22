@@ -120,6 +120,37 @@ export function fatorIsomerizacao(celsius) {
   return Math.min(1, 2.39e11 * Math.exp(-9773 / (celsius + 273.15)));
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Água da mostura e priming
+// ---------------------------------------------------------------------------------------------------------------
+export const CALOR_ESPECIFICO_GRAO = 0.41;   // relativo à água (balanço de calor, como em Palmer, "How to Brew")
+
+/**
+ * Temperatura da água para a infusão: a mistura água + grão fica em `alvoC`.
+ * Tw = alvo + (0,41 ÷ L/kg) × (alvo − grão). Não conta o calor que a tina absorve (pré-aquecer a tina, ou somar 1-2 °C).
+ */
+export function temperaturaAguaMostura({ graoC, alvoC, litrosPorKg }) {
+  if (!(litrosPorKg > 0) || !Number.isFinite(graoC) || !Number.isFinite(alvoC)) return null;
+  return alvoC + (CALOR_ESPECIFICO_GRAO / litrosPorKg) * (alvoC - graoC);
+}
+
+/** CO₂ que a cerveja já tem (volumes) depois de fermentar até `celsius` (a maior temperatura que ela atingiu). */
+export function co2Residual(celsius) {
+  const f = fahrenheitDeCelsius(celsius);
+  return 3.0378 - 0.050062 * f + 0.00026555 * f * f;
+}
+
+/** Gramas de cada açúcar por litro para subir 1 volume de CO₂ (dextrose: 15,195 g/galão; os outros relativos a ela). */
+export const PRIMING_G_L_VOL = { SACAROSE: 3.65, DEXTROSE: 4.01, EXTRATO_SECO: 5.84, MEL: 4.64 };
+
+/** Priming: gramas de açúcar para chegar a `co2Alvo` volumes em `litros`, depois de fermentar até `temperaturaMaxC`. */
+export function primingGramas({ litros, co2Alvo, temperaturaMaxC, acucar = "SACAROSE" }) {
+  const fator = PRIMING_G_L_VOL[acucar];
+  if (!(litros > 0) || !(co2Alvo > 0) || !fator || !Number.isFinite(temperaturaMaxC)) return null;
+  const residual = co2Residual(temperaturaMaxC);
+  return { gramas: Math.max(0, (co2Alvo - residual) * litros * fator), co2_residual: residual, g_por_litro: Math.max(0, (co2Alvo - residual) * fator) };
+}
+
 /** Cor em SRM pela fórmula de Morey, a partir das MCU (Σ lb × °L ÷ galão). */
 export function srmMorey(mcu) {
   return mcu > 0 ? 1.4922 * mcu ** 0.6859 : 0;
@@ -249,6 +280,18 @@ export function calcularReceita(r) {
   const absorcao = graosKg * num(r.absorcao_grao_l_kg, 1);
   const aguaTotal = preFervura + absorcao + (graosKg > 0 ? num(r.perda_tina_l) : 0);
   const aguaMostura = Math.min(aguaTotal, graosKg * num(r.relacao_agua_grao_l_kg, 3));
+  // Temperatura da água da mostura: para chegar ao 1º passo da mostura com o grão na temperatura informada.
+  const primeiroPasso = (r.mostura ?? []).find((m) => Number.isFinite(Number(m.temperatura_c)) && m.temperatura_c !== null);
+  const tempAguaMostura = graosKg > 0 && primeiroPasso
+    ? temperaturaAguaMostura({ graoC: num(r.temp_grao_c, 20), alvoC: num(primeiroPasso.temperatura_c), litrosPorKg: aguaMostura / graosKg })
+    : null;
+  // Priming do lote: volume real (ou o planejado); temperatura = a maior da fermentação (sem passos: 20 °C).
+  const tempsFerm = (r.fermentacao ?? []).flatMap((f) => [f.temperatura_c, f.temperatura_fim_c]).filter((t) => t !== null && t !== undefined && t !== "").map(Number);
+  const tempMaxFerm = tempsFerm.length ? Math.max(...tempsFerm) : 20;
+  const priming = num(r.co2_alvo_vol) > 0
+    ? { ...primingGramas({ litros: num(r.volume_final_l) || lote, co2Alvo: num(r.co2_alvo_vol), temperaturaMaxC: tempMaxFerm, acucar: r.priming_acucar || "SACAROSE" }),
+        temperatura_max_c: tempMaxFerm, litros: num(r.volume_final_l) || lote, acucar: r.priming_acucar || "SACAROSE" }
+    : null;
 
   // O que aconteceu no lote (receita = lote): OG/FG medidas e volume real no fermentador.
   // Eficiência real: açúcar que a OG medida representa no volume real pós-fervura (volume final + perda na panela),
@@ -289,11 +332,13 @@ export function calcularReceita(r) {
       absorcao_l: absorcao,
       agua_total_l: aguaTotal,
       agua_mostura_l: aguaMostura,
+      temperatura_agua_mostura_c: tempAguaMostura,
       agua_lavagem_l: aguaTotal - aguaMostura,
     },
     fermentaveis: porItem.map((x, i) => ({ ...x, pct_acucar: acucarTotal > 0 ? (x.acucar_kg / acucarTotal) * 100 : 0, indice: i })),
     lupulos: ibuPorItem,
     medido: medido(),
+    priming,
     avisos: [
       ...(leveduras.length === 0 && fermentaveis.length > 0 ? ["SEM_LEVEDURA"] : []),
       ...(lote <= 0 ? ["SEM_VOLUME"] : []),

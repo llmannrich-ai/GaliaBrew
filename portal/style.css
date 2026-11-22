@@ -180,3 +180,9 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .info-balao[hidden] { display: none; }
 /* balão aberto não estica os campos vizinhos da mesma linha */
 .grade-form > label { align-content: start; }
+
+/* ---------- ferramentas ---------- */
+.ferramentas { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; align-items: start; }
+.resultado-ferramenta { margin-top: .9rem; }
+.ferramentas details { margin-top: .8rem; font-size: .88rem; }
+.ferramentas summary { cursor: pointer; color: var(--suave); }

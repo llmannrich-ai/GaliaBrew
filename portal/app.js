@@ -1,8 +1,9 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122d";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122d";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122d";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122d";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122e";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122e";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122e";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122e";
+import { telaFerramentas } from "./ferramentas.js?v=20261122e";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -11,6 +12,7 @@ function cabecalho() {
   const links = [
     ["#/receitas", "Receitas"],
     ["#/cadastros/fermentaveis", "Cadastros"],
+    ["#/ferramentas", "Ferramentas"],
     ["#/perfil", "Meu perfil"],
   ];
   return el("header", { class: "topo" },
@@ -165,6 +167,7 @@ async function rotear() {
     else if (rota === "receita") await telaEditor(conteudo, param, origem);
     else if (rota === "cadastros") await telaCadastros(conteudo, CADASTROS[param] ? param : "fermentaveis");
     else if (rota === "perfil") telaPerfil(conteudo);
+    else if (rota === "ferramentas") telaFerramentas(conteudo);
     else { location.hash = "#/receitas"; return; }
   } catch (e) {
     console.error(e);

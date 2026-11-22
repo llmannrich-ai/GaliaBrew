@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261122d";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122d";
+import { preferencias } from "./estado.js?v=20261122e";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122e";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -53,7 +53,20 @@ export const AJUDA_VOLUME = {
   agua_lavagem_l: "Água para lavar o grão: água total − água da mostura.",
   pre_fervura_l: "Mosto na panela ao começar a fervura: pós-fervura + o que evapora.",
   pos_fervura_l: "Mosto na panela ao fim da fervura: volume no fermentador + perda na panela. A OG prevista é deste volume.",
+  temperatura_agua_mostura_c: "Temperatura da água para o grão + água chegar ao 1º passo da mostura, com o grão na temperatura dos parâmetros. Não conta o calor que a tina absorve.",
+  co2_alvo_vol: "Carbonatação desejada em volumes de CO₂ (litros de gás por litro de cerveja). Ex.: ales inglesas 1,5-2,0; maioria das ales e lagers 2,2-2,7; belgas e trigo 3,0-4,0.",
+  priming_acucar: "Açúcar usado no priming. Os gramas usam o volume real (ou o planejado) e a maior temperatura da fermentação.",
+  temperatura_max_ferm: "A maior temperatura que a cerveja atingiu depois de fermentar (antes do cold crash). Quanto mais quente, menos CO₂ ficou nela.",
 };
+
+export const ACUCAR_PRIMING = [["SACAROSE", "Açúcar comum (sacarose)"], ["DEXTROSE", "Dextrose"], ["EXTRATO_SECO", "Extrato seco (DME)"], ["MEL", "Mel"]];
+
+// Faixas usuais de carbonatação (volumes de CO₂), só como referência.
+export const CO2_TIPICO = [
+  ["Ales inglesas, stouts e bitters", "1,5 – 2,0"], ["Porter, stout americana", "1,8 – 2,3"], ["Ales americanas, IPAs", "2,2 – 2,7"],
+  ["Lagers e pilsners", "2,4 – 2,7"], ["Belgas", "2,5 – 3,5"], ["Saison", "2,8 – 3,5"], ["Weizen e witbier", "3,0 – 4,0"],
+  ["Sours e lambics", "2,4 – 3,0"],
+];
 
 export const rotulo = (lista, v) => (lista.find(([k]) => k === v) ?? [v, v ?? ""])[1];
 

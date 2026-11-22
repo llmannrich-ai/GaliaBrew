@@ -79,7 +79,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (15 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (17 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -115,7 +115,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  34 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, salvar/reabrir, lista, celular 390 px, receita
+  39 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, ferramentas, priming, salvar/reabrir, lista, celular 390 px, receita
   de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
@@ -125,7 +125,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122e.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
@@ -138,6 +138,18 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   "Nova a partir desta" (rota `#/receita/nova/<id>`) e, na receita nova, "Começar a partir de uma receita anterior".
   A cópia leva tudo menos dados do lote, notas e "pública"; liga só cadastros que a pessoa enxerga. Data sem hora
   é formatada por `dataDoDia` (new Date desloca um dia no fuso do Brasil).
+
+## Água da mostura e priming (0006, 22/11/2026)
+- `calculos.js`: `temperaturaAguaMostura` (balanço de calor de Palmer: Tw = alvo + 0,41 ÷ (L/kg) × (alvo − grão); não
+  conta a tina), `co2Residual` (CO₂ que fica na cerveja pela maior temperatura, fórmula usual em °F) e `primingGramas`
+  (g/L por volume: sacarose 3,65; dextrose 4,01 = 15,195 g/galão; DME 5,84; mel 4,64 — aproximações usuais).
+  Na receita: `res.volumes.temperatura_agua_mostura_c` (1º passo da mostura, `temp_grao_c`, água da mostura ÷ kg) e
+  `res.priming` (volume real ou planejado; maior temperatura dos passos de fermentação, sem passos 20 °C).
+- 0006: `receitas.co2_alvo_vol` (0-6) e `priming_acucar` (SACAROSE|DEXTROSE|EXTRATO_SECO|MEL; nulo = sacarose);
+  `salvar_receita` grava os dois. Teste `supabase/testes/0006_priming.sql`.
+- Portal: página `#/ferramentas` (`ferramentas.js`: calculadoras avulsas, valores ficam enquanto o portal está aberto;
+  tabela de CO₂ típico por estilo, porque o catálogo BJCP não tem CO₂); card Lote com CO₂ desejado e açúcar; painel
+  com a temperatura da água da mostura e o priming.
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
@@ -167,14 +179,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
   a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
   supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0005 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0006 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
 - 22/11/2026: FASE 1 CONCLUÍDA (testada no iPhone; Site URL/Redirect configuradas; IBU com whirlpool).
 - Fase 2 (1) feita em 22/11/2026: "criar a partir de" + dados do lote (0005).
-- Próximo: (2) calculadoras: água da mostura e priming, depois
-  refratômetro e correção do densímetro; (3) escalar receita. Sem módulo de brassagem e sem versões.
+- Fase 2 (2a) feita em 22/11/2026: calculadoras de água da mostura e priming (0006, página Ferramentas).
+- Próximo: (2b) refratômetro e correção do densímetro (temperatura); (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho
 - Fase 1 (CONCLUÍDA em 22/11/2026): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor

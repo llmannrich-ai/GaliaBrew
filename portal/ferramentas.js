@@ -1,0 +1,73 @@
+// ferramentas.js — calculadoras avulsas: água da mostura e priming (mesmas fórmulas do calculos.js).
+import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261122e";
+import { temperaturaAguaMostura, primingGramas } from "./calculos.js?v=20261122e";
+import * as O from "./opcoes.js?v=20261122e";
+
+// Volume que o grão ocupa na tina (L por kg), para saber se a mostura cabe.
+const VOLUME_GRAO_L_KG = 0.67;
+
+// Os valores ficam enquanto o portal estiver aberto (trocar de tela e voltar não apaga).
+const agua = { graos_kg: 5, relacao: 3, grao_c: 20, alvo_c: 66 };
+const prim = { litros: 20, co2: 2.4, temp_c: 20, acucar: "SACAROSE" };
+
+export function telaFerramentas(conteudo) {
+  preencher(conteudo,
+    el("div", { class: "titulo-linha" }, el("h2", { text: "Ferramentas" })),
+    el("div", { class: "ferramentas" }, cartaoAgua(), cartaoPriming()));
+}
+
+const campo = (obj, k, rot, casas, ajuda, aoMudar) =>
+  el("label", {}, el("span", {}, rot, info(ajuda)), campoNumero(obj, k, { casas, aoMudar, rotulo: rot }));
+
+function cartaoAgua() {
+  const saida = el("div", { class: "resultado-ferramenta", "aria-live": "polite" });
+  const calcular = () => {
+    const litros = agua.graos_kg > 0 && agua.relacao > 0 ? agua.graos_kg * agua.relacao : null;
+    const t = temperaturaAguaMostura({ graoC: agua.grao_c, alvoC: agua.alvo_c, litrosPorKg: agua.relacao });
+    if (litros == null || t == null) { preencher(saida, el("p", { class: "nota", text: "Preencha grãos, água/grão e as temperaturas." })); return; }
+    preencher(saida,
+      linha("Água da mostura", `${numeroBR(litros, 1)} L`),
+      linha("Temperatura da água", `${numeroBR(t, 1)} °C`),
+      linha("Volume da mostura na tina", `${numeroBR(litros + agua.graos_kg * VOLUME_GRAO_L_KG, 1)} L`));
+  };
+  const s = el("section", { class: "cartao" },
+    el("h3", { text: "Água da mostura" }),
+    el("p", { class: "nota", text: "Quanta água e em que temperatura colocar para o grão + água ficar na temperatura da parada." }),
+    el("div", { class: "grade-form" },
+      campo(agua, "graos_kg", "Grãos (kg)", 2, null, calcular),
+      campo(agua, "relacao", "Água/grão (L/kg)", 1, O.AJUDA_VOLUME.relacao_agua_grao_l_kg, calcular),
+      campo(agua, "grao_c", "Temperatura do grão (°C)", 1, "Normalmente a temperatura ambiente.", calcular),
+      campo(agua, "alvo_c", "Temperatura da parada (°C)", 1, "A temperatura que a mostura deve atingir (ex.: 66 °C na sacarificação).", calcular)),
+    saida,
+    el("p", { class: "nota", text: "Não conta o calor que a tina absorve: pré-aqueça a tina ou some 1 a 2 °C. Volume da mostura = água + 0,67 L por kg de grão." }));
+  calcular();
+  return s;
+}
+
+function cartaoPriming() {
+  const saida = el("div", { class: "resultado-ferramenta", "aria-live": "polite" });
+  const calcular = () => {
+    const p = primingGramas({ litros: prim.litros, co2Alvo: prim.co2, temperaturaMaxC: prim.temp_c, acucar: prim.acucar });
+    if (!p) { preencher(saida, el("p", { class: "nota", text: "Preencha volume, CO₂ desejado e temperatura." })); return; }
+    preencher(saida,
+      linha(`${O.rotulo(O.ACUCAR_PRIMING, prim.acucar)}`, `${numeroBR(p.gramas, 0)} g`),
+      linha("Por litro", `${numeroBR(p.g_por_litro, 2)} g/L`),
+      linha("CO₂ que a cerveja já tem", `${numeroBR(p.co2_residual, 2)} vol`),
+      p.gramas === 0 ? el("p", { class: "nota alerta", text: "A cerveja já tem esse CO₂: não precisa de priming." }) : null);
+  };
+  const s = el("section", { class: "cartao" },
+    el("h3", { text: "Priming" }),
+    el("p", { class: "nota", text: "Açúcar para carbonatar na garrafa ou no barril." }),
+    el("div", { class: "grade-form" },
+      campo(prim, "litros", "Cerveja a envasar (L)", 1, null, calcular),
+      campo(prim, "co2", "CO₂ desejado (vol)", 1, O.AJUDA_VOLUME.co2_alvo_vol, calcular),
+      campo(prim, "temp_c", "Maior temperatura da fermentação (°C)", 1, O.AJUDA_VOLUME.temperatura_max_ferm, calcular),
+      el("label", {}, el("span", { text: "Açúcar" }), campoSelect(prim, "acucar", O.ACUCAR_PRIMING, { aoMudar: calcular, rotulo: "Açúcar" }))),
+    saida,
+    el("details", {}, el("summary", { text: "CO₂ típico por estilo" }),
+      el("table", { class: "tabela" }, el("tbody", {}, O.CO2_TIPICO.map(([e, v]) => el("tr", {}, el("td", { text: e }), el("td", { class: "num", text: v })))))));
+  calcular();
+  return s;
+}
+
+const linha = (rot, valor) => el("div", { class: "metrica" }, el("span", { class: "rot", text: rot }), el("span", { class: "val", text: valor }));

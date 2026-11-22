@@ -1,9 +1,9 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122d";
-import { sb, sessao } from "./estado.js?v=20261122d";
-import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122d";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122d";
-import * as O from "./opcoes.js?v=20261122d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122e";
+import { sb, sessao } from "./estado.js?v=20261122e";
+import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122e";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122e";
+import * as O from "./opcoes.js?v=20261122e";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -85,7 +85,7 @@ const PADRAO = () => ({
   id: null, nome: "", tipo: "ALL_GRAIN", autor: sessao.perfil?.nome || "", estilo_id: null, equipamento_id: null,
   volume_lote_l: 20, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, perda_panela_l: 1, absorcao_grao_l_kg: 1,
   relacao_agua_grao_l_kg: 3, perda_tina_l: 0, temp_grao_c: 20, publica: false, notas: "",
-  lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null,
+  lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null, co2_alvo_vol: null, priming_acucar: null,
   fermentaveis: [], lupulos: [], leveduras: [], outros: [],
   mostura: [{ nome: "Sacarificação", tipo: "INFUSAO", temperatura_c: 66, tempo_min: 60 }],
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
@@ -201,9 +201,11 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
       linha("Atenuação", `${numeroBR(res.atenuacao_pct, 0)}%`),
       linha("Gravidade pré-fervura", numeroBR(res.sg_pre_fervura, 3)),
       ...painelMedido(res, linha),
+      ...painelPriming(res, linha),
       el("h4", { text: "Volumes" }),
       linha("Água total", `${numeroBR(v.agua_total_l, 1)} L`, null, null, O.AJUDA_VOLUME.agua_total_l),
       linha("Água da mostura", `${numeroBR(v.agua_mostura_l, 1)} L`, null, null, O.AJUDA_VOLUME.agua_mostura_l),
+      v.temperatura_agua_mostura_c != null ? linha("Temperatura da água da mostura", `${numeroBR(v.temperatura_agua_mostura_c, 1)} °C`, null, null, O.AJUDA_VOLUME.temperatura_agua_mostura_c) : null,
       linha("Água de lavagem", `${numeroBR(v.agua_lavagem_l, 1)} L`, null, null, O.AJUDA_VOLUME.agua_lavagem_l),
       linha("Pré-fervura", `${numeroBR(v.pre_fervura_l, 1)} L`, null, null, O.AJUDA_VOLUME.pre_fervura_l),
       linha("Pós-fervura", `${numeroBR(v.pos_fervura_l, 1)} L`, null, null, O.AJUDA_VOLUME.pos_fervura_l),
@@ -327,7 +329,10 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
       })),
       campoLote("og_medida", "OG medida", { casas: 3, placeholder: "1,050", ...sg }),
       campoLote("fg_medida", "FG medida", { casas: 3, placeholder: "1,010", ...sg }),
-      campoLote("volume_final_l", "Volume real no fermentador (L)", { casas: 1 })));
+      campoLote("volume_final_l", "Volume real no fermentador (L)", { casas: 1 }),
+      campoLote("co2_alvo_vol", "CO₂ desejado (vol)", { casas: 1, placeholder: "2,4" }),
+      el("label", {}, el("span", {}, "Açúcar do priming", info(O.AJUDA_VOLUME.priming_acucar)),
+        campoSelect(r, "priming_acucar", O.ACUCAR_PRIMING, { aoMudar: mudou, desabilitado: des, vazio: "Açúcar comum (sacarose)", rotulo: "Açúcar do priming" }))));
 
   const inicio = !r.id && !leitura ? el("section", { class: "cartao" },
     origem
@@ -505,6 +510,18 @@ function painelMedido(res, linha) {
   ];
 }
 
+/** Priming do lote (só com CO₂ desejado preenchido). */
+function painelPriming(res, linha) {
+  const p = res.priming;
+  if (!p || p.gramas == null) return [];
+  return [
+    el("h4", { text: "Priming" }),
+    linha(O.rotulo(O.ACUCAR_PRIMING, p.acucar), `${numeroBR(p.gramas, 0)} g`),
+    linha("Por litro", `${numeroBR(p.g_por_litro, 2)} g/L`),
+    el("p", { class: "nota", text: `Para ${numeroBR(p.litros, 1)} L; CO₂ que a cerveja já tem: ${numeroBR(p.co2_residual, 2)} vol (fermentou até ${numeroBR(p.temperatura_max_c, 0)} °C).` }),
+  ];
+}
+
 function validar(r) {
   const p = [];
   if (!String(r.nome ?? "").trim()) p.push("Dê um nome à receita.");
@@ -514,6 +531,7 @@ function validar(r) {
     if (r[k] != null && !(r[k] >= 0.98 && r[k] <= 1.2)) p.push(`${rot}: use densidade como 1,050 (ou 1050, ou 50).`);
   }
   if (r.volume_final_l != null && !(r.volume_final_l > 0)) p.push("Volume real deve ser maior que zero.");
+  if (r.co2_alvo_vol != null && !(r.co2_alvo_vol > 0 && r.co2_alvo_vol <= 6)) p.push("CO₂ desejado: entre 0 e 6 volumes (ex.: 2,4).");
   const falta = (lista, teste) => lista.some((x) => !teste(x));
   if (falta(r.fermentaveis, (f) => String(f.nome ?? "").trim() && f.quantidade_kg > 0 && f.rendimento_pct != null && f.cor_srm != null)) p.push("Fermentáveis: preencha nome, quantidade (> 0), rendimento e cor.");
   if (falta(r.lupulos, (h) => String(h.nome ?? "").trim() && h.quantidade_g > 0 && h.alfa_pct != null && (h.etapa !== "FERVURA" || h.tempo_min != null))) p.push("Lúpulos: preencha nome, quantidade (> 0), alfa e o tempo na fervura.");
@@ -530,7 +548,7 @@ function montarPayload(r, res) {
   return {
     ...so(r, ["id", "nome", "tipo", "autor", "estilo_id", "equipamento_id", "volume_lote_l", "eficiencia_pct", "fervura_min", "evaporacao_l_h",
       "perda_panela_l", "absorcao_grao_l_kg", "relacao_agua_grao_l_kg", "perda_tina_l", "temp_grao_c", "publica", "notas",
-      "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l"]),
+      "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l", "co2_alvo_vol", "priming_acucar"]),
     fervura_min: Math.round(r.fervura_min ?? 60),
     og_calc: arred(res.og, 4), fg_calc: arred(res.fg, 4), abv_calc_pct: arred(res.abv_pct, 2), ibu_calc: arred(res.ibu, 1), cor_srm_calc: arred(res.cor_srm, 1),
     fermentaveis: r.fermentaveis.map((x) => so(x, ["fermentavel_id", "nome", "tipo", "rendimento_pct", "umidade_pct", "cor_srm", "fermentavel_pct", "quantidade_kg", "etapa"])),
