@@ -60,7 +60,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (12 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (13 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -77,7 +77,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - HTML + módulos JS sem build: `index.html`, `app.js` (login, menu, rotas `#/receitas`, `#/receita/<id|nova>`,
   `#/cadastros/<tabela>`, `#/perfil`), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -91,8 +91,15 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  24 verificações: login, cadastros com vírgula, editor x calculos.js, salvar/reabrir, lista, celular 390 px, receita
-  de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
+  38 verificações: login, cadastros com vírgula, barra vital x calculos.js, estados do estilo, diferença após mudança,
+  barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir, lista,
+  receita de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
+- Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
+  (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, compacta,
+  "▴" abre estado e faixas) com OG, FG, ABV, IBU, cor, régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
+  folga de 25%, "perto" = últimos 10% da faixa, valor arredondado como na tela), estado com cor + ícone + texto, e a
+  diferença da última mudança (acumula no mesmo campo, some em 3 s). Estilo no topo; lote numa linha de resumo
+  (`<details>`); volumes e água no painel lateral (coluna única abaixo de 1180 px). SVG pelo `svg()` do ui.js.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
   `_headers` e publica. Só publica da branch PADRÃO do repositório. Pré-requisito único (manual, o proxy daqui não
@@ -101,7 +108,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122b.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122c.
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,

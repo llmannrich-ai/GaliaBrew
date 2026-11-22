@@ -1,6 +1,8 @@
 # GaliaBrew — Plano de UX e direção de arte do editor de receitas
 
-Versão 1 — 22/11/2026. Base: código do portal (`receitas.js`, `style.css`), capturas da tela atual (computador e
+Versão 1 — 22/11/2026.
+
+Status: **E0 e E1 feitas em 22/11/2026** (fonte do sistema, decisão do responsável). Próxima: E2. Base: código do portal (`receitas.js`, `style.css`), capturas da tela atual (computador e
 celular 390 px, geradas pelo `navegador.cjs`) e documentação pública do Brewfather.
 
 ---

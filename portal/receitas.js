@@ -1,9 +1,10 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122b";
-import { sb, sessao } from "./estado.js?v=20261122b";
-import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122b";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122b";
-import * as O from "./opcoes.js?v=20261122b";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122c";
+import { sb, sessao } from "./estado.js?v=20261122c";
+import { calcularReceita, platoDeSg } from "./calculos.js?v=20261122c";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122c";
+import * as O from "./opcoes.js?v=20261122c";
+import { criarBarraVital } from "./vital.js?v=20261122c";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -132,51 +133,59 @@ function aplicarEquipamento(r, eq) {
 
 function montarEditor(conteudo, r, cat, leitura) {
   const calculados = new Map();      // item → célula com valor calculado (% do açúcar, IBU)
-  const painel = el("aside", { class: "resultados", "aria-live": "polite" });
+  const vital = criarBarraVital();
+  const painel = el("aside", { class: "painel-lote" });
+  const resumoLote = el("span", { class: "resumo-texto" });
   const secoes = {};
   const des = leitura;
+  let montado = false;            // antes de montar, os cálculos não contam como "mudança" (sem diferença na barra)
 
   const mudou = () => {
     if (!leitura) editor.sujo = true;
     atualizarResultados();
   };
 
-  // ---------- resultados ----------
+  // ---------- resultados: barra vital + painel "Lote e água" ----------
+  const blocoPainel = (titulo, aberto) => el("details", { class: "cartao bloco-painel", open: aberto }, el("summary", { text: titulo }));
+  const celular = window.matchMedia("(max-width: 640px)").matches;
+  const pNumeros = blocoPainel("Mais números", !celular);
+  const pVolumes = blocoPainel("Volumes", !celular);
+  const pAgua = blocoPainel("Água", !celular);
+  const pNotas = el("div", { class: "notas-painel" });
+  preencher(painel, pNumeros, pVolumes, pAgua, pNotas);
+  const corpoBloco = (bloco, ...linhas) => { while (bloco.children.length > 1) bloco.lastChild.remove(); bloco.append(...linhas); };
+  const linha = (rot, valor) => el("div", { class: "metrica" }, el("span", { class: "rot", text: rot }), el("span", { class: "val", text: valor }));
+
   function atualizarResultados() {
     const res = calcularReceita(r);
     res.fermentaveis.forEach((x, i) => { const c = calculados.get(r.fermentaveis[i]); if (c) c.textContent = `${numeroBR(x.pct_acucar, 0)}%`; });
     res.lupulos.forEach((x, i) => { const c = calculados.get(r.lupulos[i]); if (c) c.textContent = numeroBR(x.ibu, 1); });
     const estilo = cat.estilos.find((e) => e.id === r.estilo_id);
-    const cmp = compararComEstilo(res, estilo);
+    vital.atualizar(res, estilo, { mudanca: montado && !leitura });
     const v = res.volumes;
-    const linha = (rot, valor, chave, faixaTxt) => el("div", { class: "metrica" },
-      el("span", { class: "rot", text: rot }),
-      el("span", { class: "val", text: valor }),
-      cmp && chave && cmp[chave] ? el("span", { class: `faixa ${cmp[chave].toLowerCase()}`, title: faixaTxt, text: { ABAIXO: "abaixo", DENTRO: "ok", ACIMA: "acima" }[cmp[chave]] }) : null);
-    const fx = (a, b, casas, conv = (x) => x) => (estilo && (a != null || b != null) ? `Estilo: ${numeroBR(conv(a), casas)} a ${numeroBR(conv(b), casas)}` : "");
-    const amostra = el("span", { class: "amostra grande", "aria-hidden": "true" });
-    amostra.style.background = corHexDeSrm(res.cor_srm);
-    preencher(painel, 
-      el("h3", { text: "Resultado" }),
-      el("div", { class: "cor-linha" }, amostra, el("span", { text: `${numeroBR(O.corParaTela(res.cor_srm), 1)} ${O.unidadeCor()}` })),
-      linha("OG", `${numeroBR(res.og, 3)} (${numeroBR(platoDeSg(res.og), 1)} °P)`, "og", fx(estilo?.og_min, estilo?.og_max, 3)),
-      linha("FG", numeroBR(res.fg, 3), "fg", fx(estilo?.fg_min, estilo?.fg_max, 3)),
-      linha("ABV", `${numeroBR(res.abv_pct, 1)}%`, "abv_pct", fx(estilo?.abv_min_pct, estilo?.abv_max_pct, 1)),
-      linha("IBU (Tinseth)", numeroBR(res.ibu, 0), "ibu", fx(estilo?.ibu_min, estilo?.ibu_max, 0)),
-      linha(`Cor (${O.unidadeCor()})`, numeroBR(O.corParaTela(res.cor_srm), 1), "cor_srm", fx(estilo?.cor_srm_min, estilo?.cor_srm_max, 1, O.corParaTela)),
-      linha("BU:GU", numeroBR(res.bu_gu, 2)),
-      linha("Atenuação", `${numeroBR(res.atenuacao_pct, 0)}%`),
-      linha("Gravidade pré-fervura", numeroBR(res.sg_pre_fervura, 3)),
-      el("h4", { text: "Volumes" }),
-      linha("Água total", `${numeroBR(v.agua_total_l, 1)} L`),
-      linha("Água da mostura", `${numeroBR(v.agua_mostura_l, 1)} L`),
-      linha("Água de lavagem", `${numeroBR(v.agua_lavagem_l, 1)} L`),
+    corpoBloco(pNumeros,
+      linha("OG em °Plato", `${numeroBR(platoDeSg(res.og), 1)} °P`),
+      linha("FG em °Plato", `${numeroBR(platoDeSg(res.fg), 1)} °P`),
+      linha("Gravidade pré-fervura", numeroBR(res.sg_pre_fervura, 3)));
+    corpoBloco(pVolumes,
       linha("Pré-fervura", `${numeroBR(v.pre_fervura_l, 1)} L`),
       linha("Pós-fervura", `${numeroBR(v.pos_fervura_l, 1)} L`),
-      linha("Grãos", `${numeroBR(v.graos_kg, 2)} kg`),
-      estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : null,
-      res.avisos.includes("SEM_LEVEDURA") ? el("p", { class: "nota alerta", text: "Sem levedura: a FG fica igual à OG." }) : null,
+      linha("No fermentador", `${numeroBR(v.lote_l, 1)} L`),
+      linha("Grãos na mostura", `${numeroBR(v.graos_kg, 2)} kg`));
+    corpoBloco(pAgua,
+      linha("Água total", `${numeroBR(v.agua_total_l, 1)} L`),
+      linha("Água da mostura", `${numeroBR(v.agua_mostura_l, 1)} L`),
+      linha("Água de lavagem", `${numeroBR(v.agua_lavagem_l, 1)} L`));
+    preencher(pNotas,
+      estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : el("p", { class: "nota", text: "Escolha um estilo no topo para ver as faixas." }),
       el("p", { class: "nota", text: "IBU só da fervura e do primeiro mosto (whirlpool e dry hop não entram no Tinseth)." }));
+    const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
+    resumoLote.textContent = [
+      `${numeroBR(r.volume_lote_l, 1)} L no fermentador`,
+      `${numeroBR(r.eficiencia_pct, 0)}% de eficiência`,
+      `${numeroBR(r.fervura_min, 0)} min de fervura`,
+      eq ? eq.nome : null,
+    ].filter(Boolean).join(" · ");
     return res;
   }
 
@@ -269,24 +278,27 @@ function montarEditor(conteudo, r, cat, leitura) {
     } } }) : null,
     el("a", { href: "#/receitas", class: "botao secundario", text: "Voltar" }));
 
+  const estiloCampo = el("label", { class: "estilo-topo" }, el("span", { text: "Estilo" }), campoSelect(r, "estilo_id",
+    cat.estilos.map((e) => [e.id, `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}`]), { aoMudar: mudou, desabilitado: des, vazio: "— sem estilo —", rotulo: "Estilo" }));
+
   const geral = el("section", { class: "cartao" },
-    el("h3", { text: "Geral" }),
+    el("h3", { text: "Dados gerais" }),
     el("div", { class: "grade-form" },
       el("label", {}, el("span", { text: "Tipo" }), campoSelect(r, "tipo", O.TIPO_RECEITA, { aoMudar: mudou, desabilitado: des, rotulo: "Tipo" })),
-      el("label", {}, el("span", { text: "Estilo" }), campoSelect(r, "estilo_id",
-        cat.estilos.map((e) => [e.id, `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}`]), { aoMudar: mudou, desabilitado: des, vazio: "— sem estilo —", rotulo: "Estilo" })),
-      el("label", {}, el("span", { text: "Equipamento" }), campoSelect(r, "equipamento_id",
-        cat.equipamentos.map((e) => [e.id, e.nome]), {
-          desabilitado: des, vazio: cat.equipamentos.length ? "— nenhum —" : "— cadastre em Cadastros —", rotulo: "Equipamento",
-          aoMudar: () => {
-            const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
-            if (eq) { aplicarEquipamento(r, eq); desenharParametros(); avisar("Parâmetros copiados do equipamento."); }
-            mudou();
-          },
-        })),
       el("label", {}, el("span", { text: "Autor" }), campoTexto(r, "autor", { aoMudar: mudou, desabilitado: des, max: 80, rotulo: "Autor" })),
       el("label", { class: "linha" }, el("input", { type: "checkbox", checked: r.publica, disabled: des, on: { change: (e) => { r.publica = e.target.checked; mudou(); } } }),
         "Pública (outros usuários podem ver e duplicar)")));
+
+  const equipamentoCampo = el("div", { class: "grade-form" },
+    el("label", {}, el("span", { text: "Equipamento" }), campoSelect(r, "equipamento_id",
+      cat.equipamentos.map((e) => [e.id, e.nome]), {
+        desabilitado: des, vazio: cat.equipamentos.length ? "— nenhum —" : "— cadastre em Cadastros —", rotulo: "Equipamento",
+        aoMudar: () => {
+          const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
+          if (eq) { aplicarEquipamento(r, eq); desenharParametros(); avisar("Parâmetros copiados do equipamento."); }
+          mudou();
+        },
+      })));
 
   const parametros = el("div", { class: "grade-form" });
   function desenharParametros() {
@@ -407,16 +419,23 @@ function montarEditor(conteudo, r, cat, leitura) {
   const notas = el("section", { class: "cartao" }, el("h3", { text: "Notas" }),
     el("textarea", { rows: 4, maxlength: 8000, disabled: des, value: r.notas ?? "", "aria-label": "Notas", on: { input: (e) => { r.notas = e.target.value; mudou(); } } }));
 
-  preencher(conteudo, 
-    el("div", { class: "editor-topo" }, nomeInput, acoes),
+  // Lote: uma linha de resumo; os parâmetros abrem ao clicar. Receita nova sem equipamento já abre (falta o volume).
+  const lote = el("details", { class: "cartao lote", open: !r.id && !r.equipamento_id && !leitura },
+    el("summary", {}, el("span", { class: "resumo-titulo", text: "Lote" }), resumoLote, el("span", { class: "resumo-acao", "aria-hidden": "true" })),
+    equipamentoCampo,
+    parametros);
+
+  conteudo.classList.add("com-vital");
+  preencher(conteudo,
+    el("div", { class: "editor-topo" }, nomeInput, estiloCampo, acoes),
     msg,
+    vital.elemento,
     el("div", { class: "editor" },
       el("div", { class: "editor-corpo" },
-        geral,
-        el("section", { class: "cartao" }, el("h3", { text: "Parâmetros do lote" }), parametros),
-        fermentaveis, lupulos, leveduras, outros, mostura, fermentacao, notas),
+        lote, fermentaveis, lupulos, leveduras, outros, mostura, fermentacao, geral, notas),
       painel));
   atualizarResultados();
+  montado = true;
   if (!r.id && !leitura) nomeInput.focus();
 }
 

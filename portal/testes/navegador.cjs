@@ -197,7 +197,7 @@ async function site(rota) {
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122b");
+    const m = await import("./calculos.js?v=20261122c");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -205,12 +205,47 @@ async function site(rota) {
       leveduras: [{ atenuacao_pct: 80 }],
     });
   });
-  const textoPainel = await pagina.textContent(".resultados");
   const br = (v, c) => v.toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c });
-  verificar(textoPainel.includes(br(esperado.og, 3)), `painel mostra OG ${br(esperado.og, 3)}`);
-  verificar(textoPainel.includes(`IBU (Tinseth)${br(esperado.ibu, 0)}`), `painel mostra IBU ${br(esperado.ibu, 0)}`);
-  verificar(textoPainel.includes(br(esperado.fg, 3)), `painel mostra FG ${br(esperado.fg, 3)}`);
-  await pagina.screenshot({ path: `${SAIDA}/p3-editor.png`, fullPage: true });
+  const vital = (m, parte = "vital-val") => pagina.textContent(`.vital [data-metrica="${m}"] .${parte}`);
+  verificar(await vital("og") === br(esperado.og, 3), `barra vital mostra OG ${br(esperado.og, 3)}`);
+  verificar(await vital("ibu") === br(esperado.ibu, 0), `barra vital mostra IBU ${br(esperado.ibu, 0)}`);
+  verificar(await vital("fg") === br(esperado.fg, 3), `barra vital mostra FG ${br(esperado.fg, 3)}`);
+  verificar(await vital("abv") === `${br(esperado.abv_pct, 1)}%`, `barra vital mostra ABV ${br(esperado.abv_pct, 1)}%`);
+  // German Pils: OG 1,044–1,050 (receita 1,041 → abaixo); IBU 22–40 (23 → perto do mínimo); cor 2–4 SRM.
+  verificar((await vital("og", "vital-estado")).includes("abaixo do estilo") && await pagina.getAttribute('.vital [data-metrica="og"]', "class") === "vital-item estado-fora",
+    "OG fora da faixa: ▼ abaixo do estilo (cor + ícone + texto)");
+  verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
+  verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
+  verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
+  verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
+
+  // Mudança mostra a diferença e a barra continua à vista com a página rolada.
+  const qtd = pagina.locator('input[aria-label="Qtd (kg)"]').first();
+  await qtd.fill("5,3");
+  await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
+  const esperado53 = await pagina.evaluate(async () => {
+    const m = await import("./calculos.js?v=20261122c");
+    const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
+      fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
+    return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
+  });
+  verificar(await vital("og", "vital-delta") === `+${br(esperado53, 3)}`, `diferença só desta mudança: 4,8 → 5,3 kg = OG +${br(esperado53, 3)}`);
+  await pagina.locator('textarea[aria-label="Notas"]').scrollIntoViewIfNeeded();
+  const caixa = await pagina.locator(".vital").boundingBox();
+  verificar(caixa.y >= 0 && caixa.y + caixa.height <= 900, `computador: barra vital à vista com a página rolada até as notas (y=${Math.round(caixa.y)})`);
+  await pagina.screenshot({ path: `${SAIDA}/p3b-editor-rolado.png` });
+  await qtd.fill("4,8");
+  await pagina.waitForTimeout(100);
+  verificar(await vital("og") === br(esperado.og, 3), "voltar a 4,8 kg volta a OG");
+  await pagina.evaluate(() => window.scrollTo(0, 0));
+  await pagina.screenshot({ path: `${SAIDA}/p3-editor.png` });
+  await pagina.emulateMedia({ colorScheme: "dark" });
+  await pagina.screenshot({ path: `${SAIDA}/p3c-editor-escuro.png` });
+  await pagina.emulateMedia({ colorScheme: "light" });
+  await pagina.setViewportSize({ width: 1024, height: 768 });
+  verificar(await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 1, "tablet (1024 px): página não passa da largura");
+  await pagina.screenshot({ path: `${SAIDA}/p3d-editor-tablet.png` });
+  await pagina.setViewportSize({ width: 1366, height: 900 });
 
   await pagina.click("button:has-text('Salvar')");
   await pagina.waitForFunction(() => /#\/receita\/[0-9a-f-]{36}$/.test(location.hash));
@@ -234,6 +269,18 @@ async function site(rota) {
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
+  await pagina.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await pagina.waitForTimeout(100);
+  const barraCel = await pagina.locator(".vital").boundingBox();
+  verificar(Math.abs(barraCel.y + barraCel.height - 844) <= 1, `celular: barra vital presa no rodapé (altura ${Math.round(barraCel.height)}px)`);
+  const fimNotas = await pagina.locator('textarea[aria-label="Notas"]').boundingBox();
+  verificar(fimNotas.y + fimNotas.height <= barraCel.y, "celular: a barra não cobre o fim da receita");
+  verificar(await pagina.isVisible('.vital [data-metrica="ibu"] .vital-val') && !(await pagina.isVisible('.vital [data-metrica="ibu"] .vital-estado')), "celular: barra compacta (números sem textos)");
+  await pagina.screenshot({ path: `${SAIDA}/p5b-celular-rolado.png` });
+  await pagina.click(".vital-mais");
+  verificar(await pagina.getAttribute(".vital-mais", "aria-expanded") === "true" && await pagina.isVisible('.vital [data-metrica="og"] .vital-estado'), "celular: 'detalhes' abre estado e faixas");
+  await pagina.screenshot({ path: `${SAIDA}/p5c-celular-detalhes.png` });
+  await pagina.click(".vital-mais");
 
   // Receita pública de outro usuário: só leitura + duplicar
   const outro = "22222222-2222-2222-2222-222222222222";

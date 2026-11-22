@@ -1,8 +1,8 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122b";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122b";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122b";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122b";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122c";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122c";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122c";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122c";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -160,6 +160,7 @@ async function rotear() {
   if (!conteudo) return;
   marcarMenu();
   rotaAtual = location.hash;
+  conteudo.className = "conteudo";      // o editor acrescenta "com-vital"; as outras telas não
   try {
     if (rota === "receitas") await telaReceitas(conteudo);
     else if (rota === "receita") await telaEditor(conteudo, param);
@@ -195,8 +196,13 @@ async function carregarPerfil() {
 }
 
 function montarApp() {
-  preencher(raiz(), cabecalho(), el("main", { id: "conteudo", class: "conteudo" }));
+  const topo = cabecalho();
+  preencher(raiz(), topo, el("main", { id: "conteudo", class: "conteudo" }));
   marcarMenu();
+  // Altura real do topo para o CSS: a barra vital do editor fica fixa logo abaixo dele.
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => document.documentElement.style.setProperty("--topo-h", `${topo.offsetHeight}px`)).observe(topo);
+  }
 }
 
 // ---------- início ----------

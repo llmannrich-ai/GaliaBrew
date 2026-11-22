@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   platoDeSg, sgDePlato, platoDeAcucar, abv, utilizacaoTinseth, ibuTinseth, srmMorey, ebcDeSrm,
-  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm,
+  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -141,6 +141,32 @@ test("Faixa do estilo", () => {
   assert.deepEqual(compararComEstilo(res, e), { og: "DENTRO", fg: "DENTRO", ibu: "DENTRO", cor_srm: "DENTRO", abv_pct: null });
   assert.equal(compararComEstilo({ ...res, ibu: 60 }, e).ibu, "ACIMA");
   assert.equal(compararComEstilo(res, null), null);
+});
+
+test("Régua do estilo (barra vital)", () => {
+  // Faixa 30–50 IBU: eixo 25–55 (folga de 25% de cada lado); "perto" = a menos de 2 IBU da borda.
+  const meio = reguaDoEstilo(40, 30, 50);
+  assert.equal(meio.estado, "DENTRO");
+  perto(meio.pos, 0.5, 1e-12);
+  perto(meio.ini, 5 / 30, 1e-12);
+  perto(meio.fim, 25 / 30, 1e-12);
+  assert.deepEqual(meio.eixo, [25, 55]);
+  assert.equal(reguaDoEstilo(31, 30, 50).estado, "PERTO_MIN");
+  assert.equal(reguaDoEstilo(49, 30, 50).estado, "PERTO_MAX");
+  assert.equal(reguaDoEstilo(30, 30, 50).estado, "PERTO_MIN");      // na borda ainda está dentro
+  assert.equal(reguaDoEstilo(29, 30, 50).estado, "ABAIXO");
+  assert.equal(reguaDoEstilo(51, 30, 50).estado, "ACIMA");
+  // Muito fora: marcador preso na ponta do eixo, com aviso.
+  const longe = reguaDoEstilo(90, 30, 50);
+  assert.equal(longe.pos, 1);
+  assert.equal(longe.foraDoEixo, true);
+  assert.equal(reguaDoEstilo(1.041, 1.044, 1.05).estado, "ABAIXO");
+  // Sem faixa completa ou sem valor: sem régua.
+  assert.equal(reguaDoEstilo(40, null, 50), null);
+  assert.equal(reguaDoEstilo(40, 30, undefined), null);
+  assert.equal(reguaDoEstilo(NaN, 30, 50), null);
+  // Faixa de largura zero não divide por zero.
+  assert.equal(reguaDoEstilo(5, 5, 5).estado, "DENTRO");
 });
 
 test("Receita vazia não quebra", () => {

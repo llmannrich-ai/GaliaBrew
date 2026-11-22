@@ -20,6 +20,20 @@ export function el(tag, attrs = {}, ...filhos) {
   return n;
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+/** Igual ao el(), para SVG (createElementNS). Atributos de apresentação (fill, stroke) são permitidos pela CSP. */
+export function svg(tag, attrs = {}, ...filhos) {
+  const n = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs ?? {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") n.setAttribute("class", v);
+    else if (k === "text") n.textContent = v;
+    else n.setAttribute(k, v === true ? "" : String(v));
+  }
+  for (const f of filhos.flat(Infinity)) if (f instanceof Node) n.append(f);
+  return n;
+}
+
 export const $ = (sel, raiz = document) => raiz.querySelector(sel);
 
 export function limpar(n) {

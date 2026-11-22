@@ -260,6 +260,30 @@ export function compararComEstilo(res, e) {
   };
 }
 
+/**
+ * Régua do estilo (barra vital): onde o valor cai em relação à faixa do estilo.
+ * O eixo vai da faixa menos `folga` × largura até a faixa mais `folga` × largura (para ver o quanto está fora).
+ * Estado: ABAIXO | PERTO_MIN | DENTRO | PERTO_MAX | ACIMA; "perto" = dentro, a menos de `perto` × largura da borda.
+ * Arredondar o valor na precisão da tela ANTES (1,0439 aparece 1,044 e não deve sair "abaixo" de 1,044).
+ * Sem mínimo E máximo, devolve null (sem régua).
+ */
+export function reguaDoEstilo(valor, min, max, { folga = 0.25, perto = 0.1 } = {}) {
+  if (min === null || min === undefined || max === null || max === undefined || !Number.isFinite(Number(valor))) return null;
+  const a = Math.min(Number(min), Number(max));
+  const b = Math.max(Number(min), Number(max));
+  const v = Number(valor);
+  const largura = b - a > 0 ? b - a : Math.abs(a) * 0.1 || 1;
+  const eixoIni = a - folga * largura;
+  const eixoFim = b + folga * largura;
+  const pos = (x) => Math.min(1, Math.max(0, (x - eixoIni) / (eixoFim - eixoIni)));
+  let estado = "DENTRO";
+  if (v < a) estado = "ABAIXO";
+  else if (v > b) estado = "ACIMA";
+  else if (b > a && v - a < perto * largura) estado = "PERTO_MIN";
+  else if (b > a && b - v < perto * largura) estado = "PERTO_MAX";
+  return { estado, pos: pos(v), ini: pos(a), fim: pos(b), eixo: [eixoIni, eixoFim], foraDoEixo: v < eixoIni || v > eixoFim };
+}
+
 /** Cor aproximada para a tela (#rrggbb) a partir do SRM, por interpolação numa escala de referência. */
 export function corHexDeSrm(srm) {
   const escala = [
