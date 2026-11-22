@@ -80,7 +80,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (21 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (23 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -116,11 +116,11 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  119 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  125 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
-  priming e temperatura da água no painel, tela Ferramentas (água da mostura, priming),
+  priming e temperatura da água no painel, tela Ferramentas (água da mostura, priming, refratômetro, correção do densímetro),
   receita de outro, sair; e um bloco de celular com toque: barra do app, toque/segurar no ±, teclado aberto,
   cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
@@ -168,7 +168,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122i.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122j.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
@@ -195,6 +195,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Portal: página `#/ferramentas` (`ferramentas.js`: calculadoras avulsas, valores ficam enquanto o portal está aberto;
   tabela de CO₂ típico por estilo, porque o catálogo BJCP não tem CO₂); card Lote com CO₂ desejado e açúcar; painel
   com a temperatura da água da mostura e o priming.
+
+## Refratômetro e densímetro (22/11/2026, sem migração)
+- `calculos.js`: `sgDeBrix` (°Brix ÷ fator → °P → SG; fator padrão 1,04), `refratometro` (FG com álcool pela cúbica
+  de Sean Terrill, leituras ÷ fator; devolve OG, FG, ABV, atenuação) e `corrigirDensimetro` (polinômio usual da
+  densidade da água em °F; calibração padrão 20 °C).
+- Ferramentas: cartões Refratômetro (com "Descobrir o fator": °Brix ÷ °P do densímetro no mesmo mosto) e Densímetro.
+  Fator do refratômetro e calibração do densímetro ficam em `preferencias` (localStorage), por serem do aparelho.
+- `campoNumero` (ui.js): ao sair do campo mostra o valor guardado (densidade digitada 1048 aparece 1,048).
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
@@ -231,7 +239,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - 22/11/2026: FASE 1 CONCLUÍDA (testada no iPhone; Site URL/Redirect configuradas; IBU com whirlpool).
 - Fase 2 (1) feita em 22/11/2026: "criar a partir de" + dados do lote (0005).
 - Fase 2 (2a) feita em 22/11/2026: calculadoras de água da mostura e priming (0006, página Ferramentas).
-- Próximo: (2b) refratômetro e correção do densímetro (temperatura); (3) escalar receita. Sem módulo de brassagem e sem versões.
+- Fase 2 (2b) feita em 22/11/2026: refratômetro e correção do densímetro (Ferramentas).
+- Próximo: (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho
 - Fase 1 (CONCLUÍDA em 22/11/2026): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor

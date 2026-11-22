@@ -1,14 +1,14 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122i";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122i";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122i";
-import { abrirBusca } from "./busca.js?v=20261122i";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122i";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122i";
-import * as O from "./opcoes.js?v=20261122i";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122i";
-import { icone } from "./icones.js?v=20261122i";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261122i";
+import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122j";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122j";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122j";
+import { abrirBusca } from "./busca.js?v=20261122j";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122j";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122j";
+import * as O from "./opcoes.js?v=20261122j";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122j";
+import { icone } from "./icones.js?v=20261122j";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261122j";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;

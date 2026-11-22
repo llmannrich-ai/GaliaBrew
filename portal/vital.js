@@ -1,8 +1,8 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança. Computador: fixa abaixo do topo. Celular: fixa no rodapé (compacta).
-import { el, svg, numeroBR } from "./ui.js?v=20261122i";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122i";
-import * as O from "./opcoes.js?v=20261122i";
+import { el, svg, numeroBR } from "./ui.js?v=20261122j";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122j";
+import * as O from "./opcoes.js?v=20261122j";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {

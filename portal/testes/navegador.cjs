@@ -255,7 +255,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122i");
+    const m = await import("./calculos.js?v=20261122j");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -297,7 +297,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122i");
+    const m = await import("./calculos.js?v=20261122j");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -378,7 +378,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122i");
+    const m = await import("./calculos.js?v=20261122j");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -454,7 +454,21 @@ const erros = [];
   await pagina.selectOption('select[aria-label="Açúcar"]', "DEXTROSE");
   await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "0,5");
   verificar((await pagina.textContent(".ferramentas")).includes("não precisa de priming"), "CO₂ abaixo do que a cerveja já tem: avisa que não precisa");
-  await pagina.screenshot({ path: `${SAIDA}/p6-ferramentas.png` });
+  // Refratômetro (12 °Brix, fator 1,04) e densímetro (1,050 a 25 °C, calibrado a 20 °C).
+  const refr = () => pagina.textContent("section:has(h3:text('Refratômetro'))");
+  verificar((await refr()).includes("Densidade do mosto (OG)1,046"), "refratômetro: 12 °Brix → OG 1,046");
+  await pagina.fill('input[aria-label="°Brix atual (fermentando)"]', "6");
+  verificar(/FG \(densidade atual\)1,011/.test(await refr()), "refratômetro fermentando (Terrill): FG 1,011");
+  await pagina.click("summary:text('Descobrir o fator')");
+  await pagina.fill('input[aria-label="Densímetro (mosto)"]', "1048");
+  await pagina.fill('input[aria-label="Refratômetro (°Brix)"]', "12,5");
+  await pagina.click('input[aria-label="Refratômetro (°Brix)"]');
+  verificar(await pagina.inputValue('input[aria-label="Densímetro (mosto)"]') === "1,048", "densidade digitada 1048 aparece como 1,048 ao sair do campo");
+  await pagina.click("button:has-text('Usar este fator')");
+  verificar(await pagina.inputValue('input[aria-label="Fator do refratômetro"]') === "1,049", "descobre o fator (1,049) e passa a usar");
+  verificar(await pagina.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).fator_refratometro) === 1.049, "fator fica salvo no navegador");
+  verificar((await pagina.textContent("section:has(h3:text('Densímetro'))")).includes("Densidade corrigida1,051"), "densímetro: 1,050 a 25 °C (calibrado a 20 °C) → 1,051");
+  await pagina.screenshot({ path: `${SAIDA}/p6-ferramentas.png`, fullPage: true });
   await pagina.click("header nav >> text=Receitas");
   await pagina.screenshot({ path: `${SAIDA}/p4-lista.png` });
 
