@@ -1,9 +1,9 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122a";
-import { sb, sessao } from "./estado.js?v=20261122a";
-import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122a";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122a";
-import * as O from "./opcoes.js?v=20261122a";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122b";
+import { sb, sessao } from "./estado.js?v=20261122b";
+import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122b";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122b";
+import * as O from "./opcoes.js?v=20261122b";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;

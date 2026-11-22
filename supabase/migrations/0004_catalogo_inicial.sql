@@ -14,7 +14,7 @@
 --   DefaultContent006-MashAndWaterProfiles.beer perfis de água (nomes traduzidos, sem as notas)
 -- "Outros" (sais, ácidos, clarificantes, especiarias) foram escritos aqui, em português.
 --
--- Conversões: temperatura °F → °C; cor °L → SRM (1,3546 × °L − 0,76) e EBC → SRM (÷ 1,97); atenuação limitada a 100%;
+-- Conversões: densidade em pontos → SG; temperatura °F → °C; cor °L → SRM (1,3546 × °L − 0,76) e EBC → SRM (÷ 1,97); atenuação limitada a 100%;
 -- temperatura fora de −5 a 50 °C ou mínima > máxima fica em branco. Leveduras repetidas (mesmo produtor + código)
 -- entram uma vez, na ordem 005 → 003 → 004; "Omega Yeast" = "Omega Yeast Labs", "Wyeast Labs" = "Wyeast".
 -- Contagem esperada: 110 estilos, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros, 23 águas.
@@ -46,14 +46,21 @@ begin
 end;
 $$;
 
+-- Densidade escrita em "pontos" (1055 em vez de 1,055; acontece no X2 IPA Argenta) volta para SG.
+create or replace function pg_temp.sg(v numeric)
+returns numeric
+language sql
+immutable
+as $$ select case when v > 2 then v / 1000 else v end $$;
+
 -- ---------------------------------------------------------------------------------------------------------------
 -- Estilos BJCP 2021
 -- ---------------------------------------------------------------------------------------------------------------
 insert into public.estilos (dono, guia, categoria, codigo, nome, tipo, og_min, og_max, fg_min, fg_max, ibu_min, ibu_max,
                             cor_srm_min, cor_srm_max, abv_min_pct, abv_max_pct, extras)
 select null, 'BJCP 2021', s ->> 'category', s ->> 'style_id', s ->> 'name', 'CERVEJA',
-       (s #>> '{original_gravity,minimum,value}')::numeric, (s #>> '{original_gravity,maximum,value}')::numeric,
-       (s #>> '{final_gravity,minimum,value}')::numeric, (s #>> '{final_gravity,maximum,value}')::numeric,
+       pg_temp.sg((s #>> '{original_gravity,minimum,value}')::numeric), pg_temp.sg((s #>> '{original_gravity,maximum,value}')::numeric),
+       pg_temp.sg((s #>> '{final_gravity,minimum,value}')::numeric), pg_temp.sg((s #>> '{final_gravity,maximum,value}')::numeric),
        (s #>> '{international_bitterness_units,minimum,value}')::numeric, (s #>> '{international_bitterness_units,maximum,value}')::numeric,
        (s #>> '{color,minimum,value}')::numeric, (s #>> '{color,maximum,value}')::numeric,
        (s #>> '{alcohol_by_volume,minimum,value}')::numeric, (s #>> '{alcohol_by_volume,maximum,value}')::numeric,
@@ -253,7 +260,7 @@ left join (values
 ) tr(en, pt) on tr.en = x ->> 'name';
 
 -- ---------------------------------------------------------------------------------------------------------------
--- Conferência e limpeza
+-- Conferência das contagens e permissões da extensão
 -- ---------------------------------------------------------------------------------------------------------------
 do $$
 declare e int; f int; l int; y int; o int; a int;

@@ -40,6 +40,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - `supabase/migrations/` — SQL versionado (`NNNN_nome.sql`)
 - `supabase/testes/` — testes de RLS e de funções (rodam e desfazem)
 - `portal/` — página do app (fase 1: login + receitas); `portal/testes/` — testes (calculos.js e navegador)
+- `.github/workflows/pages.yml` — publicação do portal no GitHub Pages
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 
 ## Modelo de acesso (0001, 22/11/2026)
@@ -82,7 +83,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   escreve "null": usar `preencher(n, ...)`, que ignora vazios.
 - VERSÃO NOS IMPORTS (lição do portal de notas, 05/11/2026): todo import entre scripts e os arquivos do index.html
   levam `?v=AAAAMMDDx`. A cada publicação que mude qualquer .js/.css, trocar em todos de uma vez:
-  `sed -i -E 's/\?v=[0-9a-z]+/?v=AAAAMMDDx/g' portal/*.js portal/index.html`. Versão atual: 20261122a.
+  `sed -i -E 's/\?v=[0-9a-z]+/?v=AAAAMMDDx/g' portal/*.js portal/index.html` (e o import do navegador.cjs).
 - Gravação da receita só por `salvar_receita(p jsonb)` (0003, security invoker: a RLS vale): cabeçalho + partes numa
   transação; parte enviada é substituída inteira, parte ausente fica como está; `id`/`dono` do jsonb são ignorados
   (dono = quem grava). Teste `supabase/testes/0003_salvar_receita.sql`: 10 verificações ok.
@@ -91,9 +92,29 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
   24 verificações: login, cadastros com vírgula, editor x calculos.js, salvar/reabrir, lista, celular 390 px, receita
   de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
-- Publicação (pendente): Cloudflare Pages ligado ao repositório, sem comando de build, pasta de saída `portal`.
-  Depois: Supabase → Authentication → URL Configuration → Site URL e Redirect URLs = endereço do portal (senão o
-  link de convite/recuperação volta para localhost).
+- Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
+  `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
+  `_headers` e publica. Só publica da branch PADRÃO do repositório. Pré-requisito único (manual, o proxy daqui não
+  mexe em configuração do repositório): Settings → Pages → Source = GitHub Actions. O Pages não lê `_headers`: a CSP
+  está também numa `<meta>` no index.html (frame-ancestors só vale no _headers, para um dia ir ao Cloudflare).
+  Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
+  Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
+- iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122b.
+
+## Catálogo inicial (0004, aplicada em 22/11/2026)
+- 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
+  todos com `dono` nulo e a origem em `extras.fonte`. O próprio banco baixou os arquivos do Brewtarget travados no
+  commit 6d9e69d (md5 conferido) pela extensão `http`; o conteúdo não está no repositório.
+- Só números e nomes dos estilos (texto do BJCP tem direitos autorais). Notas só de fonte CC BY-SA (beer-analytics.com);
+  leveduras de outras fontes levam só "Indicada para". Nomes de ingredientes ficaram no original (marcas e produtos).
+- Dado consertado na carga: X2 IPA Argenta vinha com densidade em pontos (1055) → 1,055. Atenuação acima de 100% → 100;
+  temperatura impossível → em branco.
+- A 1ª tentativa parou numa confirmação do Supabase por causa de "drop" no script (a confirmação não aparece para o
+  responsável): evitar comando destrutivo em migração; se precisar, pedir para ele rodar no SQL Editor.
+- A extensão `http` ficou instalada. O revoke da 0004 NÃO tirou o acesso de anon/authenticated (as permissões foram dadas
+  pelo supabase_admin; o postgres não consegue revogar). Risco prático nulo: o schema `extensions` não é exposto pela API.
+  Para remover: painel → Database → Extensions → http (desligar).
 
 ## Login (decisões pendentes no painel do Supabase, não dá para fazer por SQL)
 - Recomendado: só por convite (Authentication → Sign In / Providers → desligar "Allow new users to sign up";
@@ -105,11 +126,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 
 ## Ordem de trabalho
 - Fase 1 (em andamento): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor
-  de receita ✔ (falta publicar) → carga do catálogo (estilos BJCP 2021, maltes, lúpulos e leveduras): migração
-  `0004_catalogo_inicial.sql` ESCRITA E AINDA NÃO APLICADA (22/11/2026: a 1ª tentativa parou numa confirmação do
-  Supabase que expirou; nada foi gravado). O banco baixa os arquivos do Brewtarget travados no commit 6d9e69d e
-  confere o md5; contagem esperada 110/215/450/897/44/23. Sem comando destrutivo (a extensão http fica instalada,
-  sem permissão para usuários).
+  de receita ✔ → publicação no GitHub Pages (workflow pronto; falta ligar o Pages) → catálogo ✔ (0004).
 - Fase 2: brassagem (lote esperado × medido, eficiência real), ferramentas (água de mostura, priming,
   refratômetro, correção do densímetro), escalar receita, versões da receita.
 - Fase 3: importar/exportar BeerJSON e BeerXML, estoque, química da água.

@@ -1,8 +1,8 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122a";
-import { sb, sessao } from "./estado.js?v=20261122a";
-import * as O from "./opcoes.js?v=20261122a";
-import { corHexDeSrm } from "./calculos.js?v=20261122a";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122b";
+import { sb, sessao } from "./estado.js?v=20261122b";
+import * as O from "./opcoes.js?v=20261122b";
+import { corHexDeSrm } from "./calculos.js?v=20261122b";
 
 // Tipos de campo: texto | numero (casas) | cor (SRM no banco) | select (opcoes) | bool | area
 export const CADASTROS = {

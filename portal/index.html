@@ -2,12 +2,23 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Mesma regra do _headers (o GitHub Pages não lê aquele arquivo): só scripts do próprio site; conexões só com o
+       Supabase do GaliaBrew. frame-ancestors não vale em meta; fica só no _headers. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; manifest-src 'self'; connect-src 'self' https://hzomsyfujxakcuaaedmh.supabase.co wss://hzomsyfujxakcuaaedmh.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#b8650f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="GaliaBrew">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icones/icone-180.png">
+  <link rel="icon" type="image/png" href="icones/icone-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <title>GaliaBrew</title>
-  <link rel="stylesheet" href="style.css?v=20261122a">
+  <link rel="stylesheet" href="style.css?v=20261122b">
   <script src="vendor/supabase-2.119.2.js" integrity="sha256-iBavBNmRXbuhiC1vhPC0AtxAJoBjpj2cZtJPUvNxwmM=" defer></script>
-  <script type="module" src="app.js?v=20261122a"></script>
+  <script type="module" src="app.js?v=20261122b"></script>
 </head>
 <body>
   <div id="app"><main class="centro"><p class="nota">Carregando…</p></main></div>

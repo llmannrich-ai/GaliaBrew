@@ -24,6 +24,7 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
 body {
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--fundo); color: var(--tinta);
@@ -37,6 +38,7 @@ a { color: var(--destaque-escuro); }
 /* ---------- topo ---------- */
 .topo {
   display: flex; align-items: center; gap: 1.2rem; padding: .6rem 1.2rem;
+  padding-top: max(.6rem, env(safe-area-inset-top));     /* iPhone aberto pela tela de início */
   background: var(--cartao); border-bottom: 1px solid var(--linha); position: sticky; top: 0; z-index: 5;
 }
 .marca { font-weight: 700; font-size: 1.15rem; color: var(--destaque); text-decoration: none; }

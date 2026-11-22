@@ -1,0 +1,15 @@
+{
+  "name": "GaliaBrew",
+  "short_name": "GaliaBrew",
+  "description": "Receitas de cerveja",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3ee",
+  "theme_color": "#b8650f",
+  "icons": [
+    { "src": "icones/icone-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icones/icone-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
