@@ -27,6 +27,11 @@ const db = {
   lupulos: [], leveduras: [], outros: [], aguas: [], equipamentos: [], receitas: [],
   receita_fermentaveis: [], receita_lupulos: [], receita_leveduras: [], receita_outros: [], receita_mostura_passos: [], receita_fermentacao_passos: [],
 };
+// Catálogo grande de leveduras (como o real: ~900) para medir a busca.
+db.leveduras = Array.from({ length: 900 }, (_, i) => ({
+  id: `y${i}`, dono: null, nome: `Cepa ${i}`, produtor: i % 3 ? "Fermentis" : "Lallemand", tipo: i % 4 ? "ALE" : "LAGER", forma: "SECA",
+  atenuacao_min_pct: 68 + (i % 12), atenuacao_max_pct: 72 + (i % 12),
+})).concat([{ id: "y-saf", dono: null, nome: "SafLager W-34/70 Fermentação baixa", produtor: "Fermentis", tipo: "LAGER", forma: "SECA", atenuacao_min_pct: 80, atenuacao_max_pct: 84, temp_min_c: 9, temp_max_c: 15 }]);
 const chamadas = [];
 const uuid = () => crypto.randomUUID();
 
@@ -185,19 +190,61 @@ async function site(rota) {
   verificar(await pagina.inputValue('input[aria-label="Volume no fermentador (L)"]') === "23,0", "equipamento único já preenche os parâmetros");
   await pagina.fill(".titulo-receita", "Pils da Galia");
   await pagina.selectOption('select[aria-label="Estilo"]', "e1");
-  const adicionar = pagina.locator("select.adicionar");
-  await adicionar.nth(0).selectOption("f-sis");
-  await pagina.locator('input[aria-label="Qtd (kg)"]').first().fill("4,8");
-  await adicionar.nth(1).selectOption(db.lupulos[0].id);
-  await pagina.locator('input[aria-label="Qtd (g)"]').first().fill("60");
-  await adicionar.nth(2).selectOption("__livre");
-  await pagina.locator('table:near(h3:text("Leveduras")) input[aria-label="Nome"]').first().fill("W-34/70");
+  const adicionar = (secao) => pagina.click(`[data-secao="${secao}"] button.adicionar`);
+  const focado = () => pagina.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+
+  // Fermentável: a busca ignora acento ("agraria" acha o produtor "Agrária"); Enter adiciona e o foco vai para a quantidade.
+  await adicionar("fermentaveis");
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await focado() === "Buscar", "busca abre com o foco no campo");
+  await pagina.keyboard.type("agraria");
+  verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Pilsen (sistema)", "busca sem acento: 'agraria' acha o malte da Agrária");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar(await focado() === "Qtd (kg)", "Enter adiciona o malte e o foco vai direto para a quantidade");
+  await pagina.keyboard.type("4,8");
+
+  // Lúpulo só com teclado: Adicionar → "saaz" → Enter → 60.
+  await pagina.focus('[data-secao="lupulos"] button.adicionar');
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca");
+  await pagina.keyboard.type("saaz");
+  await pagina.keyboard.press("Enter");
+  await pagina.keyboard.type("60");
+  verificar(await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60", "lúpulo adicionado só com o teclado (Adicionar, 'saaz', Enter, 60)");
+
+  // Levedura: catálogo de 901 itens, filtros, Esc fecha sem adicionar; depois item livre.
+  await adicionar("leveduras");
+  await pagina.waitForSelector("dialog.busca");
+  verificar((await pagina.textContent(".busca-info")).startsWith("901 itens · mostrando 60"), "busca mostra 60 de 901 leveduras sem travar");
+  const ms = await pagina.evaluate(() => {
+    const c = document.querySelector(".busca-campo");
+    const t = performance.now();
+    c.value = "fermentis w-34";
+    c.dispatchEvent(new Event("input"));
+    return performance.now() - t;
+  });
+  verificar(ms < 100 && await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Fermentis SafLager W-34/70 Fermentação baixa",
+    `busca em 901 leveduras com dois termos responde em ${Math.round(ms)} ms`);
+  await pagina.fill(".busca-campo", "");
+  await pagina.click('.busca-grupo-filtro[aria-label="Tipo"] >> text=Lager');
+  await pagina.click('.busca-grupo-filtro[aria-label="Atenuação"] >> text=78%+');
+  const lagersFortes = db.leveduras.filter((y) => y.tipo === "LAGER" && (y.atenuacao_min_pct + y.atenuacao_max_pct) / 2 >= 78).length;
+  verificar((await pagina.textContent(".busca-info")).startsWith(`${lagersFortes} itens`), `filtros Lager + atenuação 78%+ = ${lagersFortes} itens`);
+  await pagina.screenshot({ path: `${SAIDA}/p3e-busca.png` });
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar(await pagina.locator('[data-secao="leveduras"] tbody tr input[aria-label="Nome"]').count() === 0, "Esc fecha a busca sem adicionar");
+  await adicionar("leveduras");
+  await pagina.click("dialog.busca >> text=Item livre");
+  verificar(await focado() === "Nome", "item livre: foco no nome da linha nova");
+  await pagina.keyboard.type("W-34/70");
   await pagina.locator('input[aria-label="Atenuação %"]').first().fill("80");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122c");
+    const m = await import("./calculos.js?v=20261122d");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -217,6 +264,14 @@ async function site(rota) {
   verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
   verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
   verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
+  const linhaF = '[data-secao="fermentaveis"] li.ing';
+  const linhaL = '[data-secao="lupulos"] li.ing';
+  verificar(await pagina.textContent(`${linhaF} .d1 .ing-dado-val`) === "100,0%" && await pagina.textContent(`${linhaF} .d2 .ing-dado-val`) === `+${br((esperado.og - 1) * 1000, 0)}`,
+    "fermentável mostra % do grist e pontos da OG");
+  verificar(await pagina.textContent(`${linhaL} .d1 .ing-dado-val`) === br(esperado.ibu, 1) && await pagina.textContent(`${linhaL} .d2 .ing-dado-val`) === br(60 / 23, 1),
+    "lúpulo mostra IBU da adição e g/L");
+  verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
+    "totais no cabeçalho das seções");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
 
   // Mudança mostra a diferença e a barra continua à vista com a página rolada.
@@ -224,7 +279,7 @@ async function site(rota) {
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122c");
+    const m = await import("./calculos.js?v=20261122d");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -237,6 +292,44 @@ async function site(rota) {
   await qtd.fill("4,8");
   await pagina.waitForTimeout(100);
   verificar(await vital("og") === br(esperado.og, 3), "voltar a 4,8 kg volta a OG");
+
+  // Ajuste rápido: + (50 g), seta ↑ (50 g), Shift+↓ (500 g).
+  await pagina.click(`${linhaF} button.passo[aria-label="Mais 50 g"]`);
+  verificar(await qtd.inputValue() === "4,850", "botão + soma 50 g");
+  await qtd.focus();
+  await pagina.keyboard.press("ArrowUp");
+  verificar(await qtd.inputValue() === "4,900", "seta ↑ soma 50 g");
+  await pagina.keyboard.press("Shift+ArrowDown");
+  verificar(await qtd.inputValue() === "4,400", "Shift+↓ tira 500 g");
+  await qtd.fill("4,8");
+
+  // Segundo lúpulo pela busca (Saaz aparece em "Recentes"); mudar a etapa; arrastar; mover pelo teclado; remover.
+  await adicionar("lupulos");
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await pagina.textContent(".busca-grupo") === "Recentes", "busca mostra os recentes primeiro");
+  await pagina.keyboard.press("Enter");
+  await pagina.keyboard.type("20");
+  const segunda = `${linhaL}:nth-child(2)`;
+  await pagina.selectOption(`${segunda} select[aria-label="Etapa"]`, "DRY_HOP");
+  verificar(await pagina.isVisible(`${segunda} input[aria-label="Dia"]`) && !(await pagina.isVisible(`${segunda} input[aria-label="Tempo (min)"]`)) && await pagina.textContent(`${segunda} .d1 .ing-dado-val`) === "—",
+    "dry hop: pede o dia no lugar do tempo e o IBU fica '—'");
+  verificar(await vital("ibu") === br(esperado.ibu, 0), "dry hop não muda o IBU");
+  const alca2 = await pagina.locator(`${segunda} .ing-alca`).boundingBox();
+  const linha1 = await pagina.locator(`${linhaL}:nth-child(1)`).boundingBox();
+  await pagina.mouse.move(alca2.x + alca2.width / 2, alca2.y + alca2.height / 2);
+  await pagina.mouse.down();
+  await pagina.mouse.move(alca2.x + alca2.width / 2, linha1.y + 4, { steps: 8 });
+  await pagina.mouse.up();
+  verificar(await pagina.inputValue(`${linhaL}:nth-child(1) input[aria-label="Qtd (g)"]`) === "20,0", "arrastar pela alça leva o lúpulo para cima");
+  await pagina.focus(`${linhaL}:nth-child(1) .ing-alca`);
+  await pagina.keyboard.press("ArrowDown");
+  verificar(await pagina.inputValue(`${linhaL}:nth-child(2) input[aria-label="Qtd (g)"]`) === "20,0" && (await focado()).includes("posição 2 de 2"),
+    "seta ↓ na alça desce o item e o foco acompanha");
+  await pagina.click(`${segunda} .ing-mais`);
+  verificar(await pagina.getAttribute(`${segunda} .ing-mais`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "⋯ abre os detalhes (alfa, forma, nome)");
+  await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
+  await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
+  verificar(await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pelos detalhes");
   await pagina.evaluate(() => window.scrollTo(0, 0));
   await pagina.screenshot({ path: `${SAIDA}/p3-editor.png` });
   await pagina.emulateMedia({ colorScheme: "dark" });
@@ -269,6 +362,14 @@ async function site(rota) {
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
+  await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
+  await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
+  const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
+    const sec = li.closest("section").getBoundingClientRect();
+    const filhos = [...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right);
+    return Math.round(Math.max(...filhos) - (sec.right - 17));
+  }));
+  verificar(estouro.every((d) => d <= 1), `celular: linhas de ingrediente cabem no cartão (sobra ${estouro.join(", ")} px)`);
   await pagina.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await pagina.waitForTimeout(100);
   const barraCel = await pagina.locator(".vital").boundingBox();
@@ -281,6 +382,13 @@ async function site(rota) {
   verificar(await pagina.getAttribute(".vital-mais", "aria-expanded") === "true" && await pagina.isVisible('.vital [data-metrica="og"] .vital-estado'), "celular: 'detalhes' abre estado e faixas");
   await pagina.screenshot({ path: `${SAIDA}/p5c-celular-detalhes.png` });
   await pagina.click(".vital-mais");
+  await pagina.evaluate(() => window.scrollTo(0, 0));
+  await adicionar("fermentaveis");
+  await pagina.waitForSelector("dialog.busca");
+  const janela = await pagina.locator("dialog.busca").boundingBox();
+  verificar(janela.width === 390 && janela.height === 844, "celular: busca em tela cheia");
+  await pagina.screenshot({ path: `${SAIDA}/p5d-celular-busca.png` });
+  await pagina.keyboard.press("Escape");
 
   // Receita pública de outro usuário: só leitura + duplicar
   const outro = "22222222-2222-2222-2222-222222222222";

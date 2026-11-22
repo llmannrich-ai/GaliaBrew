@@ -1,8 +1,8 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança. Computador: fixa abaixo do topo. Celular: fixa no rodapé (compacta).
-import { el, svg, numeroBR } from "./ui.js?v=20261122c";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122c";
-import * as O from "./opcoes.js?v=20261122c";
+import { el, svg, numeroBR } from "./ui.js?v=20261122d";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122d";
+import * as O from "./opcoes.js?v=20261122d";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -40,8 +40,8 @@ export function copo() {
 }
 
 /**
- * Cria a barra. atualizar(res, estilo, { mudanca }) a cada cálculo; mudanca = true quando veio de uma edição
- * (aí aparece a diferença em relação ao valor de antes da edição).
+ * Cria a barra. atualizar(res, estilo, { mudanca, campo }) a cada cálculo; mudanca = true quando veio de uma edição
+ * (aí aparece a diferença em relação ao valor de antes da edição); campo = de onde veio (a diferença acumula no mesmo campo).
  */
 export function criarBarraVital() {
   const defs = indicadores();
@@ -100,9 +100,8 @@ export function criarBarraVital() {
 
   let timerLeitor = null;
   let campoAnterior = null;       // a diferença acumula só enquanto a pessoa mexe no MESMO campo
-  function atualizar(res, estilo, { mudanca = false } = {}) {
+  function atualizar(res, estilo, { mudanca = false, campo = document.activeElement } = {}) {
     vidro.cerveja.setAttribute("fill", corHexDeSrm(res.cor_srm));
-    const campo = document.activeElement;
     const outroCampo = mudanca && campo !== campoAnterior;
     if (mudanca) campoAnterior = campo;
     const falas = [];

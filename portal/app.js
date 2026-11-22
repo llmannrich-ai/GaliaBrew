@@ -1,8 +1,8 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122c";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122c";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122c";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122c";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122d";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122d";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122d";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122d";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -130,6 +130,12 @@ function telaPerfil(conteudo) {
       el("label", {}, "Cor",
         el("select", { on: { change: (e) => { preferencias.cor = e.target.value; salvarPreferencias(); avisar("Preferência salva."); } } },
           ["EBC", "SRM"].map((u) => el("option", { value: u, text: u, selected: preferencias.cor === u }))))),
+    el("section", { class: "cartao" },
+      el("h3", { text: "Ajuste rápido no editor" }),
+      el("p", { class: "nota", text: "Quanto os botões − e + (e as setas ↑ ↓) mudam a quantidade. Shift + seta = 10 vezes." }),
+      el("div", { class: "grade-form" },
+        [["passo_fermentavel_g", "Fermentáveis (g)"], ["passo_lupulo_g", "Lúpulos (g)"]].map(([k, rot]) => el("label", {}, rot,
+          campoNumero(preferencias, k, { casas: 0, rotulo: rot, aoMudar: () => { if (preferencias[k] > 0) salvarPreferencias(); } }))))),
     el("section", { class: "cartao" },
       el("h3", { text: "Trocar senha" }),
       el("label", {}, "Nova senha", el("input", { type: "password", autocomplete: "new-password", on: { input: (e) => { senha.nova = e.target.value; } } })),

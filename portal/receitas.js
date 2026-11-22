@@ -1,10 +1,11 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122c";
-import { sb, sessao } from "./estado.js?v=20261122c";
-import { calcularReceita, platoDeSg } from "./calculos.js?v=20261122c";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122c";
-import * as O from "./opcoes.js?v=20261122c";
-import { criarBarraVital } from "./vital.js?v=20261122c";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect, campoQuantidade } from "./ui.js?v=20261122d";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122d";
+import { calcularReceita, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122d";
+import { abrirBusca } from "./busca.js?v=20261122d";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122d";
+import * as O from "./opcoes.js?v=20261122d";
+import { criarBarraVital } from "./vital.js?v=20261122d";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -132,7 +133,8 @@ function aplicarEquipamento(r, eq) {
 }
 
 function montarEditor(conteudo, r, cat, leitura) {
-  const calculados = new Map();      // item → célula com valor calculado (% do açúcar, IBU)
+  const calculados = new Map();      // item → função que escreve os valores calculados da linha (% do grist, IBU...)
+  const totais = [];                 // funções que escrevem o total no cabeçalho de cada seção
   const vital = criarBarraVital();
   const painel = el("aside", { class: "painel-lote" });
   const resumoLote = el("span", { class: "resumo-texto" });
@@ -140,9 +142,10 @@ function montarEditor(conteudo, r, cat, leitura) {
   const des = leitura;
   let montado = false;            // antes de montar, os cálculos não contam como "mudança" (sem diferença na barra)
 
-  const mudou = () => {
+  /** campo = o campo que mudou (os botões ± não ficam com o foco); sem ele, a barra vital usa o campo em foco. */
+  const mudou = (campo) => {
     if (!leitura) editor.sujo = true;
-    atualizarResultados();
+    atualizarResultados(campo instanceof Element ? campo : undefined);
   };
 
   // ---------- resultados: barra vital + painel "Lote e água" ----------
@@ -156,12 +159,13 @@ function montarEditor(conteudo, r, cat, leitura) {
   const corpoBloco = (bloco, ...linhas) => { while (bloco.children.length > 1) bloco.lastChild.remove(); bloco.append(...linhas); };
   const linha = (rot, valor) => el("div", { class: "metrica" }, el("span", { class: "rot", text: rot }), el("span", { class: "val", text: valor }));
 
-  function atualizarResultados() {
+  function atualizarResultados(campo) {
     const res = calcularReceita(r);
-    res.fermentaveis.forEach((x, i) => { const c = calculados.get(r.fermentaveis[i]); if (c) c.textContent = `${numeroBR(x.pct_acucar, 0)}%`; });
-    res.lupulos.forEach((x, i) => { const c = calculados.get(r.lupulos[i]); if (c) c.textContent = numeroBR(x.ibu, 1); });
+    res.fermentaveis.forEach((x, i) => calculados.get(r.fermentaveis[i])?.(x));
+    res.lupulos.forEach((x, i) => calculados.get(r.lupulos[i])?.(x));
+    for (const t of totais) t(res);
     const estilo = cat.estilos.find((e) => e.id === r.estilo_id);
-    vital.atualizar(res, estilo, { mudanca: montado && !leitura });
+    vital.atualizar(res, estilo, { mudanca: montado && !leitura, campo: campo ?? document.activeElement });
     const v = res.volumes;
     corpoBloco(pNumeros,
       linha("OG em °Plato", `${numeroBR(platoDeSg(res.og), 1)} °P`),
@@ -192,7 +196,7 @@ function montarEditor(conteudo, r, cat, leitura) {
   // ---------- seção genérica de lista ----------
   function secaoLista(chave, titulo, { colunas, adicionar, vazio }) {
     const corpo = el("tbody");
-    const sec = el("section", { class: "cartao" },
+    const sec = el("section", { class: "cartao", dataset: { secao: chave } },
       el("div", { class: "titulo-linha" }, el("h3", { text: titulo }), leitura ? null : adicionar()),
       el("div", { class: "tabela-rolagem" },
         el("table", { class: "tabela editavel" },
@@ -215,30 +219,15 @@ function montarEditor(conteudo, r, cat, leitura) {
     return sec;
   }
 
-  /** Select "Adicionar…" com o cadastro (sistema + meus) e a opção de item livre. */
-  function seletorCadastro(lista, aoEscolher, livre, rotuloItem = (x) => x.nome) {
-    const s = el("select", {
-      class: "adicionar", "aria-label": "Adicionar",
-      on: {
-        change: (e) => {
-          const v = e.target.value;
-          e.target.value = "";
-          if (!v) return;
-          if (v === "__livre") aoEscolher(livre());
-          else aoEscolher(lista.find((x) => x.id === v));
-        },
-      },
-    },
-    el("option", { value: "", text: "+ Adicionar…" }),
-    el("option", { value: "__livre", text: "Item livre (digitar os dados)" }),
-    lista.length ? el("optgroup", { label: "Cadastro" }, lista.map((x) => el("option", { value: x.id, text: `${rotuloItem(x)}${x.dono ? " (meu)" : ""}` }))) : null);
-    return s;
-  }
+  /** Botão "+ Adicionar" que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
+  const botaoAdicionar = (tipo, aoEscolher, aoLivre) => () => el("button", {
+    type: "button", class: "secundario adicionar", text: "+ Adicionar",
+    on: { click: () => abrirBusca({ tipo, itens: cat[tipo], aoEscolher, aoLivre }) },
+  });
 
   const num = (k, casas, extra = {}) => (item) => campoNumero(item, k, { casas, aoMudar: mudou, desabilitado: des, ...extra });
   const txt = (k, extra = {}) => (item) => campoTexto(item, k, { aoMudar: mudou, desabilitado: des, classe: "nome", ...extra });
   const sel = (k, opcoes, extra = {}) => (item) => campoSelect(item, k, opcoes, { aoMudar: mudou, desabilitado: des, ...extra });
-  const calc = (item) => { const c = el("span", { class: "calculado" }); calculados.set(item, c); return c; };
 
   // ---------- cabeçalho ----------
   const nomeInput = campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
@@ -316,47 +305,228 @@ function montarEditor(conteudo, r, cat, leitura) {
   }
   desenharParametros();
 
+  // ---------- linhas de ingrediente (fermentáveis e lúpulos): a quantidade é o campo principal ----------
+  const abertos = new Set();         // itens com "detalhes" aberto (sobrevive aos redesenhos)
+  const rotular = (texto, campo) => el("label", {}, el("span", { text: texto }), campo);
+  const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
+  const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
+
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, total, montarLinha }) {
+    const lista = el("ol", { class: `linhas-ing ${classe}` });
+    const totalEl = el("span", { class: "total-secao" });
+    const sec = el("section", { class: "cartao", dataset: { secao: chave } },
+      el("div", { class: "titulo-linha" }, el("h3", {}, titulo, " ", totalEl), leitura ? null : adicionar()),
+      lista);
+    totais.push((res) => { totalEl.textContent = r[chave].length ? total(res) : ""; });
+
+    function linha(item, i) {
+      const nome = el("strong", { class: "ing-nome-txt" });
+      const sub = el("span", { class: "ing-sub" });
+      const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
+      const partes = montarLinha(item, ctx);
+      function refrescar() {
+        nome.textContent = String(item.nome ?? "").trim() || "(sem nome)";
+        sub.textContent = partes.sub().filter(Boolean).join(" · ");
+        partes.refrescar?.();
+      }
+      const mover = (para) => {
+        if (para < 0 || para >= r[chave].length || para === i) return;
+        const [x] = r[chave].splice(i, 1);
+        r[chave].splice(para, 0, x);
+        desenhar();
+        mudou();
+        lista.querySelectorAll(".ing-alca")[para]?.focus();
+      };
+      const remover = () => { abertos.delete(item); r[chave].splice(i, 1); desenhar(); mudou(); };
+      const idDet = `det-${chave}-${i}`;
+      const aberto = abertos.has(item);
+      const det = el("div", { class: "ing-detalhes", id: idDet, hidden: !aberto },
+        el("div", { class: "grade-form" }, partes.detalhes),
+        leitura ? null : el("div", { class: "acoes-detalhes" },
+          el("button", { type: "button", class: "secundario pequeno", text: "↑ Subir", disabled: i === 0, on: { click: () => mover(i - 1) } }),
+          el("button", { type: "button", class: "secundario pequeno", text: "↓ Descer", disabled: i === r[chave].length - 1, on: { click: () => mover(i + 1) } }),
+          el("span", { class: "espaco" }),
+          el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: remover } })));
+      const botaoMais = el("button", {
+        type: "button", class: "icone ing-mais", text: "⋯", title: "Detalhes", "aria-expanded": String(aberto), "aria-controls": idDet,
+        "aria-label": `Detalhes de ${String(item.nome ?? "").trim() || "item sem nome"}`,
+        on: { click: () => {
+          const abrir = det.hidden;
+          det.hidden = !abrir;
+          botaoMais.setAttribute("aria-expanded", String(abrir));
+          if (abrir) abertos.add(item); else abertos.delete(item);
+        } },
+      });
+      const alca = leitura ? el("span", { class: "ing-alca", "aria-hidden": "true" }) : el("button", {
+        type: "button", class: "ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
+        "aria-label": `Mover ${String(item.nome ?? "").trim() || "item"}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
+        on: {
+          keydown: (e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); mover(i + (e.key === "ArrowUp" ? -1 : 1)); } },
+          pointerdown: (e) => arrastar(e, i, mover),
+        },
+      });
+      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub), partes.colunas, botaoMais, det);
+      refrescar();
+      calculados.set(item, partes.aoCalcular);
+      return li;
+    }
+
+    /** Arrastar pela alça (mouse e toque): a linha segue o ponteiro; ao soltar, vai para a posição. */
+    function arrastar(e, i, mover) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      const alca = e.currentTarget;
+      const li = alca.closest("li");
+      const linhas = [...lista.querySelectorAll(":scope > li.ing")];
+      const centros = linhas.map((l) => { const b = l.getBoundingClientRect(); return b.top + b.height / 2; });
+      const y0 = e.clientY;
+      let destino = i;
+      let moveu = false;
+      alca.setPointerCapture?.(e.pointerId);
+      const aoMover = (ev) => {
+        const dy = ev.clientY - y0;
+        if (!moveu && Math.abs(dy) < 4) return;
+        moveu = true;
+        li.classList.add("arrastando");
+        li.style.transform = `translateY(${dy}px)`;
+        destino = centros.filter((c, k) => k !== i && c < centros[i] + dy).length;
+      };
+      const fim = () => {
+        alca.removeEventListener("pointermove", aoMover);
+        alca.removeEventListener("pointerup", fim);
+        alca.removeEventListener("pointercancel", fim);
+        li.classList.remove("arrastando");
+        li.style.transform = "";
+        if (moveu && destino !== i) mover(destino);
+      };
+      alca.addEventListener("pointermove", aoMover);
+      alca.addEventListener("pointerup", fim);
+      alca.addEventListener("pointercancel", fim);
+    }
+
+    function desenhar() {
+      limpar(lista);
+      if (!r[chave].length) lista.append(el("li", { class: "nota ing-vazio", text: vazio }));
+      r[chave].forEach((item, i) => lista.append(linha(item, i)));
+      atualizarResultados();
+    }
+    secoes[chave] = desenhar;
+    /** Depois de adicionar: item do cadastro → foco na quantidade; item livre → detalhes abertos e foco no nome. */
+    focos[chave] = (livre) => {
+      const ultima = lista.querySelector(":scope > li.ing:last-of-type");
+      if (livre) ultima?.querySelector(".ing-detalhes input")?.focus();
+      else ultima?.querySelector("input.qtd")?.focus();
+    };
+    desenhar();
+    return sec;
+  }
+  const focos = {};
+  const adicionarItem = (chave, item, livre) => {
+    r[chave].push(item);
+    if (livre) abertos.add(item);
+    secoes[chave]();
+    mudou();
+    focos[chave]?.(livre);
+  };
+
   const cor = { de: O.corParaTela, para: O.corDaTela };
-  const fermentaveis = secaoLista("fermentaveis", "Fermentáveis", {
-    vazio: "Nenhum fermentável.",
-    colunas: [
-      { r: "Nome", campo: txt("nome") },
-      { r: "Tipo", campo: sel("tipo", O.TIPO_FERMENTAVEL) },
-      { r: "Qtd (kg)", num: true, campo: num("quantidade_kg", 3) },
-      { r: "Rend. %", num: true, campo: num("rendimento_pct", 1) },
-      { r: "Umid. %", num: true, campo: num("umidade_pct", 1) },
-      { r: `Cor (${O.unidadeCor()})`, num: true, campo: num("cor_srm", 1, cor) },
-      { r: "Etapa", campo: sel("etapa", O.ETAPA_FERMENTAVEL) },
-      { r: "% açúcar", num: true, campo: calc },
-    ],
-    adicionar: () => seletorCadastro(cat.fermentaveis, (f) => {
-      r.fermentaveis.push(f.id
-        ? { fermentavel_id: f.id, nome: f.nome, tipo: f.tipo, rendimento_pct: num0(f.rendimento_pct), umidade_pct: num0(f.umidade_pct), cor_srm: num0(f.cor_srm), fermentavel_pct: num0(f.fermentavel_pct, 100), quantidade_kg: null, etapa: ["GRAO", "OUTRO"].includes(f.tipo) ? "MOSTURA" : "FERVURA" }
-        : f);
-      secoes.fermentaveis(); mudou();
-    }, () => ({ fermentavel_id: null, nome: "", tipo: "GRAO", rendimento_pct: 80, umidade_pct: 4, cor_srm: 2, fermentavel_pct: 100, quantidade_kg: null, etapa: "MOSTURA" })),
+  const fermentaveis = secaoLinhas("fermentaveis", "Fermentáveis", {
+    classe: "ferm",
+    vazio: "Nenhum fermentável. Use “+ Adicionar”.",
+    total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
+    adicionar: botaoAdicionar("fermentaveis",
+      (f) => adicionarItem("fermentaveis", { fermentavel_id: f.id, nome: f.nome, tipo: f.tipo, rendimento_pct: num0(f.rendimento_pct), umidade_pct: num0(f.umidade_pct), cor_srm: num0(f.cor_srm), fermentavel_pct: num0(f.fermentavel_pct, 100), quantidade_kg: null, etapa: ["GRAO", "OUTRO"].includes(f.tipo) ? "MOSTURA" : "FERVURA" }),
+      () => adicionarItem("fermentaveis", { fermentavel_id: null, nome: "", tipo: "GRAO", rendimento_pct: 80, umidade_pct: 4, cor_srm: 2, fermentavel_pct: 100, quantidade_kg: null, etapa: "MOSTURA" }, true)),
+    montarLinha: (item, ctx) => {
+      const amostra = el("span", { class: "amostra ing-cor", "aria-hidden": "true" });
+      const pct = el("span", { class: "ing-dado-val" });
+      const pts = el("span", { class: "ing-dado-val" });
+      const passoG = passo("passo_fermentavel_g", 50);
+      const campo = { desabilitado: des, aoMudar: ctx.mudou };
+      return {
+        visual: amostra,
+        sub: () => [O.rotulo(O.TIPO_FERMENTAVEL, item.tipo), O.rotulo(O.ETAPA_FERMENTAVEL, item.etapa),
+          item.rendimento_pct != null ? `rend. ${numeroBR(item.rendimento_pct, 0)}%` : null,
+          item.umidade_pct ? `umid. ${numeroBR(item.umidade_pct, 1)}%` : null,
+          item.cor_srm != null ? `${numeroBR(O.corParaTela(Number(item.cor_srm)), 1)} ${O.unidadeCor()}` : null],
+        refrescar: () => { amostra.style.background = corHexDeSrm(item.cor_srm ?? 0); },
+        colunas: [
+          el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_kg", { casas: 3, passo: passoG / 1000, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "kg", rotulo: "Qtd (kg)", desabilitado: des, aoMudar: (c) => mudou(c) })),
+          dado("grist", pct, "d1"), dado("OG", pts, "d2")],
+        detalhes: [
+          rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
+          rotular("Tipo", campoSelect(item, "tipo", O.TIPO_FERMENTAVEL, { ...campo, rotulo: "Tipo" })),
+          rotular("Etapa", campoSelect(item, "etapa", O.ETAPA_FERMENTAVEL, { ...campo, rotulo: "Etapa" })),
+          rotular("Rendimento (% base seca)", campoNumero(item, "rendimento_pct", { ...campo, casas: 1, rotulo: "Rendimento (%)" })),
+          rotular("Umidade (%)", campoNumero(item, "umidade_pct", { ...campo, casas: 1, rotulo: "Umidade (%)" })),
+          rotular(`Cor (${O.unidadeCor()})`, campoNumero(item, "cor_srm", { ...campo, ...cor, casas: 1, rotulo: `Cor (${O.unidadeCor()})` })),
+          rotular("Fermentável (%) — lactose = 0", campoNumero(item, "fermentavel_pct", { ...campo, casas: 0, rotulo: "Fermentável (%)" }))],
+        aoCalcular: (x) => {
+          pct.textContent = `${numeroBR(x.pct_peso, 1)}%`;
+          pts.textContent = `+${numeroBR(x.pontos_og, 0)}`;
+          pts.title = `${numeroBR(x.pontos_og, 1)} pontos da OG (${numeroBR(x.pct_acucar, 0)}% do açúcar)`;
+        },
+      };
+    },
   });
 
-  const lupulos = secaoLista("lupulos", "Lúpulos", {
-    vazio: "Nenhum lúpulo.",
-    colunas: [
-      { r: "Nome", campo: txt("nome") },
-      { r: "Forma", campo: sel("forma", O.FORMA_LUPULO) },
-      { r: "Alfa %", num: true, campo: num("alfa_pct", 1) },
-      { r: "Qtd (g)", num: true, campo: num("quantidade_g", 1) },
-      { r: "Etapa", campo: (item) => campoSelect(item, "etapa", O.ETAPA_LUPULO, { desabilitado: des, aoMudar: () => { secoes.lupulos(); mudou(); } }) },
-      { r: "Tempo (min)", num: true, campo: (item) => campoNumero(item, "tempo_min", { casas: 0, aoMudar: mudou, desabilitado: des || ["DRY_HOP", "PRIMEIRO_MOSTO", "ENVASE"].includes(item.etapa) }) },
-      { r: "Dia", num: true, campo: (item) => campoNumero(item, "dia", { casas: 0, aoMudar: mudou, desabilitado: des || item.etapa !== "DRY_HOP" }) },
-      { r: "IBU", num: true, campo: calc },
-    ],
-    adicionar: () => seletorCadastro(cat.lupulos, (h) => {
-      r.lupulos.push(h.id
-        ? { lupulo_id: h.id, nome: h.nome, forma: h.forma, alfa_pct: num0(h.alfa_pct), quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }
-        : h);
-      secoes.lupulos(); mudou();
-    }, () => ({ lupulo_id: null, nome: "", forma: "PELLET", alfa_pct: 5, quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }),
-    (h) => `${h.nome} — ${numeroBR(h.alfa_pct, 1)}%`),
+  const ISOMERIZA = new Set(["FERVURA", "PRIMEIRO_MOSTO"]);     // etapas que entram no IBU (Tinseth)
+  const lupulos = secaoLinhas("lupulos", "Lúpulos", {
+    classe: "lup",
+    vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
+    total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
+    adicionar: botaoAdicionar("lupulos",
+      (h) => adicionarItem("lupulos", { lupulo_id: h.id, nome: h.nome, forma: h.forma, alfa_pct: num0(h.alfa_pct), quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }),
+      () => adicionarItem("lupulos", { lupulo_id: null, nome: "", forma: "PELLET", alfa_pct: 5, quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }, true)),
+    montarLinha: (item, ctx) => {
+      const ibu = el("span", { class: "ing-dado-val" });
+      const gl = el("span", { class: "ing-dado-val" });
+      const passoG = passo("passo_lupulo_g", 5);
+      const campo = { desabilitado: des, aoMudar: ctx.mudou };
+      const tempo = el("span", { class: "ing-tempo" });
+      const desenharTempo = () => {
+        if (["FERVURA", "WHIRLPOOL", "MOSTURA"].includes(item.etapa)) {
+          preencher(tempo, campoNumero(item, "tempo_min", { ...campo, casas: 0, rotulo: "Tempo (min)", classe: "num curto" }), el("span", { class: "sufixo", text: "min" }));
+        } else if (item.etapa === "DRY_HOP") {
+          preencher(tempo, el("span", { class: "sufixo", text: "dia" }), campoNumero(item, "dia", { ...campo, casas: 0, rotulo: "Dia", classe: "num curto" }));
+        } else limpar(tempo);
+      };
+      desenharTempo();
+      const etapa = campoSelect(item, "etapa", O.ETAPA_LUPULO, {
+        desabilitado: des, rotulo: "Etapa", classe: "etapa",
+        aoMudar: () => {
+          if (item.etapa === "FERVURA" && item.tempo_min == null) item.tempo_min = 60;
+          desenharTempo();
+          ctx.mudou();
+        },
+      });
+      return {
+        sub: () => [O.rotulo(O.FORMA_LUPULO, item.forma), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
+        colunas: [
+          el("div", { class: "ing-quando" }, etapa, tempo),
+          el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_g", { casas: 1, passo: passoG, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "g", rotulo: "Qtd (g)", desabilitado: des, aoMudar: (c) => mudou(c) })),
+          dado("IBU", ibu, "d1"), dado("g/L", gl, "d2")],
+        detalhes: [
+          rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
+          rotular("Forma", campoSelect(item, "forma", O.FORMA_LUPULO, { ...campo, rotulo: "Forma" })),
+          rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" }))],
+        aoCalcular: (x) => {
+          const conta = ISOMERIZA.has(item.etapa);
+          ibu.textContent = conta ? numeroBR(x.ibu, 1) : "—";
+          ibu.title = conta ? "" : "Tinseth não calcula IBU de whirlpool, dry hop, mostura e envase";
+          gl.textContent = numeroBR(x.g_l, 1);
+        },
+      };
+    },
   });
+
+  /** Leveduras e outros (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
+  const adicionarLinhaTabela = (chave, item, focar) => {
+    r[chave].push(item);
+    secoes[chave]();
+    mudou();
+    document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`)?.focus();
+  };
 
   const leveduras = secaoLista("leveduras", "Leveduras", {
     vazio: "Nenhuma levedura (a FG fica igual à OG).",
@@ -369,14 +539,10 @@ function montarEditor(conteudo, r, cat, leitura) {
       { r: "Unidade", campo: sel("unidade", O.UNIDADE_LEVEDURA, { vazio: "—" }) },
       { r: "Etapa", campo: sel("etapa", O.ETAPA_LEVEDURA) },
     ],
-    adicionar: () => seletorCadastro(cat.leveduras, (y) => {
+    adicionar: botaoAdicionar("leveduras", (y) => {
       const media = y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null);
-      r.leveduras.push(y.id
-        ? { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }
-        : y);
-      secoes.leveduras(); mudou();
-    }, () => ({ levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }),
-    (y) => [y.produtor, y.nome].filter(Boolean).join(" ")),
+      adicionarLinhaTabela("leveduras", { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Atenuação %");
+    }, () => adicionarLinhaTabela("leveduras", { levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Nome")),
   });
 
   const outros = secaoLista("outros", "Outros ingredientes", {
@@ -389,10 +555,9 @@ function montarEditor(conteudo, r, cat, leitura) {
       { r: "Etapa", campo: sel("etapa", O.ETAPA_OUTRO) },
       { r: "Tempo (min)", num: true, campo: num("tempo_min", 0) },
     ],
-    adicionar: () => seletorCadastro(cat.outros, (o) => {
-      r.outros.push(o.id ? { outro_id: o.id, nome: o.nome, tipo: o.tipo, quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null } : o);
-      secoes.outros(); mudou();
-    }, () => ({ outro_id: null, nome: "", tipo: "OUTRO", quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null })),
+    adicionar: botaoAdicionar("outros",
+      (o) => adicionarLinhaTabela("outros", { outro_id: o.id, nome: o.nome, tipo: o.tipo, quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Qtd"),
+      () => adicionarLinhaTabela("outros", { outro_id: null, nome: "", tipo: "OUTRO", quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Nome")),
   });
 
   const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "secundario pequeno", text: "+ Passo", on: { click: () => { r[chave].push(novo()); secoes[chave](); mudou(); } } });

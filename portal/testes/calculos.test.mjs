@@ -143,6 +143,30 @@ test("Faixa do estilo", () => {
   assert.equal(compararComEstilo(res, null), null);
 });
 
+test("Contribuição por item: % do peso, % do açúcar, pontos da OG e g/L", () => {
+  const r = calcularReceita({
+    volume_lote_l: 20, perda_panela_l: 0, eficiencia_pct: 75, fervura_min: 60, evaporacao_l_h: 0,
+    fermentaveis: [
+      { tipo: "GRAO", rendimento_pct: 80, umidade_pct: 0, cor_srm: 2, quantidade_kg: 4, etapa: "MOSTURA" },
+      { tipo: "ACUCAR", rendimento_pct: 100, umidade_pct: 0, cor_srm: 0, quantidade_kg: 1, etapa: "FERVURA" },
+    ],
+    lupulos: [{ alfa_pct: 10, quantidade_g: 30, etapa: "FERVURA", tempo_min: 60 }],
+  });
+  const [g, a] = r.fermentaveis;
+  perto(g.pct_peso, 80, 1e-9);
+  perto(a.pct_peso, 20, 1e-9);
+  // Grão: 4 × 0,8 × 0,75 = 2,4 kg de açúcar; açúcar: 1 kg (sem perda na panela) → 70,6% e 29,4%.
+  perto(g.pct_acucar, (2.4 / 3.4) * 100, 1e-9);
+  perto(g.pontos_og + a.pontos_og, (r.og - 1) * 1000, 1e-9);           // as partes somam a OG
+  perto(a.pontos_og / g.pontos_og, 1 / 2.4, 1e-9);
+  perto(r.lupulos[0].g_l, 1.5, 1e-12);
+  perto(r.volumes.fermentaveis_kg, 5, 1e-12);
+  // Sem fermentáveis nem volume: zeros, sem divisão por zero.
+  const vazio = calcularReceita({ fermentaveis: [{ quantidade_kg: 0 }], lupulos: [{ quantidade_g: 10 }] });
+  assert.equal(vazio.fermentaveis[0].pct_peso, 0);
+  assert.equal(vazio.lupulos[0].g_l, 0);
+});
+
 test("Régua do estilo (barra vital)", () => {
   // Faixa 30–50 IBU: eixo 25–55 (folga de 25% de cada lado); "perto" = a menos de 2 IBU da borda.
   const meio = reguaDoEstilo(40, 30, 50);

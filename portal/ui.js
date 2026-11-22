@@ -90,6 +90,37 @@ export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, par
   return input;
 }
 
+/**
+ * Quantidade com ajuste rápido: botões − e +, setas ↑/↓ no teclado (1 passo) e Shift+seta (10 passos).
+ * passo na unidade guardada (ex.: 0,05 kg). Os botões não roubam o foco (no celular não abrem o teclado).
+ * aoMudar(input) recebe o campo, para a barra vital saber de onde veio a mudança.
+ */
+export function campoQuantidade(obj, chave, { casas = 2, passo = 1, passoTxt = String(passo), unidade = "", aoMudar, desabilitado = false, rotulo } = {}) {
+  const input = campoNumero(obj, chave, { casas, desabilitado, rotulo, aoMudar: () => aoMudar?.(input), classe: "num qtd" });
+  input.setAttribute("role", "spinbutton");
+  const ajustar = (vezes) => {
+    const atual = Number.isFinite(obj[chave]) ? obj[chave] : 0;
+    const novo = Math.max(0, Number((atual + vezes * passo).toFixed(casas)));
+    obj[chave] = novo;
+    input.value = numeroBR(novo, casas);
+    input.classList.remove("invalido");
+    input.setAttribute("aria-valuenow", String(novo));
+    aoMudar?.(input);
+  };
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    ajustar((e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 10 : 1));
+  });
+  const botao = (sinal, vezes) => el("button", {
+    type: "button", class: "passo", tabindex: -1, disabled: desabilitado, text: sinal,
+    title: `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt} (seta ${vezes > 0 ? "↑" : "↓"}; Shift = ×10)`,
+    "aria-label": `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt}`,
+    on: { mousedown: (e) => e.preventDefault(), click: () => ajustar(vezes) },
+  });
+  return el("div", { class: "campo-qtd" }, botao("−", -1), input, el("span", { class: "unidade", text: unidade, "aria-hidden": "true" }), botao("+", 1));
+}
+
 export function campoTexto(obj, chave, { aoMudar, desabilitado = false, classe = "", placeholder, rotulo, max = 200 } = {}) {
   return el("input", {
     type: "text", class: classe, value: obj[chave] ?? "", disabled: desabilitado, placeholder, maxlength: max,

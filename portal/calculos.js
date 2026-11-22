@@ -159,6 +159,7 @@ export function calcularReceita(r) {
     return { acucar_kg: efetivo };
   });
   const acucarTotal = doAmido + pronto;
+  const kgTotal = fermentaveis.reduce((s, f) => s + num(f.quantidade_kg), 0);
 
   const og = sgDeAcucar(acucarTotal, posFervura);
   const pontosNaoFerm = naoFermentavel > 0 ? pontos(sgDeAcucar(naoFermentavel, posFervura)) : 0;
@@ -191,7 +192,7 @@ export function calcularReceita(r) {
     const ibu = minutos > 0
       ? ajuste * ibuTinseth({ alfaPct: num(h.alfa_pct), gramas: num(h.quantidade_g), minutos, sgMosto: sgMediaNaPanela(minutos), litros: lote })
       : 0;
-    return { ibu };
+    return { ibu, g_l: lote > 0 ? num(h.quantidade_g) / lote : 0 };
   });
   const ibu = ibuPorItem.reduce((s, x) => s + x.ibu, 0);
 
@@ -228,12 +229,23 @@ export function calcularReceita(r) {
       pos_fervura_l: posFervura,
       lote_l: lote,
       graos_kg: graosKg,
+      fermentaveis_kg: kgTotal,
       absorcao_l: absorcao,
       agua_total_l: aguaTotal,
       agua_mostura_l: aguaMostura,
       agua_lavagem_l: aguaTotal - aguaMostura,
     },
-    fermentaveis: porItem.map((x, i) => ({ ...x, pct_acucar: acucarTotal > 0 ? (x.acucar_kg / acucarTotal) * 100 : 0, indice: i })),
+    // Por item: % do peso do grist, % do açúcar e a parte da OG que vem dele (pontos da OG × fração do açúcar).
+    fermentaveis: porItem.map((x, i) => {
+      const fracao = acucarTotal > 0 ? x.acucar_kg / acucarTotal : 0;
+      return {
+        ...x,
+        pct_peso: kgTotal > 0 ? (num(fermentaveis[i].quantidade_kg) / kgTotal) * 100 : 0,
+        pct_acucar: fracao * 100,
+        pontos_og: fracao * pontos(og),
+        indice: i,
+      };
+    }),
     lupulos: ibuPorItem,
     avisos: [
       ...(leveduras.length === 0 && fermentaveis.length > 0 ? ["SEM_LEVEDURA"] : []),

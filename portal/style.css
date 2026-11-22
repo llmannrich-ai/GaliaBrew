@@ -180,7 +180,80 @@ details.lote .grade-form + .grade-form { margin-top: .7rem; }
 .metrica .rot { color: var(--suave); font-size: var(--t-p); }
 .metrica .val { font-weight: 600; font-variant-numeric: tabular-nums; }
 .notas-painel { padding: 0 .2rem; }
-select.adicionar { width: auto; min-width: 14rem; }
+
+/* ---------- linhas de ingrediente (fermentáveis e lúpulos) ---------- */
+.titulo-linha h3 .total-secao { font-size: var(--t-p); font-weight: 400; color: var(--suave); font-variant-numeric: tabular-nums; margin-left: .4rem; }
+.linhas-ing { list-style: none; margin: 0; padding: 0; }
+.ing {
+  display: grid; align-items: center; gap: .35rem .8rem; padding: .55rem 0; border-top: 1px solid var(--linha);
+  background: var(--cartao);
+}
+.ing:first-child { border-top: none; }
+.linhas-ing.ferm .ing { grid-template-columns: 1.6rem 1.2rem minmax(9rem, 1fr) auto 4.4rem 3.6rem 2.2rem; }
+.linhas-ing.lup .ing { grid-template-columns: 1.6rem minmax(8rem, 1fr) auto auto 3.6rem 3.2rem 2.2rem; }
+.ing-vazio { padding: .4rem 0; }
+.ing-alca {
+  width: 1.6rem; height: 2.4rem; padding: 0; border: none; border-radius: var(--raio-p); background: transparent; color: var(--suave);
+  font-size: 1.15rem; font-weight: 400; cursor: grab; touch-action: none; user-select: none;
+}
+button.ing-alca:hover { background: var(--fundo); border: none; color: var(--tinta); }
+.ing.arrastando { position: relative; z-index: 3; box-shadow: var(--sombra-forte); border-radius: var(--raio-p); opacity: .96; }
+.ing.arrastando .ing-alca { cursor: grabbing; }
+.ing-cor { width: 1.2rem; height: 1.2rem; margin: 0; border-radius: 50%; }
+.ing-nome { display: grid; min-width: 0; }
+.ing-nome-txt { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ing-sub { font-size: .8rem; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ing-dado { display: grid; justify-items: end; line-height: 1.15; }
+.ing-dado-rot { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); }
+.ing-dado-val { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ing-mais { width: 2.2rem; height: 2.2rem; padding: 0; font-size: 1.1rem; }
+.ing-mais[aria-expanded="true"] { background: var(--fundo); color: var(--tinta); }
+.ing-detalhes { grid-column: 1 / -1; background: var(--fundo); border-radius: var(--raio-p); padding: .8rem .9rem; margin: .2rem 0 .1rem; }
+.ing-detalhes .grade-form { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ing-detalhes input, .ing-detalhes select { background: var(--cartao); }
+.acoes-detalhes { display: flex; gap: .5rem; align-items: center; margin-top: .8rem; flex-wrap: wrap; }
+.ing-quando { display: flex; align-items: center; gap: .35rem; }
+.ing-quando select.etapa { width: auto; min-width: 7.5rem; padding: .4rem .45rem; }
+.ing-tempo { display: inline-flex; align-items: center; gap: .3rem; }
+.ing-tempo:empty { display: none; }
+input.num.curto { width: 3.4rem; }
+.sufixo { color: var(--suave); font-size: var(--t-p); }
+
+/* quantidade com − e + */
+.campo-qtd { display: inline-flex; align-items: center; gap: .25rem; }
+.campo-qtd input.qtd { width: 5.8rem; font-size: 1.1rem; font-weight: 700; padding: .4rem .5rem; }
+.campo-qtd .unidade { color: var(--suave); font-size: var(--t-p); min-width: 1.3rem; }
+button.passo {
+  width: 2.2rem; height: 2.3rem; padding: 0; border: 1px solid var(--linha); border-radius: var(--raio-p);
+  background: var(--cartao); color: var(--tinta); font-size: 1.2rem; font-weight: 600; line-height: 1;
+}
+button.passo:hover { background: var(--fundo); border-color: var(--destaque); color: var(--destaque-escuro); }
+button.passo:disabled { visibility: hidden; }
+
+/* ---------- busca de ingrediente ---------- */
+dialog.busca { padding: 0; max-width: min(680px, 96vw); max-height: min(84vh, 780px); }
+dialog.busca[open] { display: flex; flex-direction: column; }
+.busca-topo { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1.1rem .5rem; }
+.busca-topo h3 { margin: 0; }
+.busca-campo { margin: 0 1.1rem; width: auto !important; font-size: 1.05rem; padding: .6rem .7rem !important; }
+.busca-filtros { display: grid; gap: .35rem; padding: .6rem 1.1rem 0; }
+.busca-grupo-filtro { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+.busca-filtro-rot { font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); min-width: 5.2rem; }
+button.chip { padding: .2rem .65rem; border-radius: 99px; background: var(--cartao); color: var(--tinta); border: 1px solid var(--linha); font-weight: 400; font-size: var(--t-p); }
+button.chip:hover { background: var(--fundo); border-color: var(--destaque); }
+button.chip[aria-pressed="true"] { background: var(--destaque); color: var(--sobre-destaque); border-color: var(--destaque); }
+.busca-info { font-size: .8rem; color: var(--suave); margin: .55rem 1.1rem .3rem; }
+.busca-lista { list-style: none; margin: 0; padding: .3rem .5rem; overflow-y: auto; flex: 1; min-height: 8rem; border-top: 1px solid var(--linha); }
+.busca-opcao { display: flex; gap: .6rem; align-items: center; padding: .5rem .6rem; border-radius: 8px; cursor: pointer; }
+.busca-opcao .amostra { margin: 0; flex: none; }
+.busca-opcao[aria-selected="true"] { background: var(--fundo); box-shadow: inset 0 0 0 2px var(--destaque); }
+.busca-opcao-texto { display: grid; min-width: 0; }
+.busca-opcao-nome { font-weight: 650; }
+.busca-opcao-resumo { font-size: .82rem; color: var(--suave); font-variant-numeric: tabular-nums; }
+.busca-grupo { font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); padding: .7rem .6rem .2rem; }
+.busca-vazia { padding: 1rem .6rem; color: var(--suave); }
+.busca-rodape { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .6rem 1.1rem; border-top: 1px solid var(--linha); }
+.busca-rodape .nota { margin: 0; }
 
 /* ---------- barra vital ---------- */
 .vital {
@@ -272,7 +345,32 @@ dialog form { display: grid; gap: .9rem; }
   input[type="text"], input[type="email"], input[type="password"], input[type="search"], select, textarea { font-size: 16px; }
   .estilo-topo { flex: 1 1 100%; }
   .titulo-linha { flex-wrap: wrap; }
-  select.adicionar { flex: 1 1 12rem; min-width: 0; }
+
+  /* Linhas de ingrediente em 2–3 linhas: nome em cima, quantidade (com ± de 44 px) e números embaixo. */
+  .ing { gap: .4rem .5rem; }
+  .linhas-ing.ferm .ing {
+    grid-template-columns: 1.8rem 1.2rem minmax(0, 1fr) 2.75rem 3.4rem 2.8rem;
+    grid-template-areas: "alca cor nome nome nome mais" "qtd qtd qtd qtd d1 d2" "det det det det det det";
+  }
+  .linhas-ing.lup .ing {
+    grid-template-columns: 1.8rem minmax(0, 1fr) 2.75rem 3.4rem 2.8rem;
+    grid-template-areas: "alca nome nome nome mais" "quando quando quando quando quando" "qtd qtd qtd d1 d2" "det det det det det";
+  }
+  .ing-alca { grid-area: alca; height: 2.75rem; }
+  .ing-cor { grid-area: cor; }
+  .ing-nome { grid-area: nome; }
+  .ing-qtd { grid-area: qtd; }
+  .ing-dado.d1 { grid-area: d1; }
+  .ing-dado.d2 { grid-area: d2; }
+  .ing-mais { grid-area: mais; width: 2.75rem; height: 2.75rem; justify-self: end; }
+  .ing-quando { grid-area: quando; }
+  .ing-detalhes { grid-area: det; }
+  .campo-qtd input.qtd { width: 5rem; }
+  button.passo { width: 2.75rem; height: 2.75rem; }
+
+  dialog.busca { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
+  .busca-rodape .nota { display: none; }
+  .busca-filtro-rot { min-width: 100%; }
   #avisos { left: 1rem; bottom: calc(var(--vital-h, 0px) + .8rem); }
 
   /* Barra vital no rodapé, compacta: 5 números + régua. "Detalhes" abre estado, faixas e BU:GU. */
