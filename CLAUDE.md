@@ -105,7 +105,11 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 
 ## Ordem de trabalho
 - Fase 1 (em andamento): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor
-  de receita ✔ (falta publicar) → carga do catálogo (estilos BJCP 2021, maltes, lúpulos e leveduras).
+  de receita ✔ (falta publicar) → carga do catálogo (estilos BJCP 2021, maltes, lúpulos e leveduras): migração
+  `0004_catalogo_inicial.sql` ESCRITA E AINDA NÃO APLICADA (22/11/2026: a 1ª tentativa parou numa confirmação do
+  Supabase que expirou; nada foi gravado). O banco baixa os arquivos do Brewtarget travados no commit 6d9e69d e
+  confere o md5; contagem esperada 110/215/450/897/44/23. Sem comando destrutivo (a extensão http fica instalada,
+  sem permissão para usuários).
 - Fase 2: brassagem (lote esperado × medido, eficiência real), ferramentas (água de mostura, priming,
   refratômetro, correção do densímetro), escalar receita, versões da receita.
 - Fase 3: importar/exportar BeerJSON e BeerXML, estoque, química da água.
