@@ -53,20 +53,40 @@ with psycopg.connect(host=HOST, port=5432, dbname="postgres", user=f"postgres.{R
         cur.execute("select extras->>'brewfather_id' from public.receitas where extras ? 'brewfather_id'")
         ja = {x[0] for x in cur.fetchall()}
 
-        gravadas, puladas, sem_estilo = 0, 0, []
+        gravadas, puladas, sem_estilo, datas = 0, 0, [], []
         for r in receitas:
             if r["extras"]["brewfather_id"] in ja:
                 puladas += 1
                 continue
             nome_estilo = r.pop("estilo_nome", None)
+            d = r.pop("datas_brewfather", None) or {}
             r["estilo_id"] = estilos.get(nome_estilo) if nome_estilo else None
             if nome_estilo and not r["estilo_id"]:
                 sem_estilo.append(f'{r["nome"]} ("{nome_estilo}")')
             cur.execute("select public.salvar_receita(%s::jsonb)", (json.dumps(r),))
+            novo_id = cur.fetchone()[0]
+            if d.get("criado_em"):
+                datas.append((str(novo_id), d["criado_em"], d.get("atualizado_em") or d["criado_em"]))
             gravadas += 1
 
         cur.execute("select count(*) from public.receitas")
         total = cur.fetchone()[0]
+
+        # Datas do Brewfather: salvar_receita usa "agora" e o gatilho receitas_atualizado_em também.
+        # De volta ao papel postgres, desliga o gatilho só nesta transação (o ALTER volta junto se der erro).
+        if datas:
+            cur.execute("reset role")
+            cur.execute("alter table public.receitas disable trigger receitas_atualizado_em")
+            cur.executemany("update public.receitas set criado_em = %s::timestamptz, atualizado_em = %s::timestamptz "
+                            "where id = %s::uuid and dono = %s::uuid",
+                            [(c, a, i, user_id) for i, c, a in datas])
+            cur.execute("alter table public.receitas enable trigger receitas_atualizado_em")
+            cur.execute("select count(*) from public.receitas r join unnest(%s::uuid[], %s::timestamptz[]) as d(id, c) "
+                        "on d.id = r.id where r.criado_em = d.c",
+                        ([i for i, _, _ in datas], [c for _, c, _ in datas]))
+            conferidas = cur.fetchone()[0]
+            if conferidas != len(datas):
+                raise SystemExit(f"Datas não conferem: {conferidas} de {len(datas)} (nada gravado).")
 
     if args.gravar:
         conn.commit()
@@ -74,6 +94,6 @@ with psycopg.connect(host=HOST, port=5432, dbname="postgres", user=f"postgres.{R
         conn.rollback()
 
 print(f"{'GRAVADO' if args.gravar else 'SIMULAÇÃO (nada gravado)'}: novas={gravadas} já existiam={puladas} "
-      f"total na conta={total}")
+      f"total na conta={total} com data do Brewfather={len(datas)}")
 for s in sem_estilo:
     print("Sem estilo no catálogo:", s)

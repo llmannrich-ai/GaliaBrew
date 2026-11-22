@@ -51,6 +51,9 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - `converter.mjs` (backup.json → jsonb do `salvar_receita`, recalcula com calculos.js e compara) e `importar.py`
   (grava como o usuário: `request.jwt.claims` + `set local role authenticated`; simula sem `--gravar`; pula
   `extras.brewfather_id` já importado). Senha do banco só em `GALIABREW_DB_SENHA`. Detalhes no README da pasta.
+- Datas: `criado_em`/`atualizado_em` vêm do Brewfather (`_created`/`_timestamp`). Como `salvar_receita` e o gatilho
+  `receitas_atualizado_em` gravam "agora", o importar.py volta ao papel postgres e ajusta as datas com o gatilho
+  desligado só na transação. As 102 receitas de 22/11/2026 foram corrigidas assim pelo MCP (datas de 2020 a 2026).
 - 22/11/2026: 102 receitas importadas para llmannrich (2 rascunhos vazios ignorados). Eficiência = `mashEfficiency`
   do Brewfather; cor do malte vem em °L. OG de 100/102 em ±0,002. IBU (depois do whirlpool, 22/11/2026): pior diferença 18%, 80/101 dentro de 10%;
   sobra ~9% abaixo nos lúpulos de fervura, variando por receita (4-14%), causa não identificada.

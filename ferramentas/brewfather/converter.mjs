@@ -38,6 +38,9 @@ const NOME_FERMENT = { Primary: "Primária", Secondary: "Secundária", Tertiary:
 // Nomes do BJCP 2015 (ou do Brewfather) que mudaram no catálogo BJCP 2021.
 const ESTILO_ALIAS = { "English Barleywine": "English Barley Wine", "Red IPA": "Specialty IPA" };
 
+// Data do Brewfather ({_seconds, _nanoseconds}) → ISO 8601.
+const dataBf = (t) => (t && t._seconds != null ? new Date(t._seconds * 1000 + Math.round((t._nanoseconds || 0) / 1e6)).toISOString() : null);
+
 const avisos = [];
 const saida = [];
 for (const r of receitasBf) {
@@ -53,6 +56,8 @@ for (const r of receitasBf) {
     tipo: r.type === "Partial Mash" ? "PARCIAL" : r.type === "Extract" ? "EXTRATO" : "ALL_GRAIN",
     autor: r.author || null,
     estilo_nome: estiloBf ? (ESTILO_ALIAS[estiloBf] ?? estiloBf) : null,
+    // Datas do Brewfather: salvar_receita ignora; o importar.py grava depois (o gatilho poria "agora").
+    datas_brewfather: { criado_em: dataBf(r._created), atualizado_em: dataBf(r._timestamp) ?? dataBf(r._created) },
     volume_lote_l: pos(r.batchSize ?? eq.batchSize) ?? 20,
     // O GaliaBrew aplica a eficiência ao açúcar do grão e mede a OG no pós-fervura: equivale à eficiência
     // de MOSTURA do Brewfather (com ela, 100 de 102 receitas batem a OG em ±0,002).

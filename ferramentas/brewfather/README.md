@@ -29,6 +29,7 @@ Usado em 22/11/2026: 102 receitas importadas (2 rascunhos vazios ignorados).
 | lúpulo Boil / Aroma / First Wort / Dry Hop | FERVURA / WHIRLPOOL / PRIMEIRO_MOSTO / DRY_HOP (dia) |
 | estilo pelo nome | `estilo_id` do catálogo BJCP 2021 (alias: English Barleywine → English Barley Wine, Red IPA → Specialty IPA) |
 | números originais (OG, FG, ABV, IBU, cor, estilo, eficiências) | `extras.brewfather`, junto com `brewfather_id` |
+| `_created` / `_timestamp` | `criado_em` / `atualizado_em` (gravados depois do `salvar_receita`, com o gatilho `receitas_atualizado_em` desligado só dentro da transação; o script confere as datas antes de confirmar) |
 
 Resultado em 22/11/2026: OG de 100 em 102 receitas dentro de ±0,002 do Brewfather; cor com mediana igual.
 IBU (desde 22/11/2026, com whirlpool pela temperatura): pior diferença 18%, 80 de 101 dentro de 10%. Sobra ~9% abaixo
