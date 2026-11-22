@@ -250,6 +250,7 @@ const erros = [];
   await pagina.fill('input[aria-label="OG medida"]', "1048");
   await pagina.locator('input[aria-label="OG medida"]').blur();
   verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "1,048", "OG medida digitada 1048 aparece como 1,048 ao sair do campo");
+  await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "2,5");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
@@ -287,6 +288,9 @@ const erros = [];
     "totais no cabeçalho das seções");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
+  const textoPainel = await pagina.textContent(".painel-lote");
+  verificar(/Priming.*Açúcar comum \(sacarose\)\d+ g/.test(textoPainel), "CO₂ desejado mostra os gramas de priming");
+  verificar(/Temperatura da água da mostura[\s\S]{0,300}?absorve\.\d+,\d °C/.test(textoPainel), "painel mostra a temperatura da água da mostura");
 
   // Mudança mostra a diferença e a barra continua à vista com a página rolada.
   const qtd = pagina.locator('input[aria-label="Qtd (kg)"]').first();
@@ -440,6 +444,18 @@ const erros = [];
   await pagina.waitForSelector("td >> text=Pils da Galia");
   verificar(await pagina.isVisible("td >> text=5D German Pils"), "lista mostra a receita com o estilo");
   verificar(await pagina.isVisible("td >> text=20/04/2026"), "lista mostra a data da brassagem sem erro de fuso");
+
+  // Ferramentas: valores padrão (5 kg, 3 L/kg, grão 20 °C, parada 66 °C; 20 L, 2,4 vol, 20 °C, sacarose).
+  await pagina.click("header nav >> text=Ferramentas");
+  await pagina.waitForSelector("h3:text('Priming')");
+  const ferr = await pagina.textContent(".ferramentas");
+  verificar(ferr.includes("Água da mostura15,0 L") && ferr.includes("Temperatura da água72,3 °C"), "água da mostura: 15,0 L a 72,3 °C");
+  verificar(ferr.includes("112 g"), "priming: 112 g de açúcar comum para 20 L a 2,4 vol");
+  await pagina.selectOption('select[aria-label="Açúcar"]', "DEXTROSE");
+  await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "0,5");
+  verificar((await pagina.textContent(".ferramentas")).includes("não precisa de priming"), "CO₂ abaixo do que a cerveja já tem: avisa que não precisa");
+  await pagina.screenshot({ path: `${SAIDA}/p6-ferramentas.png` });
+  await pagina.click("header nav >> text=Receitas");
   await pagina.screenshot({ path: `${SAIDA}/p4-lista.png` });
 
   // Celular

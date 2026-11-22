@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import {
   platoDeSg, sgDePlato, platoDeAcucar, abv, utilizacaoTinseth, ibuTinseth, srmMorey, ebcDeSrm,
   lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao, acucarDeSg, sgDeAcucar,
+  temperaturaAguaMostura, co2Residual, primingGramas,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -312,6 +313,39 @@ test("Lote medido: eficiência, ABV e atenuação reais", () => {
   const maisVolume = calcularReceita({ ...base, og_medida: plano.og, volume_final_l: 22 });
   assert.ok(maisVolume.medido.eficiencia_pct > 70);
   assert.equal(calcularReceita({ ...base, og_medida: 1.050, fg_medida: 1.060 }).medido.abv_pct, null, "FG acima da OG não dá ABV");
+});
+
+test("Água da mostura: temperatura da infusão (balanço de calor de Palmer)", () => {
+  // Palmer: 1,5 qt/lb (3,13 L/kg), grão a 70 °F, alvo 154 °F → 165,2 °F (73,9 °C).
+  perto(temperaturaAguaMostura({ graoC: 21.11, alvoC: 67.78, litrosPorKg: 3.13 }), 73.89, 0.05);
+  // Mais água por kg = menos acima do alvo; grão na temperatura do alvo = água no alvo.
+  assert.ok(temperaturaAguaMostura({ graoC: 20, alvoC: 66, litrosPorKg: 4 }) < temperaturaAguaMostura({ graoC: 20, alvoC: 66, litrosPorKg: 2.5 }));
+  perto(temperaturaAguaMostura({ graoC: 66, alvoC: 66, litrosPorKg: 3 }), 66, 1e-9);
+  assert.equal(temperaturaAguaMostura({ graoC: 20, alvoC: 66, litrosPorKg: 0 }), null);
+  // Na receita: 1º passo da mostura, grão da receita, água da mostura ÷ kg de grão.
+  const r = calcularReceita({
+    volume_lote_l: 20, perda_panela_l: 1, evaporacao_l_h: 3, eficiencia_pct: 72, fervura_min: 60, relacao_agua_grao_l_kg: 3, temp_grao_c: 20,
+    fermentaveis: [{ tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 5, etapa: "MOSTURA", cor_srm: 2 }],
+    mostura: [{ temperatura_c: 66, tempo_min: 60 }, { temperatura_c: 76, tempo_min: 10 }],
+  });
+  perto(r.volumes.temperatura_agua_mostura_c, temperaturaAguaMostura({ graoC: 20, alvoC: 66, litrosPorKg: 3 }), 1e-9);
+});
+
+test("Priming: CO₂ residual pela temperatura e gramas por açúcar", () => {
+  perto(co2Residual(20), 0.861, 0.002, "20 °C");
+  assert.ok(co2Residual(10) > co2Residual(20), "mais frio retém mais CO₂");
+  // 5 galões (18,93 L), 2,4 vol, 20 °C: ~117 g de dextrose, ~106 g de sacarose (calculadoras usuais).
+  perto(primingGramas({ litros: 18.93, co2Alvo: 2.4, temperaturaMaxC: 20, acucar: "DEXTROSE" }).gramas, 116.8, 0.5);
+  perto(primingGramas({ litros: 18.93, co2Alvo: 2.4, temperaturaMaxC: 20 }).gramas, 106.3, 0.5);
+  assert.equal(primingGramas({ litros: 20, co2Alvo: 0.5, temperaturaMaxC: 20 }).gramas, 0, "alvo abaixo do residual = 0");
+  // Na receita: volume real, maior temperatura da fermentação.
+  const r = calcularReceita({
+    volume_lote_l: 20, volume_final_l: 18, co2_alvo_vol: 2.5, priming_acucar: "DEXTROSE",
+    fermentacao: [{ temperatura_c: 18, dias: 10 }, { temperatura_c: 21, temperatura_fim_c: 22, dias: 3 }, { temperatura_c: 2, dias: 3 }],
+  });
+  perto(r.priming.gramas, primingGramas({ litros: 18, co2Alvo: 2.5, temperaturaMaxC: 22, acucar: "DEXTROSE" }).gramas, 1e-9);
+  assert.equal(r.priming.temperatura_max_c, 22);
+  assert.equal(calcularReceita({ volume_lote_l: 20 }).priming, null, "sem CO₂ desejado não calcula");
 });
 
 test("Receita vazia não quebra", () => {

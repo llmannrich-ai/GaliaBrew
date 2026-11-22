@@ -3,6 +3,7 @@ import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero
 import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122i";
 import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122i";
 import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122i";
+import { telaFerramentas } from "./ferramentas.js?v=20261122i";
 import { copo } from "./vital.js?v=20261122i";
 
 /** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar). */
@@ -19,7 +20,8 @@ function cabecalho() {
   const links = [
     ["#/receitas", "Receitas"],
     ["#/cadastros/fermentaveis", "Cadastros"],
-    ["#/perfil", "Meu perfil"],
+    ["#/ferramentas", "Ferramentas"],
+    ["#/perfil", "Perfil"],
   ];
   return el("header", { class: "topo" },
     el("a", { href: "#/receitas", class: "marca" }, marcaCopo(), "GaliaBrew"),
@@ -181,6 +183,7 @@ async function rotear() {
     else if (rota === "receita") await telaEditor(conteudo, param, origem);
     else if (rota === "cadastros") await telaCadastros(conteudo, CADASTROS[param] ? param : "fermentaveis");
     else if (rota === "perfil") telaPerfil(conteudo);
+    else if (rota === "ferramentas") telaFerramentas(conteudo);
     else { location.hash = "#/receitas"; return; }
   } catch (e) {
     console.error(e);

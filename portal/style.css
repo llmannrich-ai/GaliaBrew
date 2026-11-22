@@ -439,7 +439,8 @@ dialog form { display: grid; gap: .9rem; }
 }
 @media (max-width: 640px) {
   .topo { position: static; flex-wrap: wrap; gap: .5rem; padding: .5rem .8rem; }
-  .topo nav { order: 3; flex: 1 1 100%; overflow-x: auto; }
+  .topo nav { order: 3; flex: 1 1 100%; overflow-x: auto; gap: 0; scrollbar-width: none; }
+  .topo nav a { white-space: nowrap; padding: .35rem .5rem; }
   .topo nav a.ativo, .topo nav a:hover { background: transparent; text-decoration: underline; text-underline-offset: 4px; }
   .quem { margin-left: auto; }
   .conteudo { padding: .8rem; }
@@ -576,3 +577,9 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .info-balao[hidden] { display: none; }
 /* balão aberto não estica os campos vizinhos da mesma linha */
 .grade-form > label { align-content: start; }
+
+/* ---------- ferramentas ---------- */
+.ferramentas { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; align-items: start; }
+.resultado-ferramenta { margin-top: .9rem; }
+.ferramentas details { margin-top: .8rem; font-size: .88rem; }
+.ferramentas summary { cursor: pointer; color: var(--suave); }
