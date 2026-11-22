@@ -54,7 +54,7 @@ fórmulas publicadas, não do código.
 
 | Resultado | Método |
 |---|---|
-| OG | Açúcar (kg) = Σ quantidade × rendimento %. Grão na mostura leva a eficiência; extrato, açúcar e mel não. °Plato = açúcar ÷ (açúcar + água) × 100, com água = volume − açúcar ÷ 1,587 (densidade da sacarose). °Plato → SG pelo polinômio padrão |
+| OG | Açúcar (kg) = Σ quantidade × rendimento % × (1 − umidade %). Grão na mostura leva a eficiência; extrato, açúcar e mel não. °Plato = açúcar ÷ (açúcar + água) × 100, com água = volume − açúcar ÷ 1,587 (densidade da sacarose). °Plato → SG pelo polinômio padrão |
 | FG | Pontos da OG fermentáveis × (1 − atenuação da levedura de MAIOR atenuação) + pontos não fermentáveis (lactose) |
 | ABV | Método HMRC (Reino Unido); conferir contra (OG − FG) × 131,25 |
 | IBU | Tinseth: utilização = 1,65 × 0,000125^(SG fervura − 1) × (1 − e^(−0,04 × min)) ÷ 4,15; IBU = utilização × alfa × g × 1000 ÷ L. Whirlpool/dry hop = 0 na fase 1 |

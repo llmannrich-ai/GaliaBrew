@@ -1,4 +1,4 @@
--- Teste da segurança (RLS) da 0001. Roda como postgres (SQL Editor ou MCP execute_sql).
+-- Teste da segurança (RLS) da 0001 (+ cópia da umidade, 0002). Roda como postgres (SQL Editor ou MCP execute_sql).
 -- Cria dois logins fictícios (A = admin, B = usuário comum), executa as operações com o papel
 -- "authenticated" (e "anon" no fim) e termina com RAISE EXCEPTION: o Postgres desfaz TUDO.
 -- Resultado esperado: a mensagem de erro lista cada verificação com "ok"; qualquer "FALHOU" é problema.
@@ -23,8 +23,8 @@ begin
   select nome into txt from public.perfis where user_id = b;
   res := res || format(E'\n02 nome padrão = início do e-mail: %s', case when txt = 'teste-b' then 'ok' else 'FALHOU (' || txt || ')' end);
   update public.perfis set papel = 'admin' where user_id = a;
-  insert into public.fermentaveis (dono, nome, tipo, rendimento_pct, cor_srm, fermentavel_pct)
-  values (null, 'Pilsen (sistema)', 'GRAO', 80, 1.8, 100) returning id into f_sis;
+  insert into public.fermentaveis (dono, nome, tipo, rendimento_pct, cor_srm, fermentavel_pct, umidade_pct)
+  values (null, 'Pilsen (sistema)', 'GRAO', 80, 1.8, 100, 4) returning id into f_sis;
 
   -- ---------- como A (admin) ----------
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
@@ -34,8 +34,9 @@ begin
   returning id into f_a;
   insert into public.receitas (nome) values ('Receita A') returning id into r_a;
   insert into public.receita_fermentaveis (receita_id, fermentavel_id, quantidade_kg) values (r_a, f_sis, 5);
-  select nome || '|' || rendimento_pct || '|' || fermentavel_pct into txt from public.receita_fermentaveis where receita_id = r_a;
-  res := res || format(E'\n03 cópia do cadastro na adição: %s', case when txt = 'Pilsen (sistema)|80|100' then 'ok' else 'FALHOU (' || txt || ')' end);
+  select nome || '|' || rendimento_pct || '|' || fermentavel_pct || '|' || umidade_pct into txt
+  from public.receita_fermentaveis where receita_id = r_a;
+  res := res || format(E'\n03 cópia do cadastro na adição: %s', case when txt = 'Pilsen (sistema)|80|100|4' then 'ok' else 'FALHOU (' || txt || ')' end);
 
   begin
     insert into public.fermentaveis (dono, nome, tipo, rendimento_pct, cor_srm) values (null, 'Trigo (sistema)', 'GRAO', 82, 2);

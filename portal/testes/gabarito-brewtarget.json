@@ -1,0 +1,1600 @@
+{
+ "_origem": "Receitas de exemplo do banco padrão do Brewtarget 2.3.1 (testData/Brewtarget_2.3.1_default_database.sqlite, projeto GPL-3, github.com/Brewtarget/brewtarget). Usadas SÓ como gabarito de OG/FG calculados pelo Brewtarget. A receita 15 (Rauchbier) ficou de fora: o OG gravado não confere com os próprios ingredientes. cor_srm convertida de °L (SRM = 1,3546 × °L − 0,76).",
+ "receitas": [
+  {
+   "nome": "Bt: Blonde Ale",
+   "og": 1.04572,
+   "fg": 1.01143,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Briess - 2 Row Brewers Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.5,
+      "umidade_pct": 4.0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 4.76272,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: California Common",
+   "og": 1.04908,
+   "fg": 1.0162,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Briess - 2 Row Brewers Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.5,
+      "umidade_pct": 4.0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 4.082331,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Weyermann - Light Munich Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 82.0,
+      "umidade_pct": 4.5,
+      "cor_srm": 8.587,
+      "quantidade_kg": 0.56699,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.453592,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Victory Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 6.0,
+      "cor_srm": 473.35,
+      "quantidade_kg": 0.056699,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP810 - San Francisco Lager Yeast",
+      "atenuacao_pct": 67.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Extra Special Bitter",
+   "og": 1.05163,
+   "fg": 1.01755,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Simpsons - Maris Otter",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 5.216312,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 120L",
+      "tipo": "GRAO",
+      "rendimento_pct": 72.0,
+      "umidade_pct": 0,
+      "cor_srm": 161.792,
+      "quantidade_kg": 0.113398,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP002 - English Ale Yeast",
+      "atenuacao_pct": 66.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Scottish 70 Shilling",
+   "og": 1.03491,
+   "fg": 1.00978,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Simpsons - Maris Otter",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 2.721554,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Munich Malt 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 76.0,
+      "umidade_pct": 3.3,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.453592,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 120L",
+      "tipo": "GRAO",
+      "rendimento_pct": 72.0,
+      "umidade_pct": 0,
+      "cor_srm": 161.792,
+      "quantidade_kg": 0.113398,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Honey Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.0,
+      "umidade_pct": 3.8,
+      "cor_srm": 33.105,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.056699,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP028 - Edinburgh Scottish Ale Yeast",
+      "atenuacao_pct": 72.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: American Pale Ale",
+   "og": 1.04757,
+   "fg": 1.01189,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Briess - 2 Row Brewers Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.5,
+      "umidade_pct": 4.0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 4.535924,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Munich Malt 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 76.0,
+      "umidade_pct": 3.3,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Nut Brown",
+   "og": 1.0458,
+   "fg": 1.01328,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Simpsons - Maris Otter",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 4.082331,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.113398,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Victory Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Special Roast Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 72.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 66.97,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP013 - London Ale Yeast",
+      "atenuacao_pct": 71.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Robust Porter",
+   "og": 1.05829,
+   "fg": 1.01457,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Briess - 2 Row Brewers Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.5,
+      "umidade_pct": 4.0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 4.76272,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Munich Malt 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 76.0,
+      "umidade_pct": 3.3,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.680389,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.453592,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Simpsons - Black Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 70.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 744.27,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Oatmeal Stout",
+   "og": 1.04985,
+   "fg": 1.01695,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Simpsons - Maris Otter",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 3.855535,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Simpsons - Black Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 70.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 744.27,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Oats, Flaked",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.0,
+      "umidade_pct": 0,
+      "cor_srm": 0.595,
+      "quantidade_kg": 0.453592,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 80L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 107.608,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Victory Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP002 - English Ale Yeast",
+      "atenuacao_pct": 66.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: American IPA",
+   "og": 1.05789,
+   "fg": 1.01447,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Briess - 2 Row Brewers Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.5,
+      "umidade_pct": 4.0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 5.443108,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Munich Malt 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 76.0,
+      "umidade_pct": 3.3,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.453592,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.113398,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Weizen",
+   "og": 1.0446,
+   "fg": 1.0116,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Weyermann - Pilsner Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 2.38136,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Weyermann - Pale Wheat Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 85.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 2.38136,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP300 - Hefeweizen Ale Yeast",
+      "atenuacao_pct": 74.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Saison",
+   "og": 1.05434,
+   "fg": 1.0163,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Weyermann - Pilsner Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 5.216312,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Weyermann - Pale Wheat Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 85.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - Munich Malt 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 76.0,
+      "umidade_pct": 3.3,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.340194,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramunich Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 71.7,
+      "umidade_pct": 0,
+      "cor_srm": 75.098,
+      "quantidade_kg": 0.056699,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP565 - Belgian Saison I Yeast",
+      "atenuacao_pct": 70.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Berliner Weisse",
+   "og": 1.02967,
+   "fg": 1.00742,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Weyermann - Pilsner Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 1.814369,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Weyermann - Pale Wheat Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 85.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 1.360777,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP630 - Berliner Weisse Blend",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Belgian Blonde Ale",
+   "og": 1.06038,
+   "fg": 1.01389,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Weyermann - Pilsner Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 81.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 4.989516,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Weyermann - Pale Wheat Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 85.0,
+      "umidade_pct": 5.0,
+      "cor_srm": 2.491,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Sugar, Table (Sucrose)",
+      "tipo": "ACUCAR",
+      "rendimento_pct": 100.0,
+      "umidade_pct": 0,
+      "cor_srm": 0.595,
+      "quantidade_kg": 0.680389,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Aromatic Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 82.5,
+      "umidade_pct": 5.0,
+      "cor_srm": 33.105,
+      "quantidade_kg": 0.226796,
+      "etapa": "MOSTURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP500 - Trappist Ale Yeast",
+      "atenuacao_pct": 77.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: American Barleywine",
+   "og": 1.1075,
+   "fg": 1.02687,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 1.8927,
+    "fermentaveis": [
+     {
+      "nome": "Briess - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 6.0,
+      "cor_srm": 473.35,
+      "quantidade_kg": 0.056699,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.453592,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 80L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 107.608,
+      "quantidade_kg": 0.453592,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Special B Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 65.2,
+      "umidade_pct": 0,
+      "cor_srm": 215.976,
+      "quantidade_kg": 0.113398,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess - 2 Row Brewers Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.5,
+      "umidade_pct": 4.0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 9.979032,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Corn Sugar (Dextrose)",
+      "tipo": "ACUCAR",
+      "rendimento_pct": 100.0,
+      "umidade_pct": 0,
+      "cor_srm": 0,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Blonde Ale - Extract",
+   "og": 1.04598,
+   "fg": 1.01149,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Briess DME - Golden Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 2.540117,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: California Common - Extract",
+   "og": 1.04858,
+   "fg": 1.01603,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Briess DME - Golden Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 2.154564,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess LME - Munich",
+      "tipo": "EXTRATO",
+      "rendimento_pct": 78.0,
+      "umidade_pct": 0,
+      "cor_srm": 10.077,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess - Victory Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 6.0,
+      "cor_srm": 473.35,
+      "quantidade_kg": 0.056699,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP810 - San Francisco Lager Yeast",
+      "atenuacao_pct": 67.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Extra Special Bitter - Extract",
+   "og": 1.05177,
+   "fg": 1.0176,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Muntons DME - Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 2.834952,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 120L",
+      "tipo": "GRAO",
+      "rendimento_pct": 72.0,
+      "umidade_pct": 0,
+      "cor_srm": 161.792,
+      "quantidade_kg": 0.113398,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP002 - English Ale Yeast",
+      "atenuacao_pct": 66.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Scottish 70 Shilling - Extract",
+   "og": 1.03822,
+   "fg": 1.0107,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Muntons DME - Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 1.814369,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess LME - Munich",
+      "tipo": "EXTRATO",
+      "rendimento_pct": 78.0,
+      "umidade_pct": 0,
+      "cor_srm": 10.077,
+      "quantidade_kg": 0.085049,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 120L",
+      "tipo": "GRAO",
+      "rendimento_pct": 72.0,
+      "umidade_pct": 0,
+      "cor_srm": 161.792,
+      "quantidade_kg": 0.113398,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.085049,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Honey Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.0,
+      "umidade_pct": 3.8,
+      "cor_srm": 33.105,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP028 - Edinburgh Scottish Ale Yeast",
+      "atenuacao_pct": 72.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: American Pale Ale - Extract",
+   "og": 1.04719,
+   "fg": 1.0118,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Briess DME - Golden Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 2.267962,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess LME - Munich",
+      "tipo": "EXTRATO",
+      "rendimento_pct": 78.0,
+      "umidade_pct": 0,
+      "cor_srm": 10.077,
+      "quantidade_kg": 0.170097,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Bavarian Wheat",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 0.170097,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess - Victory Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.340194,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Nut Brown - Extract",
+   "og": 1.04497,
+   "fg": 1.01304,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Briess - Victory Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.113398,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Special Roast",
+      "tipo": "GRAO",
+      "rendimento_pct": 72.0,
+      "umidade_pct": 0,
+      "cor_srm": 66.97,
+      "quantidade_kg": 0.340194,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Muntons DME - Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 2.267962,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP013 - London Ale Yeast",
+      "atenuacao_pct": 71.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Robust Porter - Extract",
+   "og": 1.05804,
+   "fg": 1.01451,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.340194,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Black Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 70.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 744.27,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess LME - Munich",
+      "tipo": "EXTRATO",
+      "rendimento_pct": 78.0,
+      "umidade_pct": 0,
+      "cor_srm": 10.077,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Golden Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 2.608156,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Oatmeal Stout - Extract",
+   "og": 1.05491,
+   "fg": 1.01867,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Oats, Flaked",
+      "tipo": "GRAO",
+      "rendimento_pct": 80.0,
+      "umidade_pct": 0,
+      "cor_srm": 0.595,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 1.9,
+      "cor_srm": 541.08,
+      "quantidade_kg": 0.340194,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess - Victory Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 2.5,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.340194,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 80L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 107.608,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Black Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 70.0,
+      "umidade_pct": 3.0,
+      "cor_srm": 744.27,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Muntons DME - Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 2.608156,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP002 - English Ale Yeast",
+      "atenuacao_pct": 66.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: American IPA - Extract",
+   "og": 1.06429,
+   "fg": 1.01607,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 40L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 53.424,
+      "quantidade_kg": 0.113398,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Golden Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 3.288545,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess LME - Munich",
+      "tipo": "EXTRATO",
+      "rendimento_pct": 78.0,
+      "umidade_pct": 0,
+      "cor_srm": 10.077,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Weizen - Extract",
+   "og": 1.04784,
+   "fg": 1.01244,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Briess DME - Bavarian Wheat",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 2.721554,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP300 - Hefeweizen Ale Yeast",
+      "atenuacao_pct": 74.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Saison - Extract",
+   "og": 1.05976,
+   "fg": 1.01793,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Sugar, Table (Sucrose)",
+      "tipo": "ACUCAR",
+      "rendimento_pct": 100.0,
+      "umidade_pct": 0,
+      "cor_srm": 0.595,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Bavarian Wheat",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess LME - Munich",
+      "tipo": "EXTRATO",
+      "rendimento_pct": 78.0,
+      "umidade_pct": 0,
+      "cor_srm": 10.077,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramunich Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 71.7,
+      "umidade_pct": 0,
+      "cor_srm": 75.098,
+      "quantidade_kg": 0.056699,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Pilsen Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 2.494758,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP565 - Belgian Saison I Yeast",
+      "atenuacao_pct": 70.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Berliner Weisse - Extract",
+   "og": 1.03194,
+   "fg": 1.00798,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Briess DME - Pilsen Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 0.907185,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Bavarian Wheat",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 0.907185,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP630 - Berliner Weisse Blend",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: Belgian Blonde Ale - Extract",
+   "og": 1.06768,
+   "fg": 1.01557,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Sugar, Table (Sucrose)",
+      "tipo": "ACUCAR",
+      "rendimento_pct": 100.0,
+      "umidade_pct": 0,
+      "cor_srm": 0.595,
+      "quantidade_kg": 0.680389,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Bavarian Wheat",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 3.304,
+      "quantidade_kg": 0.340194,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Simpsons - Aromatic Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 82.5,
+      "umidade_pct": 5.0,
+      "cor_srm": 33.105,
+      "quantidade_kg": 0.226796,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess DME - Pilsen Light",
+      "tipo": "EXTRATO_SECO",
+      "rendimento_pct": 95.0,
+      "umidade_pct": 0,
+      "cor_srm": 1.949,
+      "quantidade_kg": 2.721554,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP500 - Trappist Ale Yeast",
+      "atenuacao_pct": 77.0
+     }
+    ]
+   }
+  },
+  {
+   "nome": "Bt: American Barleywine - Extract",
+   "og": 1.11287,
+   "fg": 1.02822,
+   "receita": {
+    "volume_lote_l": 20.8198,
+    "eficiencia_pct": 70.0,
+    "fervura_min": 60.0,
+    "evaporacao_l_h": 2.8391,
+    "perda_panela_l": 0.0,
+    "fermentaveis": [
+     {
+      "nome": "Corn Sugar (Dextrose)",
+      "tipo": "ACUCAR",
+      "rendimento_pct": 100.0,
+      "umidade_pct": 0,
+      "cor_srm": 0,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 10L",
+      "tipo": "GRAO",
+      "rendimento_pct": 75.0,
+      "umidade_pct": 0,
+      "cor_srm": 12.786,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Caramel/Crystal Malt - 80L",
+      "tipo": "GRAO",
+      "rendimento_pct": 74.0,
+      "umidade_pct": 0,
+      "cor_srm": 107.608,
+      "quantidade_kg": 0.453592,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Briess - Chocolate Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 73.0,
+      "umidade_pct": 6.0,
+      "cor_srm": 473.35,
+      "quantidade_kg": 0.113398,
+      "etapa": "FERVURA"
+     },
+     {
+      "nome": "Special B Malt",
+      "tipo": "GRAO",
+      "rendimento_pct": 65.2,
+      "umidade_pct": 0,
+      "cor_srm": 215.976,
+      "quantidade_kg": 0.113398,
+      "etapa": "MOSTURA"
+     },
+     {
+      "nome": "Briess LME - Golden Light",
+      "tipo": "EXTRATO",
+      "rendimento_pct": 78.0,
+      "umidade_pct": 0,
+      "cor_srm": 4.658,
+      "quantidade_kg": 6.803886,
+      "etapa": "FERVURA"
+     }
+    ],
+    "leveduras": [
+     {
+      "nome": "WLP001 - California Ale Yeast",
+      "atenuacao_pct": 75.0
+     }
+    ]
+   }
+  }
+ ]
+}
