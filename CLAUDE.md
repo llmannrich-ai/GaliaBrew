@@ -119,8 +119,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  132 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
-  arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
+  130 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
   priming e temperatura da água no painel, tela Ferramentas (água da mostura, priming, refratômetro, correção do densímetro), água da
@@ -128,14 +128,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   receita de outro, sair; e um bloco de celular com toque: barra do app, toque/segurar no ±, teclado aberto,
   cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
-  (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, compacta,
-  "▴" abre estado e faixas) com OG, FG, ABV, IBU, cor, régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
+  (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, ~157 px desde
+  22/11/2026: puxador "detalhes" + 2 linhas de 3 cartões com número e régua; com teclado aberto fica baixa, sem régua;
+  "detalhes" abre estado e faixas) com OG, FG, ABV, IBU, cor, pH da mostura (faixa fixa 5,2–5,6, ideal 5,3–5,5,
+  não depende do estilo; "—" sem grão na mostura), régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
   folga de 25%, "perto" = últimos 10% da faixa, valor arredondado como na tela), estado com cor + ícone + texto, e a
   diferença da última mudança (acumula no mesmo campo, some em 3 s). Estilo no topo; lote numa linha de resumo
   (`<details>`); volumes e água no painel lateral (coluna única abaixo de 1180 px). SVG pelo `svg()` do ui.js.
 - Editor (E2, 22/11/2026): fermentáveis e lúpulos em linhas (`secaoLinhas` no receitas.js) com a quantidade em
   destaque (`campoQuantidade` do ui.js: botões ± que não roubam o foco, ↑/↓ = 1 passo, Shift = 10; passo no perfil,
-  padrão 50 g malte / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
+  padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
   (`pct_peso`, `pontos_og`, `g_l` no calculos.js), totais no cabeçalho, ⋯ = detalhes (dados do cadastro, subir,
   descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
   seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
@@ -143,8 +145,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
   fermentáveis destravados pelo mesmo fator (bisseção, `ajustarParaOG`); "Chegar ao IBU" muda só um lúpulo (o de mais
   tempo ou o escolhido; regra de três, `ajustarParaIBU`). Abrem pelo número da OG/IBU na barra ou pelo botão da seção,
-  com prévia antes de aplicar; aceitam OG em pontos (46 = 1,046). Cadeado por item (`travado`, só na memória, não vai
-  para o banco). Histórico em memória (50 passos; digitação vira passo após 0,8 s ou ao trocar de campo; ação inteira
+  com prévia antes de aplicar; aceitam OG em pontos (46 = 1,046). Cadeado por item RETIRADO da tela em 22/11/2026 (pedido do
+  responsável); `travado` continua aceito no calculos.js, mas a tela não marca mais. Histórico em memória (50 passos; digitação vira passo após 0,8 s ou ao trocar de campo; ação inteira
   = 1 passo); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y; desfazer remonta o editor e a barra mostra a diferença. "Fixar
   referência" compara cada número com a tentativa fixada; "Voltar à referência" restaura (e pode ser desfeito).
   Histórico e referência somem ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
@@ -172,7 +174,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122l.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122m.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.

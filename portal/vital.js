@@ -1,8 +1,9 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
-// estilo e a diferença da última mudança. Computador: fixa abaixo do topo. Celular: fixa no rodapé (compacta).
-import { el, svg, numeroBR } from "./ui.js?v=20261122l";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122l";
-import * as O from "./opcoes.js?v=20261122l";
+// estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
+// do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
+import { el, svg, numeroBR } from "./ui.js?v=20261122m";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122m";
+import * as O from "./opcoes.js?v=20261122m";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -24,6 +25,9 @@ function indicadores() {
     { chave: "abv", rot: "ABV", casas: 1, sufixo: "%", valor: (r) => r.abv_pct, faixa: (e) => [e.abv_min_pct, e.abv_max_pct] },
     { chave: "ibu", rot: "IBU", casas: 0, valor: (r) => r.ibu, faixa: (e) => [e.ibu_min, e.ibu_max] },
     { chave: "cor", rot: `Cor ${O.unidadeCor()}`, casas: 1, valor: (r) => corTela(r.cor_srm), faixa: (e) => [corTela(e.cor_srm_min), corTela(e.cor_srm_max)] },
+    // pH: faixa fixa (não depende do estilo). Boa 5,2–5,6; "perto" = 1/4 da largura → ideal 5,3–5,5.
+    { chave: "ph", rot: "pH mostura", casas: 2, valor: (r) => r.ph_mostura?.ph ?? null, faixaFixa: [5.2, 5.6], perto: 0.25, nomeFaixa: "boa",
+      estados: { DENTRO: "ideal", PERTO_MIN: "um pouco baixo", PERTO_MAX: "um pouco alto", ABAIXO: "baixo", ACIMA: "alto" } },
   ];
 }
 
@@ -149,16 +153,17 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
       const n = itens.get(d.chave);
       const v = arred(d.valor(res), d.casas);
       const fmt = (x) => numeroBR(x, d.casas);
-      n.val.textContent = `${fmt(v)}${d.sufixo ?? ""}`;
+      n.val.textContent = v === null ? "—" : `${fmt(v)}${d.sufixo ?? ""}`;
       n.extra.textContent = d.extra ? d.extra(res) : "";
 
       // Régua do estilo
-      const [min, max] = estilo ? d.faixa(estilo) : [null, null];
-      const regua = reguaDoEstilo(v, min, max);
-      const est = regua ? ESTADOS[regua.estado] : null;
+      const [min, max] = d.faixaFixa ?? (estilo ? d.faixa(estilo) : [null, null]);
+      const regua = v === null ? null : reguaDoEstilo(v, min, max, d.perto ? { perto: d.perto } : undefined);
+      const est = regua ? { ...ESTADOS[regua.estado], ...(d.estados ? { texto: d.estados[regua.estado] } : {}) } : null;
       n.raiz.className = `vital-item ${est ? `estado-${est.classe}` : "sem-estilo"}`;
       n.estado.textContent = est ? `${est.icone} ${est.texto}` : "";
-      n.faixaTxt.textContent = regua ? `estilo ${fmt(Math.min(min, max))}–${fmt(Math.max(min, max))}${d.sufixo ?? ""}` : "";
+      n.estado.title = n.estado.textContent;
+      n.faixaTxt.textContent = regua ? `${d.nomeFaixa ?? "estilo"} ${fmt(Math.min(min, max))}–${fmt(Math.max(min, max))}${d.sufixo ?? ""}` : "";
       if (regua) {
         n.faixa.style.left = `${regua.ini * 100}%`;
         n.faixa.style.width = `${(regua.fim - regua.ini) * 100}%`;
@@ -171,11 +176,12 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
           n.regua.style.background = `linear-gradient(to right, ${paradas.join(", ")})`;
         }
       }
-      falas.push(`${d.rot} ${n.val.textContent}${est ? `, ${est.texto}` : ""}`);
+      falas.push(`${d.rot} ${v === null ? "sem estimativa" : n.val.textContent}${est ? `, ${est.texto}` : ""}`);
 
       // Comparação com a referência fixada (fica enquanto a referência existir).
-      if (referencia) {
-        const rv = arred(d.valor(referencia), d.casas);
+      const rv = referencia ? arred(d.valor(referencia), d.casas) : null;
+      if (referencia && (v === null || rv === null)) n.ref.textContent = "";
+      else if (referencia) {
         const dif = arred(v - rv, d.casas);
         n.ref.textContent = `ref. ${fmt(rv)}${d.sufixo ?? ""} · ${dif === 0 ? "igual" : `${dif > 0 ? "+" : "−"}${fmt(Math.abs(dif))}`}`;
         n.ref.classList.toggle("diferente", dif !== 0);
@@ -183,7 +189,7 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
 
       // Diferença: acumula enquanto a pessoa mexe no mesmo campo; some DIFERENCA_MS depois da última mudança.
       if (outroCampo) esconderDiferenca(n);
-      if (mudanca && n.ultimo !== undefined && v !== n.ultimo) {
+      if (mudanca && v !== null && n.ultimo !== undefined && n.ultimo !== null && v !== n.ultimo) {
         if (n.base === null) n.base = n.ultimo;
         const dif = arred(v - n.base, d.casas);
         if (dif === 0) esconderDiferenca(n);
