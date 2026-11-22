@@ -119,7 +119,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  132 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  133 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
@@ -172,7 +172,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122l.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122m.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
@@ -211,10 +211,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 ## Química da água: sais e perfil de íons (0007, 22/11/2026)
 - `calculos.js`: `SAIS` (ppm por g/L a partir das massas molares: gesso, CaCl₂·2H₂O, MgSO₄·7H₂O, MgCl₂·6H₂O, NaCl,
   NaHCO₃), `perfilAgua` (origem × (1 − diluição) + sais ÷ litros; relação SO₄/Cl; alcalinidade como CaCO₃ e residual
-  de Kolbach: alcalinidade − Ca/1,4 − Mg/1,7), `leituraSulfatoCloreto`. Na receita: `res.agua` na água TOTAL do dia,
-  cada sal dividido entre mostura e lavagem na proporção dos volumes.
+  de Kolbach: alcalinidade − Ca/1,4 − Mg/1,7), `leituraSulfatoCloreto`.
+- Sais separados por água (22/11/2026, sem migração): cada sal tem `etapa` MOSTURA | LAVAGEM no jsonb `sais`
+  (`etapaSal`: sem etapa = mostura). `res.agua` = { mostura, lavagem, panela }, cada um um `perfilAgua` no próprio
+  volume (+ `litros`, `sais_g`); panela = todos os sais na água total. pH estimado usa só a água/sais da mostura.
+  Receita antiga (sais sem etapa = água total) é convertida ao abrir no editor por `separarSaisAntigos` (mostura +
+  lavagem na proporção dos volumes, mesmos gramas); grava com etapa ao salvar. Card Água: tabela de sais da mostura e
+  da lavagem ("Igual à mostura" copia os sais da mostura na proporção dos volumes), perfil Origem/Mostura/Lavagem/
+  Panela/Alvo (destaque longe do alvo na mostura e na panela; no celular símbolos curtos para caber sem rolagem).
 - 0007: `receitas.agua_origem` e `agua_alvo` (jsonb, CÓPIA do perfil: nome + 6 íons; sem id, como a regra 5),
-  `agua_diluicao_pct`, `sais` (jsonb lista [{sal, gramas}], nunca nulo). Teste `supabase/testes/0007_agua_sais.sql`.
+  `agua_diluicao_pct`, `sais` (jsonb lista [{sal, gramas, etapa}], nunca nulo). Teste `supabase/testes/0007_agua_sais.sql`.
 - Portal: card "Água" no editor (origem, diluição, alvo do cadastro de águas; sais; tabela origem × final × alvo, com
   destaque no que está longe do alvo; SO₄/Cl com leitura; alcalinidade residual). "Criar a partir de" copia a água.
 - Ácido e pH estimado da mostura (0008, 22/11/2026): `phMostura` (balanço de cargas no espírito de Troester): cada

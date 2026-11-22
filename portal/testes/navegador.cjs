@@ -254,8 +254,11 @@ const erros = [];
   // Água: origem e alvo do cadastro (copiados), 6 g de gesso.
   await pagina.selectOption('select[aria-label="Água de origem"]', "ag-tor");
   await pagina.selectOption('select[aria-label="Perfil alvo"]', "ag-alvo");
-  await pagina.click("button:has-text('+ Sal')");
-  await pagina.locator('input[aria-label="Gramas"]').first().fill("6");
+  await pagina.click("button:has-text('+ Sal na mostura')");
+  await pagina.fill('input[aria-label="Gramas na mostura"]', "6");
+  await pagina.click("button:has-text('+ Sal na lavagem')");
+  await pagina.selectOption('section:has(h3:text("Água")) tr:has(input[aria-label="Gramas na lavagem"]) select', "CLORETO_CALCIO");
+  await pagina.fill('input[aria-label="Gramas na lavagem"]', "2");
   await pagina.waitForTimeout(150);
   const phAntes = await pagina.textContent("section:has(h3:text('Água'))");
   verificar(/pH estimado da mostura[\s\S]*?5,\d\d/.test(phAntes) && phAntes.includes("Para chegar a 5,4"), "mostra o pH estimado e quanto ácido falta para 5,4");
@@ -266,7 +269,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
+    const m = await import("./calculos.js?v=20261122m");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -301,12 +304,17 @@ const erros = [];
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
-  const esperadoSo4 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
-    const total = Number(document.querySelector(".painel-lote").textContent.match(/Água total[^0-9]*?([0-9]+,[0-9]) L/)[1].replace(",", "."));
-    return m.perfilAgua({ origem: { sulfato_ppm: 10, cloreto_ppm: 15 }, sais: [{ sal: "GESSO", gramas: 6 }], litros: total }).ions.sulfato_ppm;
+  const esperadoAgua = await pagina.evaluate(async () => {
+    const m = await import("./calculos.js?v=20261122m");
+    const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
+    const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
+    const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
+    const lavagem = m.perfilAgua({ origem: o, sais: [{ sal: "CLORETO_CALCIO", gramas: 2 }], litros: litros("Água de lavagem") }).ions;
+    const panela = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }, { sal: "CLORETO_CALCIO", gramas: 2 }], litros: litros("Água total") }).ions;
+    return { so4: [mostura, lavagem, panela].map((x) => Math.round(x.sulfato_ppm)), cl: [mostura, lavagem, panela].map((x) => Math.round(x.cloreto_ppm)) };
   });
-  verificar(textoAgua.includes(`Sulfato (SO₄)10${Math.round(esperadoSo4)}255`), `perfil da água: sulfato 10 → ${Math.round(esperadoSo4)} (alvo 255)`);
+  verificar(textoAgua.includes(`Sulfato (SO₄)SO₄10${esperadoAgua.so4.join("")}255`), `perfil da água: sulfato origem 10 → mostura/lavagem/panela ${esperadoAgua.so4.join(" / ")} (alvo 255)`);
+  verificar(textoAgua.includes(`Cloreto (Cl)Cl15${esperadoAgua.cl.join("")}`), `perfil da água: cloreto da lavagem só na lavagem e na panela (${esperadoAgua.cl.join(" / ")})`);
   verificar(/Sulfato\/cloreto[\s\S]*?\d+,\d\d \((seca e amarga|levemente amarga)\)/.test(textoAgua), "mostra a relação sulfato/cloreto com a leitura");
   verificar(/Priming.*Açúcar comum \(sacarose\)\d+ g/.test(textoPainel), "CO₂ desejado mostra os gramas de priming");
   verificar(/Temperatura da água da mostura[\s\S]{0,300}?absorve\.\d+,\d °C/.test(textoPainel), "painel mostra a temperatura da água da mostura");
@@ -316,7 +324,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
+    const m = await import("./calculos.js?v=20261122m");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -397,7 +405,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122l");
+    const m = await import("./calculos.js?v=20261122m");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -455,7 +463,7 @@ const erros = [];
   verificar(salvo.corpo.p.og_medida === 1.048 && salvo.corpo.p.data_brassagem === "2026-04-20" && salvo.corpo.p.lote_numero === null,
     "lote vai com OG 1048 → 1,048, data e número automático");
   verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
-    && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6}]', "água vai como cópia (sem id) e sais em gramas");
+    && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6,"etapa":"MOSTURA"},{"sal":"CLORETO_CALCIO","gramas":2,"etapa":"LAVAGEM"}]', "água vai como cópia (sem id) e sais em gramas, cada um com a sua água");
   verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");

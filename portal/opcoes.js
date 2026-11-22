@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261122l";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122l";
+import { preferencias } from "./estado.js?v=20261122m";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122m";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -59,7 +59,7 @@ export const AJUDA_VOLUME = {
   agua_origem: "A água que você usa (cadastre a sua em Cadastros → Águas, com os números da análise ou da companhia de água). Fica copiada na receita.",
   agua_alvo: "Perfil que você quer atingir, só para comparar. Os 'Alvo — …' do catálogo são pontos de partida por tipo de cerveja.",
   agua_diluicao_pct: "Parte da água trocada por destilada ou de osmose (sem íons). 50% corta pela metade todos os íons da origem.",
-  sais_agua: "Gramas na água total do dia. A tabela mostra quanto vai na mostura e na lavagem (proporcional aos volumes).",
+  sais_agua: "Gramas de cada sal, separados por água: os da mostura dissolvem na água da mostura (e entram no pH), os da lavagem na água de lavagem. Cada perfil é calculado no próprio volume; Panela = as duas águas juntas, o que chega à fervura.",
   sulfato_cloreto: "Sulfato realça o amargor e seca; cloreto arredonda e dá corpo. Abaixo de 0,8: maltada; 0,8 a 1,3: equilibrada; acima de 2: seca e amarga.",
   alcalinidade_residual: "Alcalinidade (como CaCO₃) menos o efeito do cálcio e do magnésio. Alta (acima de ~50) puxa o pH da mostura para cima: combina com maltes escuros; para cervejas claras, quanto mais baixa melhor.",
   acidos: "Ácido colocado na água da mostura, em mL. Baixa o pH. Para acidificar a água de lavagem, anote em Notas.",
@@ -72,6 +72,7 @@ export const SAL_AGUA = [
   ["CLORETO_MAGNESIO", "Cloreto de magnésio"], ["CLORETO_SODIO", "Sal de cozinha (cloreto de sódio)"], ["BICARBONATO_SODIO", "Bicarbonato de sódio"],
 ];
 export const NOME_ION = { calcio_ppm: "Cálcio (Ca)", magnesio_ppm: "Magnésio (Mg)", sodio_ppm: "Sódio (Na)", sulfato_ppm: "Sulfato (SO₄)", cloreto_ppm: "Cloreto (Cl)", bicarbonato_ppm: "Bicarbonato (HCO₃)" };
+export const SIMBOLO_ION = { calcio_ppm: "Ca", magnesio_ppm: "Mg", sodio_ppm: "Na", sulfato_ppm: "SO₄", cloreto_ppm: "Cl", bicarbonato_ppm: "HCO₃" };
 export const LEITURA_SO4_CL = {
   MUITO_MALTADA: "muito maltada", MALTADA: "maltada", EQUILIBRADA: "equilibrada", LEVEMENTE_AMARGA: "levemente amarga", SECA_AMARGA: "seca e amarga",
 };

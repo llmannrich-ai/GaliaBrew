@@ -7,7 +7,7 @@ import {
   lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao, acucarDeSg, sgDeAcucar,
   temperaturaAguaMostura, co2Residual, primingGramas,
   sgDeBrix, refratometro, corrigirDensimetro,
-  SAIS, perfilAgua, leituraSulfatoCloreto,
+  SAIS, perfilAgua, leituraSulfatoCloreto, etapaSal, separarSaisAntigos,
   phMostura, classificarMalte, ACIDOS,
 } from "../calculos.js";
 
@@ -392,16 +392,31 @@ test("Água: sais em ppm, diluição, sulfato/cloreto e alcalinidade residual", 
   perto(full.alcalinidade, 200.1, 0.1);
   perto(full.alcalinidade_residual, full.alcalinidade - 80 / 1.4 - 10 / 1.7, 1e-9);
   assert.equal(leituraSulfatoCloreto(3), "SECA_AMARGA"); assert.equal(leituraSulfatoCloreto(1), "EQUILIBRADA"); assert.equal(leituraSulfatoCloreto(0.5), "MALTADA");
-  // Na receita: sais na água total, divididos entre mostura e lavagem.
-  const r = calcularReceita({
+  // Na receita: sais da mostura na água da mostura, da lavagem na água de lavagem; panela = tudo na água total.
+  const base = {
     volume_lote_l: 20, perda_panela_l: 1, evaporacao_l_h: 3, eficiencia_pct: 72, fervura_min: 60, relacao_agua_grao_l_kg: 3,
-    fermentaveis: [{ tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 5, etapa: "MOSTURA", cor_srm: 2 }],
-    agua_origem: o, sais: [{ sal: "GESSO", gramas: 6 }],
-  });
-  perto(r.agua.litros, r.volumes.agua_total_l, 1e-9);
-  perto(r.agua.ions.sulfato_ppm, 40 + (557.9 * 6) / r.volumes.agua_total_l, 0.05);
-  perto(r.agua.sais[0].mostura_g + r.agua.sais[0].lavagem_g, 6, 1e-9);
-  perto(r.agua.sais[0].mostura_g, (6 * r.volumes.agua_mostura_l) / r.volumes.agua_total_l, 1e-9);
+    fermentaveis: [{ nome: "Pilsner", tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 5, etapa: "MOSTURA", cor_srm: 2 }],
+    agua_origem: o,
+  };
+  const r = calcularReceita({ ...base, sais: [{ sal: "GESSO", gramas: 4, etapa: "MOSTURA" }, { sal: "CLORETO_CALCIO", gramas: 2, etapa: "LAVAGEM" }] });
+  const v = r.volumes;
+  perto(r.agua.mostura.litros, v.agua_mostura_l, 1e-9); perto(r.agua.lavagem.litros, v.agua_lavagem_l, 1e-9); perto(r.agua.panela.litros, v.agua_total_l, 1e-9);
+  perto(r.agua.mostura.ions.sulfato_ppm, 40 + (557.9 * 4) / v.agua_mostura_l, 0.05);
+  perto(r.agua.mostura.ions.cloreto_ppm, 40, 1e-9, "cloreto da lavagem não entra na mostura");
+  perto(r.agua.lavagem.ions.sulfato_ppm, 40, 1e-9, "gesso da mostura não entra na lavagem");
+  perto(r.agua.lavagem.ions.cloreto_ppm, 40 + (482.3 * 2) / v.agua_lavagem_l, 0.05);
+  perto(r.agua.panela.ions.sulfato_ppm, 40 + (557.9 * 4) / v.agua_total_l, 0.05);
+  perto(r.agua.mostura.sais_g, 4, 1e-9); perto(r.agua.lavagem.sais_g, 2, 1e-9);
+  // pH usa só a água da mostura: sal na lavagem não muda o pH; sal na mostura muda.
+  const semSal = calcularReceita(base).ph_mostura.ph;
+  perto(calcularReceita({ ...base, sais: [{ sal: "CLORETO_CALCIO", gramas: 5, etapa: "LAVAGEM" }] }).ph_mostura.ph, semSal, 1e-9, "sal da lavagem não mexe no pH");
+  assert.ok(calcularReceita({ ...base, sais: [{ sal: "CLORETO_CALCIO", gramas: 5, etapa: "MOSTURA" }] }).ph_mostura.ph < semSal - 0.02, "cálcio na mostura baixa o pH");
+  // Sal sem etapa conta como mostura; receita antiga (água total) vira mostura + lavagem com os mesmos gramas.
+  perto(calcularReceita({ ...base, sais: [{ sal: "GESSO", gramas: 4 }] }).agua.mostura.ions.sulfato_ppm, r.agua.mostura.ions.sulfato_ppm, 1e-9);
+  assert.equal(etapaSal({}), "MOSTURA"); assert.equal(etapaSal({ etapa: "LAVAGEM" }), "LAVAGEM");
+  const antigos = separarSaisAntigos([{ sal: "GESSO", gramas: 6 }, { sal: "CLORETO_SODIO", gramas: 1, etapa: "LAVAGEM" }], { aguaMostura: 15, aguaTotal: 30 });
+  assert.deepEqual(antigos, [{ sal: "GESSO", gramas: 3, etapa: "MOSTURA" }, { sal: "GESSO", gramas: 3, etapa: "LAVAGEM" }, { sal: "CLORETO_SODIO", gramas: 1, etapa: "LAVAGEM" }]);
+  assert.deepEqual(separarSaisAntigos([{ sal: "GESSO", gramas: 5 }], { aguaMostura: 20, aguaTotal: 20 }), [{ sal: "GESSO", gramas: 5, etapa: "MOSTURA" }], "sem lavagem: tudo na mostura");
   assert.equal(calcularReceita({ volume_lote_l: 20 }).agua, null, "sem água nem sais não calcula");
 });
 

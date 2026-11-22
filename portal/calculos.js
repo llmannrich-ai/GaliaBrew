@@ -229,6 +229,28 @@ export function perfilAgua({ origem = {}, diluicaoPct = 0, sais = [], litros }) 
   };
 }
 
+/** Onde o sal vai: "MOSTURA" ou "LAVAGEM". Sal sem etapa (receita antiga) conta como mostura. */
+export const etapaSal = (s) => (s?.etapa === "LAVAGEM" ? "LAVAGEM" : "MOSTURA");
+
+/**
+ * Receita antiga guardava os sais na água TOTAL (sem etapa), divididos na proporção dos volumes. Converte cada um em
+ * dois: o da mostura e o da lavagem, com os mesmos gramas finais (0,1 g). Sais que já têm etapa ficam como estão.
+ */
+export function separarSaisAntigos(sais = [], { aguaMostura, aguaTotal }) {
+  if (!sais.some((s) => !s.etapa)) return sais;
+  const fracao = aguaTotal > 0 ? Math.min(1, Math.max(0, aguaMostura / aguaTotal)) : 1;
+  const r1 = (v) => Math.round(v * 10) / 10;
+  return sais.flatMap((s) => {
+    if (s.etapa) return [s];
+    const g = num(s.gramas);
+    const m = r1(g * fracao), l = r1(g * (1 - fracao));
+    const partes = [];
+    if (m > 0 || l <= 0) partes.push({ ...s, etapa: "MOSTURA", gramas: m });
+    if (l > 0) partes.push({ ...s, etapa: "LAVAGEM", gramas: l });
+    return partes;
+  });
+}
+
 /** Leitura da relação sulfato/cloreto (faixas usuais). */
 export function leituraSulfatoCloreto(r) {
   if (r == null) return null;
@@ -448,19 +470,27 @@ export function calcularReceita(r) {
   const tempAguaMostura = graosKg > 0 && primeiroPasso
     ? temperaturaAguaMostura({ graoC: num(r.temp_grao_c, 20), alvoC: num(primeiroPasso.temperatura_c), litrosPorKg: aguaMostura / graosKg })
     : null;
-  // Água do dia: origem (cópia na receita) + diluição + sais, na água total; cada sal dividido entre mostura e lavagem
-  // na proporção dos volumes.
-  const temAgua = r.agua_origem || (r.sais ?? []).length;
+  // Água do dia: origem (cópia na receita) + diluição; sais separados por água — os da mostura dissolvidos na água da
+  // mostura, os da lavagem na água de lavagem (cada perfil é calculado à parte). "Panela" = as duas juntas (o que
+  // chega à fervura: sabor, sulfato/cloreto).
+  const aguaLavagem = aguaTotal - aguaMostura;
+  const sais = (r.sais ?? []).map((x) => ({ ...x, etapa: etapaSal(x) }));
+  const temAgua = r.agua_origem || sais.length;
+  const perfilDe = (lista, litros) => ({
+    ...perfilAgua({ origem: r.agua_origem ?? {}, diluicaoPct: r.agua_diluicao_pct, sais: lista, litros }),
+    litros,
+    sais_g: lista.reduce((s, x) => s + Math.max(0, num(x.gramas)), 0),
+  });
   const agua = temAgua
     ? {
-        ...perfilAgua({ origem: r.agua_origem ?? {}, diluicaoPct: r.agua_diluicao_pct, sais: r.sais ?? [], litros: aguaTotal }),
-        sais: (r.sais ?? []).map((x) => ({ ...x, mostura_g: aguaTotal > 0 ? (num(x.gramas) * aguaMostura) / aguaTotal : 0, lavagem_g: aguaTotal > 0 ? (num(x.gramas) * (aguaTotal - aguaMostura)) / aguaTotal : 0 })),
-        litros: aguaTotal,
+        mostura: perfilDe(sais.filter((x) => x.etapa === "MOSTURA"), aguaMostura),
+        lavagem: perfilDe(sais.filter((x) => x.etapa === "LAVAGEM"), aguaLavagem),
+        panela: perfilDe(sais, aguaTotal),
       }
     : null;
-  // pH estimado da mostura: grãos da mostura, água da mostura (perfil final, com sais), ácidos na mostura.
+  // pH estimado da mostura: grãos da mostura, água da mostura (só com os sais da mostura), ácidos na mostura.
   const maltesMostura = fermentaveis.filter((f) => f.etapa === "MOSTURA" && !ACUCAR_PRONTO.has(f.tipo) && num(f.quantidade_kg) > 0);
-  const ionsMostura = agua?.ions ?? perfilAgua({ origem: {}, litros: aguaTotal }).ions;
+  const ionsMostura = agua?.mostura.ions ?? perfilAgua({ origem: {}, litros: aguaMostura }).ions;
   const mostura = maltesMostura.length && aguaMostura > 0
     ? phMostura({ maltes: maltesMostura, litros: aguaMostura, ions: ionsMostura, acidos: r.acidos ?? [] })
     : null;

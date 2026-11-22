@@ -58,10 +58,11 @@ body {
   background: var(--fundo); color: var(--tinta);
   -webkit-font-smoothing: antialiased;
 }
-h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .6rem; }
+h1, h2, h3, h4, h5 { line-height: 1.2; margin: 0 0 .6rem; }
 h2 { font-size: var(--t-g); }
 h3 { font-size: 1.1rem; font-weight: 700; }
 h4 { font-size: var(--t-rotulo); margin-top: 1rem; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; }
+h5 { font-size: var(--t-rotulo); margin: .8rem 0 .4rem; font-weight: 600; }
 a { color: var(--destaque-escuro); }
 .so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 
@@ -91,6 +92,7 @@ a { color: var(--destaque-escuro); }
 .erro-form:empty { display: none; }
 .titulo-linha { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
 .titulo-linha h2, .titulo-linha h3 { margin: 0; }
+.acoes-sais { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }
 .barra { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: .8rem; }
 .barra input[type="search"] { flex: 1; min-width: 200px; }
 .espaco { flex: 1; }
@@ -585,5 +587,12 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .ferramentas summary { cursor: pointer; color: var(--suave); }
 
 /* ---------- água ---------- */
+.perfil-agua .ion-curto { display: none; text-decoration: none; }
 .perfil-agua td.longe { color: var(--destaque-escuro); font-weight: 700; }
 .resumo-agua { margin-top: .6rem; }
+@media (max-width: 640px) {
+  .perfil-agua { font-size: .82rem; width: 100%; }
+  .perfil-agua th, .perfil-agua td { padding-left: .25rem; padding-right: .25rem; }
+  .perfil-agua .ion-longo { display: none; }
+  .perfil-agua .ion-curto { display: inline; }
+}

@@ -1,14 +1,14 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122l";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122l";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto } from "./calculos.js?v=20261122l";
-import { abrirBusca } from "./busca.js?v=20261122l";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122l";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122l";
-import * as O from "./opcoes.js?v=20261122l";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122l";
-import { icone } from "./icones.js?v=20261122l";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261122l";
+import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122m";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122m";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261122m";
+import { abrirBusca } from "./busca.js?v=20261122m";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122m";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122m";
+import * as O from "./opcoes.js?v=20261122m";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122m";
+import { icone } from "./icones.js?v=20261122m";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261122m";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -148,6 +148,11 @@ async function carregarReceita(id) {
   r.fermentacao = ord(data.receita_fermentacao_passos);
   r.sais = Array.isArray(data.sais) ? data.sais : [];
   r.acidos = Array.isArray(data.acidos) ? data.acidos : [];
+  // Receita antiga: sais na água total, sem etapa → um sal na mostura e outro na lavagem (mesmos gramas de antes).
+  if (r.sais.some((x) => !x.etapa)) {
+    const v = calcularReceita({ ...r, sais: [] }).volumes;
+    r.sais = separarSaisAntigos(r.sais, { aguaMostura: v.agua_mostura_l, aguaTotal: v.agua_total_l });
+  }
   for (const k of ["receita_fermentaveis", "receita_lupulos", "receita_leveduras", "receita_outros", "receita_mostura_passos", "receita_fermentacao_passos"]) delete r[k];
   return r;
 }
@@ -856,24 +861,41 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       return el("label", {}, el("span", {}, rot, info(ajuda)), s);
     };
 
-    const corpoSais = el("tbody");
-    const celulas = new Map();     // sal → [célula mostura, célula lavagem]
+    // Sais separados: os da mostura vão na água da mostura, os da lavagem na água de lavagem (perfis calculados à parte).
+    const grupos = Object.fromEntries(["MOSTURA", "LAVAGEM"].map((etapa) => [etapa, { corpo: el("tbody"), litros: el("span", { class: "calculado" }) }]));
     const desenharSais = () => {
-      limpar(corpoSais);
-      if (!r.sais.length) corpoSais.append(el("tr", {}, el("td", { colspan: 5, class: "nota", text: "Nenhum sal." })));
-      r.sais.forEach((x, i) => {
-        const m = el("span", { class: "calculado" }), l = el("span", { class: "calculado" });
-        celulas.set(x, [m, l]);
-        corpoSais.append(el("tr", {},
-          el("td", { dataset: { rotulo: "Sal" } }, comRotulo(campoSelect(x, "sal", O.SAL_AGUA, { aoMudar: mudou, desabilitado: des }), "Sal")),
-          el("td", { class: "num", dataset: { rotulo: "Total (g)" } }, comRotulo(campoNumero(x, "gramas", { casas: 1, aoMudar: mudou, desabilitado: des }), "Gramas")),
-          el("td", { class: "num", dataset: { rotulo: "Mostura (g)" } }, m),
-          el("td", { class: "num", dataset: { rotulo: "Lavagem (g)" } }, l),
-          leitura ? null : el("td", { class: "acoes-linha" },
-            el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover sal", text: "×", on: { click: () => { r.sais.splice(i, 1); desenharSais(); mudou(); } } }))));
-      });
+      for (const [etapa, g] of Object.entries(grupos)) {
+        limpar(g.corpo);
+        const lista = r.sais.filter((x) => etapaSal(x) === etapa);
+        if (!lista.length) g.corpo.append(el("tr", {}, el("td", { colspan: 3, class: "nota", text: "Nenhum sal." })));
+        for (const x of lista) {
+          g.corpo.append(el("tr", {},
+            el("td", { dataset: { rotulo: "Sal" } }, comRotulo(campoSelect(x, "sal", O.SAL_AGUA, { aoMudar: mudou, desabilitado: des }), "Sal")),
+            el("td", { class: "num", dataset: { rotulo: "Gramas" } }, comRotulo(campoNumero(x, "gramas", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: etapa === "MOSTURA" ? "Gramas na mostura" : "Gramas na lavagem" }), "Gramas")),
+            leitura ? null : el("td", { class: "acoes-linha" },
+              el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover sal", text: "×", on: { click: () => { r.sais.splice(r.sais.indexOf(x), 1); desenharSais(); mudou(); } } }))));
+        }
+      }
       atualizarResultados();
     };
+    const novoSal = (etapa) => { r.sais.push({ sal: "GESSO", gramas: null, etapa }); desenharSais(); mudou(); };
+    // Lavagem com a mesma concentração da mostura: cada sal da mostura × (água de lavagem ÷ água da mostura).
+    let ultimoRes = null;
+    const lavagemIgualMostura = () => {
+      const v = ultimoRes?.volumes;
+      if (!v || !(v.agua_mostura_l > 0)) return;
+      const fator = v.agua_lavagem_l / v.agua_mostura_l;
+      r.sais = [...r.sais.filter((x) => etapaSal(x) === "MOSTURA"),
+        ...r.sais.filter((x) => etapaSal(x) === "MOSTURA" && Number(x.gramas) > 0).map((x) => ({ sal: x.sal, gramas: Number((Number(x.gramas) * fator).toFixed(1)), etapa: "LAVAGEM" }))]
+        .filter((x) => x.etapa !== "LAVAGEM" || x.gramas > 0);
+      desenharSais(); mudou();
+    };
+    const tabelaSais = (etapa, titulo, extra) => el("div", {},
+      el("div", { class: "titulo-linha" }, el("h5", {}, titulo, " ", grupos[etapa].litros),
+        leitura ? null : el("div", { class: "acoes-sais" }, extra, el("button", { type: "button", class: "secundario pequeno", text: etapa === "MOSTURA" ? "+ Sal na mostura" : "+ Sal na lavagem", on: { click: () => novoSal(etapa) } }))),
+      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
+        el("thead", {}, el("tr", {}, ["Sal", "Gramas"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
+        grupos[etapa].corpo)));
 
     const corpoAcidos = el("tbody");
     const desenharAcidos = () => {
@@ -911,43 +933,46 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     const perfil = el("div", { class: "tabela-rolagem" });
     const resumo = el("div", { class: "resumo-agua" });
     aoRecalcular.push((res) => {
+      ultimoRes = res;
+      grupos.MOSTURA.litros.textContent = `(${numeroBR(res.volumes.agua_mostura_l, 1)} L)`;
+      grupos.LAVAGEM.litros.textContent = `(${numeroBR(res.volumes.agua_lavagem_l, 1)} L)`;
       const a = res.agua;
-      r.sais.forEach((x, i) => { const c = celulas.get(x); const s = a?.sais?.[i]; if (c && s) { c[0].textContent = numeroBR(s.mostura_g, 1); c[1].textContent = numeroBR(s.lavagem_g, 1); } });
       if (!a) { preencher(perfil, el("p", { class: "nota", text: "Escolha a água de origem ou adicione sais para ver o perfil." })); preencher(resumo); return; }
       const alvo = r.agua_alvo;
       const fator = 1 - (Number(r.agua_diluicao_pct) || 0) / 100;
+      const longe = (v, k) => alvo && Math.abs(v - Number(alvo[k] ?? 0)) > Math.max(15, 0.25 * Number(alvo[k] ?? 0));
       preencher(perfil, el("table", { class: "tabela perfil-agua" },
-        el("thead", {}, el("tr", {}, ["Íon (ppm)", "Origem", "Final", alvo ? "Alvo" : null].filter(Boolean).map((h, i) => el("th", { class: i ? "num" : "", text: h })))),
-        el("tbody", {}, IONS.map((k) => {
-          const final = a.ions[k];
-          const longe = alvo && Math.abs(final - Number(alvo[k] ?? 0)) > Math.max(15, 0.25 * Number(alvo[k] ?? 0));
-          return el("tr", {},
-            el("td", { text: O.NOME_ION[k] }),
-            el("td", { class: "num", text: numeroBR(Number(r.agua_origem?.[k] ?? 0) * fator, 0) }),
-            el("td", { class: `num${longe ? " longe" : ""}`, text: numeroBR(final, 0) }),
-            alvo ? el("td", { class: "num", text: numeroBR(Number(alvo[k] ?? 0), 0) }) : null);
-        }))));
-      const leituraSo4 = leituraSulfatoCloreto(a.sulfato_cloreto);
+        el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Origem", "Orig."], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Panela", "Pan."], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
+          .map(([longo, curto], i) => el("th", { class: i ? "num" : "" }, el("span", { class: "ion-longo", text: longo }), el("abbr", { class: "ion-curto", title: longo, text: curto }))))),
+        el("tbody", {}, IONS.map((k) => el("tr", {},
+          el("td", {}, el("span", { class: "ion-longo", text: O.NOME_ION[k] }), el("abbr", { class: "ion-curto", title: O.NOME_ION[k], text: O.SIMBOLO_ION[k] })),
+          el("td", { class: "num", text: numeroBR(Number(r.agua_origem?.[k] ?? 0) * fator, 0) }),
+          el("td", { class: `num${longe(a.mostura.ions[k], k) ? " longe" : ""}`, text: numeroBR(a.mostura.ions[k], 0) }),
+          el("td", { class: "num", text: numeroBR(a.lavagem.ions[k], 0) }),
+          el("td", { class: `num${longe(a.panela.ions[k], k) ? " longe" : ""}`, text: numeroBR(a.panela.ions[k], 0) }),
+          alvo ? el("td", { class: "num", text: numeroBR(Number(alvo[k] ?? 0), 0) }) : null)))));
+      const so4cl = (p) => (p.sulfato_cloreto == null ? "—" : `${numeroBR(p.sulfato_cloreto, 2)} (${O.LEITURA_SO4_CL[leituraSulfatoCloreto(p.sulfato_cloreto)]})`);
       preencher(resumo,
-        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Sulfato/cloreto", info(O.AJUDA_VOLUME.sulfato_cloreto)),
-          el("span", { class: "val", text: a.sulfato_cloreto == null ? "—" : `${numeroBR(a.sulfato_cloreto, 2)} (${O.LEITURA_SO4_CL[leituraSo4]})` })),
-        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Alcalinidade residual", info(O.AJUDA_VOLUME.alcalinidade_residual)),
-          el("span", { class: "val", text: `${numeroBR(a.alcalinidade_residual, 0)} ppm` })),
-        el("p", { class: "nota", text: `Sais e ppm na água total do dia: ${numeroBR(a.litros, 1)} L.` }));
+        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Sulfato/cloreto na panela", info(O.AJUDA_VOLUME.sulfato_cloreto)),
+          el("span", { class: "val", text: so4cl(a.panela) })),
+        el("div", { class: "metrica" }, el("span", { class: "rot", text: "Sulfato/cloreto na mostura" }), el("span", { class: "val", text: so4cl(a.mostura) })),
+        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Alcalinidade residual da mostura", info(O.AJUDA_VOLUME.alcalinidade_residual)),
+          el("span", { class: "val", text: `${numeroBR(a.mostura.alcalinidade_residual, 0)} ppm` })),
+        el("div", { class: "metrica" }, el("span", { class: "rot", text: "Alcalinidade residual da lavagem" }), el("span", { class: "val", text: `${numeroBR(a.lavagem.alcalinidade_residual, 0)} ppm` })),
+        el("p", { class: "nota", text: `Mostura: ${numeroBR(a.mostura.sais_g, 1)} g de sais em ${numeroBR(a.mostura.litros, 1)} L. Lavagem: ${numeroBR(a.lavagem.sais_g, 1)} g em ${numeroBR(a.lavagem.litros, 1)} L. Panela = as duas águas juntas.` }));
     });
 
     const sec = el("section", { class: "cartao" },
-      el("div", { class: "titulo-linha" }, tituloSecao("agua", "Água"),
-        leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "+ Sal", on: { click: () => { r.sais.push({ sal: "GESSO", gramas: null }); desenharSais(); mudou(); } } })),
+      el("div", { class: "titulo-linha" }, tituloSecao("agua", "Água")),
       el("div", { class: "grade-form" },
         escolha("agua_origem", "Água de origem", O.AJUDA_VOLUME.agua_origem, "— nenhuma (só destilada) —"),
         el("label", {}, el("span", {}, "Diluição com destilada (%)", info(O.AJUDA_VOLUME.agua_diluicao_pct)),
           campoNumero(r, "agua_diluicao_pct", { casas: 0, aoMudar: mudou, desabilitado: des, rotulo: "Diluição com destilada (%)", placeholder: "0" })),
         escolha("agua_alvo", "Perfil alvo", O.AJUDA_VOLUME.agua_alvo, "— sem alvo —")),
       el("h4", {}, "Sais", info(O.AJUDA_VOLUME.sais_agua)),
-      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
-        el("thead", {}, el("tr", {}, ["Sal", "Total (g)", "Mostura (g)", "Lavagem (g)"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
-        corpoSais)),
+      tabelaSais("MOSTURA", "Água da mostura"),
+      tabelaSais("LAVAGEM", "Água de lavagem",
+        el("button", { type: "button", class: "secundario pequeno", text: "Igual à mostura", title: "Troca os sais da lavagem pelos da mostura, na proporção dos volumes", on: { click: lavagemIgualMostura } })),
       el("h4", { text: "Perfil" }),
       perfil, resumo,
       el("div", { class: "titulo-linha" }, el("h4", {}, "Ácido na mostura", info(O.AJUDA_VOLUME.acidos)),
@@ -1107,7 +1132,7 @@ function montarPayload(r, res) {
       "perda_panela_l", "absorcao_grao_l_kg", "relacao_agua_grao_l_kg", "perda_tina_l", "temp_grao_c", "publica", "notas",
       "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l", "co2_alvo_vol", "priming_acucar",
       "agua_origem", "agua_alvo", "agua_diluicao_pct"]),
-    sais: (r.sais ?? []).map((x) => ({ sal: x.sal, gramas: x.gramas })),
+    sais: (r.sais ?? []).map((x) => ({ sal: x.sal, gramas: x.gramas, etapa: etapaSal(x) })),
     acidos: (r.acidos ?? []).map((x) => ({ acido: x.acido, ml: x.ml })),
     fervura_min: Math.round(r.fervura_min ?? 60),
     og_calc: arred(res.og, 4), fg_calc: arred(res.fg, 4), abv_calc_pct: arred(res.abv_pct, 2), ibu_calc: arred(res.ibu, 1), cor_srm_calc: arred(res.cor_srm, 1),
