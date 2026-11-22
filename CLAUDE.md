@@ -43,6 +43,9 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - `.github/workflows/pages.yml` — publicação do portal no GitHub Pages
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 - `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
+- `.claude/skills/deploy/` — skill `/deploy` (22/11/2026, pedida pelo responsável): publicar SEMPRE por ela. Fila entre
+  sessões paralelas em `refs/fila/*` no origin (`fila.sh`), atualiza com a main, `conferir.sh` (nº de migração, `?v=`),
+  testes, push só avanço rápido na `main` e na branch padrão.
 
 ## Importação do Brewfather (`ferramentas/brewfather/`, 22/11/2026)
 - `converter.mjs` (backup.json → jsonb do `salvar_receita`, recalcula com calculos.js e compara) e `importar.py`
