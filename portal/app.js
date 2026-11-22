@@ -1,9 +1,17 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122h";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122h";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122h";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122h";
-import { telaFerramentas } from "./ferramentas.js?v=20261122h";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122l";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122l";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122l";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122l";
+import { telaFerramentas } from "./ferramentas.js?v=20261122l";
+import { copo } from "./vital.js?v=20261122l";
+
+/** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar). */
+function marcaCopo() {
+  const c = copo();
+  c.cerveja.setAttribute("fill", "#d08a2a");
+  return c;
+}
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -13,10 +21,10 @@ function cabecalho() {
     ["#/receitas", "Receitas"],
     ["#/cadastros/fermentaveis", "Cadastros"],
     ["#/ferramentas", "Ferramentas"],
-    ["#/perfil", "Meu perfil"],
+    ["#/perfil", "Perfil"],
   ];
   return el("header", { class: "topo" },
-    el("a", { href: "#/receitas", class: "marca", text: "GaliaBrew" }),
+    el("a", { href: "#/receitas", class: "marca" }, marcaCopo(), "GaliaBrew"),
     el("nav", {}, links.map(([h, t]) => el("a", { href: h, text: t, dataset: { rota: h.split("/")[1] } }))),
     el("div", { class: "quem" },
       el("span", { text: sessao.perfil?.nome || sessao.usuario?.email || "" }),
@@ -133,6 +141,12 @@ function telaPerfil(conteudo) {
         el("select", { on: { change: (e) => { preferencias.cor = e.target.value; salvarPreferencias(); avisar("Preferência salva."); } } },
           ["EBC", "SRM"].map((u) => el("option", { value: u, text: u, selected: preferencias.cor === u }))))),
     el("section", { class: "cartao" },
+      el("h3", { text: "Ajuste rápido no editor" }),
+      el("p", { class: "nota", text: "Quanto os botões − e + (e as setas ↑ ↓) mudam a quantidade. Shift + seta = 10 vezes." }),
+      el("div", { class: "grade-form" },
+        [["passo_fermentavel_g", "Fermentáveis (g)"], ["passo_lupulo_g", "Lúpulos (g)"]].map(([k, rot]) => el("label", {}, rot,
+          campoNumero(preferencias, k, { casas: 0, rotulo: rot, aoMudar: () => { if (preferencias[k] > 0) salvarPreferencias(); } }))))),
+    el("section", { class: "cartao" },
       el("h3", { text: "Trocar senha" }),
       el("label", {}, "Nova senha", el("input", { type: "password", autocomplete: "new-password", on: { input: (e) => { senha.nova = e.target.value; } } })),
       el("label", {}, "Repita", el("input", { type: "password", autocomplete: "new-password", on: { input: (e) => { senha.repetir = e.target.value; } } })),
@@ -162,6 +176,8 @@ async function rotear() {
   if (!conteudo) return;
   marcarMenu();
   rotaAtual = location.hash;
+  conteudo.className = "conteudo";      // o editor acrescenta "com-vital"; as outras telas não
+  document.body.classList.remove("no-editor");
   try {
     if (rota === "receitas") await telaReceitas(conteudo);
     else if (rota === "receita") await telaEditor(conteudo, param, origem);
@@ -198,8 +214,13 @@ async function carregarPerfil() {
 }
 
 function montarApp() {
-  preencher(raiz(), cabecalho(), el("main", { id: "conteudo", class: "conteudo" }));
+  const topo = cabecalho();
+  preencher(raiz(), topo, el("main", { id: "conteudo", class: "conteudo" }));
   marcarMenu();
+  // Altura real do topo para o CSS: a barra vital do editor fica fixa logo abaixo dele.
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => document.documentElement.style.setProperty("--topo-h", `${topo.offsetHeight}px`)).observe(topo);
+  }
 }
 
 // ---------- início ----------

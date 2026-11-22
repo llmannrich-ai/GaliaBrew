@@ -370,6 +370,7 @@ export function calcularReceita(r) {
     return { acucar_kg: efetivo };
   });
   const acucarTotal = doAmido + pronto;
+  const kgTotal = fermentaveis.reduce((s, f) => s + num(f.quantidade_kg), 0);
 
   const og = sgDeAcucar(acucarTotal, posFervura);
   const pontosNaoFerm = naoFermentavel > 0 ? pontos(sgDeAcucar(naoFermentavel, posFervura)) : 0;
@@ -422,7 +423,7 @@ export function calcularReceita(r) {
       ibu += fatorWhirlpool * (ibuTinseth({ ...lup, minutos: minutos + minWhirlpool, sgMosto: sgFimFervura })
         - ibuTinseth({ ...lup, minutos, sgMosto: sgFimFervura }));
     }
-    return { ibu };
+    return { ibu, g_l: lote > 0 ? num(h.quantidade_g) / lote : 0 };
   });
   const ibu = ibuPorItem.reduce((s, x) => s + x.ibu, 0);
 
@@ -511,13 +512,24 @@ export function calcularReceita(r) {
       pos_fervura_l: posFervura,
       lote_l: lote,
       graos_kg: graosKg,
+      fermentaveis_kg: kgTotal,
       absorcao_l: absorcao,
       agua_total_l: aguaTotal,
       agua_mostura_l: aguaMostura,
       temperatura_agua_mostura_c: tempAguaMostura,
       agua_lavagem_l: aguaTotal - aguaMostura,
     },
-    fermentaveis: porItem.map((x, i) => ({ ...x, pct_acucar: acucarTotal > 0 ? (x.acucar_kg / acucarTotal) * 100 : 0, indice: i })),
+    // Por item: % do peso do grist, % do açúcar e a parte da OG que vem dele (pontos da OG × fração do açúcar).
+    fermentaveis: porItem.map((x, i) => {
+      const fracao = acucarTotal > 0 ? x.acucar_kg / acucarTotal : 0;
+      return {
+        ...x,
+        pct_peso: kgTotal > 0 ? (num(fermentaveis[i].quantidade_kg) / kgTotal) * 100 : 0,
+        pct_acucar: fracao * 100,
+        pontos_og: fracao * pontos(og),
+        indice: i,
+      };
+    }),
     lupulos: ibuPorItem,
     medido: medido(),
     priming,
@@ -546,6 +558,96 @@ export function compararComEstilo(res, e) {
     cor_srm: faixa(res.cor_srm, e.cor_srm_min, e.cor_srm_max),
     abv_pct: faixa(res.abv_pct, e.abv_min_pct, e.abv_max_pct),
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Ajustes automáticos (E3): chegar a uma OG ou a um IBU. Item com `travado: true` não muda.
+// ---------------------------------------------------------------------------------------------------------------
+/** Etapas de lúpulo que entram no IBU (Tinseth). */
+export const ETAPAS_IBU = new Set(["FERVURA", "PRIMEIRO_MOSTO"]);
+
+const comQuantidades = (r, chave, campo, fn) => ({ ...r, [chave]: (r[chave] ?? []).map((x, i) => ({ ...x, [campo]: fn(x, i) })) });
+const arredonda = (v, casas) => Number(v.toFixed(casas));
+
+/**
+ * Escala os fermentáveis destravados (com quantidade > 0) pelo MESMO fator até a OG chegar ao alvo.
+ * A OG cresce com o fator (função monótona): busca por bisseção. Quantidades arredondadas ao grama.
+ * Devolve { ok: true, quantidades, fator, og } ou { ok: false, motivo: SEM_LIVRES | TRAVADOS_PASSAM | INALCANCAVEL }.
+ */
+export function ajustarParaOG(r, alvo) {
+  const fs = r.fermentaveis ?? [];
+  const livre = fs.map((f) => !f.travado && num(f.quantidade_kg) > 0);
+  if (!livre.some(Boolean)) return { ok: false, motivo: "SEM_LIVRES" };
+  const ogCom = (fator) => calcularReceita(comQuantidades(r, "fermentaveis", "quantidade_kg", (f, i) => (livre[i] ? num(f.quantidade_kg) * fator : num(f.quantidade_kg)))).og;
+  if (ogCom(0) >= alvo) return { ok: false, motivo: "TRAVADOS_PASSAM" };
+  let hi = 1;
+  while (ogCom(hi) < alvo && hi < 1024) hi *= 2;
+  if (ogCom(hi) < alvo) return { ok: false, motivo: "INALCANCAVEL" };
+  let lo = 0;
+  for (let k = 0; k < 60; k++) {
+    const meio = (lo + hi) / 2;
+    if (ogCom(meio) < alvo) lo = meio;
+    else hi = meio;
+  }
+  const fator = (lo + hi) / 2;
+  const quantidades = fs.map((f, i) => (livre[i] ? arredonda(num(f.quantidade_kg) * fator, 3) : f.quantidade_kg ?? null));
+  const og = calcularReceita(comQuantidades(r, "fermentaveis", "quantidade_kg", (f, i) => quantidades[i])).og;
+  return { ok: true, quantidades, fator, og };
+}
+
+/** Lúpulos que podem ser ajustados para o IBU: destravados, na fervura (tempo > 0) ou no primeiro mosto. */
+export function lupulosAjustaveis(r) {
+  const fervura = num(r.fervura_min);
+  return (r.lupulos ?? [])
+    .map((h, i) => ({ i, minutos: h.etapa === "PRIMEIRO_MOSTO" ? fervura : num(h.tempo_min) }))
+    .filter(({ i, minutos }) => !r.lupulos[i].travado && ETAPAS_IBU.has(r.lupulos[i].etapa) && minutos > 0)
+    .sort((a, b) => b.minutos - a.minutos);           // o de amargor (mais tempo) primeiro
+}
+
+/**
+ * Muda só UM lúpulo (o de amargor = mais tempo, ou o `indice` escolhido) até o IBU total chegar ao alvo.
+ * IBU é proporcional aos gramas (a gravidade não depende do lúpulo): regra de três. Gramas com 1 casa.
+ * Devolve { ok: true, indice, gramas, ibu } ou { ok: false, motivo: SEM_AMARGOR | SEM_EFEITO | OUTROS_PASSAM, ibuOutros }.
+ */
+export function ajustarParaIBU(r, alvo, indice) {
+  const ajustaveis = lupulosAjustaveis(r);
+  if (!ajustaveis.length) return { ok: false, motivo: "SEM_AMARGOR" };
+  const i = ajustaveis.some((a) => a.i === indice) ? indice : ajustaveis[0].i;
+  // IBU é linear nos gramas DESTE lúpulo com os outros fixos (inclusive a parte que ele ganha no whirlpool):
+  // mede com 0 g e com 1 g.
+  const ibuCom = (g) => calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? g : num(h.quantidade_g)))).ibu;
+  const ibuOutros = ibuCom(0);
+  const porGrama = ibuCom(1) - ibuOutros;
+  if (!(porGrama > 0)) return { ok: false, motivo: "SEM_EFEITO", indice: i, ibuOutros };
+  const gramas = (alvo - ibuOutros) / porGrama;
+  if (gramas < 0) return { ok: false, motivo: "OUTROS_PASSAM", indice: i, ibuOutros };
+  const g = arredonda(gramas, 1);
+  const ibu = calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? g : num(h.quantidade_g)))).ibu;
+  return { ok: true, indice: i, gramas: g, ibu };
+}
+
+/**
+ * Régua do estilo (barra vital): onde o valor cai em relação à faixa do estilo.
+ * O eixo vai da faixa menos `folga` × largura até a faixa mais `folga` × largura (para ver o quanto está fora).
+ * Estado: ABAIXO | PERTO_MIN | DENTRO | PERTO_MAX | ACIMA; "perto" = dentro, a menos de `perto` × largura da borda.
+ * Arredondar o valor na precisão da tela ANTES (1,0439 aparece 1,044 e não deve sair "abaixo" de 1,044).
+ * Sem mínimo E máximo, devolve null (sem régua).
+ */
+export function reguaDoEstilo(valor, min, max, { folga = 0.25, perto = 0.1 } = {}) {
+  if (min === null || min === undefined || max === null || max === undefined || !Number.isFinite(Number(valor))) return null;
+  const a = Math.min(Number(min), Number(max));
+  const b = Math.max(Number(min), Number(max));
+  const v = Number(valor);
+  const largura = b - a > 0 ? b - a : Math.abs(a) * 0.1 || 1;
+  const eixoIni = a - folga * largura;
+  const eixoFim = b + folga * largura;
+  const pos = (x) => Math.min(1, Math.max(0, (x - eixoIni) / (eixoFim - eixoIni)));
+  let estado = "DENTRO";
+  if (v < a) estado = "ABAIXO";
+  else if (v > b) estado = "ACIMA";
+  else if (b > a && v - a < perto * largura) estado = "PERTO_MIN";
+  else if (b > a && b - v < perto * largura) estado = "PERTO_MAX";
+  return { estado, pos: pos(v), ini: pos(a), fim: pos(b), eixo: [eixoIni, eixoFim], foraDoEixo: v < eixoIni || v > eixoFim };
 }
 
 /** Cor aproximada para a tela (#rrggbb) a partir do SRM, por interpolação numa escala de referência. */
