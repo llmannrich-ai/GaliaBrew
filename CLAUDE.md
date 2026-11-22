@@ -42,6 +42,15 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - `portal/` — página do app (fase 1: login + receitas); `portal/testes/` — testes (calculos.js e navegador)
 - `.github/workflows/pages.yml` — publicação do portal no GitHub Pages
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
+- `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
+
+## Importação do Brewfather (`ferramentas/brewfather/`, 22/11/2026)
+- `converter.mjs` (backup.json → jsonb do `salvar_receita`, recalcula com calculos.js e compara) e `importar.py`
+  (grava como o usuário: `request.jwt.claims` + `set local role authenticated`; simula sem `--gravar`; pula
+  `extras.brewfather_id` já importado). Senha do banco só em `GALIABREW_DB_SENHA`. Detalhes no README da pasta.
+- 22/11/2026: 102 receitas importadas para llmannrich (2 rascunhos vazios ignorados). Eficiência = `mashEfficiency`
+  do Brewfather; cor do malte vem em °L. OG de 100/102 em ±0,002; IBU abaixo quando há whirlpool (conta 0 aqui).
+- Pooler do banco: `aws-1-sa-east-1.pooler.supabase.com:5432`, usuário `postgres.hzomsyfujxakcuaaedmh`.
 
 ## Modelo de acesso (0001, 22/11/2026)
 - Cadastros (`estilos`, `fermentaveis`, `lupulos`, `leveduras`, `outros`, `aguas`): `dono` nulo = catálogo do
