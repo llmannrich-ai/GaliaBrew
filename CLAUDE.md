@@ -42,6 +42,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - `portal/` — página do app (fase 1: login + receitas); `portal/testes/` — testes (calculos.js e navegador)
 - `.github/workflows/pages.yml` — publicação do portal no GitHub Pages
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
+- `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
 
 ## Modelo de acesso (0001, 22/11/2026)
 - Cadastros (`estilos`, `fermentaveis`, `lupulos`, `leveduras`, `outros`, `aguas`): `dono` nulo = catálogo do
