@@ -39,7 +39,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 ## Estrutura
 - `supabase/migrations/` — SQL versionado (`NNNN_nome.sql`)
 - `supabase/testes/` — testes de RLS e de funções (rodam e desfazem)
-- `portal/` — página do app (fase 1: login + receitas); `portal/testes/` — testes do calculos.js
+- `portal/` — página do app (fase 1: login + receitas); `portal/testes/` — testes (calculos.js e navegador)
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 
 ## Modelo de acesso (0001, 22/11/2026)
@@ -71,6 +71,30 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - 0002: `fermentaveis.umidade_pct` (+ cópia em `receita_fermentaveis`): o rendimento da ficha do malte é base seca;
   sem a umidade a OG sai ~4% alta. `receitas.relacao_agua_grao_l_kg` e `perda_tina_l` (água da mostura × lavagem).
 
+## Portal (`portal/`, 22/11/2026, migração 0003)
+- HTML + módulos JS sem build: `index.html`, `app.js` (login, menu, rotas `#/receitas`, `#/receita/<id|nova>`,
+  `#/cadastros/<tabela>`, `#/perfil`), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
+  pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
+  `receitas.js`, `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+- supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
+  depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
+- Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
+  escreve "null": usar `preencher(n, ...)`, que ignora vazios.
+- VERSÃO NOS IMPORTS (lição do portal de notas, 05/11/2026): todo import entre scripts e os arquivos do index.html
+  levam `?v=AAAAMMDDx`. A cada publicação que mude qualquer .js/.css, trocar em todos de uma vez:
+  `sed -i -E 's/\?v=[0-9a-z]+/?v=AAAAMMDDx/g' portal/*.js portal/index.html`. Versão atual: 20261122a.
+- Gravação da receita só por `salvar_receita(p jsonb)` (0003, security invoker: a RLS vale): cabeçalho + partes numa
+  transação; parte enviada é substituída inteira, parte ausente fica como está; `id`/`dono` do jsonb são ignorados
+  (dono = quem grava). Teste `supabase/testes/0003_salvar_receita.sql`: 10 verificações ok.
+- Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
+  ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
+- Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
+  24 verificações: login, cadastros com vírgula, editor x calculos.js, salvar/reabrir, lista, celular 390 px, receita
+  de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
+- Publicação (pendente): Cloudflare Pages ligado ao repositório, sem comando de build, pasta de saída `portal`.
+  Depois: Supabase → Authentication → URL Configuration → Site URL e Redirect URLs = endereço do portal (senão o
+  link de convite/recuperação volta para localhost).
+
 ## Login (decisões pendentes no painel do Supabase, não dá para fazer por SQL)
 - Recomendado: só por convite (Authentication → Sign In / Providers → desligar "Allow new users to sign up";
   convidar em Authentication → Users → Invite). Confirmação de e-mail ligada. Senha mínima 10 caracteres.
@@ -81,7 +105,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 
 ## Ordem de trabalho
 - Fase 1 (em andamento): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor
-  de receita → carga do catálogo (estilos BJCP 2021, maltes, lúpulos e leveduras).
+  de receita ✔ (falta publicar) → carga do catálogo (estilos BJCP 2021, maltes, lúpulos e leveduras).
 - Fase 2: brassagem (lote esperado × medido, eficiência real), ferramentas (água de mostura, priming,
   refratômetro, correção do densímetro), escalar receita, versões da receita.
 - Fase 3: importar/exportar BeerJSON e BeerXML, estoque, química da água.
