@@ -7,6 +7,13 @@ Montar, calcular e registrar receitas de cerveja. Uso pessoal no início, com lo
 primeira versão. Critério de sucesso da fase 1: uma receita real recalculada no GaliaBrew bate com o Brewtarget
 (OG/FG ±0,002; IBU, cor e ABV ±5%).
 
+## 1.1 Princípio: cada receita é um lote (decisão de 22/11/2026)
+- Não existe módulo de brassagem separado (o do Brewfather exige etapas e dados demais e não é usado na prática).
+  Cada receita É um lote: o que foi planejado e o que aconteceu ficam na mesma receita.
+- Cervejeiro caseiro nunca repete receita igual: o jeito normal de começar é "criar a partir de" uma receita anterior
+  (copia tudo para uma receita nova, que se edita à vontade). A anterior nunca muda.
+- Praticidade acima de completude: só pedir o que o cervejeiro realmente anota.
+
 ## 2. Referências (engenharia reversa, 22/11/2026)
 | Projeto | O que é | Licença | Uso no GaliaBrew |
 |---|---|---|---|
@@ -15,7 +22,7 @@ primeira versão. Critério de sucesso da fase 1: uma receita real recalculada n
 
 O que o Brewtarget tem e o que vale aproveitar:
 - Três camadas: cadastro de ingredientes → receita com ADIÇÕES (quantidade + momento) → registro da brassagem
-  (esperado × medido). Copiado.
+  (esperado × medido). Copiadas só as duas primeiras: no GaliaBrew a receita já é o lote (seção 1.1).
 - Tudo guardado em unidades métricas/SI, conversão só na tela. Copiado.
 - 7 fórmulas de IBU, 3 de cor, pastas, versões, estoque com impostos e frete. NÃO copiado na fase 1: para uso
   pessoal, ~20% das funções entregam ~90% do valor.
@@ -40,7 +47,7 @@ O que o Brewtarget tem e o que vale aproveitar:
 | `outros` | temperos, clarificantes, sais, nutrientes... |
 | `aguas` | Ca, Mg, Na, SO₄, Cl, HCO₃ (ppm), pH |
 | `equipamentos` | volume do lote, evaporação/h, perdas (panela, tina, fermentador), absorção do grão, eficiência, relação água/grão |
-| `receitas` | cabeçalho, parâmetros de cálculo copiados do equipamento, resultados calculados, pública |
+| `receitas` | cabeçalho, parâmetros de cálculo copiados do equipamento, resultados calculados, pública; dados do lote (0005): nº, data da brassagem, OG/FG medidas, volume real |
 | `receita_fermentaveis`, `receita_lupulos`, `receita_leveduras`, `receita_outros` | adições com cópia dos dados do ingrediente |
 | `receita_mostura_passos`, `receita_fermentacao_passos` | passos de temperatura e tempo |
 
@@ -68,7 +75,7 @@ como gabarito.
 | Fase | Entrega | Pronto quando |
 |---|---|---|
 | 1. Receita | Login, cadastros, editor de receita com cálculo ao vivo e faixa do estilo, catálogo inicial (BJCP 2021, maltes, lúpulos, leveduras) | Receita real bate com o Brewtarget |
-| 2. Brassagem | Lote esperado × medido, eficiência real, ferramentas, escalar receita, versões | Primeiro lote registrado do início ao fim |
+| 2. Lote | "Criar a partir de" uma receita anterior; dados do lote na própria receita (a definir); ferramentas (água da mostura, priming, refratômetro, densímetro); escalar receita | Primeira receita nova criada a partir de uma anterior e registrada |
 | 3. Extras | Importar/exportar BeerJSON e BeerXML, estoque, química da água | Receita importada do Brewfather/BeerSmith |
 
 ## 7. Riscos

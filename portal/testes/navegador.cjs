@@ -72,9 +72,14 @@ async function supabaseSimulado(rota) {
   if (url.pathname === "/rest/v1/rpc/salvar_receita") {
     const p = corpo.p;
     let r = p.id ? db.receitas.find((x) => x.id === p.id) : null;
-    if (!r) { r = { id: uuid(), dono: USUARIO.id, criado_em: new Date().toISOString() }; db.receitas.push(r); }
+    if (!r) {
+      // Como o gatilho receitas_numerar (0005): sem número, o próximo do dono.
+      const maior = Math.max(0, ...db.receitas.filter((x) => x.dono === USUARIO.id).map((x) => x.lote_numero ?? 0));
+      r = { id: uuid(), dono: USUARIO.id, criado_em: new Date().toISOString(), lote_numero: maior + 1 };
+      db.receitas.push(r);
+    }
     const partes = { fermentaveis: "receita_fermentaveis", lupulos: "receita_lupulos", leveduras: "receita_leveduras", outros: "receita_outros", mostura: "receita_mostura_passos", fermentacao: "receita_fermentacao_passos" };
-    for (const [k, v] of Object.entries(p)) if (!partes[k] && k !== "id") r[k] = v;
+    for (const [k, v] of Object.entries(p)) if (!partes[k] && k !== "id" && !(k === "lote_numero" && v == null)) r[k] = v;
     r.atualizado_em = new Date().toISOString();
     for (const [k, t] of Object.entries(partes)) {
       if (!(k in p)) continue;
@@ -133,11 +138,11 @@ async function site(rota) {
 }
 
 const ok = [];
+const erros = [];
 (async () => {
   const navegador = await chromium.launch();
   const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
   const pagina = await ctx.newPage();
-  const erros = [];
   pagina.on("console", (m) => { if (["error", "warning"].includes(m.type())) erros.push(`${m.type()}: ${m.text()}`); });
   pagina.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
   await ctx.route(`${SB}/**`, supabaseSimulado);
@@ -240,11 +245,16 @@ const ok = [];
   verificar(await focado() === "Nome", "item livre: foco no nome da linha nova");
   await pagina.keyboard.type("W-34/70");
   await pagina.locator('input[aria-label="Atenuação %"]').first().fill("80");
+  // Lote: data, OG medida digitada como 1048 (vira 1,048).
+  await pagina.fill('input[aria-label="Data da brassagem"]', "2026-04-20");
+  await pagina.fill('input[aria-label="OG medida"]', "1048");
+  await pagina.locator('input[aria-label="OG medida"]').blur();
+  verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "1,048", "OG medida digitada 1048 aparece como 1,048 ao sair do campo");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122g");
+    const m = await import("./calculos.js?v=20261122h");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -273,13 +283,14 @@ const ok = [];
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
     "totais no cabeçalho das seções");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
+  verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
 
   // Mudança mostra a diferença e a barra continua à vista com a página rolada.
   const qtd = pagina.locator('input[aria-label="Qtd (kg)"]').first();
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122g");
+    const m = await import("./calculos.js?v=20261122h");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -354,7 +365,7 @@ const ok = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122g");
+    const m = await import("./calculos.js?v=20261122h");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -409,6 +420,9 @@ const ok = [];
   const salvo = chamadas.find((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita"));
   verificar(salvo && salvo.corpo.p.fermentaveis[0].fermentavel_id === "f-sis" && salvo.corpo.p.fermentaveis[0].quantidade_kg === 4.8, "salvar_receita recebe o fermentável do cadastro com 4,8 kg");
   verificar(Math.abs(salvo.corpo.p.og_calc - esperado.og) < 1e-4, "og_calc gravado = cálculo");
+  verificar(salvo.corpo.p.og_medida === 1.048 && salvo.corpo.p.data_brassagem === "2026-04-20" && salvo.corpo.p.lote_numero === null,
+    "lote vai com OG 1048 → 1,048, data e número automático");
+  verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");
   verificar(await pagina.inputValue(".titulo-receita") === "Pils da Galia", "receita reabre do banco com o nome");
   verificar(await pagina.inputValue('input[aria-label="Qtd (kg)"]') === "4,800", "fermentável reabre com 4,800 kg");
 
@@ -416,6 +430,7 @@ const ok = [];
   await pagina.click("text=Voltar");
   await pagina.waitForSelector("td >> text=Pils da Galia");
   verificar(await pagina.isVisible("td >> text=5D German Pils"), "lista mostra a receita com o estilo");
+  verificar(await pagina.isVisible("td >> text=20/04/2026"), "lista mostra a data da brassagem sem erro de fuso");
   await pagina.screenshot({ path: `${SAIDA}/p4-lista.png` });
 
   // Celular
@@ -466,17 +481,33 @@ const ok = [];
   await pagina.waitForSelector("text=Somente leitura");
   verificar(await pagina.isDisabled('input[aria-label="Qtd (kg)"]'), "receita de outro abre só para leitura");
   verificar(!(await pagina.isVisible("button:has-text('Salvar')")), "sem botão Salvar na receita de outro");
-  await pagina.click("button:has-text('Duplicar para mim')");
+  await pagina.click("button:has-text('Nova a partir desta')");
+  await pagina.waitForSelector("text=Receita nova a partir de");
+  verificar((await pagina.evaluate(() => location.hash)) === "#/receita/nova/r-outro", "abre a receita nova a partir da de outro");
+  verificar(!(await pagina.isDisabled('input[aria-label="Qtd (kg)"]')) && await pagina.inputValue(".titulo-receita") === "IPA do Vizinho", "receita nova vem editável, com os dados da anterior");
+  verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "", "dados do lote começam em branco");
+  await pagina.click(".acoes-receita button:has-text('Salvar')");
   await pagina.waitForFunction(() => /#\/receita\/[0-9a-f-]{36}$/.test(location.hash));
   const copia = chamadas.filter((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita")).pop().corpo.p;
-  verificar(copia.id === null && copia.nome === "IPA do Vizinho (cópia)" && copia.publica === false, "cópia vai como receita nova, privada, com '(cópia)'");
-  verificar(copia.fermentaveis[0].fermentavel_id === null && copia.equipamento_id === null && copia.fermentaveis[0].quantidade_kg === 6, "cópia não leva ligação com cadastro que não enxergo, mas leva os dados");
-  await pagina.waitForSelector(".acoes-receita button:has-text('Salvar')");
-  verificar(await pagina.inputValue(".titulo-receita") === "IPA do Vizinho (cópia)", "cópia abre editável");
+  verificar(copia.id === null && copia.publica === false && copia.og_medida === null && copia.lote_numero === null, "salva como receita nova, privada, sem dados do lote");
+  verificar(copia.fermentaveis[0].fermentavel_id === null && copia.equipamento_id === null && copia.fermentaveis[0].quantidade_kg === 6, "não leva ligação com cadastro que não enxergo, mas leva os dados");
+  await pagina.waitForSelector('input[aria-label="Nº do lote"]');
+  verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "2", "receita nova recebe o próximo nº (2)");
+  verificar(db.receitas.find((x) => x.id === "r-outro").nome === "IPA do Vizinho", "a receita anterior não muda");
 
-  // Sair
+  // Nova receita em branco oferece "começar a partir de" com as minhas receitas.
+  await pagina.goto(`${ORIGEM}/#/receita/nova`);
+  await pagina.waitForSelector('select[aria-label="Começar a partir de"] >> text=Pils da Galia', { state: "attached" });
+  await pagina.selectOption('select[aria-label="Começar a partir de"]', { label: "1 · Pils da Galia · 20/04/2026" });
+  await pagina.waitForSelector("text=Receita nova a partir de nº 1");
+  verificar(await pagina.inputValue('input[aria-label="Qtd (kg)"]') === "4,800", "começar a partir de: copia os ingredientes da anterior");
+
+  // Sair (a receita nova ainda não salva pede confirmação)
+  let aviso = "";
+  pagina.once("dialog", (d) => { aviso = d.message(); d.accept(); });
   await pagina.click("button:has-text('Sair')");
   await pagina.waitForSelector("form.login");
+  verificar(aviso.includes("não salvas"), "sair com receita nova não salva pede confirmação");
   verificar(true, "sair volta para o login");
 
   // ================= Celular de verdade: tela de toque (isMobile + hasTouch), 390 px e 320 px =================
@@ -606,4 +637,9 @@ const ok = [];
   console.log(ok.map((x) => `ok - ${x}`).join("\n"));
   console.log(relevantes.length ? `\nERROS NO CONSOLE:\n${relevantes.join("\n")}` : "\nsem erros no console (CSP ativa)");
   await navegador.close();
-})().catch(async (e) => { console.log(ok.map((x) => `ok - ${x}`).join("\n")); console.error(e.message); process.exit(1); });
+})().catch(async (e) => {
+  console.log(ok.map((x) => `ok - ${x}`).join("\n"));
+  if (erros.length) console.log(`\nERROS NO CONSOLE:\n${erros.join("\n")}`);
+  console.error(e.message);
+  process.exit(1);
+});

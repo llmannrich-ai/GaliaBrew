@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   platoDeSg, sgDePlato, platoDeAcucar, abv, utilizacaoTinseth, ibuTinseth, srmMorey, ebcDeSrm,
-  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao,
+  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao, acucarDeSg, sgDeAcucar,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -287,6 +287,31 @@ test("Régua do estilo (barra vital)", () => {
   assert.equal(reguaDoEstilo(NaN, 30, 50), null);
   // Faixa de largura zero não divide por zero.
   assert.equal(reguaDoEstilo(5, 5, 5).estado, "DENTRO");
+});
+
+test("Lote medido: eficiência, ABV e atenuação reais", () => {
+  perto(acucarDeSg(sgDeAcucar(1, 10), 10), 1, 1e-6, "acucarDeSg é o inverso de sgDeAcucar");
+  const base = {
+    volume_lote_l: 20, perda_panela_l: 1, evaporacao_l_h: 3, eficiencia_pct: 70, fervura_min: 60,
+    fermentaveis: [
+      { tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 5, etapa: "MOSTURA", cor_srm: 2 },
+      { tipo: "ACUCAR", rendimento_pct: 100, quantidade_kg: 0.5, etapa: "FERVURA", cor_srm: 0 },
+    ],
+    leveduras: [{ atenuacao_pct: 75 }],
+  };
+  const plano = calcularReceita(base);
+  assert.equal(plano.medido.eficiencia_pct, null, "sem medidas não calcula");
+  // OG medida igual à planejada, no volume planejado = eficiência planejada.
+  const igual = calcularReceita({ ...base, og_medida: plano.og, fg_medida: plano.fg });
+  perto(igual.medido.eficiencia_pct, 70, 0.01);
+  perto(igual.medido.abv_pct, plano.abv_pct, 1e-9);
+  perto(igual.medido.atenuacao_pct, ((plano.og - plano.fg) / (plano.og - 1)) * 100, 1e-9);
+  // OG mais baixa = eficiência menor; mais volume com a mesma OG = eficiência maior.
+  const baixa = calcularReceita({ ...base, og_medida: plano.og - 0.004 });
+  assert.ok(baixa.medido.eficiencia_pct < 70);
+  const maisVolume = calcularReceita({ ...base, og_medida: plano.og, volume_final_l: 22 });
+  assert.ok(maisVolume.medido.eficiencia_pct > 70);
+  assert.equal(calcularReceita({ ...base, og_medida: 1.050, fg_medida: 1.060 }).medido.abv_pct, null, "FG acima da OG não dá ABV");
 });
 
 test("Receita vazia não quebra", () => {

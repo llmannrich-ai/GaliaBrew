@@ -51,6 +51,40 @@ export function preencher(n, ...filhos) {
   return n;
 }
 
+/**
+ * Ícone ⓘ que abre/fecha uma explicação logo abaixo (toque no celular, clique no computador; title no passar do mouse).
+ * Fica dentro do rótulo do campo; o clique não passa para o campo.
+ */
+export function info(texto) {
+  if (!texto) return null;
+  const balao = el("span", { class: "info-balao", text: texto, hidden: true });
+  const botao = el("button", {
+    type: "button", class: "info", text: "i", title: texto, "aria-label": "O que é este campo", "aria-expanded": "false",
+    on: {
+      click: (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const abrir = balao.hidden;
+        fecharInfos();
+        balao.hidden = !abrir;
+        botao.setAttribute("aria-expanded", String(abrir));
+      },
+    },
+  });
+  return el("span", { class: "info-wrap" }, botao, balao);
+}
+
+function fecharInfos() {
+  for (const b of document.querySelectorAll(".info-balao:not([hidden])")) {
+    b.hidden = true;
+    b.previousElementSibling?.setAttribute("aria-expanded", "false");
+  }
+}
+if (typeof document !== "undefined") {
+  document.addEventListener("click", (e) => { if (!e.target.closest?.(".info-wrap")) fecharInfos(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharInfos(); });
+}
+
 // ---------- números no padrão brasileiro ----------
 /** Lê "1,05" ou "1.05" → 1.05; vazio → null. Rejeita lixo (NaN → null). */
 export function lerNumero(texto) {
@@ -83,7 +117,8 @@ export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, par
       },
       blur: () => {
         const v = lerNumero(input.value);
-        if (v !== null) input.value = numeroBR(v, casas);
+        // Mostra o valor como ficou guardado (ex.: OG digitada "1048" vira 1,048), na unidade da tela.
+        if (v !== null) input.value = numeroBR(de(para(v)), casas);
       },
     },
   });
