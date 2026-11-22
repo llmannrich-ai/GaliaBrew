@@ -1,12 +1,12 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect, campoQuantidade } from "./ui.js?v=20261122f";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122f";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122f";
-import { abrirBusca } from "./busca.js?v=20261122f";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122f";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122f";
-import * as O from "./opcoes.js?v=20261122f";
-import { criarBarraVital } from "./vital.js?v=20261122f";
+import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect, campoQuantidade } from "./ui.js?v=20261122g";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122g";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122g";
+import { abrirBusca } from "./busca.js?v=20261122g";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122g";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122g";
+import * as O from "./opcoes.js?v=20261122g";
+import { criarBarraVital, manterAcimaDaBarra } from "./vital.js?v=20261122g";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -187,6 +187,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
     clearTimeout(t.timer);
     t.timer = setTimeout(registrar, 800);
     bDesfazer.disabled = false;
+    bDesfazerApp.disabled = false;
   }
   /** Ação inteira (adicionar, remover, mover, ajuste automático) = um passo próprio. */
   function acao(fn) { registrar(); fn(); registrar(); }
@@ -232,6 +233,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
     atualizarFerramentas();
   }
   const bDesfazer = el("button", { type: "button", class: "secundario pequeno", text: "↶ Desfazer", title: "Desfazer (Ctrl+Z)", on: { click: desfazer } });
+  const bDesfazerApp = el("button", { type: "button", class: "icone app-desfazer", text: "↶", title: "Desfazer", "aria-label": "Desfazer", on: { click: desfazer } });
   const bRefazer = el("button", { type: "button", class: "secundario pequeno", text: "↷ Refazer", title: "Refazer (Ctrl+Shift+Z)", on: { click: refazer } });
   const bFixar = el("button", { type: "button", class: "secundario pequeno", text: "Fixar referência", title: "Guarda os números de agora para comparar com as próximas tentativas", on: { click: fixarReferencia } });
   const refInfo = el("span", { class: "ref-info" });
@@ -241,6 +243,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
     bDesfazer, bRefazer, el("span", { class: "separador", "aria-hidden": "true" }), bFixar, refInfo, bVoltarRef, bSoltar);
   function atualizarFerramentas() {
     bDesfazer.disabled = !t.passado.length && !t.timer;
+    bDesfazerApp.disabled = bDesfazer.disabled;
     bRefazer.disabled = !t.futuro.length;
     bFixar.hidden = Boolean(t.ref);
     bVoltarRef.hidden = bSoltar.hidden = !t.ref;
@@ -265,7 +268,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
 
   /** campo = o campo que mudou (os botões ± não ficam com o foco); sem ele, a barra vital usa o campo em foco. */
   const mudou = (campo) => {
-    if (!leitura) { editor.sujo = true; agendarRegistro(); }
+    if (!leitura) { editor.sujo = true; agendarRegistro(); marcarPendente(); }
     atualizarResultados(campo);
   };
 
@@ -305,6 +308,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
       estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : el("p", { class: "nota", text: "Escolha um estilo no topo para ver as faixas." }),
       el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
     const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
+    tituloApp.textContent = String(r.nome ?? "").trim() || "Receita nova";
     resumoLote.textContent = [
       `${numeroBR(r.volume_lote_l, 1)} L no fermentador`,
       `${numeroBR(r.eficiencia_pct, 0)}% de eficiência`,
@@ -353,7 +357,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
   // ---------- cabeçalho ----------
   const nomeInput = campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
   const msg = el("p", { class: "erro-form", role: "alert" });
-  const botaoSalvar = el("button", { type: "button", text: "Salvar", on: { click: () => salvar() } });
+  const botaoSalvar = el("button", { type: "button", class: "so-largo", text: "Salvar", on: { click: () => salvar() } });
+  const botaoSalvarApp = el("button", { type: "button", class: "app-salvar", text: "Salvar", on: { click: () => salvar() } });
+  /** Salvar com ponto = há alteração não salva. */
+  function marcarPendente() {
+    for (const b of [botaoSalvar, botaoSalvarApp]) b.classList.toggle("pendente", editor.sujo);
+  }
 
   async function salvar(comoCopia = false) {
     msg.textContent = "";
@@ -370,11 +379,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
       p.leveduras.forEach((x) => { x.levedura_id = visivel(cat.leveduras, x.levedura_id); });
       p.outros.forEach((x) => { x.outro_id = visivel(cat.outros, x.outro_id); });
     }
-    botaoSalvar.disabled = true;
+    botaoSalvar.disabled = botaoSalvarApp.disabled = true;
     const { data, error } = await sb.rpc("salvar_receita", { p });
-    botaoSalvar.disabled = false;
+    botaoSalvar.disabled = botaoSalvarApp.disabled = false;
     if (error) { msg.textContent = mensagemErro(error); return; }
     editor.sujo = false;
+    marcarPendente();
     avisar(comoCopia ? "Cópia criada." : "Receita salva.");
     r.id = data;
     if (location.hash !== `#/receita/${data}`) location.hash = `#/receita/${data}`;   // recarrega o editor
@@ -386,7 +396,15 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
       if (!leitura && editor.sujo && !(await confirmar("Salvar as alterações antes? A cópia é feita do que está na tela."))) return;
       salvar(true);
     } } }) : null,
-    el("a", { href: "#/receitas", class: "botao secundario", text: "Voltar" }));
+    el("a", { href: "#/receitas", class: "botao secundario so-largo", text: "Voltar" }));
+
+  // Celular: barra do app no topo (voltar, nome, desfazer, salvar), sempre à vista; o menu geral some no editor.
+  const tituloApp = el("span", { class: "app-titulo" });
+  const barraApp = el("div", { class: "barra-app" },
+    el("a", { href: "#/receitas", class: "app-voltar", "aria-label": "Voltar às receitas", text: "‹" }),
+    tituloApp,
+    leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
+    leitura ? null : botaoSalvarApp);
 
   const estiloCampo = el("label", { class: "estilo-topo" }, el("span", { text: "Estilo" }), campoSelect(r, "estilo_id",
     cat.estilos.map((e) => [e.id, `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}`]), { aoMudar: mudou, desabilitado: des, vazio: "— sem estilo —", rotulo: "Estilo" }));
@@ -451,7 +469,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
         sub.textContent = partes.sub().filter(Boolean).join(" · ");
         partes.refrescar?.();
       }
-      const mover = (para) => {
+      /** focar = true no teclado (o foco acompanha o item); com dedo/mouse não mexe no foco. */
+      const mover = (para, focar = true) => {
         if (para < 0 || para >= r[chave].length || para === i) return;
         acao(() => {
           const [x] = r[chave].splice(i, 1);
@@ -459,7 +478,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
           desenhar();
           mudou();
         });
-        lista.querySelectorAll(".ing-alca")[para]?.focus();
+        if (focar) lista.querySelectorAll(".ing-alca")[para]?.focus();
       };
       const remover = () => acao(() => { abertos.delete(item); r[chave].splice(i, 1); desenhar(); mudou(); });
       const nomeItem = String(item.nome ?? "").trim() || "item sem nome";
@@ -510,7 +529,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
     /** Arrastar pela alça (mouse e toque): a linha segue o ponteiro; ao soltar, vai para a posição. */
     function arrastar(e, i, mover) {
       if (e.button !== 0) return;
-      e.preventDefault();
       const alca = e.currentTarget;
       const li = alca.closest("li");
       const linhas = [...lista.querySelectorAll(":scope > li.ing")];
@@ -527,13 +545,16 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
         li.style.transform = `translateY(${dy}px)`;
         destino = centros.filter((c, k) => k !== i && c < centros[i] + dy).length;
       };
-      const fim = () => {
+      const fim = (ev) => {
         alca.removeEventListener("pointermove", aoMover);
         alca.removeEventListener("pointerup", fim);
         alca.removeEventListener("pointercancel", fim);
         li.classList.remove("arrastando");
         li.style.transform = "";
-        if (moveu && destino !== i) mover(destino);
+        // Solta a captura e só redesenha no próximo quadro: remover a alça ainda capturada deixa o Chrome sem
+        // gerar o "click" do toque seguinte.
+        if (alca.hasPointerCapture?.(ev.pointerId)) alca.releasePointerCapture(ev.pointerId);
+        if (moveu && destino !== i) requestAnimationFrame(() => mover(destino, false));
       };
       alca.addEventListener("pointermove", aoMover);
       alca.addEventListener("pointerup", fim);
@@ -736,8 +757,18 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {})
       lote, fermentaveis, lupulos, leveduras, outros, mostura, fermentacao, geral, notas),
     painel);
   // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
-  for (const n of [topo, corpo]) n.addEventListener("focusin", () => { if (t.timer) registrar(); });
-  preencher(conteudo, topo, msg, vital.elemento, corpo);
+  for (const n of [topo, corpo]) {
+    n.addEventListener("focusin", (e) => {
+      if (t.timer) registrar();
+      // Celular: depois que o teclado abre, o campo não pode ficar atrás da barra de números.
+      if (window.matchMedia("(max-width: 640px)").matches && e.target.matches("input, select, textarea")) {
+        setTimeout(() => manterAcimaDaBarra(e.target, vital.elemento), 350);
+      }
+    });
+  }
+  document.body.classList.add("no-editor");
+  preencher(conteudo, barraApp, topo, msg, vital.elemento, corpo);
+  marcarPendente();
   vital.definirReferencia(t.ref?.res ?? null);
   if (resAnterior) vital.atualizar(resAnterior, estiloAtual());     // desfazer/refazer: a barra mostra a diferença
   else atualizarResultados();

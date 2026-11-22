@@ -132,6 +132,7 @@ async function site(rota) {
   return rota.fulfill({ status: 200, contentType: TIPOS[path.extname(p)] || "application/octet-stream", headers: { "content-security-policy": CSP }, body: fs.readFileSync(p) });
 }
 
+const ok = [];
 (async () => {
   const navegador = await chromium.launch();
   const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
@@ -142,7 +143,6 @@ async function site(rota) {
   await ctx.route(`${SB}/**`, supabaseSimulado);
   await ctx.route(`${ORIGEM}/**`, site);
 
-  const ok = [];
   const verificar = (cond, msg) => { if (!cond) throw new Error(`FALHOU: ${msg}`); ok.push(msg); };
 
   await pagina.goto(`${ORIGEM}/`);
@@ -244,7 +244,7 @@ async function site(rota) {
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122f");
+    const m = await import("./calculos.js?v=20261122g");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -279,7 +279,7 @@ async function site(rota) {
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122f");
+    const m = await import("./calculos.js?v=20261122g");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -320,6 +320,7 @@ async function site(rota) {
   await pagina.mouse.down();
   await pagina.mouse.move(alca2.x + alca2.width / 2, linha1.y + 4, { steps: 8 });
   await pagina.mouse.up();
+  await pagina.waitForTimeout(100);
   verificar(await pagina.inputValue(`${linhaL}:nth-child(1) input[aria-label="Qtd (g)"]`) === "20,0", "arrastar pela alça leva o lúpulo para cima");
   await pagina.focus(`${linhaL}:nth-child(1) .ing-alca`);
   await pagina.keyboard.press("ArrowDown");
@@ -353,7 +354,7 @@ async function site(rota) {
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122f");
+    const m = await import("./calculos.js?v=20261122g");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -402,7 +403,7 @@ async function site(rota) {
   await pagina.screenshot({ path: `${SAIDA}/p3d-editor-tablet.png` });
   await pagina.setViewportSize({ width: 1366, height: 900 });
 
-  await pagina.click("button:has-text('Salvar')");
+  await pagina.click(".acoes-receita button:has-text('Salvar')");
   await pagina.waitForFunction(() => /#\/receita\/[0-9a-f-]{36}$/.test(location.hash));
   await pagina.waitForSelector(".titulo-receita");
   const salvo = chamadas.find((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita"));
@@ -470,13 +471,133 @@ async function site(rota) {
   const copia = chamadas.filter((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita")).pop().corpo.p;
   verificar(copia.id === null && copia.nome === "IPA do Vizinho (cópia)" && copia.publica === false, "cópia vai como receita nova, privada, com '(cópia)'");
   verificar(copia.fermentaveis[0].fermentavel_id === null && copia.equipamento_id === null && copia.fermentaveis[0].quantidade_kg === 6, "cópia não leva ligação com cadastro que não enxergo, mas leva os dados");
-  await pagina.waitForSelector("button:has-text('Salvar')");
+  await pagina.waitForSelector(".acoes-receita button:has-text('Salvar')");
   verificar(await pagina.inputValue(".titulo-receita") === "IPA do Vizinho (cópia)", "cópia abre editável");
 
   // Sair
   await pagina.click("button:has-text('Sair')");
   await pagina.waitForSelector("form.login");
   verificar(true, "sair volta para o login");
+
+  // ================= Celular de verdade: tela de toque (isMobile + hasTouch), 390 px e 320 px =================
+  const ctxCel = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await ctxCel.route(`${SB}/**`, supabaseSimulado);
+  await ctxCel.route(`${ORIGEM}/**`, site);
+  const cel = await ctxCel.newPage();
+  cel.on("console", (m) => { if (["error", "warning"].includes(m.type())) erros.push(`${m.type()}: ${m.text()}`); });
+  cel.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
+  const cdp = await ctxCel.newCDPSession(cel);
+  const toque = async (tipo, x, y) => cdp.send("Input.dispatchTouchEvent", { type: tipo, touchPoints: tipo === "touchEnd" ? [] : [{ x, y }] });
+  const centro = async (sel) => {
+    await cel.locator(sel).first().evaluate((n) => n.scrollIntoView({ block: "center" }));
+    const b = await cel.locator(sel).first().boundingBox();
+    return [b.x + b.width / 2, b.y + b.height / 2];
+  };
+  const tocar = async (sel) => { const [x, y] = await centro(sel); await cel.touchscreen.tap(x, y); };
+  const larguraSobra = () => cel.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+
+  await cel.goto(`${ORIGEM}/`);
+  await cel.fill('input[type="email"]', USUARIO.email);
+  await cel.fill('input[type="password"]', SENHA);
+  await cel.click('button[type="submit"]');
+  await cel.waitForSelector("td >> text=Pils da Galia");
+  await tocar("td >> text=Pils da Galia");
+  await cel.waitForSelector(".barra-app");
+  verificar(!(await cel.isVisible("header.topo")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
+    "toque: no editor o menu geral some e a barra do app mostra voltar, nome, desfazer e Salvar");
+  const qtdCel = cel.locator('input[aria-label="Qtd (kg)"]').first();
+  const maisF = '[data-secao="fermentaveis"] li.ing button.passo[aria-label="Mais 50 g"]';
+  await tocar(maisF);
+  verificar(await qtdCel.inputValue() === "4,850", "toque: um toque no + soma exatamente 50 g (sem contar duas vezes)");
+  verificar(await cel.getAttribute(".barra-app .app-salvar", "class") === "app-salvar pendente", "toque: Salvar mostra o ponto de alteração pendente");
+  await cel.waitForTimeout(900);
+  const [mx, my] = await centro(maisF);
+  await toque("touchStart", mx, my);
+  await cel.waitForTimeout(1300);
+  await toque("touchEnd");
+  const depoisSegurar = Number((await qtdCel.inputValue()).replace(",", "."));
+  verificar(depoisSegurar >= 4.85 + 0.05 * 8, `toque: segurar o + repete (${br(depoisSegurar, 3)} kg em 1,3 s)`);
+  await tocar(".barra-app .app-desfazer");
+  verificar(await qtdCel.inputValue() === "4,850", "toque: ↶ da barra do app desfaz o segurar inteiro");
+  await tocar(".barra-app .app-desfazer");
+  verificar(await qtdCel.inputValue() === "4,800", "toque: ↶ de novo desfaz o toque");
+
+  // Teclado aberto (simulado: a visual viewport encolhe para 500 px) → a barra de números sobe junto.
+  const teclado = (altura) => cel.evaluate((h) => {
+    if (h === null) delete window.visualViewport.height;
+    else Object.defineProperty(window.visualViewport, "height", { configurable: true, get: () => h });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  }, altura);
+  await teclado(500);
+  const atenuacao = cel.locator('input[aria-label="Atenuação %"]').first();
+  await atenuacao.focus();
+  await cel.waitForTimeout(1000);
+  const vitalTeclado = await cel.locator(".vital").boundingBox();
+  const campoTeclado = await atenuacao.boundingBox();
+  verificar(Math.abs(vitalTeclado.y + vitalTeclado.height - 500) <= 1, `toque: com o teclado aberto a barra de números fica logo acima dele (fundo em ${Math.round(vitalTeclado.y + vitalTeclado.height)} px)`);
+  verificar(campoTeclado.y + campoTeclado.height <= vitalTeclado.y, "toque: o campo em foco rola para cima da barra");
+  await cel.screenshot({ path: `${SAIDA}/p6a-celular-teclado.png` });
+  await teclado(null);
+  await cel.evaluate(() => document.activeElement.blur());
+  const vitalSem = await cel.locator(".vital").boundingBox();
+  verificar(Math.abs(vitalSem.y + vitalSem.height - 844) <= 1, "toque: teclado fechado, a barra volta ao rodapé");
+
+  // Tabelas viram cartões, sem rolagem para o lado.
+  const rolagemTabelas = await cel.evaluate(() => [...document.querySelectorAll(".tabela-rolagem")].map((t) => t.scrollWidth - t.clientWidth));
+  verificar(rolagemTabelas.every((d) => d <= 0) && await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="leveduras"] tbody tr')).display) === "grid",
+    "toque: leveduras, outros, mostura e fermentação em cartões, sem rolagem para o lado");
+  await cel.evaluate(() => document.querySelector('[data-secao="leveduras"]').scrollIntoView());
+  await cel.screenshot({ path: `${SAIDA}/p6b-celular-cartoes.png` });
+
+  // Arrastar com o dedo: segundo lúpulo pela busca e arrastado para cima.
+  await tocar('[data-secao="lupulos"] button.adicionar');
+  await cel.waitForSelector("dialog.busca");
+  await cel.keyboard.type("saaz");
+  await cel.keyboard.press("Enter");
+  await cel.keyboard.type("20");
+  const linhaLCel = '[data-secao="lupulos"] li.ing';
+  const [ax, ay] = await centro(`${linhaLCel}:nth-child(2) .ing-alca`);
+  const l1 = await cel.locator(`${linhaLCel}:nth-child(1)`).boundingBox();
+  await toque("touchStart", ax, ay);
+  for (let k = 1; k <= 8; k++) { await toque("touchMove", ax, ay + ((l1.y + 6 - ay) * k) / 8); await cel.waitForTimeout(16); }   // ritmo de dedo (60 Hz)
+  await toque("touchEnd");
+  await cel.waitForTimeout(100);
+  verificar(await cel.inputValue(`${linhaLCel}:nth-child(1) input[aria-label="Qtd (g)"]`) === "20,0", "toque: arrastar a alça com o dedo leva o lúpulo para cima");
+
+  // PENDÊNCIA (conferir no iPhone real): no simulador do Chrome (toque via CDP), depois de arrastar a alça o PRIMEIRO
+  // toque não vira "click" (o clique fica preso até o toque seguinte). Não acontece com arrasto em elemento sem código.
+  // Investigado sem sucesso: captura do ponteiro, redesenho da lista, foco, rolagem suave, toque duplo, ritmo do arrasto.
+  // Aqui, um toque neutro (título da seção) encerra a sequência antes de seguir.
+  await tocar('[data-secao="lupulos"] .titulo-linha h3');
+  // Janela "Chegar à OG" cabe na tela.
+  await tocar('.vital [data-metrica="og"] button.vital-val');
+  await cel.waitForSelector("dialog.alvo");
+  const jan = await cel.locator("dialog.alvo").boundingBox();
+  verificar(jan.x >= 0 && jan.x + jan.width <= 390 && await cel.isVisible('dialog.alvo button:has-text("Aplicar")'), "toque: janela de Chegar à OG cabe na tela");
+  await cel.screenshot({ path: `${SAIDA}/p6c-celular-chegar-og.png` });
+  await tocar('dialog.alvo button:has-text("Cancelar")');
+
+  // 320 px (iPhone SE de 1ª geração, Androids pequenos).
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(200);
+  verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
+  const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
+    const sec = li.closest("section").getBoundingClientRect();
+    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - (sec.right - 17));
+  }));
+  verificar(estouro320.every((d) => d <= 1), `320 px: linhas de ingrediente cabem no cartão (sobra ${estouro320.join(", ")} px)`);
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.screenshot({ path: `${SAIDA}/p6d-celular-320.png` });
+  await tocar('[data-secao="fermentaveis"] button.adicionar');
+  await cel.waitForSelector("dialog.busca");
+  verificar(await cel.evaluate(() => document.querySelector("dialog.busca").scrollWidth <= 320), "320 px: busca cabe na tela");
+  await cel.keyboard.press("Escape");
+  await tocar('.vital [data-metrica="ibu"] button.vital-val');
+  const jan320 = await cel.locator("dialog.alvo").boundingBox();
+  verificar(jan320.x >= 0 && jan320.x + jan320.width <= 320 && await cel.evaluate(() => document.querySelector("dialog.alvo").scrollWidth <= document.querySelector("dialog.alvo").clientWidth),
+    "320 px: janela de Chegar ao IBU cabe na tela");
+  await cel.screenshot({ path: `${SAIDA}/p6e-celular-320-ibu.png` });
+  await ctxCel.close();
 
   // O 400 é o da senha errada, testada de propósito (uma vez só).
   const esperados = erros.filter((e) => /status of 400/.test(e));
@@ -485,4 +606,4 @@ async function site(rota) {
   console.log(ok.map((x) => `ok - ${x}`).join("\n"));
   console.log(relevantes.length ? `\nERROS NO CONSOLE:\n${relevantes.join("\n")}` : "\nsem erros no console (CSP ativa)");
   await navegador.close();
-})().catch(async (e) => { console.error(e.message); process.exit(1); });
+})().catch(async (e) => { console.log(ok.map((x) => `ok - ${x}`).join("\n")); console.error(e.message); process.exit(1); });

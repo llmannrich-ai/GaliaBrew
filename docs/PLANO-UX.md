@@ -3,8 +3,9 @@
 Versão 1 — 22/11/2026.
 
 Status: **E0, E1, E2 e E3 feitas em 22/11/2026** (fonte do sistema; passos 50 g / 5 g, configuráveis no perfil; o
-"modo %" da E3 ficou de fora: o responsável não usa). Próxima: E4. Base: código do portal (`receitas.js`, `style.css`), capturas da tela atual (computador e
-celular 390 px, geradas pelo `navegador.cjs`) e documentação pública do Brewfather.
+"modo %" da E3 ficou de fora: o responsável não usa). **Etapa de celular (E5) antecipada e feita em 22/11/2026**: o
+responsável e a maioria das pessoas usam pelo celular, então daqui em diante tudo é desenhado e testado primeiro em
+390 px e 320 px com toque. Próxima: E4 (arte), desenhada para o celular.
 
 ---
 

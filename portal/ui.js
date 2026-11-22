@@ -112,12 +112,39 @@ export function campoQuantidade(obj, chave, { casas = 2, passo = 1, passoTxt = S
     e.preventDefault();
     ajustar((e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 10 : 1));
   });
-  const botao = (sinal, vezes) => el("button", {
-    type: "button", class: "passo", tabindex: -1, disabled: desabilitado, text: sinal,
-    title: `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt} (seta ${vezes > 0 ? "↑" : "↓"}; Shift = ×10)`,
-    "aria-label": `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt}`,
-    on: { mousedown: (e) => e.preventDefault(), click: () => ajustar(vezes) },
-  });
+  // Toque/clique = 1 passo (no soltar: arrastar o dedo para rolar a tela não conta). Segurar = repete, cada vez
+  // mais rápido. Teclado e leitor de tela chegam pelo "click" sem ponteiro.
+  const botao = (sinal, vezes) => {
+    let espera = null;
+    let repete = null;
+    let repetiu = false;
+    let fimPonteiro = 0;          // o "click" que vem logo depois de um toque/clique já foi contado
+    const parar = () => { clearTimeout(espera); clearInterval(repete); espera = null; repete = null; fimPonteiro = Date.now(); };
+    return el("button", {
+      type: "button", class: "passo", tabindex: -1, disabled: desabilitado, text: sinal,
+      title: `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt} (segure para repetir; seta ${vezes > 0 ? "↑" : "↓"}, Shift = ×10)`,
+      "aria-label": `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt}`,
+      on: {
+        mousedown: (e) => e.preventDefault(),          // não tira o foco do campo
+        contextmenu: (e) => e.preventDefault(),        // toque longo não abre menu
+        pointerdown: (e) => {
+          if (e.button !== 0) return;
+          parar();
+          repetiu = false;
+          espera = setTimeout(() => {
+            repetiu = true;
+            ajustar(vezes);
+            let n = 0;
+            repete = setInterval(() => ajustar(vezes * (++n > 15 ? 4 : 1)), 90);
+          }, 400);
+        },
+        pointerup: () => { const toque = espera !== null && !repetiu; parar(); if (toque) ajustar(vezes); },
+        pointerleave: () => { if (espera !== null || repete !== null) parar(); },
+        pointercancel: parar,
+        click: () => { if (Date.now() - fimPonteiro < 700) return; ajustar(vezes); },
+      },
+    });
+  };
   return el("div", { class: "campo-qtd" }, botao("−", -1), input, el("span", { class: "unidade", text: unidade, "aria-hidden": "true" }), botao("+", 1));
 }
 

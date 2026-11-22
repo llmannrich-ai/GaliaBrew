@@ -112,10 +112,11 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  81 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  97 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
-  lista, receita de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
+  lista, receita de outro, sair; e um bloco de celular com toque: barra do app, toque/segurar no ±, teclado aberto,
+  cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
   (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, compacta,
   "▴" abre estado e faixas) com OG, FG, ABV, IBU, cor, régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
@@ -137,6 +138,16 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   = 1 passo); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y; desfazer remonta o editor e a barra mostra a diferença. "Fixar
   referência" compara cada número com a tentativa fixada; "Voltar à referência" restaura (e pode ser desfeito).
   Histórico e referência somem ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
+- CELULAR PRIMEIRO (decisão de 22/11/2026: o responsável e a maioria das pessoas usam pelo celular). Toda tela nova se
+  desenha e testa primeiro em 390 px e 320 px com toque (contexto `isMobile + hasTouch` no navegador.cjs).
+  Etapa de celular (22/11/2026): no editor o menu geral some e entra a `barra-app` presa no topo (‹ voltar, nome,
+  ↶ desfazer, Salvar com ponto quando há alteração pendente); a barra de números acompanha o teclado
+  (`visualViewport` → `--teclado`) e o campo em foco rola para cima dela (rolagem instantânea: toque durante rolagem
+  suave não vira clique); ± com toque no soltar (rolar a tela por cima não conta) e segurar repete; tabelas
+  (leveduras, outros, mostura, fermentação) viram cartões com rótulo por campo (`td[data-rotulo]::before`); chip de
+  diferença com `pointer-events: none`; `touch-action: manipulation` nos elementos de toque (sem espera de toque
+  duplo). O arrastar com o dedo funciona. PENDÊNCIA: no simulador do Chrome, o 1º toque depois de arrastar a alça não
+  vira clique (preso até o toque seguinte); causa não achada (detalhes no navegador.cjs). Conferir no iPhone real.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
   `_headers` e publica. Só publica da branch PADRÃO do repositório. Pré-requisito único (manual, o proxy daqui não
@@ -145,7 +156,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122f.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122g.
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,

@@ -1,8 +1,8 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122f";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122f";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122f";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122f";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122g";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122g";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122g";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122g";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -167,6 +167,7 @@ async function rotear() {
   marcarMenu();
   rotaAtual = location.hash;
   conteudo.className = "conteudo";      // o editor acrescenta "com-vital"; as outras telas não
+  document.body.classList.remove("no-editor");
   try {
     if (rota === "receitas") await telaReceitas(conteudo);
     else if (rota === "receita") await telaEditor(conteudo, param);

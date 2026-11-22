@@ -1,8 +1,8 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança. Computador: fixa abaixo do topo. Celular: fixa no rodapé (compacta).
-import { el, svg, numeroBR } from "./ui.js?v=20261122f";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122f";
-import * as O from "./opcoes.js?v=20261122f";
+import { el, svg, numeroBR } from "./ui.js?v=20261122g";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122g";
+import * as O from "./opcoes.js?v=20261122g";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -37,6 +37,38 @@ export function copo() {
     svg("path", { class: "copo-vidro", d: "M6.5 4 H33.5 L30.6 51 Q30.4 54 27.4 54 H12.6 Q9.6 54 9.4 51 Z" }));
   n.cerveja = cerveja;
   return n;
+}
+
+/**
+ * Celular: com o teclado aberto, a barra sobe junto e fica logo acima dele (é quando a pessoa digita a quantidade e
+ * quer ver a OG mudar). O teclado encolhe a "visual viewport"; a distância até o fundo da tela vira --teclado.
+ */
+function acompanharTeclado(barra) {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const ajustar = () => {
+    if (!barra.isConnected && barra.dataset.montada) {            // saiu do editor
+      vv.removeEventListener("resize", ajustar);
+      vv.removeEventListener("scroll", ajustar);
+      return;
+    }
+    const teclado = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+    barra.style.setProperty("--teclado", `${teclado}px`);
+    barra.classList.toggle("com-teclado", teclado > 80);
+  };
+  vv.addEventListener("resize", ajustar);
+  vv.addEventListener("scroll", ajustar);
+  requestAnimationFrame(() => { barra.dataset.montada = "1"; ajustar(); });
+}
+
+/** Rola a página para o campo não ficar escondido atrás da barra (celular, depois que o teclado abre). */
+export function manterAcimaDaBarra(campo, barra) {
+  const vv = window.visualViewport;
+  if (!vv || !campo?.isConnected || !barra?.isConnected) return;
+  const r = campo.getBoundingClientRect();
+  const limite = vv.offsetTop + vv.height - barra.offsetHeight - 12;
+  // Instantâneo: com rolagem suave, um toque durante a animação só para a rolagem e não vira clique.
+  if (r.bottom > limite) window.scrollBy({ top: r.bottom - limite, behavior: "instant" });
 }
 
 /**
@@ -104,6 +136,7 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
   if (window.ResizeObserver) {
     new ResizeObserver(() => document.documentElement.style.setProperty("--vital-h", `${barra.offsetHeight}px`)).observe(barra);
   }
+  acompanharTeclado(barra);
 
   let timerLeitor = null;
   let campoAnterior = null;       // a diferença acumula só enquanto a pessoa mexe no MESMO campo

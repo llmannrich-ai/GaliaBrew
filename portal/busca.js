@@ -1,9 +1,9 @@
 // busca.js — janela de busca de ingrediente (no lugar do <select> com centenas de itens).
 // Filtra enquanto digita (nome, produtor, origem, tipo; sem diferença de acento ou maiúscula), filtros rápidos por
 // tipo de ingrediente, "Recentes" e "Meus" no topo. Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
-import { el, preencher, numeroBR } from "./ui.js?v=20261122f";
-import { corHexDeSrm } from "./calculos.js?v=20261122f";
-import * as O from "./opcoes.js?v=20261122f";
+import { el, preencher, numeroBR } from "./ui.js?v=20261122g";
+import { corHexDeSrm } from "./calculos.js?v=20261122g";
+import * as O from "./opcoes.js?v=20261122g";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
