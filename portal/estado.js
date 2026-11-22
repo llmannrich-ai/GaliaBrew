@@ -1,5 +1,5 @@
 // estado.js — cliente do Supabase, sessão e preferências, compartilhados pelas telas.
-import { SUPABASE_URL, SUPABASE_CHAVE_PUBLICA } from "./config.js?v=20261122g";
+import { SUPABASE_URL, SUPABASE_CHAVE_PUBLICA } from "./config.js?v=20261122k";
 
 // O link de convite/recuperação chega com #access_token=...&type=invite|recovery; o cliente apaga o hash ao ler,
 // então o tipo é guardado ANTES de criar o cliente.
@@ -16,7 +16,8 @@ export const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_CHAVE_PUBL
 export const sessao = { usuario: null, perfil: null, admin: false };
 
 const PREF = "galiabrew.preferencias";
-export const preferencias = Object.assign({ cor: "EBC" }, lerJson(localStorage.getItem(PREF)));
+// passo_*: quanto os botões ± e as setas mudam a quantidade no editor (gramas).
+export const preferencias = Object.assign({ cor: "EBC", passo_fermentavel_g: 50, passo_lupulo_g: 5 }, lerJson(localStorage.getItem(PREF)));
 export function salvarPreferencias() {
   localStorage.setItem(PREF, JSON.stringify(preferencias));
 }
