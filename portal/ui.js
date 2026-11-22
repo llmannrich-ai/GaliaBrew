@@ -102,8 +102,8 @@ export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, par
         aoMudar?.();
       },
       blur: () => {
-        const v = lerNumero(input.value);
-        if (v !== null) input.value = numeroBR(v, casas);
+        // Mostra o valor guardado (já convertido: ex. densidade digitada 1048 → 1,048).
+        if (lerNumero(input.value) !== null && obj[chave] !== null && obj[chave] !== undefined) input.value = numeroBR(de(Number(obj[chave])), casas);
       },
     },
   });

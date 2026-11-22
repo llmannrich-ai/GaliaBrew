@@ -6,6 +6,7 @@ import {
   platoDeSg, sgDePlato, platoDeAcucar, abv, utilizacaoTinseth, ibuTinseth, srmMorey, ebcDeSrm,
   lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, fatorIsomerizacao, acucarDeSg, sgDeAcucar,
   temperaturaAguaMostura, co2Residual, primingGramas,
+  sgDeBrix, refratometro, corrigirDensimetro,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -235,6 +236,28 @@ test("Priming: CO₂ residual pela temperatura e gramas por açúcar", () => {
   perto(r.priming.gramas, primingGramas({ litros: 18, co2Alvo: 2.5, temperaturaMaxC: 22, acucar: "DEXTROSE" }).gramas, 1e-9);
   assert.equal(r.priming.temperatura_max_c, 22);
   assert.equal(calcularReceita({ volume_lote_l: 20 }).priming, null, "sem CO₂ desejado não calcula");
+});
+
+test("Refratômetro: mosto (°Brix ÷ fator) e cerveja fermentando (Terrill)", () => {
+  perto(sgDeBrix(12, 1), sgDePlato(12), 1e-12, "fator 1: °Brix = °P");
+  perto(sgDeBrix(12), sgDePlato(12 / 1.04), 1e-12, "fator padrão 1,04");
+  // Terrill (cúbica): 12 → 6 °Brix com fator 1 dá FG ~1,0117 (calculadoras usuais).
+  const r = refratometro({ brixInicial: 12, brixFinal: 6, fator: 1 });
+  perto(r.og, 1.0484, 0.0002);
+  perto(r.fg, 1.0117, 0.0002);
+  perto(r.abv_pct, abv(r.og, r.fg).abv_pct, 1e-12);
+  perto(r.atenuacao_pct, ((r.og - r.fg) / (r.og - 1)) * 100, 1e-9);
+  // Fator maior = leituras menores = OG e FG menores.
+  assert.ok(refratometro({ brixInicial: 12, brixFinal: 6, fator: 1.04 }).og < r.og);
+  assert.equal(refratometro({ brixInicial: 0, brixFinal: 0 }), null);
+});
+
+test("Densímetro: correção pela temperatura da amostra", () => {
+  // 1,050 lido a 100 °F num densímetro de 60 °F → ~1,056.
+  perto(corrigirDensimetro({ sg: 1.050, tempC: 37.78, calibracaoC: 15.56 }), 1.0561, 0.0003);
+  perto(corrigirDensimetro({ sg: 1.050, tempC: 30, calibracaoC: 20 }), 1.0526, 0.0003, "30 °C, calibrado a 20 °C");
+  perto(corrigirDensimetro({ sg: 1.050, tempC: 20 }), 1.050, 1e-12, "na temperatura de calibração não muda");
+  assert.ok(corrigirDensimetro({ sg: 1.050, tempC: 10 }) < 1.050, "amostra fria lê alto: correção baixa");
 });
 
 test("Receita vazia não quebra", () => {

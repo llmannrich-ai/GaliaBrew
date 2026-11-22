@@ -1,7 +1,8 @@
 // ferramentas.js — calculadoras avulsas: água da mostura e priming (mesmas fórmulas do calculos.js).
-import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261122e";
-import { temperaturaAguaMostura, primingGramas } from "./calculos.js?v=20261122e";
-import * as O from "./opcoes.js?v=20261122e";
+import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261122f";
+import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261122f";
+import { preferencias, salvarPreferencias } from "./estado.js?v=20261122f";
+import * as O from "./opcoes.js?v=20261122f";
 
 // Volume que o grão ocupa na tina (L por kg), para saber se a mostura cabe.
 const VOLUME_GRAO_L_KG = 0.67;
@@ -9,15 +10,23 @@ const VOLUME_GRAO_L_KG = 0.67;
 // Os valores ficam enquanto o portal estiver aberto (trocar de tela e voltar não apaga).
 const agua = { graos_kg: 5, relacao: 3, grao_c: 20, alvo_c: 66 };
 const prim = { litros: 20, co2: 2.4, temp_c: 20, acucar: "SACAROSE" };
+// Fator do refratômetro e calibração do densímetro são do aparelho: ficam salvos neste navegador.
+const refr = { brix_ini: 12, brix_fim: null, get fator() { return preferencias.fator_refratometro ?? FATOR_REFRATOMETRO_PADRAO; },
+  set fator(v) { preferencias.fator_refratometro = v; salvarPreferencias(); } };
+const dens = { sg: 1.050, temp_c: 25, get calibracao_c() { return preferencias.calibracao_densimetro_c ?? 20; },
+  set calibracao_c(v) { preferencias.calibracao_densimetro_c = v; salvarPreferencias(); } };
+const descobrir = { sg: null, brix: null };
+// Densidade: aceita 1,050, 1050 e 50 (pontos).
+const sg = { de: (x) => x, para: (v) => (v >= 900 ? v / 1000 : v > 2 && v < 200 ? 1 + v / 1000 : v) };
 
 export function telaFerramentas(conteudo) {
   preencher(conteudo,
     el("div", { class: "titulo-linha" }, el("h2", { text: "Ferramentas" })),
-    el("div", { class: "ferramentas" }, cartaoAgua(), cartaoPriming()));
+    el("div", { class: "ferramentas" }, cartaoAgua(), cartaoPriming(), cartaoRefratometro(), cartaoDensimetro()));
 }
 
-const campo = (obj, k, rot, casas, ajuda, aoMudar) =>
-  el("label", {}, el("span", {}, rot, info(ajuda)), campoNumero(obj, k, { casas, aoMudar, rotulo: rot }));
+const campo = (obj, k, rot, casas, ajuda, aoMudar, extra = {}) =>
+  el("label", {}, el("span", {}, rot, info(ajuda)), campoNumero(obj, k, { casas, aoMudar, rotulo: rot, ...extra }));
 
 function cartaoAgua() {
   const saida = el("div", { class: "resultado-ferramenta", "aria-live": "polite" });
@@ -71,3 +80,67 @@ function cartaoPriming() {
 }
 
 const linha = (rot, valor) => el("div", { class: "metrica" }, el("span", { class: "rot", text: rot }), el("span", { class: "val", text: valor }));
+
+function cartaoRefratometro() {
+  const saida = el("div", { class: "resultado-ferramenta", "aria-live": "polite" });
+  const saidaFator = el("div", { class: "resultado-ferramenta", "aria-live": "polite" });
+  const calcular = () => {
+    if (!(refr.fator > 0) || !(refr.brix_ini > 0)) { preencher(saida, el("p", { class: "nota", text: "Preencha o °Brix do mosto e o fator." })); return; }
+    const og = sgDeBrix(refr.brix_ini, refr.fator);
+    if (refr.brix_fim == null) {
+      preencher(saida, linha("Densidade do mosto (OG)", numeroBR(og, 3)),
+        el("p", { class: "nota", text: "Com a cerveja já fermentando, preencha também o °Brix atual: o álcool muda a leitura." }));
+      return;
+    }
+    const r = refratometro({ brixInicial: refr.brix_ini, brixFinal: refr.brix_fim, fator: refr.fator });
+    preencher(saida,
+      linha("OG", numeroBR(r.og, 3)),
+      linha("FG (densidade atual)", numeroBR(r.fg, 3)),
+      r.abv_pct != null ? linha("ABV", `${numeroBR(r.abv_pct, 1)}%`) : null,
+      r.atenuacao_pct != null ? linha("Atenuação aparente", `${numeroBR(r.atenuacao_pct, 0)}%`) : null,
+      r.fg > r.og ? el("p", { class: "nota alerta", text: "O °Brix atual parece alto demais para essa leitura inicial." }) : null);
+  };
+  const calcularFator = () => {
+    if (!(descobrir.sg > 1) || !(descobrir.brix > 0)) { preencher(saidaFator, el("p", { class: "nota", text: "Meça o mesmo mosto (antes de fermentar) com os dois aparelhos." })); return; }
+    const f = descobrir.brix / platoDeSg(descobrir.sg);
+    preencher(saidaFator, linha("Fator do seu refratômetro", numeroBR(f, 3)),
+      el("button", { type: "button", class: "secundario pequeno", text: "Usar este fator", on: { click: () => { refr.fator = Number(f.toFixed(3)); campoFator.value = numeroBR(refr.fator, 3); calcular(); } } }));
+  };
+  const campoFator = campoNumero(refr, "fator", { casas: 3, aoMudar: calcular, rotulo: "Fator do refratômetro" });
+  const s = el("section", { class: "cartao" },
+    el("h3", { text: "Refratômetro" }),
+    el("p", { class: "nota", text: "Converte °Brix em densidade. Com a cerveja fermentando, corrige o efeito do álcool (equação de Terrill)." }),
+    el("div", { class: "grade-form" },
+      campo(refr, "brix_ini", "°Brix do mosto (antes de fermentar)", 1, null, calcular),
+      campo(refr, "brix_fim", "°Brix atual (fermentando)", 1, "Deixe em branco se a cerveja ainda não fermentou.", calcular),
+      el("label", {}, el("span", {}, "Fator do refratômetro", info("O mosto lê um pouco acima de açúcar puro. 1,04 é o valor comum; o seu fica salvo neste navegador.")), campoFator)),
+    saida,
+    el("details", {}, el("summary", { text: "Descobrir o fator do meu refratômetro" }),
+      el("div", { class: "grade-form" },
+        campo(descobrir, "sg", "Densímetro (mosto)", 3, null, calcularFator, { placeholder: "1,050", ...sg }),
+        campo(descobrir, "brix", "Refratômetro (°Brix)", 1, null, calcularFator)),
+      saidaFator));
+  calcular();
+  calcularFator();
+  return s;
+}
+
+function cartaoDensimetro() {
+  const saida = el("div", { class: "resultado-ferramenta", "aria-live": "polite" });
+  const calcular = () => {
+    const c = corrigirDensimetro({ sg: dens.sg, tempC: dens.temp_c, calibracaoC: dens.calibracao_c });
+    if (c == null || !(dens.sg > 0.98)) { preencher(saida, el("p", { class: "nota", text: "Preencha a leitura e as temperaturas." })); return; }
+    preencher(saida, linha("Densidade corrigida", numeroBR(c, 3)), linha("Diferença", `${c >= dens.sg ? "+" : ""}${numeroBR((c - dens.sg) * 1000, 1)} pontos`));
+  };
+  const s = el("section", { class: "cartao" },
+    el("h3", { text: "Densímetro" }),
+    el("p", { class: "nota", text: "Corrige a leitura de uma amostra fora da temperatura de calibração do densímetro." }),
+    el("div", { class: "grade-form" },
+      campo(dens, "sg", "Leitura", 3, null, calcular, { placeholder: "1,050", ...sg }),
+      campo(dens, "temp_c", "Temperatura da amostra (°C)", 1, null, calcular),
+      campo(dens, "calibracao_c", "Calibração do densímetro (°C)", 1, "Vem escrita no densímetro: normalmente 20 °C (ou 15,6 °C = 60 °F). Fica salva neste navegador.", calcular)),
+    saida,
+    el("p", { class: "nota", text: "Acima de uns 40 °C a correção perde precisão: melhor esfriar a amostra." }));
+  calcular();
+  return s;
+}

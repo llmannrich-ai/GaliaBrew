@@ -151,6 +151,43 @@ export function primingGramas({ litros, co2Alvo, temperaturaMaxC, acucar = "SACA
   return { gramas: Math.max(0, (co2Alvo - residual) * litros * fator), co2_residual: residual, g_por_litro: Math.max(0, (co2Alvo - residual) * fator) };
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Refratômetro e densímetro
+// ---------------------------------------------------------------------------------------------------------------
+export const FATOR_REFRATOMETRO_PADRAO = 1.04;   // mosto lê ~4% acima de uma solução de sacarose de mesmo °P
+
+/** Densidade a partir da leitura do refratômetro em mosto NÃO fermentado: °Brix ÷ fator → °P → SG. */
+export function sgDeBrix(brix, fator = FATOR_REFRATOMETRO_PADRAO) {
+  if (!Number.isFinite(brix) || !(fator > 0)) return null;
+  return sgDePlato(brix / fator);
+}
+
+/**
+ * FG pelo refratômetro com a cerveja fermentando (o álcool distorce a leitura). Equação cúbica de Sean Terrill
+ * (2011), com as leituras divididas pelo fator do refratômetro. Devolve OG, FG, ABV e atenuação aparente.
+ */
+export function refratometro({ brixInicial, brixFinal, fator = FATOR_REFRATOMETRO_PADRAO }) {
+  if (!Number.isFinite(brixInicial) || !Number.isFinite(brixFinal) || !(fator > 0) || brixInicial <= 0) return null;
+  const o = brixInicial / fator;
+  const f = brixFinal / fator;
+  const fg = 1 - 0.0044993 * o + 0.011774 * f + 0.00027581 * o * o - 0.0012717 * f * f - 0.0000072800 * o ** 3 + 0.000063293 * f ** 3;
+  const og = sgDePlato(o);
+  const ok = fg <= og;
+  return { og, fg, abv_pct: ok ? abv(og, fg).abv_pct : null, atenuacao_pct: ok && og > 1 ? ((og - fg) / (og - 1)) * 100 : null };
+}
+
+/** Densidade da água relativa a 60 °F na temperatura `celsius` (polinômio usual da correção do densímetro). */
+function fatorTemperaturaDensimetro(celsius) {
+  const f = fahrenheitDeCelsius(celsius);
+  return 1.00130346 - 0.000134722124 * f + 0.00000204052596 * f * f - 0.00000000232820948 * f ** 3;
+}
+
+/** Corrige a leitura do densímetro feita a `tempC` para a temperatura de calibração dele (`calibracaoC`, 20 °C). */
+export function corrigirDensimetro({ sg, tempC, calibracaoC = 20 }) {
+  if (!Number.isFinite(sg) || !Number.isFinite(tempC) || !Number.isFinite(calibracaoC)) return null;
+  return sg * (fatorTemperaturaDensimetro(tempC) / fatorTemperaturaDensimetro(calibracaoC));
+}
+
 /** Cor em SRM pela fórmula de Morey, a partir das MCU (Σ lb × °L ÷ galão). */
 export function srmMorey(mcu) {
   return mcu > 0 ? 1.4922 * mcu ** 0.6859 : 0;
