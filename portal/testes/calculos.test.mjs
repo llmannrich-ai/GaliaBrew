@@ -7,6 +7,7 @@ import {
   lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao, acucarDeSg, sgDeAcucar,
   temperaturaAguaMostura, co2Residual, primingGramas,
   sgDeBrix, refratometro, corrigirDensimetro,
+  SAIS, perfilAgua, leituraSulfatoCloreto,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -369,6 +370,38 @@ test("Densímetro: correção pela temperatura da amostra", () => {
   perto(corrigirDensimetro({ sg: 1.050, tempC: 30, calibracaoC: 20 }), 1.0526, 0.0003, "30 °C, calibrado a 20 °C");
   perto(corrigirDensimetro({ sg: 1.050, tempC: 20 }), 1.050, 1e-12, "na temperatura de calibração não muda");
   assert.ok(corrigirDensimetro({ sg: 1.050, tempC: 10 }) < 1.050, "amostra fria lê alto: correção baixa");
+});
+
+test("Água: sais em ppm, diluição, sulfato/cloreto e alcalinidade residual", () => {
+  // Tabelas usuais: 1 g/L de gesso = 232,8 ppm Ca + 557,9 ppm SO₄; 1 g/L de CaCl₂·2H₂O = 272,6 Ca + 482,3 Cl.
+  perto(SAIS.GESSO.calcio_ppm, 232.8, 0.1); perto(SAIS.GESSO.sulfato_ppm, 557.9, 0.1);
+  perto(SAIS.CLORETO_CALCIO.calcio_ppm, 272.6, 0.1); perto(SAIS.CLORETO_CALCIO.cloreto_ppm, 482.3, 0.1);
+  perto(SAIS.SULFATO_MAGNESIO.magnesio_ppm, 98.6, 0.1); perto(SAIS.CLORETO_SODIO.sodio_ppm, 393.4, 0.1);
+  perto(SAIS.BICARBONATO_SODIO.bicarbonato_ppm, 726.3, 0.2);
+  // 5 g de gesso em 25 L sobre água destilada = 46,6 Ca e 111,6 SO₄.
+  const p = perfilAgua({ sais: [{ sal: "GESSO", gramas: 5 }], litros: 25 });
+  perto(p.ions.calcio_ppm, 46.56, 0.05); perto(p.ions.sulfato_ppm, 111.6, 0.1);
+  assert.equal(p.sulfato_cloreto, null, "sem cloreto não há relação");
+  // Diluição 50% corta todos os íons da origem pela metade.
+  const o = { calcio_ppm: 80, magnesio_ppm: 10, sodio_ppm: 20, sulfato_ppm: 40, cloreto_ppm: 40, bicarbonato_ppm: 244 };
+  const d = perfilAgua({ origem: o, diluicaoPct: 50, litros: 20 });
+  perto(d.ions.bicarbonato_ppm, 122, 1e-9); perto(d.sulfato_cloreto, 1, 1e-9);
+  // Alcalinidade: 244 ppm HCO₃ = 200 ppm como CaCO₃; RA = 200 − 80/1,4 − 10/1,7.
+  const full = perfilAgua({ origem: o, litros: 20 });
+  perto(full.alcalinidade, 200.1, 0.1);
+  perto(full.alcalinidade_residual, full.alcalinidade - 80 / 1.4 - 10 / 1.7, 1e-9);
+  assert.equal(leituraSulfatoCloreto(3), "SECA_AMARGA"); assert.equal(leituraSulfatoCloreto(1), "EQUILIBRADA"); assert.equal(leituraSulfatoCloreto(0.5), "MALTADA");
+  // Na receita: sais na água total, divididos entre mostura e lavagem.
+  const r = calcularReceita({
+    volume_lote_l: 20, perda_panela_l: 1, evaporacao_l_h: 3, eficiencia_pct: 72, fervura_min: 60, relacao_agua_grao_l_kg: 3,
+    fermentaveis: [{ tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 5, etapa: "MOSTURA", cor_srm: 2 }],
+    agua_origem: o, sais: [{ sal: "GESSO", gramas: 6 }],
+  });
+  perto(r.agua.litros, r.volumes.agua_total_l, 1e-9);
+  perto(r.agua.ions.sulfato_ppm, 40 + (557.9 * 6) / r.volumes.agua_total_l, 0.05);
+  perto(r.agua.sais[0].mostura_g + r.agua.sais[0].lavagem_g, 6, 1e-9);
+  perto(r.agua.sais[0].mostura_g, (6 * r.volumes.agua_mostura_l) / r.volumes.agua_total_l, 1e-9);
+  assert.equal(calcularReceita({ volume_lote_l: 20 }).agua, null, "sem água nem sais não calcula");
 });
 
 test("Receita vazia não quebra", () => {

@@ -1,10 +1,10 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122j";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122j";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122j";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122j";
-import { telaFerramentas } from "./ferramentas.js?v=20261122j";
-import { copo } from "./vital.js?v=20261122j";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122k";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122k";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122k";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122k";
+import { telaFerramentas } from "./ferramentas.js?v=20261122k";
+import { copo } from "./vital.js?v=20261122k";
 
 /** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar). */
 function marcaCopo() {

@@ -583,3 +583,7 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .resultado-ferramenta { margin-top: .9rem; }
 .ferramentas details { margin-top: .8rem; font-size: .88rem; }
 .ferramentas summary { cursor: pointer; color: var(--suave); }
+
+/* ---------- água ---------- */
+.perfil-agua td.longe { color: var(--destaque-escuro); font-weight: 700; }
+.resumo-agua { margin-top: .6rem; }

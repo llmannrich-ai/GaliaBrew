@@ -188,6 +188,57 @@ export function corrigirDensimetro({ sg, tempC, calibracaoC = 20 }) {
   return sg * (fatorTemperaturaDensimetro(tempC) / fatorTemperaturaDensimetro(calibracaoC));
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Química da água: sais e perfil de íons
+// ---------------------------------------------------------------------------------------------------------------
+export const IONS = ["calcio_ppm", "magnesio_ppm", "sodio_ppm", "sulfato_ppm", "cloreto_ppm", "bicarbonato_ppm"];
+
+// Massas molares (g/mol). 1 g de sal em 1 L dá (massa do íon × quantos ÷ massa do sal) × 1000 mg/L (ppm).
+const M = { Ca: 40.078, Mg: 24.305, Na: 22.990, SO4: 96.06, Cl: 35.453, HCO3: 61.017, H2O: 18.015 };
+const ppmPorGL = (massaSal, partes) => Object.fromEntries(Object.entries(partes).map(([ion, m]) => [ion, (m / massaSal) * 1000]));
+export const SAIS = {
+  GESSO:             ppmPorGL(M.Ca + M.SO4 + 2 * M.H2O,      { calcio_ppm: M.Ca, sulfato_ppm: M.SO4 }),          // CaSO₄·2H₂O
+  CLORETO_CALCIO:    ppmPorGL(M.Ca + 2 * M.Cl + 2 * M.H2O,   { calcio_ppm: M.Ca, cloreto_ppm: 2 * M.Cl }),       // CaCl₂·2H₂O
+  SULFATO_MAGNESIO:  ppmPorGL(M.Mg + M.SO4 + 7 * M.H2O,      { magnesio_ppm: M.Mg, sulfato_ppm: M.SO4 }),        // MgSO₄·7H₂O (sal amargo)
+  CLORETO_MAGNESIO:  ppmPorGL(M.Mg + 2 * M.Cl + 6 * M.H2O,   { magnesio_ppm: M.Mg, cloreto_ppm: 2 * M.Cl }),     // MgCl₂·6H₂O
+  CLORETO_SODIO:     ppmPorGL(M.Na + M.Cl,                   { sodio_ppm: M.Na, cloreto_ppm: M.Cl }),            // NaCl (sal de cozinha)
+  BICARBONATO_SODIO: ppmPorGL(M.Na + M.HCO3,                 { sodio_ppm: M.Na, bicarbonato_ppm: M.HCO3 }),      // NaHCO₃
+};
+
+/**
+ * Perfil final da água: origem diluída com água destilada/osmose (`diluicaoPct` % do volume) + sais (gramas no
+ * volume `litros`, a água toda do dia). Devolve os íons (ppm), a relação sulfato/cloreto, a alcalinidade e a
+ * alcalinidade residual (Kolbach, ppm como CaCO₃: alcalinidade − Ca/1,4 − Mg/1,7).
+ */
+export function perfilAgua({ origem = {}, diluicaoPct = 0, sais = [], litros }) {
+  const fator = 1 - Math.min(100, Math.max(0, num(diluicaoPct))) / 100;
+  const ions = Object.fromEntries(IONS.map((k) => [k, num(origem[k]) * fator]));
+  if (litros > 0) {
+    for (const s of sais) {
+      const tabela = SAIS[s.sal];
+      if (!tabela || !(num(s.gramas) > 0)) continue;
+      for (const [ion, ppm] of Object.entries(tabela)) ions[ion] += (ppm * num(s.gramas)) / litros;
+    }
+  }
+  const alcalinidade = ions.bicarbonato_ppm * (50.04 / M.HCO3);
+  return {
+    ions,
+    sulfato_cloreto: ions.cloreto_ppm > 0 ? ions.sulfato_ppm / ions.cloreto_ppm : null,
+    alcalinidade,
+    alcalinidade_residual: alcalinidade - ions.calcio_ppm / 1.4 - ions.magnesio_ppm / 1.7,
+  };
+}
+
+/** Leitura da relação sulfato/cloreto (faixas usuais). */
+export function leituraSulfatoCloreto(r) {
+  if (r == null) return null;
+  if (r < 0.4) return "MUITO_MALTADA";
+  if (r < 0.77) return "MALTADA";
+  if (r <= 1.3) return "EQUILIBRADA";
+  if (r <= 2) return "LEVEMENTE_AMARGA";
+  return "SECA_AMARGA";
+}
+
 /** Cor em SRM pela fórmula de Morey, a partir das MCU (Σ lb × °L ÷ galão). */
 export function srmMorey(mcu) {
   return mcu > 0 ? 1.4922 * mcu ** 0.6859 : 0;
@@ -323,6 +374,16 @@ export function calcularReceita(r) {
   const tempAguaMostura = graosKg > 0 && primeiroPasso
     ? temperaturaAguaMostura({ graoC: num(r.temp_grao_c, 20), alvoC: num(primeiroPasso.temperatura_c), litrosPorKg: aguaMostura / graosKg })
     : null;
+  // Água do dia: origem (cópia na receita) + diluição + sais, na água total; cada sal dividido entre mostura e lavagem
+  // na proporção dos volumes.
+  const temAgua = r.agua_origem || (r.sais ?? []).length;
+  const agua = temAgua
+    ? {
+        ...perfilAgua({ origem: r.agua_origem ?? {}, diluicaoPct: r.agua_diluicao_pct, sais: r.sais ?? [], litros: aguaTotal }),
+        sais: (r.sais ?? []).map((x) => ({ ...x, mostura_g: aguaTotal > 0 ? (num(x.gramas) * aguaMostura) / aguaTotal : 0, lavagem_g: aguaTotal > 0 ? (num(x.gramas) * (aguaTotal - aguaMostura)) / aguaTotal : 0 })),
+        litros: aguaTotal,
+      }
+    : null;
   // Priming do lote: volume real (ou o planejado); temperatura = a maior da fermentação (sem passos: 20 °C).
   const tempsFerm = (r.fermentacao ?? []).flatMap((f) => [f.temperatura_c, f.temperatura_fim_c]).filter((t) => t !== null && t !== undefined && t !== "").map(Number);
   const tempMaxFerm = tempsFerm.length ? Math.max(...tempsFerm) : 20;
@@ -388,6 +449,7 @@ export function calcularReceita(r) {
     lupulos: ibuPorItem,
     medido: medido(),
     priming,
+    agua,
     avisos: [
       ...(leveduras.length === 0 && fermentaveis.length > 0 ? ["SEM_LEVEDURA"] : []),
       ...(lote <= 0 ? ["SEM_VOLUME"] : []),

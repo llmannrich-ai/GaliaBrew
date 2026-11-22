@@ -24,7 +24,7 @@ const db = {
   perfis: [{ user_id: USUARIO.id, nome: "Leo", papel: "usuario" }],
   estilos: [{ id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 }],
   fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária" }],
-  lupulos: [], leveduras: [], outros: [], aguas: [], equipamentos: [], receitas: [],
+  lupulos: [], leveduras: [], outros: [], aguas: [{ id: "ag-tor", dono: null, nome: "Torneira teste", calcio_ppm: 20, magnesio_ppm: 4, sodio_ppm: 10, sulfato_ppm: 10, cloreto_ppm: 15, bicarbonato_ppm: 60 }, { id: "ag-alvo", dono: null, nome: "Alvo IPA", calcio_ppm: 110, magnesio_ppm: 10, sodio_ppm: 10, sulfato_ppm: 255, cloreto_ppm: 50, bicarbonato_ppm: 0 }], equipamentos: [], receitas: [],
   receita_fermentaveis: [], receita_lupulos: [], receita_leveduras: [], receita_outros: [], receita_mostura_passos: [], receita_fermentacao_passos: [],
 };
 // Catálogo grande de leveduras (como o real: ~900) para medir a busca.
@@ -251,11 +251,16 @@ const erros = [];
   await pagina.locator('input[aria-label="OG medida"]').blur();
   verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "1,048", "OG medida digitada 1048 aparece como 1,048 ao sair do campo");
   await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "2,5");
+  // Água: origem e alvo do cadastro (copiados), 6 g de gesso.
+  await pagina.selectOption('select[aria-label="Água de origem"]', "ag-tor");
+  await pagina.selectOption('select[aria-label="Perfil alvo"]', "ag-alvo");
+  await pagina.click("button:has-text('+ Sal')");
+  await pagina.locator('input[aria-label="Gramas"]').first().fill("6");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122j");
+    const m = await import("./calculos.js?v=20261122k");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -289,6 +294,14 @@ const erros = [];
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
   const textoPainel = await pagina.textContent(".painel-lote");
+  const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
+  const esperadoSo4 = await pagina.evaluate(async () => {
+    const m = await import("./calculos.js?v=20261122k");
+    const total = Number(document.querySelector(".painel-lote").textContent.match(/Água total[^0-9]*?([0-9]+,[0-9]) L/)[1].replace(",", "."));
+    return m.perfilAgua({ origem: { sulfato_ppm: 10, cloreto_ppm: 15 }, sais: [{ sal: "GESSO", gramas: 6 }], litros: total }).ions.sulfato_ppm;
+  });
+  verificar(textoAgua.includes(`Sulfato (SO₄)10${Math.round(esperadoSo4)}255`), `perfil da água: sulfato 10 → ${Math.round(esperadoSo4)} (alvo 255)`);
+  verificar(/Sulfato\/cloreto[\s\S]*?\d+,\d\d \((seca e amarga|levemente amarga)\)/.test(textoAgua), "mostra a relação sulfato/cloreto com a leitura");
   verificar(/Priming.*Açúcar comum \(sacarose\)\d+ g/.test(textoPainel), "CO₂ desejado mostra os gramas de priming");
   verificar(/Temperatura da água da mostura[\s\S]{0,300}?absorve\.\d+,\d °C/.test(textoPainel), "painel mostra a temperatura da água da mostura");
 
@@ -297,7 +310,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122j");
+    const m = await import("./calculos.js?v=20261122k");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -378,7 +391,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122j");
+    const m = await import("./calculos.js?v=20261122k");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -435,6 +448,9 @@ const erros = [];
   verificar(Math.abs(salvo.corpo.p.og_calc - esperado.og) < 1e-4, "og_calc gravado = cálculo");
   verificar(salvo.corpo.p.og_medida === 1.048 && salvo.corpo.p.data_brassagem === "2026-04-20" && salvo.corpo.p.lote_numero === null,
     "lote vai com OG 1048 → 1,048, data e número automático");
+  verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
+    && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6}]', "água vai como cópia (sem id) e sais em gramas");
+  verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");
   verificar(await pagina.inputValue(".titulo-receita") === "Pils da Galia", "receita reabre do banco com o nome");
   verificar(await pagina.inputValue('input[aria-label="Qtd (kg)"]') === "4,800", "fermentável reabre com 4,800 kg");
