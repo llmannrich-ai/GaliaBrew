@@ -166,7 +166,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app mantido.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
-  `_headers` e publica. Só publica da branch PADRÃO do repositório. Pré-requisito único (manual, o proxy daqui não
+  `_headers` e publica. Só publica da branch PADRÃO do repositório (a `main`). Pré-requisito único (manual, o proxy daqui não
   mexe em configuração do repositório): Settings → Pages → Source = GitHub Actions. O Pages não lê `_headers`: a CSP
   está também numa `<meta>` no index.html (frame-ancestors só vale no _headers, para um dia ir ao Cloudflare).
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
@@ -244,13 +244,19 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Primeiro admin: depois de criar o próprio login, `update perfis set papel = 'admin' where user_id = ...` por SQL.
 
 ## Situação em 22/11/2026 (fim da 1ª sessão)
-- No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
-  a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
+- No ar: https://llmannrich-ai.github.io/GaliaBrew/, publicado da `main`, que é a branch padrão desde 22/11/2026
+  (antes era `claude/gallant-hypatia-oyvzpp`, hoje parada). O container de desenvolvimento NÃO acessa github.io nem
   supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
+- GitHub (22/11/2026, feito pelo responsável): `main` protegida (PR obrigatório, sem aprovação; o dono pode enviar
+  direto, que é o que o /deploy das sessões no computador faz); ambiente `github-pages` aceita a `main`. Sessão na
+  nuvem não grava a `main` nem a fila: publica pelo modo nuvem do /deploy (PR + merge pela API, com pedido do
+  responsável). 1ª publicação assim: PR #3 (editor novo, celular, arte), 22/11/2026.
+- Pendente na proteção da `main`: marcar o teste "Cálculos e versões" como obrigatório e "Require branches to be up
+  to date" (Settings → Branches → Edit). Sem isso, o GitHub não barra PR desatualizado.
 - Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0007 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
-  branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
+  desligar a extensão http no painel.
 - 22/11/2026: FASE 1 CONCLUÍDA (testada no iPhone; Site URL/Redirect configuradas; IBU com whirlpool).
 - Fase 2 (1) feita em 22/11/2026: "criar a partir de" + dados do lote (0005).
 - Fase 2 (2a) feita em 22/11/2026: calculadoras de água da mostura e priming (0006, página Ferramentas).
