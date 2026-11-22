@@ -128,12 +128,14 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   pelo supabase_admin; o postgres não consegue revogar). Risco prático nulo: o schema `extensions` não é exposto pela API.
   Para remover: painel → Database → Extensions → http (desligar).
 
-## Login (decisões pendentes no painel do Supabase, não dá para fazer por SQL)
-- Recomendado: só por convite (Authentication → Sign In / Providers → desligar "Allow new users to sign up";
-  convidar em Authentication → Users → Invite). Confirmação de e-mail ligada. Senha mínima 10 caracteres.
-- O e-mail padrão do Supabase só envia para membros da org e com limite baixo por hora: para convidar outras pessoas
-  é preciso SMTP próprio (Authentication → Emails → SMTP; ex.: Resend ou Brevo, plano gratuito).
-- Site URL e Redirect URLs: preencher quando o portal tiver endereço.
+## Login (painel do Supabase, não dá para fazer por SQL)
+- DECIDIDO (22/11/2026): cadastro ABERTO ("Allow new users to sign up" ligado), para testes com amigos. A RLS protege
+  os dados. Confirmação de e-mail DESLIGADA (o e-mail padrão do Supabase só entrega para membros da org Versa, então
+  amigos não conseguiriam confirmar). Consequência: recuperação de senha só funciona para membros da org.
+  Senha mínima 10 caracteres.
+- Para recuperação de senha de todos (ou religar a confirmação): SMTP próprio (Authentication → Emails → SMTP; ex.:
+  Resend ou Brevo, plano gratuito).
+- Site URL e Redirect URLs = https://llmannrich-ai.github.io/GaliaBrew/ (feito pelo responsável em 22/11/2026).
 - Primeiro admin: depois de criar o próprio login, `update perfis set papel = 'admin' where user_id = ...` por SQL.
 
 ## Situação em 22/11/2026 (fim da 1ª sessão)
@@ -142,8 +144,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
 - Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0004 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
-- Pendente do responsável: desligar "Allow new users to sign up"; Site URL/Redirect URLs = endereço do Pages;
-  SMTP próprio só quando for convidar outras pessoas; (opcional) repositório privado (aí o Pages exige plano pago),
+- Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
 - Próximo: o responsável testa a fase 1 no iPhone e diz o que incomoda; depois fase 2, na ordem recomendada:
   (1) LOTE: brassagem ligada à receita, esperado × medido (volumes, densidades pré-fervura/OG/FG, temperaturas,
