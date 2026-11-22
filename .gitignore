@@ -1,0 +1,14 @@
+# Segredos: nunca no repositório
+.env
+.env.*
+*.pem
+*.key
+supabase/.temp/
+supabase/.branches/
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+node_modules/
