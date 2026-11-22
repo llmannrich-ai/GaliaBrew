@@ -79,7 +79,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (19 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (20 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -115,7 +115,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  45 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, ferramentas, priming, salvar/reabrir, lista, celular 390 px, receita
+  49 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, ferramentas, priming, salvar/reabrir, lista, celular 390 px, receita
   de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
@@ -125,7 +125,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122f.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122g.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
@@ -159,6 +159,17 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Fator do refratômetro e calibração do densímetro ficam em `preferencias` (localStorage), por serem do aparelho.
 - `campoNumero` (ui.js): ao sair do campo mostra o valor guardado (densidade digitada 1048 aparece 1,048).
 
+## Química da água: sais e perfil de íons (0007, 22/11/2026)
+- `calculos.js`: `SAIS` (ppm por g/L a partir das massas molares: gesso, CaCl₂·2H₂O, MgSO₄·7H₂O, MgCl₂·6H₂O, NaCl,
+  NaHCO₃), `perfilAgua` (origem × (1 − diluição) + sais ÷ litros; relação SO₄/Cl; alcalinidade como CaCO₃ e residual
+  de Kolbach: alcalinidade − Ca/1,4 − Mg/1,7), `leituraSulfatoCloreto`. Na receita: `res.agua` na água TOTAL do dia,
+  cada sal dividido entre mostura e lavagem na proporção dos volumes.
+- 0007: `receitas.agua_origem` e `agua_alvo` (jsonb, CÓPIA do perfil: nome + 6 íons; sem id, como a regra 5),
+  `agua_diluicao_pct`, `sais` (jsonb lista [{sal, gramas}], nunca nulo). Teste `supabase/testes/0007_agua_sais.sql`.
+- Portal: card "Água" no editor (origem, diluição, alvo do cadastro de águas; sais; tabela origem × final × alvo, com
+  destaque no que está longe do alvo; SO₄/Cl com leitura; alcalinidade residual). "Criar a partir de" copia a água.
+- Ainda não: ácido (lático/fosfórico) e pH estimado da mostura.
+
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
   todos com `dono` nulo e a origem em `extras.fonte`. O próprio banco baixou os arquivos do Brewtarget travados no
@@ -187,7 +198,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
   a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
   supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0006 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0007 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
@@ -195,7 +206,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fase 2 (1) feita em 22/11/2026: "criar a partir de" + dados do lote (0005).
 - Fase 2 (2a) feita em 22/11/2026: calculadoras de água da mostura e priming (0006, página Ferramentas).
 - Fase 2 (2b) feita em 22/11/2026: refratômetro e correção do densímetro (Ferramentas).
-- Próximo: (3) escalar receita. Sem módulo de brassagem e sem versões.
+- Fase 3 (química da água) começada em 22/11/2026: sais e perfil de íons (0007).
+- Próximo: (3) escalar receita; água: ácido e pH estimado da mostura. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho
 - Fase 1 (CONCLUÍDA em 22/11/2026): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor

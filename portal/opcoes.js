@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261122f";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122f";
+import { preferencias } from "./estado.js?v=20261122g";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122g";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -56,7 +56,22 @@ export const AJUDA_VOLUME = {
   temperatura_agua_mostura_c: "Temperatura da água para o grão + água chegar ao 1º passo da mostura, com o grão na temperatura dos parâmetros. Não conta o calor que a tina absorve.",
   co2_alvo_vol: "Carbonatação desejada em volumes de CO₂ (litros de gás por litro de cerveja). Ex.: ales inglesas 1,5-2,0; maioria das ales e lagers 2,2-2,7; belgas e trigo 3,0-4,0.",
   priming_acucar: "Açúcar usado no priming. Os gramas usam o volume real (ou o planejado) e a maior temperatura da fermentação.",
+  agua_origem: "A água que você usa (cadastre a sua em Cadastros → Águas, com os números da análise ou da companhia de água). Fica copiada na receita.",
+  agua_alvo: "Perfil que você quer atingir, só para comparar. Os 'Alvo — …' do catálogo são pontos de partida por tipo de cerveja.",
+  agua_diluicao_pct: "Parte da água trocada por destilada ou de osmose (sem íons). 50% corta pela metade todos os íons da origem.",
+  sais_agua: "Gramas na água total do dia. A tabela mostra quanto vai na mostura e na lavagem (proporcional aos volumes).",
+  sulfato_cloreto: "Sulfato realça o amargor e seca; cloreto arredonda e dá corpo. Abaixo de 0,8: maltada; 0,8 a 1,3: equilibrada; acima de 2: seca e amarga.",
+  alcalinidade_residual: "Alcalinidade (como CaCO₃) menos o efeito do cálcio e do magnésio. Alta (acima de ~50) puxa o pH da mostura para cima: combina com maltes escuros; para cervejas claras, quanto mais baixa melhor.",
   temperatura_max_ferm: "A maior temperatura que a cerveja atingiu depois de fermentar (antes do cold crash). Quanto mais quente, menos CO₂ ficou nela.",
+};
+
+export const SAL_AGUA = [
+  ["GESSO", "Gesso (sulfato de cálcio)"], ["CLORETO_CALCIO", "Cloreto de cálcio"], ["SULFATO_MAGNESIO", "Sal amargo (sulfato de magnésio)"],
+  ["CLORETO_MAGNESIO", "Cloreto de magnésio"], ["CLORETO_SODIO", "Sal de cozinha (cloreto de sódio)"], ["BICARBONATO_SODIO", "Bicarbonato de sódio"],
+];
+export const NOME_ION = { calcio_ppm: "Cálcio (Ca)", magnesio_ppm: "Magnésio (Mg)", sodio_ppm: "Sódio (Na)", sulfato_ppm: "Sulfato (SO₄)", cloreto_ppm: "Cloreto (Cl)", bicarbonato_ppm: "Bicarbonato (HCO₃)" };
+export const LEITURA_SO4_CL = {
+  MUITO_MALTADA: "muito maltada", MALTADA: "maltada", EQUILIBRADA: "equilibrada", LEVEMENTE_AMARGA: "levemente amarga", SECA_AMARGA: "seca e amarga",
 };
 
 export const ACUCAR_PRIMING = [["SACAROSE", "Açúcar comum (sacarose)"], ["DEXTROSE", "Dextrose"], ["EXTRATO_SECO", "Extrato seco (DME)"], ["MEL", "Mel"]];

@@ -1,9 +1,9 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122f";
-import { sb, sessao } from "./estado.js?v=20261122f";
-import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122f";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122f";
-import * as O from "./opcoes.js?v=20261122f";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122g";
+import { sb, sessao } from "./estado.js?v=20261122g";
+import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto } from "./calculos.js?v=20261122g";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122g";
+import * as O from "./opcoes.js?v=20261122g";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -86,6 +86,7 @@ const PADRAO = () => ({
   volume_lote_l: 20, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, perda_panela_l: 1, absorcao_grao_l_kg: 1,
   relacao_agua_grao_l_kg: 3, perda_tina_l: 0, temp_grao_c: 20, publica: false, notas: "",
   lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null, co2_alvo_vol: null, priming_acucar: null,
+  agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, sais: [],
   fermentaveis: [], lupulos: [], leveduras: [], outros: [],
   mostura: [{ nome: "Sacarificação", tipo: "INFUSAO", temperatura_c: 66, tempo_min: 60 }],
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
@@ -105,6 +106,7 @@ async function carregarReceita(id) {
   r.outros = ord(data.receita_outros);
   r.mostura = ord(data.receita_mostura_passos);
   r.fermentacao = ord(data.receita_fermentacao_passos);
+  r.sais = Array.isArray(data.sais) ? data.sais : [];
   for (const k of ["receita_fermentaveis", "receita_lupulos", "receita_leveduras", "receita_outros", "receita_mostura_passos", "receita_fermentacao_passos"]) delete r[k];
   return r;
 }
@@ -116,8 +118,8 @@ export async function telaEditor(conteudo, id, origemId) {
   const nova = !id || id === "nova";
   const buscar = nova ? origemId : id;
   const [cat, rec] = await Promise.all([
-    Promise.all(["estilos", "equipamentos", "fermentaveis", "lupulos", "leveduras", "outros"].map((t) => listarCadastro(t)))
-      .then(([estilos, equipamentos, fermentaveis, lupulos, leveduras, outros]) => ({ estilos, equipamentos, fermentaveis, lupulos, leveduras, outros })),
+    Promise.all(["estilos", "equipamentos", "fermentaveis", "lupulos", "leveduras", "outros", "aguas"].map((t) => listarCadastro(t)))
+      .then(([estilos, equipamentos, fermentaveis, lupulos, leveduras, outros, aguas]) => ({ estilos, equipamentos, fermentaveis, lupulos, leveduras, outros, aguas })),
     buscar ? carregarReceita(buscar) : Promise.resolve(null),
   ]);
   if (buscar && !rec) {
@@ -154,6 +156,8 @@ function copiaDe(o, cat) {
     leveduras: o.leveduras.map((x) => ({ ...sem(x), levedura_id: visivel(cat.leveduras, x.levedura_id) })),
     outros: o.outros.map((x) => ({ ...sem(x), outro_id: visivel(cat.outros, x.outro_id) })),
     mostura: o.mostura.map(sem),
+    agua_origem: o.agua_origem ?? null, agua_alvo: o.agua_alvo ?? null, agua_diluicao_pct: o.agua_diluicao_pct ?? null,
+    sais: (o.sais ?? []).map((x) => ({ ...x })),
     fermentacao: o.fermentacao.map(sem),
   };
 }
@@ -175,8 +179,10 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
   };
 
   // ---------- resultados ----------
+  const aoRecalcular = [];   // partes do editor que mostram resultado fora do painel (ex.: perfil da água)
   function atualizarResultados() {
     const res = calcularReceita(r);
+    for (const f of aoRecalcular) f(res);
     res.fermentaveis.forEach((x, i) => { const c = calculados.get(r.fermentaveis[i]); if (c) c.textContent = `${numeroBR(x.pct_acucar, 0)}%`; });
     res.lupulos.forEach((x, i) => { const c = calculados.get(r.lupulos[i]); if (c) c.textContent = numeroBR(x.ibu, 1); });
     const estilo = cat.estilos.find((e) => e.id === r.estilo_id);
@@ -429,6 +435,93 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
     (y) => [y.produtor, y.nome].filter(Boolean).join(" ")),
   });
 
+  // ---------- água: origem, diluição, alvo, sais e perfil final ----------
+  function secaoAgua() {
+    const copiaPerfil = (a) => (a ? { nome: a.nome, ...Object.fromEntries(IONS.map((k) => [k, a[k] == null ? 0 : Number(a[k])])) } : null);
+    const escolha = (chave, rot, ajuda, vazio) => {
+      const atual = r[chave];
+      const s = el("select", {
+        disabled: des, "aria-label": rot,
+        on: { change: (e) => {
+          const v = e.target.value;
+          if (v === "__atual") return;
+          r[chave] = v ? copiaPerfil(cat.aguas.find((x) => x.id === v)) : null;
+          mudou();
+        } },
+      },
+      el("option", { value: "", text: vazio, selected: !atual }),
+      atual ? el("option", { value: "__atual", text: `${atual.nome ?? "Perfil"} (guardado nesta receita)`, selected: true }) : null,
+      cat.aguas.length ? el("optgroup", { label: "Cadastro" }, cat.aguas.map((x) => el("option", { value: x.id, text: `${x.nome}${x.dono ? " (minha)" : ""}` }))) : null);
+      return el("label", {}, el("span", {}, rot, info(ajuda)), s);
+    };
+
+    const corpoSais = el("tbody");
+    const celulas = new Map();     // sal → [célula mostura, célula lavagem]
+    const desenharSais = () => {
+      limpar(corpoSais);
+      if (!r.sais.length) corpoSais.append(el("tr", {}, el("td", { colspan: 5, class: "nota", text: "Nenhum sal." })));
+      r.sais.forEach((x, i) => {
+        const m = el("span", { class: "calculado" }), l = el("span", { class: "calculado" });
+        celulas.set(x, [m, l]);
+        corpoSais.append(el("tr", {},
+          el("td", { dataset: { rotulo: "Sal" } }, comRotulo(campoSelect(x, "sal", O.SAL_AGUA, { aoMudar: mudou, desabilitado: des }), "Sal")),
+          el("td", { class: "num", dataset: { rotulo: "Total (g)" } }, comRotulo(campoNumero(x, "gramas", { casas: 1, aoMudar: mudou, desabilitado: des }), "Gramas")),
+          el("td", { class: "num", dataset: { rotulo: "Mostura (g)" } }, m),
+          el("td", { class: "num", dataset: { rotulo: "Lavagem (g)" } }, l),
+          leitura ? null : el("td", { class: "acoes-linha" },
+            el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover sal", text: "×", on: { click: () => { r.sais.splice(i, 1); desenharSais(); mudou(); } } }))));
+      });
+      atualizarResultados();
+    };
+
+    const perfil = el("div", { class: "tabela-rolagem" });
+    const resumo = el("div", { class: "resumo-agua" });
+    aoRecalcular.push((res) => {
+      const a = res.agua;
+      r.sais.forEach((x, i) => { const c = celulas.get(x); const s = a?.sais?.[i]; if (c && s) { c[0].textContent = numeroBR(s.mostura_g, 1); c[1].textContent = numeroBR(s.lavagem_g, 1); } });
+      if (!a) { preencher(perfil, el("p", { class: "nota", text: "Escolha a água de origem ou adicione sais para ver o perfil." })); preencher(resumo); return; }
+      const alvo = r.agua_alvo;
+      const fator = 1 - (Number(r.agua_diluicao_pct) || 0) / 100;
+      preencher(perfil, el("table", { class: "tabela perfil-agua" },
+        el("thead", {}, el("tr", {}, ["Íon (ppm)", "Origem", "Final", alvo ? "Alvo" : null].filter(Boolean).map((h, i) => el("th", { class: i ? "num" : "", text: h })))),
+        el("tbody", {}, IONS.map((k) => {
+          const final = a.ions[k];
+          const longe = alvo && Math.abs(final - Number(alvo[k] ?? 0)) > Math.max(15, 0.25 * Number(alvo[k] ?? 0));
+          return el("tr", {},
+            el("td", { text: O.NOME_ION[k] }),
+            el("td", { class: "num", text: numeroBR(Number(r.agua_origem?.[k] ?? 0) * fator, 0) }),
+            el("td", { class: `num${longe ? " longe" : ""}`, text: numeroBR(final, 0) }),
+            alvo ? el("td", { class: "num", text: numeroBR(Number(alvo[k] ?? 0), 0) }) : null);
+        }))));
+      const leituraSo4 = leituraSulfatoCloreto(a.sulfato_cloreto);
+      preencher(resumo,
+        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Sulfato/cloreto", info(O.AJUDA_VOLUME.sulfato_cloreto)),
+          el("span", { class: "val", text: a.sulfato_cloreto == null ? "—" : `${numeroBR(a.sulfato_cloreto, 2)} (${O.LEITURA_SO4_CL[leituraSo4]})` })),
+        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Alcalinidade residual", info(O.AJUDA_VOLUME.alcalinidade_residual)),
+          el("span", { class: "val", text: `${numeroBR(a.alcalinidade_residual, 0)} ppm` })),
+        el("p", { class: "nota", text: `Sais e ppm na água total do dia: ${numeroBR(a.litros, 1)} L.` }));
+    });
+
+    const sec = el("section", { class: "cartao" },
+      el("div", { class: "titulo-linha" }, el("h3", { text: "Água" }),
+        leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "+ Sal", on: { click: () => { r.sais.push({ sal: "GESSO", gramas: null }); desenharSais(); mudou(); } } })),
+      el("div", { class: "grade-form" },
+        escolha("agua_origem", "Água de origem", O.AJUDA_VOLUME.agua_origem, "— nenhuma (só destilada) —"),
+        el("label", {}, el("span", {}, "Diluição com destilada (%)", info(O.AJUDA_VOLUME.agua_diluicao_pct)),
+          campoNumero(r, "agua_diluicao_pct", { casas: 0, aoMudar: mudou, desabilitado: des, rotulo: "Diluição com destilada (%)", placeholder: "0" })),
+        escolha("agua_alvo", "Perfil alvo", O.AJUDA_VOLUME.agua_alvo, "— sem alvo —")),
+      el("h4", {}, "Sais", info(O.AJUDA_VOLUME.sais_agua)),
+      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
+        el("thead", {}, el("tr", {}, ["Sal", "Total (g)", "Mostura (g)", "Lavagem (g)"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
+        corpoSais)),
+      el("h4", { text: "Perfil" }),
+      perfil, resumo);
+    desenharSais();
+    return sec;
+  }
+
+  const agua = secaoAgua();
+
   const outros = secaoLista("outros", "Outros ingredientes", {
     vazio: "Nenhum.",
     colunas: [
@@ -478,7 +571,7 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
         geral,
         lote,
         el("section", { class: "cartao" }, el("h3", { text: "Parâmetros do lote" }), parametros),
-        fermentaveis, lupulos, leveduras, outros, mostura, fermentacao, notas),
+        fermentaveis, lupulos, leveduras, outros, agua, mostura, fermentacao, notas),
       painel));
   atualizarResultados();
   if (!r.id && !leitura) nomeInput.focus();
@@ -532,6 +625,8 @@ function validar(r) {
   }
   if (r.volume_final_l != null && !(r.volume_final_l > 0)) p.push("Volume real deve ser maior que zero.");
   if (r.co2_alvo_vol != null && !(r.co2_alvo_vol > 0 && r.co2_alvo_vol <= 6)) p.push("CO₂ desejado: entre 0 e 6 volumes (ex.: 2,4).");
+  if (r.agua_diluicao_pct != null && !(r.agua_diluicao_pct >= 0 && r.agua_diluicao_pct <= 100)) p.push("Diluição: de 0 a 100%.");
+  if ((r.sais ?? []).some((x) => !x.sal || !(x.gramas > 0))) p.push("Sais: escolha o sal e os gramas (> 0).");
   const falta = (lista, teste) => lista.some((x) => !teste(x));
   if (falta(r.fermentaveis, (f) => String(f.nome ?? "").trim() && f.quantidade_kg > 0 && f.rendimento_pct != null && f.cor_srm != null)) p.push("Fermentáveis: preencha nome, quantidade (> 0), rendimento e cor.");
   if (falta(r.lupulos, (h) => String(h.nome ?? "").trim() && h.quantidade_g > 0 && h.alfa_pct != null && (h.etapa !== "FERVURA" || h.tempo_min != null))) p.push("Lúpulos: preencha nome, quantidade (> 0), alfa e o tempo na fervura.");
@@ -548,7 +643,9 @@ function montarPayload(r, res) {
   return {
     ...so(r, ["id", "nome", "tipo", "autor", "estilo_id", "equipamento_id", "volume_lote_l", "eficiencia_pct", "fervura_min", "evaporacao_l_h",
       "perda_panela_l", "absorcao_grao_l_kg", "relacao_agua_grao_l_kg", "perda_tina_l", "temp_grao_c", "publica", "notas",
-      "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l", "co2_alvo_vol", "priming_acucar"]),
+      "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l", "co2_alvo_vol", "priming_acucar",
+      "agua_origem", "agua_alvo", "agua_diluicao_pct"]),
+    sais: (r.sais ?? []).map((x) => ({ sal: x.sal, gramas: x.gramas })),
     fervura_min: Math.round(r.fervura_min ?? 60),
     og_calc: arred(res.og, 4), fg_calc: arred(res.fg, 4), abv_calc_pct: arred(res.abv_pct, 2), ibu_calc: arred(res.ibu, 1), cor_srm_calc: arred(res.cor_srm, 1),
     fermentaveis: r.fermentaveis.map((x) => so(x, ["fermentavel_id", "nome", "tipo", "rendimento_pct", "umidade_pct", "cor_srm", "fermentavel_pct", "quantidade_kg", "etapa"])),
