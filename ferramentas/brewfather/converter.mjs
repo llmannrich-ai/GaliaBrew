@@ -145,6 +145,6 @@ const og = dif("og_calc", "og");
 console.log(`Convertidas: ${saida.length} de ${receitasBf.length} → ${saidaPath}`);
 console.log(`OG  (dif.):      ${resumo(og, 4)}  — dentro de ±0,002: ${og.filter((x) => Math.abs(x[1]) <= 0.002).length}/${og.length}`);
 console.log(`FG  (dif.):      ${resumo(dif("fg_calc", "fg"), 4)}`);
-console.log(`IBU (dif. rel.): ${resumo(dif("ibu_calc", "ibu", true), 2)}  — whirlpool conta 0 no GaliaBrew`);
+console.log(`IBU (dif. rel.): ${resumo(dif("ibu_calc", "ibu", true), 2)}`);
 console.log(`Cor (dif. rel.): ${resumo(dif("cor_srm_calc", "cor_srm", true), 2)}`);
 for (const a of avisos) console.log("Aviso:", a);

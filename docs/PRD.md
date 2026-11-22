@@ -57,7 +57,7 @@ fórmulas publicadas, não do código.
 | OG | Açúcar (kg) = Σ quantidade × rendimento % × (1 − umidade %). Grão na mostura leva a eficiência; extrato, açúcar e mel não. °Plato = açúcar ÷ (açúcar + água) × 100, com água = volume − açúcar ÷ 1,587 (densidade da sacarose). °Plato → SG pelo polinômio padrão |
 | FG | Pontos da OG fermentáveis × (1 − atenuação da levedura de MAIOR atenuação) + pontos não fermentáveis (lactose) |
 | ABV | Método HMRC (Reino Unido); conferir contra (OG − FG) × 131,25 |
-| IBU | Tinseth: utilização = 1,65 × 0,000125^(SG fervura − 1) × (1 − e^(−0,04 × min)) ÷ 4,15; IBU = utilização × alfa × g × 1000 ÷ L. Whirlpool/dry hop = 0 na fase 1 |
+| IBU | Tinseth: utilização = 1,65 × 0,000125^(SG fervura − 1) × (1 − e^(−0,04 × min)) ÷ 4,15; IBU = utilização × alfa × g × 1000 ÷ L. Whirlpool: Tinseth pelos minutos do whirlpool × fator de isomerização na temperatura (Malowicz: 2,39 × 10¹¹ × e^(−9773/K); sem temperatura = 80 °C); lúpulos da fervura somam o que isomerizam durante o whirlpool. Dry hop = 0 |
 | Cor | MCU = Σ (lb × °L) ÷ galão; SRM = 1,4922 × MCU^0,6859 (Morey); EBC = SRM × 1,97 |
 | Volumes | Pré-fervura = lote + perda da panela + evaporação × horas de fervura; água total = pré-fervura + absorção do grão × kg |
 

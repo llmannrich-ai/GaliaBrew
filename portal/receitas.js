@@ -1,9 +1,9 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122b";
-import { sb, sessao } from "./estado.js?v=20261122b";
-import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122b";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122b";
-import * as O from "./opcoes.js?v=20261122b";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect } from "./ui.js?v=20261122c";
+import { sb, sessao } from "./estado.js?v=20261122c";
+import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122c";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122c";
+import * as O from "./opcoes.js?v=20261122c";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -176,7 +176,7 @@ function montarEditor(conteudo, r, cat, leitura) {
       linha("Grãos", `${numeroBR(v.graos_kg, 2)} kg`),
       estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : null,
       res.avisos.includes("SEM_LEVEDURA") ? el("p", { class: "nota alerta", text: "Sem levedura: a FG fica igual à OG." }) : null,
-      el("p", { class: "nota", text: "IBU só da fervura e do primeiro mosto (whirlpool e dry hop não entram no Tinseth)." }));
+      el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
     return res;
   }
 
@@ -334,6 +334,7 @@ function montarEditor(conteudo, r, cat, leitura) {
       { r: "Qtd (g)", num: true, campo: num("quantidade_g", 1) },
       { r: "Etapa", campo: (item) => campoSelect(item, "etapa", O.ETAPA_LUPULO, { desabilitado: des, aoMudar: () => { secoes.lupulos(); mudou(); } }) },
       { r: "Tempo (min)", num: true, campo: (item) => campoNumero(item, "tempo_min", { casas: 0, aoMudar: mudou, desabilitado: des || ["DRY_HOP", "PRIMEIRO_MOSTO", "ENVASE"].includes(item.etapa) }) },
+      { r: "Temp. (°C)", num: true, campo: (item) => campoNumero(item, "temperatura_c", { casas: 0, aoMudar: mudou, desabilitado: des || item.etapa !== "WHIRLPOOL", placeholder: item.etapa === "WHIRLPOOL" ? String(TEMPERATURA_WHIRLPOOL_PADRAO_C) : undefined }) },
       { r: "Dia", num: true, campo: (item) => campoNumero(item, "dia", { casas: 0, aoMudar: mudou, desabilitado: des || item.etapa !== "DRY_HOP" }) },
       { r: "IBU", num: true, campo: calc },
     ],

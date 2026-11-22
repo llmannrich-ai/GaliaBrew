@@ -1,2 +1,5 @@
 # Scripts de shell sempre com LF (no Windows, CRLF quebra o bash)
 *.sh text eol=lf
+
+# Biblioteca de terceiros com SRI no index.html: nunca converter fim de linha (o hash muda e o navegador bloqueia)
+portal/vendor/** -text

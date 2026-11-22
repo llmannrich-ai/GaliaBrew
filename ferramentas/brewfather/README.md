@@ -31,7 +31,8 @@ Usado em 22/11/2026: 102 receitas importadas (2 rascunhos vazios ignorados).
 | números originais (OG, FG, ABV, IBU, cor, estilo, eficiências) | `extras.brewfather`, junto com `brewfather_id` |
 
 Resultado em 22/11/2026: OG de 100 em 102 receitas dentro de ±0,002 do Brewfather; cor com mediana igual.
-O IBU fica abaixo quando há lúpulo de whirlpool/hopstand: o GaliaBrew conta 0 para eles (Tinseth não modela).
+IBU (desde 22/11/2026, com whirlpool pela temperatura): pior diferença 18%, 80 de 101 dentro de 10%. Sobra ~9% abaixo
+nos lúpulos de fervura, variando por receita.
 
 ## Segurança
 
