@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261122g";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122g";
+import { preferencias } from "./estado.js?v=20261122h";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261122h";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -62,6 +62,8 @@ export const AJUDA_VOLUME = {
   sais_agua: "Gramas na água total do dia. A tabela mostra quanto vai na mostura e na lavagem (proporcional aos volumes).",
   sulfato_cloreto: "Sulfato realça o amargor e seca; cloreto arredonda e dá corpo. Abaixo de 0,8: maltada; 0,8 a 1,3: equilibrada; acima de 2: seca e amarga.",
   alcalinidade_residual: "Alcalinidade (como CaCO₃) menos o efeito do cálcio e do magnésio. Alta (acima de ~50) puxa o pH da mostura para cima: combina com maltes escuros; para cervejas claras, quanto mais baixa melhor.",
+  acidos: "Ácido colocado na água da mostura, em mL. Baixa o pH. Para acidificar a água de lavagem, anote em Notas.",
+  ph_mostura: "Estimativa (±0,1 a 0,2) em temperatura ambiente, pelo balanço entre maltes, alcalinidade, cálcio/magnésio, malte acidificado e ácido. Faixa boa: 5,2 a 5,6 (ideal 5,3 a 5,5). Malte acidificado é reconhecido pelo nome (acid/sauer), cristal por cara/crystal/caramel e torrado por roast/black/chocolate/carafa ou cor alta.",
   temperatura_max_ferm: "A maior temperatura que a cerveja atingiu depois de fermentar (antes do cold crash). Quanto mais quente, menos CO₂ ficou nela.",
 };
 
@@ -73,6 +75,8 @@ export const NOME_ION = { calcio_ppm: "Cálcio (Ca)", magnesio_ppm: "Magnésio (
 export const LEITURA_SO4_CL = {
   MUITO_MALTADA: "muito maltada", MALTADA: "maltada", EQUILIBRADA: "equilibrada", LEVEMENTE_AMARGA: "levemente amarga", SECA_AMARGA: "seca e amarga",
 };
+
+export const ACIDO = [["LATICO_88", "Ácido lático 88%"], ["FOSFORICO_10", "Ácido fosfórico 10%"], ["FOSFORICO_85", "Ácido fosfórico 85%"]];
 
 export const ACUCAR_PRIMING = [["SACAROSE", "Açúcar comum (sacarose)"], ["DEXTROSE", "Dextrose"], ["EXTRATO_SECO", "Extrato seco (DME)"], ["MEL", "Mel"]];
 

@@ -79,7 +79,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (20 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (21 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -115,7 +115,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  49 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, ferramentas, priming, salvar/reabrir, lista, celular 390 px, receita
+  52 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, ferramentas, priming, salvar/reabrir, lista, celular 390 px, receita
   de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
@@ -125,7 +125,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122g.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122h.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
@@ -168,7 +168,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   `agua_diluicao_pct`, `sais` (jsonb lista [{sal, gramas}], nunca nulo). Teste `supabase/testes/0007_agua_sais.sql`.
 - Portal: card "Água" no editor (origem, diluição, alvo do cadastro de águas; sais; tabela origem × final × alvo, com
   destaque no que está longe do alvo; SO₄/Cl com leitura; alcalinidade residual). "Criar a partir de" copia a água.
-- Ainda não: ácido (lático/fosfórico) e pH estimado da mostura.
+- Ácido e pH estimado da mostura (0008, 22/11/2026): `phMostura` (balanço de cargas no espírito de Troester): cada
+  malte puxa para o seu pH em água destilada com uma capacidade tampão (base 40, cristal 80, torrado 200 mEq/(kg·pH);
+  pHDI base = máx(5,2; 5,76 − 0,025 × SRM), cristal = 5,22 − 0,00504 × °L, torrado 4,7; acidificado = base + 333 mEq/kg),
+  alcalinidade (HCO₃ que vira H₂CO₃ no pH, pKa 6,35), Ca/3,5 + Mg/7 (Kolbach), ácidos (lático 88% ≈ 11,8 mmol/mL, pKa
+  3,86; fosfórico 10%/85%: 1º próton + fração do 2º). Resolve por bisseção; `ml_para(alvo)` dá o ácido que falta.
+  Classe do malte pelo nome (acid/sauer; carafa/roast/black/chocolate ou SRM ≥ 200; cara/crystal/caramel). Calibrado
+  por regras práticas (pilsen em destilada ≈ 5,7; 1% acidificado ≈ −0,07; Kolbach ≈ +0,25 por 10 °dH; stout em
+  destilada < 5,4). É ESTIMATIVA ±0,1-0,2. `receitas.acidos` (jsonb [{acido, ml}], só mostura). Teste
+  `supabase/testes/0008_acidos.sql`. Card Água: lista de ácidos, pH estimado com faixa e botão "Adicionar o lático"
+  (alvo 5,4).
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
@@ -198,7 +207,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
   a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
   supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0007 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0008 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
@@ -207,7 +216,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fase 2 (2a) feita em 22/11/2026: calculadoras de água da mostura e priming (0006, página Ferramentas).
 - Fase 2 (2b) feita em 22/11/2026: refratômetro e correção do densímetro (Ferramentas).
 - Fase 3 (química da água) começada em 22/11/2026: sais e perfil de íons (0007).
-- Próximo: (3) escalar receita; água: ácido e pH estimado da mostura. Sem módulo de brassagem e sem versões.
+- 22/11/2026: química da água com ácido e pH estimado (0008).
+- Próximo: (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho
 - Fase 1 (CONCLUÍDA em 22/11/2026): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor

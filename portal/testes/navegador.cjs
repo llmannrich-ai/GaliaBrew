@@ -207,11 +207,17 @@ async function site(rota) {
   await pagina.selectOption('select[aria-label="Perfil alvo"]', "ag-alvo");
   await pagina.click("button:has-text('+ Sal')");
   await pagina.locator('input[aria-label="Gramas"]').first().fill("6");
+  await pagina.waitForTimeout(150);
+  const phAntes = await pagina.textContent("section:has(h3:text('Água'))");
+  verificar(/pH estimado da mostura[\s\S]*?5,\d\d/.test(phAntes) && phAntes.includes("Para chegar a 5,4"), "mostra o pH estimado e quanto ácido falta para 5,4");
+  await pagina.click("button:has-text('Adicionar o lático')");
+  const phDepois = await pagina.textContent("section:has(h3:text('Água'))");
+  verificar(/pH estimado da mostura[\s\S]*?(5,40|5,39|5,41)/.test(phDepois) && phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122g");
+    const m = await import("./calculos.js?v=20261122h");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -227,7 +233,7 @@ async function site(rota) {
   verificar(textoPainel.includes("Eficiência real"), "OG medida mostra a eficiência real");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoSo4 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122g");
+    const m = await import("./calculos.js?v=20261122h");
     const total = Number(document.querySelector(".resultados").textContent.match(/Água total[^0-9]*?([0-9]+,[0-9]) L/)[1].replace(",", "."));
     return m.perfilAgua({ origem: { sulfato_ppm: 10, cloreto_ppm: 15 }, sais: [{ sal: "GESSO", gramas: 6 }], litros: total }).ions.sulfato_ppm;
   });
@@ -247,6 +253,7 @@ async function site(rota) {
     "lote vai com OG 1048 → 1,048, data e número automático");
   verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
     && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6}]', "água vai como cópia (sem id) e sais em gramas");
+  verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");
   verificar(await pagina.inputValue(".titulo-receita") === "Pils da Galia", "receita reabre do banco com o nome");

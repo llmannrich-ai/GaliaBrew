@@ -8,6 +8,7 @@ import {
   temperaturaAguaMostura, co2Residual, primingGramas,
   sgDeBrix, refratometro, corrigirDensimetro,
   SAIS, perfilAgua, leituraSulfatoCloreto,
+  phMostura, classificarMalte, ACIDOS,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -291,6 +292,43 @@ test("Água: sais em ppm, diluição, sulfato/cloreto e alcalinidade residual", 
   perto(r.agua.sais[0].mostura_g + r.agua.sais[0].lavagem_g, 6, 1e-9);
   perto(r.agua.sais[0].mostura_g, (6 * r.volumes.agua_mostura_l) / r.volumes.agua_total_l, 1e-9);
   assert.equal(calcularReceita({ volume_lote_l: 20 }).agua, null, "sem água nem sais não calcula");
+});
+
+test("pH da mostura: estimativa calibrada por regras práticas", () => {
+  const pils = (kg) => ({ nome: "Pilsner", cor_srm: 1.8, quantidade_kg: kg });
+  const ph = (maltes, ions = {}, acidos = []) => phMostura({ maltes, litros: maltes.reduce((s, x) => s + x.quantidade_kg, 0) * 3, ions, acidos });
+  perto(ph([pils(5)]).ph, 5.72, 0.05, "100% pilsen em destilada");
+  // ~0,07 de pH a menos por 1% de malte acidificado.
+  const acid = ph([pils(4.9), { nome: "Acidulated", cor_srm: 1.7, quantidade_kg: 0.1 }]).ph;
+  perto(ph([pils(5)]).ph - acid, 0.15, 0.04, "2% de malte acidificado");
+  // Escura em destilada fica ácida; com água alcalina (tipo Dublin) volta para a faixa.
+  const stout = [{ nome: "Pale", cor_srm: 3.5, quantidade_kg: 4 }, { nome: "Flaked barley", cor_srm: 2, quantidade_kg: 0.5 }, { nome: "Roasted Barley", cor_srm: 677, quantidade_kg: 0.5 }];
+  assert.ok(ph(stout).ph < 5.4, "stout em destilada abaixo de 5,4");
+  assert.ok(ph(stout, { bicarbonato_ppm: 300, calcio_ppm: 120 }).ph > ph(stout).ph + 0.1, "alcalinidade sobe o pH");
+  // Kolbach: alcalinidade residual de 10 °dH (178 ppm como CaCO₃) sobe ~0,3 (aqui ~0,25) a 4 L/kg.
+  const kol = phMostura({ maltes: [pils(5)], litros: 20, ions: { bicarbonato_ppm: 217 } }).ph - phMostura({ maltes: [pils(5)], litros: 20 }).ph;
+  assert.ok(kol > 0.2 && kol < 0.35, `Kolbach: +${kol.toFixed(2)}`);
+  // Cálcio baixa o pH; ácido baixa o pH; "quanto ácido para 5,4" leva exatamente a 5,4.
+  assert.ok(ph([pils(5)], { calcio_ppm: 150 }).ph < ph([pils(5)]).ph);
+  const base = ph([pils(5)]);
+  const ml = base.ml_para(5.4, "LATICO_88");
+  perto(ph([pils(5)], {}, [{ acido: "LATICO_88", ml }]).ph, 5.4, 0.005, "ácido sugerido chega ao alvo");
+  perto(ACIDOS.LATICO_88.mmol_ml, 11.82, 0.05);
+  // Classificação dos maltes pelo nome/cor.
+  assert.equal(classificarMalte({ nome: "Carafa Special III", cor_srm: 600 }).classe, "TORRADO");
+  assert.equal(classificarMalte({ nome: "Caramunich II", cor_srm: 60 }).classe, "CRISTAL");
+  assert.equal(classificarMalte({ nome: "Acid Malt", cor_srm: 3 }).classe, "ACIDIFICADO");
+  assert.equal(classificarMalte({ nome: "Munich I", cor_srm: 8 }).classe, "BASE");
+  // Na receita: grãos da mostura e água da mostura.
+  const r = calcularReceita({
+    volume_lote_l: 20, perda_panela_l: 1, evaporacao_l_h: 3, eficiencia_pct: 72, fervura_min: 60, relacao_agua_grao_l_kg: 3,
+    fermentaveis: [{ nome: "Pilsner", tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 5, etapa: "MOSTURA", cor_srm: 1.8 },
+      { nome: "Açúcar", tipo: "ACUCAR", rendimento_pct: 100, quantidade_kg: 0.5, etapa: "FERVURA", cor_srm: 0 }],
+    acidos: [{ acido: "LATICO_88", ml: 2 }],
+  });
+  perto(r.ph_mostura.ph, phMostura({ maltes: [{ nome: "Pilsner", cor_srm: 1.8, quantidade_kg: 5 }], litros: r.volumes.agua_mostura_l, acidos: [{ acido: "LATICO_88", ml: 2 }] }).ph, 1e-9);
+  assert.ok(r.ph_mostura.ph_sem_acido > r.ph_mostura.ph);
+  assert.equal(calcularReceita({ volume_lote_l: 20 }).ph_mostura, null);
 });
 
 test("Receita vazia não quebra", () => {

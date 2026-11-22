@@ -76,7 +76,7 @@ como gabarito.
 |---|---|---|
 | 1. Receita | Login, cadastros, editor de receita com cálculo ao vivo e faixa do estilo, catálogo inicial (BJCP 2021, maltes, lúpulos, leveduras) | Receita real bate com o Brewtarget |
 | 2. Lote | "Criar a partir de" uma receita anterior ✔; dados do lote na própria receita ✔ (nº, data, OG/FG medidas, volume real, priming); ferramentas (água da mostura, priming, refratômetro, densímetro); escalar receita | Primeira receita nova criada a partir de uma anterior e registrada |
-| 3. Extras | Importar/exportar BeerJSON e BeerXML, estoque, química da água (sais e perfil de íons ✔; ácido e pH a fazer) | Receita importada do Brewfather/BeerSmith |
+| 3. Extras | Importar/exportar BeerJSON e BeerXML, estoque, química da água (sais, perfil de íons, ácido e pH estimado ✔) | Receita importada do Brewfather/BeerSmith |
 
 ## 7. Riscos
 - Excesso de escopo (querer o Brewtarget inteiro): controlar por fase.

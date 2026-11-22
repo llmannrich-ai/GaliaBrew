@@ -239,6 +239,80 @@ export function leituraSulfatoCloreto(r) {
   return "SECA_AMARGA";
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// pH estimado da mostura e ácido
+// ---------------------------------------------------------------------------------------------------------------
+// Balanço de cargas (no espírito de Kai Troester): cada malte "puxa" o pH para o pH que daria em água destilada
+// (pHDI) com uma capacidade tampão (mEq por kg e por unidade de pH); a alcalinidade da água empurra para cima;
+// cálcio e magnésio (Kolbach), ácidos e malte acidificado puxam para baixo. O pH é onde tudo se equilibra.
+// Parâmetros calibrados por regras práticas (100% pilsen em destilada ≈ 5,7; Kolbach: +0,03 de pH por °dH de
+// alcalinidade residual; 1% de malte acidificado ≈ −0,07; cerveja escura em água mole fica ácida demais).
+// É uma ESTIMATIVA (±0,1 a 0,2), em temperatura ambiente.
+export const PH_ALVO_PADRAO = 5.4;
+const TAMPAO = { BASE: 40, CRISTAL: 80, TORRADO: 200 };          // mEq/(kg·pH)
+const ACIDO_MALTE_ACIDIFICADO = 333;                              // mEq/kg (≈ 3% de ácido lático)
+const PKA_LATICO = 3.86, PKA_CARBONICO = 6.35, PKA2_FOSFORICO = 7.2;
+
+// Ácidos líquidos: mmol de ácido por mL (densidade × concentração ÷ massa molar).
+export const ACIDOS = {
+  LATICO_88:     { mmol_ml: (1.21 * 0.88 * 1000) / 90.08, tipo: "LATICO" },       // ≈ 11,8
+  FOSFORICO_10:  { mmol_ml: (1.05 * 0.10 * 1000) / 97.995, tipo: "FOSFORICO" },   // ≈ 1,07
+  FOSFORICO_85:  { mmol_ml: (1.685 * 0.85 * 1000) / 97.995, tipo: "FOSFORICO" },  // ≈ 14,6
+};
+/** mEq que 1 mL do ácido libera no pH `ph` (lático: 1 próton; fosfórico: o 1º inteiro + fração do 2º). */
+function meqPorMl(acido, ph) {
+  const a = ACIDOS[acido];
+  if (!a) return 0;
+  if (a.tipo === "LATICO") return a.mmol_ml / (1 + 10 ** (PKA_LATICO - ph));
+  return a.mmol_ml * (1 + 1 / (1 + 10 ** (PKA2_FOSFORICO - ph)));
+}
+
+/** Como o malte se comporta na mostura: pH em água destilada, capacidade tampão e acidez extra. */
+export function classificarMalte(f) {
+  const nome = String(f.nome ?? "").toLowerCase();
+  const srm = num(f.cor_srm);
+  if (/acid|sauer/.test(nome)) return { classe: "ACIDIFICADO", ph_di: 5.7, tampao: TAMPAO.BASE, acido_meq_kg: ACIDO_MALTE_ACIDIFICADO };
+  if (/carafa|roast|torrad|black|preto|chocolate|choc|patent|midnight|cevada torrada/.test(nome) || srm >= 200)
+    return { classe: "TORRADO", ph_di: 4.7, tampao: TAMPAO.TORRADO, acido_meq_kg: 0 };
+  if (/crystal|caramel|cara|crist|special b|caramunich|caravienne/.test(nome))
+    return { classe: "CRISTAL", ph_di: 5.22 - 0.00504 * lovibondDeSrm(srm), tampao: TAMPAO.CRISTAL, acido_meq_kg: 0 };
+  return { classe: "BASE", ph_di: Math.max(5.2, 5.76 - 0.025 * srm), tampao: TAMPAO.BASE, acido_meq_kg: 0 };
+}
+
+/**
+ * pH estimado da mostura. `maltes`: [{ nome, cor_srm, quantidade_kg }] (só os que vão na mostura); `litros`: água da
+ * mostura; `ions`: perfil da água (ppm) — com os sais; `acidos`: [{ acido, ml }] na mostura.
+ */
+export function phMostura({ maltes, litros, ions = {}, acidos = [] }) {
+  const kg = maltes.reduce((s, m) => s + num(m.quantidade_kg), 0);
+  if (!(kg > 0) || !(litros > 0)) return null;
+  const cls = maltes.map((m) => ({ ...classificarMalte(m), kg: num(m.quantidade_kg) }));
+  const hco3 = (num(ions.bicarbonato_ppm) / 61.017) * litros;                                    // mEq
+  const caMg = litros * (num(ions.calcio_ppm) / 20.04 / 3.5 + num(ions.magnesio_ppm) / 12.15 / 7);
+  const balanco = (ph, extraAcidoMeq = 0) => {
+    const maltes_ = cls.reduce((s, c) => s + c.tampao * c.kg * (ph - c.ph_di), 0);
+    const alcalinidade = hco3 * (1 - 1 / (1 + 10 ** (PKA_CARBONICO - ph)));                         // HCO₃ que vira H₂CO₃
+    const acidoMalte = cls.reduce((s, c) => s + (c.acido_meq_kg * c.kg) / (1 + 10 ** (PKA_LATICO - ph)), 0);
+    const acidoLiq = acidos.reduce((s, a) => s + num(a.ml) * meqPorMl(a.acido, ph), 0);
+    return maltes_ - alcalinidade + caMg + acidoMalte + acidoLiq + extraAcidoMeq;
+  };
+  const resolver = (extra = 0) => {
+    let lo = 3.5, hi = 7.5;
+    for (let i = 0; i < 60; i++) { const m = (lo + hi) / 2; if (balanco(m, extra) > 0) hi = m; else lo = m; }
+    return (lo + hi) / 2;
+  };
+  const ph = resolver();
+  // Ácido que falta (mEq) para chegar ao alvo: o que zera o balanço no pH alvo.
+  const acidoPara = (alvo) => Math.max(0, -balanco(alvo));
+  return {
+    ph,
+    ph_sem_acido: acidos.length ? phMostura({ maltes, litros, ions, acidos: [] }).ph : ph,
+    meq_para: acidoPara,
+    ml_para: (alvo, acido = "LATICO_88") => acidoPara(alvo) / meqPorMl(acido, alvo),
+    classes: cls.map((c) => c.classe),
+  };
+}
+
 /** Cor em SRM pela fórmula de Morey, a partir das MCU (Σ lb × °L ÷ galão). */
 export function srmMorey(mcu) {
   return mcu > 0 ? 1.4922 * mcu ** 0.6859 : 0;
@@ -383,6 +457,16 @@ export function calcularReceita(r) {
         litros: aguaTotal,
       }
     : null;
+  // pH estimado da mostura: grãos da mostura, água da mostura (perfil final, com sais), ácidos na mostura.
+  const maltesMostura = fermentaveis.filter((f) => f.etapa === "MOSTURA" && !ACUCAR_PRONTO.has(f.tipo) && num(f.quantidade_kg) > 0);
+  const ionsMostura = agua?.ions ?? perfilAgua({ origem: {}, litros: aguaTotal }).ions;
+  const mostura = maltesMostura.length && aguaMostura > 0
+    ? phMostura({ maltes: maltesMostura, litros: aguaMostura, ions: ionsMostura, acidos: r.acidos ?? [] })
+    : null;
+  const phMosturaRes = mostura
+    ? { ph: mostura.ph, ph_sem_acido: mostura.ph_sem_acido, alvo: PH_ALVO_PADRAO,
+        latico_88_ml: mostura.ml_para(PH_ALVO_PADRAO, "LATICO_88"), fosforico_10_ml: mostura.ml_para(PH_ALVO_PADRAO, "FOSFORICO_10") }
+    : null;
   // Priming do lote: volume real (ou o planejado); temperatura = a maior da fermentação (sem passos: 20 °C).
   const tempsFerm = (r.fermentacao ?? []).flatMap((f) => [f.temperatura_c, f.temperatura_fim_c]).filter((t) => t !== null && t !== undefined && t !== "").map(Number);
   const tempMaxFerm = tempsFerm.length ? Math.max(...tempsFerm) : 20;
@@ -438,6 +522,7 @@ export function calcularReceita(r) {
     medido: medido(),
     priming,
     agua,
+    ph_mostura: phMosturaRes,
     avisos: [
       ...(leveduras.length === 0 && fermentaveis.length > 0 ? ["SEM_LEVEDURA"] : []),
       ...(lote <= 0 ? ["SEM_VOLUME"] : []),

@@ -1,9 +1,9 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122g";
-import { sb, sessao } from "./estado.js?v=20261122g";
-import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto } from "./calculos.js?v=20261122g";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122g";
-import * as O from "./opcoes.js?v=20261122g";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261122h";
+import { sb, sessao } from "./estado.js?v=20261122h";
+import { calcularReceita, compararComEstilo, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto } from "./calculos.js?v=20261122h";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122h";
+import * as O from "./opcoes.js?v=20261122h";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -86,7 +86,7 @@ const PADRAO = () => ({
   volume_lote_l: 20, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, perda_panela_l: 1, absorcao_grao_l_kg: 1,
   relacao_agua_grao_l_kg: 3, perda_tina_l: 0, temp_grao_c: 20, publica: false, notas: "",
   lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null, co2_alvo_vol: null, priming_acucar: null,
-  agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, sais: [],
+  agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, sais: [], acidos: [],
   fermentaveis: [], lupulos: [], leveduras: [], outros: [],
   mostura: [{ nome: "Sacarificação", tipo: "INFUSAO", temperatura_c: 66, tempo_min: 60 }],
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
@@ -107,6 +107,7 @@ async function carregarReceita(id) {
   r.mostura = ord(data.receita_mostura_passos);
   r.fermentacao = ord(data.receita_fermentacao_passos);
   r.sais = Array.isArray(data.sais) ? data.sais : [];
+  r.acidos = Array.isArray(data.acidos) ? data.acidos : [];
   for (const k of ["receita_fermentaveis", "receita_lupulos", "receita_leveduras", "receita_outros", "receita_mostura_passos", "receita_fermentacao_passos"]) delete r[k];
   return r;
 }
@@ -158,6 +159,7 @@ function copiaDe(o, cat) {
     mostura: o.mostura.map(sem),
     agua_origem: o.agua_origem ?? null, agua_alvo: o.agua_alvo ?? null, agua_diluicao_pct: o.agua_diluicao_pct ?? null,
     sais: (o.sais ?? []).map((x) => ({ ...x })),
+    acidos: (o.acidos ?? []).map((x) => ({ ...x })),
     fermentacao: o.fermentacao.map(sem),
   };
 }
@@ -474,6 +476,39 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
       atualizarResultados();
     };
 
+    const corpoAcidos = el("tbody");
+    const desenharAcidos = () => {
+      limpar(corpoAcidos);
+      if (!r.acidos.length) corpoAcidos.append(el("tr", {}, el("td", { colspan: 3, class: "nota", text: "Nenhum ácido." })));
+      r.acidos.forEach((x, i) => corpoAcidos.append(el("tr", {},
+        el("td", { dataset: { rotulo: "Ácido" } }, comRotulo(campoSelect(x, "acido", O.ACIDO, { aoMudar: mudou, desabilitado: des }), "Ácido")),
+        el("td", { class: "num", dataset: { rotulo: "mL" } }, comRotulo(campoNumero(x, "ml", { casas: 1, aoMudar: mudou, desabilitado: des }), "mL")),
+        leitura ? null : el("td", { class: "acoes-linha" },
+          el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover ácido", text: "×", on: { click: () => { r.acidos.splice(i, 1); desenharAcidos(); mudou(); } } })))));
+      atualizarResultados();
+    };
+    const caixaPh = el("div", { class: "resumo-agua", "aria-live": "polite" });
+    aoRecalcular.push((res) => {
+      const m = res.ph_mostura;
+      if (!m) { preencher(caixaPh, el("p", { class: "nota", text: "Adicione grãos na mostura para estimar o pH." })); return; }
+      const faixa = m.ph < 5.2 ? "baixo" : m.ph > 5.6 ? "alto" : m.ph >= 5.3 && m.ph <= 5.5 ? "ideal" : "ok";
+      const sugestao = m.latico_88_ml >= 0.1;
+      preencher(caixaPh,
+        el("div", { class: "metrica" }, el("span", { class: "rot" }, "pH estimado da mostura", info(O.AJUDA_VOLUME.ph_mostura)),
+          el("span", { class: "val", text: numeroBR(m.ph, 2) }),
+          el("span", { class: `faixa ${faixa === "ideal" || faixa === "ok" ? "dentro" : faixa === "alto" ? "acima" : "abaixo"}`, text: faixa })),
+        r.acidos.length ? el("div", { class: "metrica" }, el("span", { class: "rot", text: "Sem o ácido" }), el("span", { class: "val", text: numeroBR(m.ph_sem_acido, 2) })) : null,
+        sugestao
+          ? el("p", { class: "nota" }, `Para chegar a ${numeroBR(m.alvo, 1)}: mais ${numeroBR(m.latico_88_ml, 1)} mL de ácido lático 88% (ou ${numeroBR(m.fosforico_10_ml, 0)} mL de fosfórico 10%). `,
+              leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "Adicionar o lático", on: { click: () => {
+                const ja = r.acidos.find((x) => x.acido === "LATICO_88");
+                const ml = Number(m.latico_88_ml.toFixed(1));
+                if (ja) ja.ml = Number(((Number(ja.ml) || 0) + ml).toFixed(1)); else r.acidos.push({ acido: "LATICO_88", ml });
+                desenharAcidos(); mudou();
+              } } }))
+          : m.ph < 5.2 ? el("p", { class: "nota alerta", text: "pH baixo: use água com mais alcalinidade (bicarbonato) ou menos malte torrado/ácido." }) : null);
+    });
+
     const perfil = el("div", { class: "tabela-rolagem" });
     const resumo = el("div", { class: "resumo-agua" });
     aoRecalcular.push((res) => {
@@ -515,8 +550,15 @@ function montarEditor(conteudo, r, cat, leitura, origem) {
         el("thead", {}, el("tr", {}, ["Sal", "Total (g)", "Mostura (g)", "Lavagem (g)"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
         corpoSais)),
       el("h4", { text: "Perfil" }),
-      perfil, resumo);
+      perfil, resumo,
+      el("div", { class: "titulo-linha" }, el("h4", {}, "Ácido na mostura", info(O.AJUDA_VOLUME.acidos)),
+        leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "+ Ácido", on: { click: () => { r.acidos.push({ acido: "LATICO_88", ml: null }); desenharAcidos(); mudou(); } } })),
+      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
+        el("thead", {}, el("tr", {}, ["Ácido", "mL"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
+        corpoAcidos)),
+      caixaPh);
     desenharSais();
+    desenharAcidos();
     return sec;
   }
 
@@ -627,6 +669,7 @@ function validar(r) {
   if (r.co2_alvo_vol != null && !(r.co2_alvo_vol > 0 && r.co2_alvo_vol <= 6)) p.push("CO₂ desejado: entre 0 e 6 volumes (ex.: 2,4).");
   if (r.agua_diluicao_pct != null && !(r.agua_diluicao_pct >= 0 && r.agua_diluicao_pct <= 100)) p.push("Diluição: de 0 a 100%.");
   if ((r.sais ?? []).some((x) => !x.sal || !(x.gramas > 0))) p.push("Sais: escolha o sal e os gramas (> 0).");
+  if ((r.acidos ?? []).some((x) => !x.acido || !(x.ml > 0))) p.push("Ácidos: escolha o ácido e os mL (> 0).");
   const falta = (lista, teste) => lista.some((x) => !teste(x));
   if (falta(r.fermentaveis, (f) => String(f.nome ?? "").trim() && f.quantidade_kg > 0 && f.rendimento_pct != null && f.cor_srm != null)) p.push("Fermentáveis: preencha nome, quantidade (> 0), rendimento e cor.");
   if (falta(r.lupulos, (h) => String(h.nome ?? "").trim() && h.quantidade_g > 0 && h.alfa_pct != null && (h.etapa !== "FERVURA" || h.tempo_min != null))) p.push("Lúpulos: preencha nome, quantidade (> 0), alfa e o tempo na fervura.");
@@ -646,6 +689,7 @@ function montarPayload(r, res) {
       "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l", "co2_alvo_vol", "priming_acucar",
       "agua_origem", "agua_alvo", "agua_diluicao_pct"]),
     sais: (r.sais ?? []).map((x) => ({ sal: x.sal, gramas: x.gramas })),
+    acidos: (r.acidos ?? []).map((x) => ({ acido: x.acido, ml: x.ml })),
     fervura_min: Math.round(r.fervura_min ?? 60),
     og_calc: arred(res.og, 4), fg_calc: arred(res.fg, 4), abv_calc_pct: arred(res.abv_pct, 2), ibu_calc: arred(res.ibu, 1), cor_srm_calc: arred(res.cor_srm, 1),
     fermentaveis: r.fermentaveis.map((x) => so(x, ["fermentavel_id", "nome", "tipo", "rendimento_pct", "umidade_pct", "cor_srm", "fermentavel_pct", "quantidade_kg", "etapa"])),
