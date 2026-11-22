@@ -5,7 +5,9 @@ Versão 1 — 22/11/2026.
 Status: **E0, E1, E2 e E3 feitas em 22/11/2026** (fonte do sistema; passos 50 g / 5 g, configuráveis no perfil; o
 "modo %" da E3 ficou de fora: o responsável não usa). **Etapa de celular (E5) antecipada e feita em 22/11/2026**: o
 responsável e a maioria das pessoas usam pelo celular, então daqui em diante tudo é desenhado e testado primeiro em
-390 px e 320 px com toque. Próxima: E4 (arte), desenhada para o celular.
+390 px e 320 px com toque. **E4 (arte) feita em 22/11/2026**, celular primeiro: ícones em `icones.js` (em vez de
+um arquivo .svg), barra do grist, linha do tempo da fervura, lista em cartões no celular; ícone do app mantido.
+Próxima: E6 (chegar à cor; salvar a referência como versão da receita, junto com "versões" da fase 2).
 
 ---
 

@@ -102,7 +102,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - HTML + módulos JS sem build: `index.html`, `app.js` (login, menu, rotas `#/receitas`, `#/receita/<id|nova>`,
   `#/cadastros/<tabela>`, `#/perfil`), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `alvos.js` (chegar à OG / ao IBU), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -116,7 +116,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  108 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  114 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
@@ -153,6 +153,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   diferença com `pointer-events: none`; `touch-action: manipulation` nos elementos de toque (sem espera de toque
   duplo). O arrastar com o dedo funciona. PENDÊNCIA: no simulador do Chrome, o 1º toque depois de arrastar a alça não
   vira clique (preso até o toque seguinte); causa não achada (detalhes no navegador.cjs). Conferir no iPhone real.
+- Arte (E4, 22/11/2026): ícones próprios em `icones.js` (grade 24, traço 1,75, `icone(nome)` gera SVG pelo `svg()`;
+  sem arquivo .svg para não precisar de requisição nem mexer na CSP): títulos de seção com ícone num círculo, botões
+  (adicionar, desfazer, refazer, voltar) e copinho na marca. Barra do grist (cada malte na própria cor, % do peso,
+  descrição para leitor de tela) e linha do tempo da fervura (`graficos.js`: bolinha por lúpulo, tamanho ~ gramas,
+  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Lista de receitas em cartões no celular
+  (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app mantido.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
   `_headers` e publica. Só publica da branch PADRÃO do repositório. Pré-requisito único (manual, o proxy daqui não
@@ -161,7 +167,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122h.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122i.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.

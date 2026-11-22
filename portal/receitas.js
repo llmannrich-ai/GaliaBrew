@@ -1,12 +1,14 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122h";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122h";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122h";
-import { abrirBusca } from "./busca.js?v=20261122h";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122h";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122h";
-import * as O from "./opcoes.js?v=20261122h";
-import { criarBarraVital, manterAcimaDaBarra } from "./vital.js?v=20261122h";
+import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122i";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122i";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261122i";
+import { abrirBusca } from "./busca.js?v=20261122i";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122i";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122i";
+import * as O from "./opcoes.js?v=20261122i";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122i";
+import { icone } from "./icones.js?v=20261122i";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261122i";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -47,37 +49,72 @@ export async function telaReceitas(conteudo) {
       preencher(corpo, el("p", { class: "nota", text: filtro.quais === "minhas" ? (t ? "Nada encontrado." : "Nenhuma receita ainda. Use “Nova receita”.") : "Nenhuma receita pública de outros usuários." }));
       return;
     }
+    const abrir = (r) => { location.hash = `#/receita/${r.id}`; };
+    const botaoExcluir = (r) => (r.dono === sessao.usuario.id ? el("button", {
+      type: "button", class: "icone perigo", title: "Excluir", "aria-label": `Excluir ${r.nome}`, text: "×",
+      on: {
+        click: async (e) => {
+          e.stopPropagation();
+          if (!(await confirmar(`Excluir a receita “${r.nome}”? Não dá para desfazer.`, { ok: "Excluir", perigo: true }))) return;
+          const { error: erro } = await sb.from("receitas").delete().eq("id", r.id);
+          if (erro) return avisar(mensagemErro(erro), "erro");
+          receitas.splice(receitas.indexOf(r), 1);
+          avisar("Receita excluída.");
+          desenhar();
+        },
+      },
+    }) : null);
+    const estiloTxt = (r) => (r.estilo ? `${r.estilo.codigo ? r.estilo.codigo + " " : ""}${r.estilo.nome}` : "");
+
+    // Celular: cartões (copo na cor da cerveja, nº e nome, estilo e data, números principais). Computador: tabela.
+    if (celular.matches) {
+      preencher(corpo, el("ol", { class: "lista-receitas" }, lista.map((r) => {
+        const vidro = copo();
+        vidro.cerveja.setAttribute("fill", corHexDeSrm(r.cor_srm_calc ?? 0));
+        const numeros = [
+          r.og_calc != null ? `OG ${numeroBR(r.og_calc, 3)}` : null,
+          r.abv_calc_pct != null ? `${numeroBR(r.abv_calc_pct, 1)}%` : null,
+          r.ibu_calc != null ? `${numeroBR(r.ibu_calc, 0)} IBU` : null,
+          r.cor_srm_calc != null ? `${numeroBR(O.corParaTela(r.cor_srm_calc), 0)} ${O.unidadeCor()}` : null,
+        ].filter(Boolean).join(" · ");
+        return el("li", {
+          class: "receita-cartao", tabindex: 0, role: "link", "aria-label": `${r.lote_numero ? "Nº " + r.lote_numero + ", " : ""}${r.nome}`,
+          on: { click: () => abrir(r), keydown: (e) => { if (e.key === "Enter") abrir(r); } },
+        },
+        el("span", { class: "rc-copo" }, vidro),
+        el("div", { class: "rc-corpo" },
+          el("div", { class: "rc-topo" },
+            r.lote_numero ? el("span", { class: "rc-num", text: `#${r.lote_numero}` }) : null,
+            el("strong", { class: "rc-nome", text: r.nome }),
+            r.publica ? el("span", { class: "selo", text: "pública" }) : null),
+          el("div", { class: "rc-sub", text: [estiloTxt(r), dataDoDia(r.data_brassagem)].filter(Boolean).join(" · ") }),
+          numeros ? el("div", { class: "rc-numeros", text: numeros }) : null),
+        botaoExcluir(r));
+      })));
+      return;
+    }
     preencher(corpo, el("table", { class: "tabela" },
       el("thead", {}, el("tr", {}, ["", "Nº", "Nome", "Estilo", "Brassagem", "OG", "FG", "ABV", "IBU", `Cor (${O.unidadeCor()})`, ""].map((h, i) => el("th", { class: i === 1 || (i >= 5 && i <= 9) ? "num" : "", text: h })))),
       el("tbody", {}, lista.map((r) => el("tr", {
         class: "clicavel", tabindex: 0,
-        on: { click: () => { location.hash = `#/receita/${r.id}`; }, keydown: (e) => { if (e.key === "Enter") location.hash = `#/receita/${r.id}`; } },
+        on: { click: () => abrir(r), keydown: (e) => { if (e.key === "Enter") abrir(r); } },
       },
       el("td", {}, amostraCor(r.cor_srm_calc ?? 0)),
       el("td", { class: "num", text: r.lote_numero ?? "" }),
       el("td", {}, el("strong", { text: r.nome }), r.publica ? el("span", { class: "selo", text: "pública" }) : null),
-      el("td", { text: r.estilo ? `${r.estilo.codigo ? r.estilo.codigo + " " : ""}${r.estilo.nome}` : "" }),
+      el("td", { text: estiloTxt(r) }),
       el("td", { text: dataDoDia(r.data_brassagem) }),
       el("td", { class: "num", text: numeroBR(r.og_calc, 3) }),
       el("td", { class: "num", text: numeroBR(r.fg_calc, 3) }),
       el("td", { class: "num", text: r.abv_calc_pct == null ? "" : `${numeroBR(r.abv_calc_pct, 1)}%` }),
       el("td", { class: "num", text: numeroBR(r.ibu_calc, 0) }),
       el("td", { class: "num", text: r.cor_srm_calc == null ? "" : numeroBR(O.corParaTela(r.cor_srm_calc), 1) }),
-      el("td", {}, r.dono === sessao.usuario.id ? el("button", {
-        type: "button", class: "icone perigo", title: "Excluir", "aria-label": `Excluir ${r.nome}`, text: "×",
-        on: {
-          click: async (e) => {
-            e.stopPropagation();
-            if (!(await confirmar(`Excluir a receita “${r.nome}”? Não dá para desfazer.`, { ok: "Excluir", perigo: true }))) return;
-            const { error: erro } = await sb.from("receitas").delete().eq("id", r.id);
-            if (erro) return avisar(mensagemErro(erro), "erro");
-            receitas.splice(receitas.indexOf(r), 1);
-            avisar("Receita excluída.");
-            desenhar();
-          },
-        },
-      }) : null))))));
+      el("td", {}, botaoExcluir(r)))))));
   }
+  // Troca tabela ↔ cartões quando a tela muda de largura (girar o celular, janela do computador).
+  const celular = window.matchMedia("(max-width: 640px)");
+  const aoMudarTela = () => { if (corpo.isConnected) desenhar(); else celular.removeEventListener("change", aoMudarTela); };
+  celular.addEventListener("change", aoMudarTela);
   desenhar();
 }
 
@@ -199,6 +236,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const calculados = new Map();      // item → função que escreve os valores calculados da linha (% do grist, IBU...)
   const totais = [];                 // funções que escrevem o total no cabeçalho de cada seção
   const estiloAtual = () => cat.estilos.find((e) => e.id === r.estilo_id);
+  /** Título de seção com ícone. */
+  const tituloSecao = (nomeIcone, titulo, ...resto) => el("h3", { class: "titulo-secao" }, el("span", { class: "titulo-icone" }, icone(nomeIcone)), titulo, ...resto);
 
   // ---------- tentativas: desfazer/refazer e referência ----------
   const HISTORICO_MAX = 50;
@@ -265,9 +304,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     atualizarResultados();
     atualizarFerramentas();
   }
-  const bDesfazer = el("button", { type: "button", class: "secundario pequeno", text: "↶ Desfazer", title: "Desfazer (Ctrl+Z)", on: { click: desfazer } });
-  const bDesfazerApp = el("button", { type: "button", class: "icone app-desfazer", text: "↶", title: "Desfazer", "aria-label": "Desfazer", on: { click: desfazer } });
-  const bRefazer = el("button", { type: "button", class: "secundario pequeno", text: "↷ Refazer", title: "Refazer (Ctrl+Shift+Z)", on: { click: refazer } });
+  const bDesfazer = el("button", { type: "button", class: "secundario pequeno", title: "Desfazer (Ctrl+Z)", on: { click: desfazer } }, icone("desfazer"), "Desfazer");
+  const bDesfazerApp = el("button", { type: "button", class: "icone app-desfazer", title: "Desfazer", "aria-label": "Desfazer", on: { click: desfazer } }, icone("desfazer"));
+  const bRefazer = el("button", { type: "button", class: "secundario pequeno", title: "Refazer (Ctrl+Shift+Z)", on: { click: refazer } }, icone("refazer"), "Refazer");
   const bFixar = el("button", { type: "button", class: "secundario pequeno", text: "Fixar referência", title: "Guarda os números de agora para comparar com as próximas tentativas", on: { click: fixarReferencia } });
   const refInfo = el("span", { class: "ref-info" });
   const bVoltarRef = el("button", { type: "button", class: "secundario pequeno", text: "Voltar à referência", on: { click: voltarReferencia } });
@@ -292,6 +331,17 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     aoAplicar: (a) => acao(() => { r.lupulos[a.indice].quantidade_g = a.gramas; secoes.lupulos(); mudou("ajuste-ibu"); avisar("Lúpulo ajustado. Ctrl+Z desfaz."); }),
   });
   const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU }, ferramentas });
+  const grist = barraGrist();
+  const tempo = linhaFervura({
+    aoTocar: (i) => {          // leva à linha do lúpulo e a destaca (sem abrir o teclado)
+      const li = document.querySelectorAll('[data-secao="lupulos"] li.ing')[i];
+      if (!li) return;
+      li.scrollIntoView({ block: "center" });
+      li.classList.remove("destaque");
+      void li.offsetWidth;
+      li.classList.add("destaque");
+    },
+  });
   t.atalhos = { desfazer, refazer, marcador: vital.elemento };
   const painel = el("aside", { class: "painel-lote" });
   const resumoLote = el("span", { class: "resumo-texto" });
@@ -324,6 +374,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     for (const t of totais) t(res);
     const estilo = estiloAtual();
     vital.atualizar(res, estilo, { mudanca: montado && !leitura, campo: campo ?? document.activeElement });
+    grist.atualizar(res, r.fermentaveis);
+    tempo.atualizar(res, r.lupulos, r.fervura_min);
     const v = res.volumes;
     corpoBloco(pNumeros,
       linha("OG em °Plato", `${numeroBR(platoDeSg(res.og), 1)} °P`),
@@ -356,10 +408,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
 
   // ---------- seção genérica de lista ----------
-  function secaoLista(chave, titulo, { colunas, adicionar, vazio }) {
+  function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao }) {
     const corpo = el("tbody");
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
-      el("div", { class: "titulo-linha" }, el("h3", { text: titulo }), leitura ? null : adicionar()),
+      el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo), leitura ? null : adicionar()),
       el("div", { class: "tabela-rolagem" },
         el("table", { class: "tabela editavel" },
           el("thead", {}, el("tr", {}, colunas.map((c) => el("th", { class: c.num ? "num" : "", text: c.r })), leitura ? null : el("th"))),
@@ -383,9 +435,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   /** Botão "+ Adicionar" que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
   const botaoAdicionar = (tipo, aoEscolher, aoLivre) => () => el("button", {
-    type: "button", class: "secundario adicionar", text: "+ Adicionar",
+    type: "button", class: "secundario adicionar",
     on: { click: () => abrirBusca({ tipo, itens: cat[tipo], aoEscolher, aoLivre }) },
-  });
+  }, icone("mais"), "Adicionar");
 
   const num = (k, casas, extra = {}) => (item) => campoNumero(item, k, { casas, aoMudar: mudou, desabilitado: des, ...extra });
   const txt = (k, extra = {}) => (item) => campoTexto(item, k, { aoMudar: mudou, desabilitado: des, classe: "nome", ...extra });
@@ -430,7 +482,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   // Celular: barra do app no topo (voltar, nome, desfazer, salvar), sempre à vista; o menu geral some no editor.
   const tituloApp = el("span", { class: "app-titulo" });
   const barraApp = el("div", { class: "barra-app" },
-    el("a", { href: "#/receitas", class: "app-voltar", "aria-label": "Voltar às receitas", text: "‹" }),
+    el("a", { href: "#/receitas", class: "app-voltar", "aria-label": "Voltar às receitas" }, icone("voltar")),
     tituloApp,
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
     leitura ? null : botaoSalvarApp);
@@ -439,7 +491,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     cat.estilos.map((e) => [e.id, `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}`]), { aoMudar: mudou, desabilitado: des, vazio: "— sem estilo —", rotulo: "Estilo" }));
 
   const geral = el("section", { class: "cartao" },
-    el("h3", { text: "Dados gerais" }),
+    tituloSecao("geral", "Dados gerais"),
     el("div", { class: "grade-form" },
       el("label", {}, el("span", { text: "Tipo" }), campoSelect(r, "tipo", O.TIPO_RECEITA, { aoMudar: mudou, desabilitado: des, rotulo: "Tipo" })),
       el("label", {}, el("span", { text: "Autor" }), campoTexto(r, "autor", { aoMudar: mudou, desabilitado: des, max: 80, rotulo: "Autor" })),
@@ -461,7 +513,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const sg = { de: (x) => x, para: (v) => (v >= 900 ? v / 1000 : v > 2 && v < 200 ? 1 + v / 1000 : v) };
   const campoLote = (k, rot, extra) => el("label", {}, el("span", {}, rot, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { aoMudar: mudou, desabilitado: des, rotulo: rot, ...extra }));
   const brassagem = el("section", { class: "cartao", dataset: { secao: "brassagem" } },
-    el("h3", { text: "Brassagem (lote)" }),
+    tituloSecao("brassagem", "Brassagem (lote)"),
     el("div", { class: "grade-form" },
       campoLote("lote_numero", "Nº do lote", { casas: 0, placeholder: "automático" }),
       el("label", {}, el("span", { text: "Data da brassagem" }), el("input", {
@@ -509,12 +561,13 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
 
-  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, montarLinha }) {
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, montarLinha, iconeSecao, grafico }) {
     const lista = el("ol", { class: `linhas-ing ${classe}` });
     const totalEl = el("span", { class: "total-secao" });
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
-      el("div", { class: "titulo-linha" }, el("h3", {}, titulo, " ", totalEl),
+      el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo, " ", totalEl),
         leitura ? null : el("div", { class: "titulo-acoes" }, ferramenta, adicionar())),
+      grafico ?? null,
       lista);
     totais.push((res) => { totalEl.textContent = r[chave].length ? total(res) : ""; });
 
@@ -649,6 +702,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   const cor = { de: O.corParaTela, para: O.corDaTela };
   const fermentaveis = secaoLinhas("fermentaveis", "Fermentáveis", {
+    iconeSecao: "malte", grafico: grist.elemento,
     classe: "ferm",
     vazio: "Nenhum fermentável. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
@@ -691,6 +745,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   const DA_IBU = new Set(["FERVURA", "PRIMEIRO_MOSTO", "WHIRLPOOL"]);     // etapas que entram no IBU
   const lupulos = secaoLinhas("lupulos", "Lúpulos", {
+    iconeSecao: "lupulo", grafico: tempo.elemento,
     classe: "lup",
     vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
@@ -748,6 +803,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   };
 
   const leveduras = secaoLista("leveduras", "Leveduras", {
+    iconeSecao: "levedura",
     vazio: "Nenhuma levedura (a FG fica igual à OG).",
     colunas: [
       { r: "Nome", campo: txt("nome") },
@@ -765,6 +821,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   });
 
   const outros = secaoLista("outros", "Outros ingredientes", {
+    iconeSecao: "outros",
     vazio: "Nenhum.",
     colunas: [
       { r: "Nome", campo: txt("nome") },
@@ -781,6 +838,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "secundario pequeno", text: "+ Passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
   const mostura = secaoLista("mostura", "Mostura", {
+    iconeSecao: "mostura",
     vazio: "Sem passos.",
     colunas: [
       { r: "Passo", campo: txt("nome") },
@@ -791,6 +849,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     adicionar: botaoPasso("mostura", () => ({ nome: "", tipo: "TEMPERATURA", temperatura_c: 72, tempo_min: 10 })),
   });
   const fermentacao = secaoLista("fermentacao", "Fermentação", {
+    iconeSecao: "fermentacao",
     vazio: "Sem passos.",
     colunas: [
       { r: "Passo", campo: txt("nome") },
@@ -800,12 +859,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     adicionar: botaoPasso("fermentacao", () => ({ nome: "", temperatura_c: 2, dias: 3 })),
   });
 
-  const notas = el("section", { class: "cartao" }, el("h3", { text: "Notas" }),
+  const notas = el("section", { class: "cartao" }, tituloSecao("notas", "Notas"),
     el("textarea", { rows: 4, maxlength: 8000, disabled: des, value: r.notas ?? "", "aria-label": "Notas", on: { input: (e) => { r.notas = e.target.value; mudou(); } } }));
 
   // Lote: uma linha de resumo; os parâmetros abrem ao clicar. Receita nova sem equipamento já abre (falta o volume).
   const lote = el("details", { class: "cartao lote", open: !r.id && !r.equipamento_id && !leitura },
-    el("summary", {}, el("span", { class: "resumo-titulo", text: "Parâmetros" }), resumoLote, el("span", { class: "resumo-acao", "aria-hidden": "true" })),
+    el("summary", {}, el("span", { class: "resumo-titulo" }, el("span", { class: "titulo-icone" }, icone("parametros")), "Parâmetros"), resumoLote, el("span", { class: "resumo-acao", "aria-hidden": "true" })),
     equipamentoCampo,
     parametros);
 

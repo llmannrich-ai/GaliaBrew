@@ -1,8 +1,16 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122h";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122h";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122h";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122h";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261122i";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122i";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122i";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122i";
+import { copo } from "./vital.js?v=20261122i";
+
+/** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar). */
+function marcaCopo() {
+  const c = copo();
+  c.cerveja.setAttribute("fill", "#d08a2a");
+  return c;
+}
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -14,7 +22,7 @@ function cabecalho() {
     ["#/perfil", "Meu perfil"],
   ];
   return el("header", { class: "topo" },
-    el("a", { href: "#/receitas", class: "marca", text: "GaliaBrew" }),
+    el("a", { href: "#/receitas", class: "marca" }, marcaCopo(), "GaliaBrew"),
     el("nav", {}, links.map(([h, t]) => el("a", { href: h, text: t, dataset: { rota: h.split("/")[1] } }))),
     el("div", { class: "quem" },
       el("span", { text: sessao.perfil?.nome || sessao.usuario?.email || "" }),

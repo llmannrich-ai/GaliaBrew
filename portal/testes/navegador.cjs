@@ -254,7 +254,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122h");
+    const m = await import("./calculos.js?v=20261122i");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -280,6 +280,9 @@ const erros = [];
     "fermentável mostra % do grist e pontos da OG");
   verificar(await pagina.textContent(`${linhaL} .d1 .ing-dado-val`) === br(esperado.ibu, 1) && await pagina.textContent(`${linhaL} .d2 .ing-dado-val`) === br(60 / 23, 1),
     "lúpulo mostra IBU da adição e g/L");
+  verificar(await pagina.getAttribute(".grist", "aria-label") === "Proporção dos fermentáveis no peso: Pilsen (sistema) 100%" && await pagina.locator(".grist-seg").count() === 1,
+    "barra do grist: um segmento por malte, com descrição para leitor de tela");
+  verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
     "totais no cabeçalho das seções");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
@@ -290,7 +293,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122h");
+    const m = await import("./calculos.js?v=20261122i");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -325,6 +328,12 @@ const erros = [];
   verificar(await pagina.isVisible(`${segunda} input[aria-label="Dia"]`) && !(await pagina.isVisible(`${segunda} input[aria-label="Tempo (min)"]`)) && await pagina.textContent(`${segunda} .d1 .ing-dado-val`) === "—",
     "dry hop: pede o dia no lugar do tempo e o IBU fica '—'");
   verificar(await vital("ibu") === br(esperado.ibu, 0), "dry hop não muda o IBU");
+  // E4: linha do tempo com o lúpulo da fervura (60 min = início) e o dry hop na zona própria.
+  const pontosTempo = await pagina.$$eval(".tempo-ponto", (ps) => ps.map((p) => ({ rot: p.getAttribute("aria-label"), esq: parseFloat(p.style.left) })));
+  verificar(pontosTempo.length === 2 && pontosTempo.some((p) => p.esq === 0 && p.rot.includes("60 min")) && pontosTempo.some((p) => p.rot.includes("dry hop") && p.esq > 80),
+    `linha do tempo: lúpulo de 60 min no início e dry hop na zona do fim (${pontosTempo.map((p) => Math.round(p.esq)).join(", ")}%)`);
+  await pagina.click('.tempo-ponto[aria-label*="dry hop"]');
+  verificar(await pagina.evaluate(() => document.querySelectorAll('[data-secao="lupulos"] li.ing')[1].classList.contains("destaque")), "tocar no lúpulo da linha do tempo destaca a linha dele");
   const alca2 = await pagina.locator(`${segunda} .ing-alca`).boundingBox();
   const linha1 = await pagina.locator(`${linhaL}:nth-child(1)`).boundingBox();
   await pagina.mouse.move(alca2.x + alca2.width / 2, alca2.y + alca2.height / 2);
@@ -365,7 +374,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122h");
+    const m = await import("./calculos.js?v=20261122i");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -435,7 +444,7 @@ const erros = [];
 
   // Celular
   await pagina.setViewportSize({ width: 390, height: 844 });
-  await pagina.click("td >> text=Pils da Galia");
+  await pagina.click(".receita-cartao >> text=Pils da Galia");
   await pagina.waitForSelector(".titulo-receita");
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
@@ -531,8 +540,13 @@ const erros = [];
   await cel.fill('input[type="email"]', USUARIO.email);
   await cel.fill('input[type="password"]', SENHA);
   await cel.click('button[type="submit"]');
-  await cel.waitForSelector("td >> text=Pils da Galia");
-  await tocar("td >> text=Pils da Galia");
+  await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  verificar(await cel.locator(".receita-cartao").count() === db.receitas.filter((x) => x.dono === USUARIO.id).length && await larguraSobra() <= 1,
+    "toque: lista de receitas em cartões, sem rolagem para o lado");
+  verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
+    "toque: cartão mostra estilo, data e números");
+  await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
+  await tocar(".receita-cartao >> text=Pils da Galia");
   await cel.waitForSelector(".barra-app");
   verificar(!(await cel.isVisible("header.topo")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
     "toque: no editor o menu geral some e a barra do app mostra voltar, nome, desfazer e Salvar");
