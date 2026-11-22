@@ -14,6 +14,10 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   (Cloudflare Pages, como os outros portais).
 - Cálculos no navegador, num único módulo `portal/calculos.js`, com testes.
 
+## Princípio do produto (22/11/2026)
+CADA RECEITA É UM LOTE. Não há módulo de brassagem nem versões de receita. Receita nova nasce de "criar a partir de"
+uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o que o cervejeiro anota. Ver PRD 1.1.
+
 ## Regras obrigatórias
 1. NUNCA no repositório: chave `service_role`, senha do banco, token, `.env`. A chave publicável (anon/publishable)
    pode ir no portal: quem protege os dados é a RLS.
@@ -75,7 +79,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (14 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (15 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -111,7 +115,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  24 verificações: login, cadastros com vírgula, editor x calculos.js, salvar/reabrir, lista, celular 390 px, receita
+  34 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, salvar/reabrir, lista, celular 390 px, receita
   de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
@@ -121,7 +125,19 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122c.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122d.
+
+## Receita = lote (0005, aplicada em 22/11/2026)
+- `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
+  83a/83b), `data_brassagem` (date), `og_medida`, `fg_medida` (0,98-1,2), `volume_final_l`. `salvar_receita` grava
+  esses campos; `lote_numero` enviado nulo mantém o atual. Teste `supabase/testes/0005_receita_lote.sql`: 8 ok.
+- Carga: número e data tirados do nome das importadas (93 com nº, 61 com data); 9 sem número no nome ficaram nulos.
+- `calculos.js` → `res.medido`: eficiência real (OG medida no volume real + perda da panela, menos açúcar pronto,
+  sobre o açúcar possível do grão), ABV real, atenuação aparente real.
+- Portal: card "Lote" (nº, data, OG/FG medidas aceitam 1,050 / 1050 / 50, volume real); lista por nº com a data;
+  "Nova a partir desta" (rota `#/receita/nova/<id>`) e, na receita nova, "Começar a partir de uma receita anterior".
+  A cópia leva tudo menos dados do lote, notas e "pública"; liga só cadastros que a pessoa enxerga. Data sem hora
+  é formatada por `dataDoDia` (new Date desloca um dia no fuso do Brasil).
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
@@ -151,19 +167,18 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
   a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
   supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0004 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0005 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
 - 22/11/2026: FASE 1 CONCLUÍDA (testada no iPhone; Site URL/Redirect configuradas; IBU com whirlpool).
-- Próximo: fase 2, na ordem recomendada:
-  (1) LOTE: brassagem ligada à receita, esperado × medido (volumes, densidades pré-fervura/OG/FG, temperaturas,
-  datas, notas) e eficiência/ABV/atenuação reais; (2) calculadoras: água da mostura e priming, depois refratômetro
-  e correção do densímetro; (3) escalar receita; (4) versões da receita (travar a receita usada no lote).
+- Fase 2 (1) feita em 22/11/2026: "criar a partir de" + dados do lote (0005).
+- Próximo: (2) calculadoras: água da mostura e priming, depois
+  refratômetro e correção do densímetro; (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho
 - Fase 1 (CONCLUÍDA em 22/11/2026): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor
   de receita ✔ → publicação no GitHub Pages (workflow pronto; falta ligar o Pages) → catálogo ✔ (0004).
-- Fase 2: brassagem (lote esperado × medido, eficiência real), ferramentas (água de mostura, priming,
-  refratômetro, correção do densímetro), escalar receita, versões da receita.
+- Fase 2: receita = lote ("criar a partir de", dados do lote na receita), ferramentas (água de mostura, priming,
+  refratômetro, correção do densímetro), escalar receita.
 - Fase 3: importar/exportar BeerJSON e BeerXML, estoque, química da água.

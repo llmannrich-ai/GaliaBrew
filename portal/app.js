@@ -1,8 +1,8 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122c";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122c";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122c";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122c";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261122d";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261122d";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261122d";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261122d";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -155,14 +155,14 @@ let rotaAtual = null;
 
 async function rotear() {
   if (!sessao.usuario) return;
-  const [, rota = "receitas", param] = location.hash.split("/");
+  const [, rota = "receitas", param, origem] = location.hash.split("/");
   const conteudo = $("#conteudo");
   if (!conteudo) return;
   marcarMenu();
   rotaAtual = location.hash;
   try {
     if (rota === "receitas") await telaReceitas(conteudo);
-    else if (rota === "receita") await telaEditor(conteudo, param);
+    else if (rota === "receita") await telaEditor(conteudo, param, origem);
     else if (rota === "cadastros") await telaCadastros(conteudo, CADASTROS[param] ? param : "fermentaveis");
     else if (rota === "perfil") telaPerfil(conteudo);
     else { location.hash = "#/receitas"; return; }

@@ -66,6 +66,13 @@ export function sgDeAcucar(acucarKg, litros) {
   return litros > 0 && acucarKg > 0 ? sgDePlato(platoDeAcucar(acucarKg, litros)) : 1;
 }
 
+/** Açúcar (kg) que dá a densidade `sg` em `litros` (inverso de sgDeAcucar). */
+export function acucarDeSg(sg, litros) {
+  if (!(litros > 0) || !(sg > 1)) return 0;
+  const p = platoDeSg(sg);
+  return (p * litros) / (100 - p * (1 - 1 / DENSIDADE_SACAROSE_KG_L));
+}
+
 export const pontos = (sg) => (sg - 1) * 1000;
 export const sgDePontos = (p) => 1 + p / 1000;
 export const ebcDeSrm = (srm) => srm * 1.97;
@@ -243,6 +250,26 @@ export function calcularReceita(r) {
   const aguaTotal = preFervura + absorcao + (graosKg > 0 ? num(r.perda_tina_l) : 0);
   const aguaMostura = Math.min(aguaTotal, graosKg * num(r.relacao_agua_grao_l_kg, 3));
 
+  // O que aconteceu no lote (receita = lote): OG/FG medidas e volume real no fermentador.
+  // Eficiência real: açúcar que a OG medida representa no volume real pós-fervura (volume final + perda na panela),
+  // menos o açúcar pronto (extrato, açúcar...), dividido pelo açúcar que o grão podia dar (sem a eficiência).
+  function medido() {
+    const ogM = num(r.og_medida, null);
+    const fgM = num(r.fg_medida, null);
+    const volM = num(r.volume_final_l, null);
+    const m = { og: ogM, fg: fgM, volume_final_l: volM, eficiencia_pct: null, abv_pct: null, atenuacao_pct: null };
+    if (ogM > 1 && eficiencia > 0 && doAmido > 0) {
+      const amidoPossivel = doAmido / eficiencia;
+      const realAmido = acucarDeSg(ogM, (volM ?? lote) + perdaPanela) - pronto;
+      m.eficiencia_pct = Math.max(0, (realAmido / amidoPossivel) * 100);
+    }
+    if (ogM > 1 && fgM > 0 && fgM <= ogM) {
+      m.abv_pct = abv(ogM, fgM).abv_pct;
+      m.atenuacao_pct = ((ogM - fgM) / (ogM - 1)) * 100;
+    }
+    return m;
+  }
+
   return {
     og,
     fg,
@@ -266,6 +293,7 @@ export function calcularReceita(r) {
     },
     fermentaveis: porItem.map((x, i) => ({ ...x, pct_acucar: acucarTotal > 0 ? (x.acucar_kg / acucarTotal) * 100 : 0, indice: i })),
     lupulos: ibuPorItem,
+    medido: medido(),
     avisos: [
       ...(leveduras.length === 0 && fermentaveis.length > 0 ? ["SEM_LEVEDURA"] : []),
       ...(lote <= 0 ? ["SEM_VOLUME"] : []),
