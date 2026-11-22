@@ -8,8 +8,10 @@ description: Publica a branch atual do GaliaBrew na main (e na branch padrão qu
 Várias sessões desenvolvem em branches próprias e publicam em paralelo. Esta skill garante:
 **uma publicação por vez, na ordem de chegada, sempre a partir da main mais recente.**
 
-A fila mora no próprio GitHub (`refs/fila/*` no `origin`), então vale para sessões na mesma máquina, em outras
-máquinas e na nuvem. Scripts (rodar da raiz do repositório, com Bash):
+A fila mora no próprio GitHub (`refs/fila/*` no `origin`), então vale para sessões na mesma máquina e em outras
+máquinas. **Sessão na nuvem (claude.ai/code)** só pode enviar para a própria branch: não grava a fila nem a `main`.
+Ela publica pelo **Modo nuvem (pull request)**, no fim deste arquivo. Sinal de que é o caso: `fila.sh entrar` não
+cria a senha (`.git/fila-senha`) e o push é recusado com 403. Scripts (rodar da raiz do repositório, com Bash):
 
 - `.claude/skills/deploy/fila.sh` — `entrar`, `status`, `esperar [max_min]`, `pulso`, `sair`, `expulsar <senha>`
 - `.claude/skills/deploy/conferir.sh` — confere conflitos de versão contra `origin/main`
@@ -66,6 +68,21 @@ Só pedir status? Rode `bash .claude/skills/deploy/fila.sh status` e mostre a ta
 ### Sempre sair da fila
 Qualquer parada depois do `entrar` — teste falhou, conflito que precisa do responsável, erro, desistência — termina com
 `fila.sh sair`. Sessão presa na 1ª posição trava todas as outras por 20 min. Se for continuar depois, entre de novo.
+
+## Modo nuvem (pull request)
+Para a sessão que não consegue entrar na fila (ver o início). No lugar da fila, valem as regras da `main` no GitHub
+(Settings → Branches): PR obrigatório, teste "Cálculos e versões" (`.github/workflows/testes.yml`) passando e branch
+**atualizada com a main** antes de juntar. O GitHub recusa juntar um PR desatualizado: é a mesma garantia da fila.
+1. Passo 1 inteiro (atualizar com a main, testes, `conferir.sh` até `CONFERÊNCIA OK`) e enviar a branch de trabalho.
+2. PR para a `main`: abrir (`gh api repos/llmannrich-ai/GaliaBrew/pulls -f head=<branch> -f base=main ...`) ou, se
+   já existe, conferir que a base é `main` (`gh api -X PATCH .../pulls/<n> -f base=main`).
+3. Esperar os testes do PR (`gh api .../commits/<sha>/check-runs`). Falhou → corrigir na branch, enviar, esperar.
+4. Migração nova: aplicar pelo MCP do Supabase só AGORA, logo antes de juntar (mesmas regras do passo 3.4).
+5. Juntar SÓ com pedido do responsável nesta conversa ("publique", "pode juntar"):
+   `gh api -X PUT repos/llmannrich-ai/GaliaBrew/pulls/<n>/merge -f merge_method=merge`.
+   Recusado por "not up to date" (outra sessão publicou antes) → voltar ao 1. Recusado por permissão → pedir ao
+   responsável para clicar em "Merge" no PR. O GitHub Pages publica sozinho a partir da `main` (branch padrão).
+6. Conferir a publicação como no passo 3.8. Não há fila para sair.
 
 ## Conflitos de versão (como resolver)
 - **Número de migração**: duas branches criaram `0005_*`. Quem publica depois renumera a SUA (ainda não aplicada) para

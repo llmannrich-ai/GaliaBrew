@@ -45,6 +45,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - `supabase/testes/` — testes de RLS e de funções (rodam e desfazem)
 - `portal/` — página do app (fase 1: login + receitas); `portal/testes/` — testes (calculos.js e navegador)
 - `.github/workflows/pages.yml` — publicação do portal no GitHub Pages
+- `.github/workflows/testes.yml` — testes de todo PR para a main ("Cálculos e versões": cálculo + conferir.sh, exigido
+  na proteção da main; "Portal no navegador": navegador.cjs com Playwright 1.63.0). Sessão na nuvem publica por PR
+  (modo nuvem da skill /deploy), porque só pode enviar para a própria branch.
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 - `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
 - `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
