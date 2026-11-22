@@ -1,14 +1,14 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122m";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122m";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261122m";
-import { abrirBusca } from "./busca.js?v=20261122m";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122m";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122m";
-import * as O from "./opcoes.js?v=20261122m";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122m";
-import { icone } from "./icones.js?v=20261122m";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261122m";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122n";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122n";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261122n";
+import { abrirBusca } from "./busca.js?v=20261122n";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122n";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122n";
+import * as O from "./opcoes.js?v=20261122n";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122n";
+import { icone } from "./icones.js?v=20261122n";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261122n";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -229,13 +229,6 @@ function instalarAtalhos(t) {
     else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); t.atalhos.refazer(); }
   };
   document.addEventListener("keydown", atalhoAtual);
-}
-
-/** Ícone de cadeado (fechado = travado). */
-function iconeCadeado(fechado) {
-  return svg("svg", { viewBox: "0 0 24 24", width: 18, height: 18, "aria-hidden": "true", focusable: "false", class: "cadeado" },
-    svg("rect", { x: 5, y: 11, width: 14, height: 10, rx: 2.2 }),
-    svg("path", { d: fechado ? "M8 11V8a4 4 0 0 1 8 0v3" : "M8 11V8a4 4 0 0 1 7.6-1.7" }));
 }
 
 function aplicarEquipamento(r, eq) {
@@ -615,17 +608,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       };
       const remover = () => acao(() => { abertos.delete(item); r[chave].splice(i, 1); desenhar(); mudou(); });
       const nomeItem = String(item.nome ?? "").trim() || "item sem nome";
-      const trava = leitura ? el("span", { class: "ing-trava", "aria-hidden": "true" }) : el("button", {
-        type: "button", class: "icone ing-trava", "aria-pressed": String(Boolean(item.travado)),
-        title: "Cadeado: este item não muda em “Chegar à OG” e “Chegar ao IBU”",
-        "aria-label": `Cadeado de ${nomeItem} (não muda nos ajustes automáticos)`,
-        on: { click: () => acao(() => {
-          item.travado = !item.travado;
-          trava.setAttribute("aria-pressed", String(item.travado));
-          preencher(trava, iconeCadeado(item.travado));
-          trava.closest("li").classList.toggle("travado", item.travado);
-        }) },
-      }, iconeCadeado(Boolean(item.travado)));
       const idDet = `det-${chave}-${i}`;
       const aberto = abertos.has(item);
       const det = el("div", { class: "ing-detalhes", id: idDet, hidden: !aberto },
@@ -653,7 +635,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           pointerdown: (e) => arrastar(e, i, mover),
         },
       });
-      const li = el("li", { class: item.travado ? "ing travado" : "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub), partes.colunas, trava, botaoMais, det);
+      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub), partes.colunas, botaoMais, det);
       refrescar();
       calculados.set(item, partes.aoCalcular);
       return li;
@@ -735,7 +717,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const amostra = el("span", { class: "amostra ing-cor", "aria-hidden": "true" });
       const pct = el("span", { class: "ing-dado-val" });
       const pts = el("span", { class: "ing-dado-val" });
-      const passoG = passo("passo_fermentavel_g", 50);
+      const passoG = passo("passo_fermentavel_g", 250);
       const campo = { desabilitado: des, aoMudar: ctx.mudou };
       return {
         visual: amostra,

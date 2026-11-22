@@ -1,8 +1,8 @@
 // alvos.js — janelas "Chegar à OG" e "Chegar ao IBU": a pessoa digita o alvo, vê a prévia (o que muda e como
 // ficam os números) e só então aplica. As contas estão em calculos.js (ajustarParaOG, ajustarParaIBU).
-import { el, preencher, numeroBR, lerNumero } from "./ui.js?v=20261122m";
-import { calcularReceita, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis } from "./calculos.js?v=20261122m";
-import * as O from "./opcoes.js?v=20261122m";
+import { el, preencher, numeroBR, lerNumero } from "./ui.js?v=20261122n";
+import { calcularReceita, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis } from "./calculos.js?v=20261122n";
+import * as O from "./opcoes.js?v=20261122n";
 
 const nomeDe = (x) => String(x.nome ?? "").trim() || "(sem nome)";
 
@@ -74,7 +74,7 @@ export function abrirAlvoOG({ r, estilo, aoAplicar }) {
   }
   const jan = janela({
     titulo: "Chegar à OG",
-    explicacao: "Aumenta ou diminui todos os fermentáveis na mesma proporção (a receita mantém o “jeito”). Itens com cadeado não mudam.",
+    explicacao: "Aumenta ou diminui todos os fermentáveis na mesma proporção (a receita mantém o “jeito”).",
     campo: rotulo, extras,
     aoCalcular: (previa) => {
       const alvo = lerOG(input.value);
@@ -82,15 +82,14 @@ export function abrirAlvoOG({ r, estilo, aoAplicar }) {
       const a = ajustarParaOG(r, alvo);
       if (!a.ok) {
         preencher(previa, el("p", { class: "nota alerta", text: {
-          SEM_LIVRES: "Não há fermentável sem cadeado e com quantidade para ajustar.",
-          TRAVADOS_PASSAM: "Só os itens com cadeado já passam dessa OG. Tire algum cadeado ou escolha uma OG maior.",
+          SEM_LIVRES: "Não há fermentável com quantidade para ajustar.",
           INALCANCAVEL: "Essa OG não dá para alcançar com esses fermentáveis.",
         }[a.motivo] }));
         return null;
       }
       const depois = calcularReceita({ ...r, fermentaveis: r.fermentaveis.map((f, i) => ({ ...f, quantidade_kg: a.quantidades[i] })) });
       preencher(previa,
-        tabelaMudancas(r.fermentaveis.map((f, i) => [nomeDe(f), `${numeroBR(f.quantidade_kg ?? 0, 3)} kg`, `${numeroBR(a.quantidades[i] ?? 0, 3)} kg`, f.travado ? "cadeado" : null])),
+        tabelaMudancas(r.fermentaveis.map((f, i) => [nomeDe(f), `${numeroBR(f.quantidade_kg ?? 0, 3)} kg`, `${numeroBR(a.quantidades[i] ?? 0, 3)} kg`])),
         resumo(depois),
         Math.round(depois.ibu) !== Math.round(atual.ibu) ? el("p", { class: "nota", text: "O IBU muda um pouco porque o amargor rende menos em mosto mais denso." }) : null);
       return a.quantidades;
@@ -119,7 +118,7 @@ export function abrirAlvoIBU({ r, estilo, aoAplicar }) {
   }
   const jan = janela({
     titulo: "Chegar ao IBU",
-    explicacao: "Muda só um lúpulo — o de amargor (o que ferve mais tempo) ou o que você escolher. Aroma, whirlpool e dry hop ficam como estão. Itens com cadeado não mudam.",
+    explicacao: "Muda só um lúpulo — o de amargor (o que ferve mais tempo) ou o que você escolher. Aroma, whirlpool e dry hop ficam como estão.",
     campo: rotulo, extras,
     aoCalcular: (previa) => {
       const alvo = lerNumero(input.value);
@@ -127,7 +126,7 @@ export function abrirAlvoIBU({ r, estilo, aoAplicar }) {
       const a = ajustarParaIBU(r, alvo, escolha.indice);
       if (!a.ok) {
         preencher(previa, el("p", { class: "nota alerta", text: {
-          SEM_AMARGOR: "Nenhum lúpulo sem cadeado na fervura ou no primeiro mosto para ajustar.",
+          SEM_AMARGOR: "Nenhum lúpulo na fervura ou no primeiro mosto para ajustar.",
           SEM_EFEITO: "Esse lúpulo está sem alfa ácido: não dá amargor.",
           OUTROS_PASSAM: `Só os outros lúpulos já dão ${numeroBR(a.ibuOutros, 0)} IBU. Diminua-os ou escolha um IBU maior.`,
         }[a.motivo] }));
