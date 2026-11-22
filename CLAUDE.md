@@ -124,6 +124,20 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Site URL e Redirect URLs: preencher quando o portal tiver endereço.
 - Primeiro admin: depois de criar o próprio login, `update perfis set papel = 'admin' where user_id = ...` por SQL.
 
+## Situação em 22/11/2026 (fim da 1ª sessão)
+- No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
+  a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
+  supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0004 aplicadas.
+- A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
+- Pendente do responsável: desligar "Allow new users to sign up"; Site URL/Redirect URLs = endereço do Pages;
+  SMTP próprio só quando for convidar outras pessoas; (opcional) repositório privado (aí o Pages exige plano pago),
+  branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
+- Próximo: o responsável testa a fase 1 no iPhone e diz o que incomoda; depois fase 2, na ordem recomendada:
+  (1) LOTE: brassagem ligada à receita, esperado × medido (volumes, densidades pré-fervura/OG/FG, temperaturas,
+  datas, notas) e eficiência/ABV/atenuação reais; (2) calculadoras: água da mostura e priming, depois refratômetro
+  e correção do densímetro; (3) escalar receita; (4) versões da receita (travar a receita usada no lote).
+
 ## Ordem de trabalho
 - Fase 1 (em andamento): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor
   de receita ✔ → publicação no GitHub Pages (workflow pronto; falta ligar o Pages) → catálogo ✔ (0004).
