@@ -244,7 +244,7 @@ async function site(rota) {
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122d");
+    const m = await import("./calculos.js?v=20261122e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -279,7 +279,7 @@ async function site(rota) {
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122d");
+    const m = await import("./calculos.js?v=20261122e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -330,6 +330,68 @@ async function site(rota) {
   await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
   await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
   verificar(await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pelos detalhes");
+
+  // ---- E3: desfazer/refazer ----
+  await pagina.keyboard.press("Control+z");
+  verificar(await pagina.locator(linhaL).count() === 2, "Ctrl+Z traz de volta o lúpulo removido");
+  await pagina.keyboard.press("Control+Shift+z");
+  verificar(await pagina.locator(linhaL).count() === 1, "Ctrl+Shift+Z refaz a remoção");
+  await qtd.fill("5,5");
+  await pagina.click('.vital-ferramentas button:has-text("Desfazer")');
+  verificar(await qtd.inputValue() === "4,800" && await vital("og") === br(esperado.og, 3), "botão Desfazer volta a quantidade digitada");
+  verificar((await vital("og", "vital-delta")).startsWith("−"), "depois de desfazer, a barra mostra a diferença");
+
+  // ---- E3: chegar à OG (pelo número da OG na barra) ----
+  await pagina.click('.vital [data-metrica="og"] button.vital-val');
+  await pagina.waitForSelector("dialog.alvo");
+  await pagina.fill('dialog.alvo input[aria-label="OG desejada"]', "46");
+  verificar((await pagina.textContent(".alvo-previa")).includes("OG 1,046"), "OG em pontos (46) vira 1,046 na prévia");
+  await pagina.click('dialog.alvo button:has-text("Meio do estilo")');
+  const previaOG = await pagina.textContent(".alvo-previa");
+  verificar(previaOG.includes("Pilsen (sistema)") && previaOG.includes("OG 1,047"), "prévia mostra o malte novo e a OG 1,047 (meio do German Pils) antes de aplicar");
+  await pagina.screenshot({ path: `${SAIDA}/p3g-chegar-og.png` });
+  await pagina.click('dialog.alvo button:has-text("Aplicar")');
+  const kgOG = Number((await qtd.inputValue()).replace(",", "."));
+  const kgEsperado = await pagina.evaluate(async () => {
+    const m = await import("./calculos.js?v=20261122e");
+    return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
+      fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
+  });
+  verificar(await vital("og") === "1,047" && kgOG === kgEsperado, `Chegar à OG aplica ${br(kgEsperado, 3)} kg e a OG fica 1,047`);
+  await pagina.keyboard.press("Control+z");
+  verificar(await qtd.inputValue() === "4,800", "Ctrl+Z desfaz o ajuste inteiro");
+
+  // ---- E3: cadeado ----
+  await pagina.click(`${linhaF} button.ing-trava`);
+  verificar(await pagina.getAttribute(`${linhaF} button.ing-trava`, "aria-pressed") === "true", "cadeado trava o malte");
+  await pagina.click('[data-secao="fermentaveis"] button:has-text("Chegar à OG")');
+  await pagina.fill('dialog.alvo input[aria-label="OG desejada"]', "1,050");
+  verificar((await pagina.textContent(".alvo-previa")).includes("sem cadeado") && await pagina.isDisabled('dialog.alvo button:has-text("Aplicar")'),
+    "com o único malte no cadeado, o ajuste explica e não deixa aplicar");
+  await pagina.click('dialog.alvo button:has-text("Cancelar")');
+  await pagina.click(`${linhaF} button.ing-trava`);
+  verificar(await pagina.getAttribute(`${linhaF} button.ing-trava`, "aria-pressed") === "false", "cadeado solta");
+
+  // ---- E3: chegar ao IBU ----
+  await pagina.click('.vital [data-metrica="ibu"] button.vital-val');
+  await pagina.fill('dialog.alvo input[aria-label="IBU desejado"]', "30");
+  verificar((await pagina.textContent(".alvo-previa")).includes("Saaz"), "prévia do IBU mostra o lúpulo que muda");
+  await pagina.click('dialog.alvo button:has-text("Aplicar")');
+  const gIBU = Number((await pagina.inputValue('input[aria-label="Qtd (g)"]')).replace(",", "."));
+  verificar(await vital("ibu") === "30" && gIBU > 60, `Chegar ao IBU: 30 IBU com ${br(gIBU, 1)} g de Saaz`);
+  await pagina.keyboard.press("Control+z");
+  verificar(await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0" && await vital("ibu") === br(esperado.ibu, 0), "Ctrl+Z volta o lúpulo");
+
+  // ---- E3: referência ----
+  await pagina.click('.vital-ferramentas button:has-text("Fixar referência")');
+  verificar((await pagina.textContent(".ref-info")).startsWith("Comparando com a referência das"), "referência fixada aparece na barra");
+  await qtd.fill("5,3");
+  verificar(await vital("og", "vital-ref") === `ref. ${br(esperado.og, 3)} · +${br(esperado53, 3)}`, "barra compara com a referência (ref. e diferença)");
+  await pagina.screenshot({ path: `${SAIDA}/p3h-referencia.png` });
+  await pagina.click('.vital-ferramentas button:has-text("Voltar à referência")');
+  verificar(await qtd.inputValue() === "4,800" && await vital("og", "vital-ref") === `ref. ${br(esperado.og, 3)} · igual`, "Voltar à referência restaura a receita fixada");
+  await pagina.click('.vital-ferramentas button:has-text("Soltar")');
+  verificar(await vital("og", "vital-ref") === "" && await pagina.isVisible('.vital-ferramentas button:has-text("Fixar referência")'), "Soltar para de comparar");
   await pagina.evaluate(() => window.scrollTo(0, 0));
   await pagina.screenshot({ path: `${SAIDA}/p3-editor.png` });
   await pagina.emulateMedia({ colorScheme: "dark" });
@@ -380,6 +442,7 @@ async function site(rota) {
   await pagina.screenshot({ path: `${SAIDA}/p5b-celular-rolado.png` });
   await pagina.click(".vital-mais");
   verificar(await pagina.getAttribute(".vital-mais", "aria-expanded") === "true" && await pagina.isVisible('.vital [data-metrica="og"] .vital-estado'), "celular: 'detalhes' abre estado e faixas");
+  verificar(await pagina.isVisible('.vital-ferramentas button:has-text("Desfazer")'), "celular: desfazer e referência ficam nos detalhes da barra");
   await pagina.screenshot({ path: `${SAIDA}/p5c-celular-detalhes.png` });
   await pagina.click(".vital-mais");
   await pagina.evaluate(() => window.scrollTo(0, 0));

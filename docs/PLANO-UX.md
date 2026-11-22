@@ -2,7 +2,8 @@
 
 Versão 1 — 22/11/2026.
 
-Status: **E0, E1 e E2 feitas em 22/11/2026** (fonte do sistema; passos 50 g / 5 g, configuráveis no perfil). Próxima: E3. Base: código do portal (`receitas.js`, `style.css`), capturas da tela atual (computador e
+Status: **E0, E1, E2 e E3 feitas em 22/11/2026** (fonte do sistema; passos 50 g / 5 g, configuráveis no perfil; o
+"modo %" da E3 ficou de fora: o responsável não usa). Próxima: E4. Base: código do portal (`receitas.js`, `style.css`), capturas da tela atual (computador e
 celular 390 px, geradas pelo `navegador.cjs`) e documentação pública do Brewfather.
 
 ---

@@ -60,7 +60,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (14 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (16 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -77,7 +77,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - HTML + módulos JS sem build: `index.html`, `app.js` (login, menu, rotas `#/receitas`, `#/receita/<id|nova>`,
   `#/cadastros/<tabela>`, `#/perfil`), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `alvos.js` (chegar à OG / ao IBU), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -91,8 +91,8 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  62 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
-  arrastar e mover pelo teclado, detalhes/remover, barra vital x calculos.js, estados do estilo, diferença após
+  81 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, receita de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
@@ -108,6 +108,14 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
   seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
   (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
+- Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
+  fermentáveis destravados pelo mesmo fator (bisseção, `ajustarParaOG`); "Chegar ao IBU" muda só um lúpulo (o de mais
+  tempo ou o escolhido; regra de três, `ajustarParaIBU`). Abrem pelo número da OG/IBU na barra ou pelo botão da seção,
+  com prévia antes de aplicar; aceitam OG em pontos (46 = 1,046). Cadeado por item (`travado`, só na memória, não vai
+  para o banco). Histórico em memória (50 passos; digitação vira passo após 0,8 s ou ao trocar de campo; ação inteira
+  = 1 passo); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y; desfazer remonta o editor e a barra mostra a diferença. "Fixar
+  referência" compara cada número com a tentativa fixada; "Voltar à referência" restaura (e pode ser desfeito).
+  Histórico e referência somem ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
   `_headers` e publica. Só publica da branch PADRÃO do repositório. Pré-requisito único (manual, o proxy daqui não
@@ -116,7 +124,7 @@ e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122e.
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,

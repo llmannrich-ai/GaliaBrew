@@ -47,6 +47,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }        /* vale também para botões (que têm display próprio) */
 html, body { margin: 0; }
 body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
 body {
@@ -189,8 +190,14 @@ details.lote .grade-form + .grade-form { margin-top: .7rem; }
   background: var(--cartao);
 }
 .ing:first-child { border-top: none; }
-.linhas-ing.ferm .ing { grid-template-columns: 1.6rem 1.2rem minmax(9rem, 1fr) auto 4.4rem 3.6rem 2.2rem; }
-.linhas-ing.lup .ing { grid-template-columns: 1.6rem minmax(8rem, 1fr) auto auto 3.6rem 3.2rem 2.2rem; }
+.linhas-ing.ferm .ing { grid-template-columns: 1.6rem 1.2rem minmax(9rem, 1fr) auto 4.4rem 3.6rem 2.2rem 2.2rem; }
+.linhas-ing.lup .ing { grid-template-columns: 1.6rem minmax(8rem, 1fr) auto auto 3.6rem 3.2rem 2.2rem 2.2rem; }
+.titulo-acoes { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.ing-trava { width: 2.2rem; height: 2.2rem; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.cadeado { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+button.ing-trava[aria-pressed="true"] { color: var(--destaque-escuro); border-color: var(--destaque); background: var(--fundo); }
+button.ing-trava[aria-pressed="true"] .cadeado rect { fill: currentColor; fill-opacity: .18; }
+.ing.travado .campo-qtd input.qtd { border-style: dashed; }
 .ing-vazio { padding: .4rem 0; }
 .ing-alca {
   width: 1.6rem; height: 2.4rem; padding: 0; border: none; border-radius: var(--raio-p); background: transparent; color: var(--suave);
@@ -308,6 +315,31 @@ button.chip[aria-pressed="true"] { background: var(--destaque); color: var(--sob
 .vital-item.secundario .vital-val { font-size: var(--t-m); }
 .vital-item.secundario .vital-cab + .vital-linha + .vital-cab { margin-top: .35rem; }
 .vital-mais { display: none; }
+button.vital-val.ajustavel {
+  padding: 0 .15rem; margin: 0 -.15rem; border: none; border-radius: 6px; background: transparent; color: inherit;
+  font: inherit; font-size: var(--t-vital); font-weight: 750; text-decoration: underline dotted 2px; text-decoration-color: var(--linha);
+  text-underline-offset: 5px; cursor: pointer;
+}
+button.vital-val.ajustavel:hover { background: var(--fundo); text-decoration-color: var(--destaque); }
+.vital-ref { font-size: var(--t-rotulo); color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vital-ref:empty { display: none; }
+.vital-ref.diferente { color: var(--destaque-escuro); font-weight: 700; }
+.vital-ferramentas { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; padding-top: .5rem; border-top: 1px dashed var(--linha); }
+.vital-ferramentas .separador { width: 1px; height: 1.4rem; background: var(--linha); margin: 0 .2rem; }
+.vital-ferramentas button.pequeno { padding: .2rem .6rem; }
+.ref-info { font-size: var(--t-p); color: var(--destaque-escuro); font-weight: 600; }
+.ref-info:empty { display: none; }
+.vital.com-referencia { border-color: var(--destaque); }
+
+/* janelas "Chegar à OG / ao IBU" */
+dialog.alvo { max-width: min(560px, 96vw); }
+.alvo-campos { display: flex; gap: .6rem 1rem; align-items: end; flex-wrap: wrap; }
+.alvo-campos label { flex: 0 1 12rem; }
+input.alvo-valor { font-size: var(--t-m); font-weight: 700; }
+.alvo-previa { min-height: 4rem; }
+.alvo-tabela td, .alvo-tabela th { padding: .3rem .4rem; }
+.alvo-tabela tr:not(.igual) td:last-child { font-weight: 700; color: var(--destaque-escuro); }
+.alvo-resumo { margin: .6rem 0 0; font-variant-numeric: tabular-nums; }
 .vital-aviso { grid-column: 1 / -1; margin: .2rem 0 0; color: var(--alerta); font-size: var(--t-p); font-weight: 600; }
 .vital-aviso:empty { display: none; }
 
@@ -350,11 +382,11 @@ dialog form { display: grid; gap: .9rem; }
   .ing { gap: .4rem .5rem; }
   .linhas-ing.ferm .ing {
     grid-template-columns: 1.8rem 1.2rem minmax(0, 1fr) 2.75rem 3.4rem 2.8rem;
-    grid-template-areas: "alca cor nome nome nome mais" "qtd qtd qtd qtd d1 d2" "det det det det det det";
+    grid-template-areas: "alca cor nome nome trava mais" "qtd qtd qtd qtd d1 d2" "det det det det det det";
   }
   .linhas-ing.lup .ing {
     grid-template-columns: 1.8rem minmax(0, 1fr) 2.75rem 3.4rem 2.8rem;
-    grid-template-areas: "alca nome nome nome mais" "quando quando quando quando quando" "qtd qtd qtd d1 d2" "det det det det det";
+    grid-template-areas: "alca nome nome trava mais" "quando quando quando quando quando" "qtd qtd qtd d1 d2" "det det det det det";
   }
   .ing-alca { grid-area: alca; height: 2.75rem; }
   .ing-cor { grid-area: cor; }
@@ -363,6 +395,7 @@ dialog form { display: grid; gap: .9rem; }
   .ing-dado.d1 { grid-area: d1; }
   .ing-dado.d2 { grid-area: d2; }
   .ing-mais { grid-area: mais; width: 2.75rem; height: 2.75rem; justify-self: end; }
+  .ing-trava { grid-area: trava; width: 2.75rem; height: 2.75rem; justify-self: end; }
   .ing-quando { grid-area: quando; }
   .ing-detalhes { grid-area: det; }
   .campo-qtd input.qtd { width: 5rem; }
@@ -384,7 +417,8 @@ dialog form { display: grid; gap: .9rem; }
   .vital-grade { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .3rem; }
   .vital-rot { font-size: .7rem; letter-spacing: .03em; }
   .vital-val { font-size: 1.2rem; }
-  .vital-estado, .vital-pe, .vital-item.secundario { display: none; }
+  .vital-estado, .vital-pe, .vital-item.secundario, .vital-ref, .vital-ferramentas { display: none; }
+  button.vital-val.ajustavel { font-size: 1.2rem; text-underline-offset: 3px; }
   .vital-delta { position: absolute; top: -.15rem; right: 0; font-size: .68rem; padding: 0 .3rem; }
   .regua { height: 6px; margin: .3rem 0 0; }
   .regua-marca { width: 11px; height: 11px; }
@@ -399,6 +433,10 @@ dialog form { display: grid; gap: .9rem; }
   .vital.aberta .vital-val { font-size: 1.5rem; }
   .vital.aberta .vital-estado { display: block; }
   .vital.aberta .vital-pe { display: flex; }
+  .vital.aberta .vital-ref:not(:empty) { display: block; }
+  .vital.aberta .vital-ferramentas { display: flex; }
+  .vital.aberta button.vital-val.ajustavel { font-size: 1.5rem; }
+  .vital.com-referencia .vital-mais { border-color: var(--destaque); color: var(--destaque-escuro); }
   .vital.aberta .vital-item.secundario { display: flex; grid-column: 1 / -1; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; border-top: 1px dashed var(--linha); padding-top: .4rem; }
   .vital.aberta .vital-item.secundario .vital-val { font-size: var(--t-corpo); }
 }

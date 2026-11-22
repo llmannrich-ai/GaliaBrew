@@ -1,11 +1,12 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect, campoQuantidade } from "./ui.js?v=20261122d";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122d";
-import { calcularReceita, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122d";
-import { abrirBusca } from "./busca.js?v=20261122d";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122d";
-import * as O from "./opcoes.js?v=20261122d";
-import { criarBarraVital } from "./vital.js?v=20261122d";
+import { el, svg, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, dataBR, campoNumero, campoTexto, campoSelect, campoQuantidade } from "./ui.js?v=20261122e";
+import { sb, sessao, preferencias } from "./estado.js?v=20261122e";
+import { calcularReceita, platoDeSg, corHexDeSrm } from "./calculos.js?v=20261122e";
+import { abrirBusca } from "./busca.js?v=20261122e";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122e";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122e";
+import * as O from "./opcoes.js?v=20261122e";
+import { criarBarraVital } from "./vital.js?v=20261122e";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -124,7 +125,36 @@ export async function telaEditor(conteudo, id) {
   const r = rec ?? PADRAO();
   if (!rec && cat.equipamentos.length === 1) aplicarEquipamento(r, cat.equipamentos[0]);
   const leitura = Boolean(rec) && rec.dono !== sessao.usuario.id;
-  montarEditor(conteudo, r, cat, leitura);
+  // Tentativas: histórico para desfazer/refazer e a referência fixada. Vive enquanto a receita está aberta
+  // (inclusive depois de salvar uma receita que já existia); não vai para o banco.
+  const t = { passado: [], futuro: [], base: structuredClone(r), timer: null, ref: null, atalhos: null };
+  montarEditor(conteudo, r, cat, leitura, t);
+  if (!leitura) instalarAtalhos(t);
+}
+
+/** Ctrl+Z desfaz, Ctrl+Shift+Z (ou Ctrl+Y) refaz — em qualquer campo do editor (o histórico cobre todos). */
+let atalhoAtual = null;
+function instalarAtalhos(t) {
+  if (atalhoAtual) document.removeEventListener("keydown", atalhoAtual);
+  atalhoAtual = (e) => {
+    if (!t.atalhos || !document.contains(t.atalhos.marcador)) {      // saiu do editor
+      document.removeEventListener("keydown", atalhoAtual);
+      atalhoAtual = null;
+      return;
+    }
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || document.querySelector("dialog[open]")) return;
+    const k = e.key.toLowerCase();
+    if (k === "z" && !e.shiftKey) { e.preventDefault(); t.atalhos.desfazer(); }
+    else if ((k === "z" && e.shiftKey) || k === "y") { e.preventDefault(); t.atalhos.refazer(); }
+  };
+  document.addEventListener("keydown", atalhoAtual);
+}
+
+/** Ícone de cadeado (fechado = travado). */
+function iconeCadeado(fechado) {
+  return svg("svg", { viewBox: "0 0 24 24", width: 18, height: 18, "aria-hidden": "true", focusable: "false", class: "cadeado" },
+    svg("rect", { x: 5, y: 11, width: 14, height: 10, rx: 2.2 }),
+    svg("path", { d: fechado ? "M8 11V8a4 4 0 0 1 8 0v3" : "M8 11V8a4 4 0 0 1 7.6-1.7" }));
 }
 
 function aplicarEquipamento(r, eq) {
@@ -132,10 +162,101 @@ function aplicarEquipamento(r, eq) {
   for (const k of PARAMETROS_EQUIPAMENTO) if (eq[k] !== null && eq[k] !== undefined) r[k] = Number(eq[k]);
 }
 
-function montarEditor(conteudo, r, cat, leitura) {
+function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null } = {}) {
   const calculados = new Map();      // item → função que escreve os valores calculados da linha (% do grist, IBU...)
   const totais = [];                 // funções que escrevem o total no cabeçalho de cada seção
-  const vital = criarBarraVital();
+  const estiloAtual = () => cat.estilos.find((e) => e.id === r.estilo_id);
+
+  // ---------- tentativas: desfazer/refazer e referência ----------
+  const HISTORICO_MAX = 50;
+  const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  /** Fecha o passo atual do histórico (se a receita mudou desde o último). */
+  function registrar() {
+    clearTimeout(t.timer);
+    t.timer = null;
+    if (!leitura && !igual(r, t.base)) {
+      t.passado.push(t.base);
+      if (t.passado.length > HISTORICO_MAX) t.passado.shift();
+      t.futuro = [];
+      t.base = structuredClone(r);
+    }
+    atualizarFerramentas();
+  }
+  /** Digitação: vira um passo quando a pessoa para (0,8 s) ou muda de campo. */
+  function agendarRegistro() {
+    clearTimeout(t.timer);
+    t.timer = setTimeout(registrar, 800);
+    bDesfazer.disabled = false;
+  }
+  /** Ação inteira (adicionar, remover, mover, ajuste automático) = um passo próprio. */
+  function acao(fn) { registrar(); fn(); registrar(); }
+  function irPara(estado) {
+    const antes = calcularReceita(r);
+    Object.assign(r, structuredClone(estado));
+    t.base = structuredClone(r);
+    editor.sujo = true;
+    const y = window.scrollY;
+    montarEditor(conteudo, r, cat, leitura, t, { resAnterior: antes });
+    window.scrollTo(0, y);
+  }
+  function desfazer() {
+    registrar();
+    if (!t.passado.length) return;
+    t.futuro.push(structuredClone(r));
+    irPara(t.passado.pop());
+  }
+  function refazer() {
+    registrar();
+    if (!t.futuro.length) return;
+    t.passado.push(structuredClone(r));
+    irPara(t.futuro.pop());
+  }
+  function fixarReferencia() {
+    registrar();
+    t.ref = { receita: structuredClone(r), res: calcularReceita(r), hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) };
+    vital.definirReferencia(t.ref.res);
+    atualizarResultados();
+    atualizarFerramentas();
+  }
+  function voltarReferencia() {
+    registrar();
+    if (igual(r, t.ref.receita)) return;
+    t.passado.push(structuredClone(r));
+    t.futuro = [];
+    irPara(t.ref.receita);
+  }
+  function soltarReferencia() {
+    t.ref = null;
+    vital.definirReferencia(null);
+    atualizarResultados();
+    atualizarFerramentas();
+  }
+  const bDesfazer = el("button", { type: "button", class: "secundario pequeno", text: "↶ Desfazer", title: "Desfazer (Ctrl+Z)", on: { click: desfazer } });
+  const bRefazer = el("button", { type: "button", class: "secundario pequeno", text: "↷ Refazer", title: "Refazer (Ctrl+Shift+Z)", on: { click: refazer } });
+  const bFixar = el("button", { type: "button", class: "secundario pequeno", text: "Fixar referência", title: "Guarda os números de agora para comparar com as próximas tentativas", on: { click: fixarReferencia } });
+  const refInfo = el("span", { class: "ref-info" });
+  const bVoltarRef = el("button", { type: "button", class: "secundario pequeno", text: "Voltar à referência", on: { click: voltarReferencia } });
+  const bSoltar = el("button", { type: "button", class: "link", text: "Soltar", title: "Parar de comparar", on: { click: soltarReferencia } });
+  const ferramentas = leitura ? null : el("div", { class: "vital-ferramentas" },
+    bDesfazer, bRefazer, el("span", { class: "separador", "aria-hidden": "true" }), bFixar, refInfo, bVoltarRef, bSoltar);
+  function atualizarFerramentas() {
+    bDesfazer.disabled = !t.passado.length && !t.timer;
+    bRefazer.disabled = !t.futuro.length;
+    bFixar.hidden = Boolean(t.ref);
+    bVoltarRef.hidden = bSoltar.hidden = !t.ref;
+    refInfo.textContent = t.ref ? `Comparando com a referência das ${t.ref.hora}` : "";
+  }
+
+  const ajustarOG = () => abrirAlvoOG({
+    r, estilo: estiloAtual(),
+    aoAplicar: (qs) => acao(() => { r.fermentaveis.forEach((f, i) => { f.quantidade_kg = qs[i]; }); secoes.fermentaveis(); mudou("ajuste-og"); avisar("Fermentáveis ajustados. Ctrl+Z desfaz."); }),
+  });
+  const ajustarIBU = () => abrirAlvoIBU({
+    r, estilo: estiloAtual(),
+    aoAplicar: (a) => acao(() => { r.lupulos[a.indice].quantidade_g = a.gramas; secoes.lupulos(); mudou("ajuste-ibu"); avisar("Lúpulo ajustado. Ctrl+Z desfaz."); }),
+  });
+  const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU }, ferramentas });
+  t.atalhos = { desfazer, refazer, marcador: vital.elemento };
   const painel = el("aside", { class: "painel-lote" });
   const resumoLote = el("span", { class: "resumo-texto" });
   const secoes = {};
@@ -144,8 +265,8 @@ function montarEditor(conteudo, r, cat, leitura) {
 
   /** campo = o campo que mudou (os botões ± não ficam com o foco); sem ele, a barra vital usa o campo em foco. */
   const mudou = (campo) => {
-    if (!leitura) editor.sujo = true;
-    atualizarResultados(campo instanceof Element ? campo : undefined);
+    if (!leitura) { editor.sujo = true; agendarRegistro(); }
+    atualizarResultados(campo);
   };
 
   // ---------- resultados: barra vital + painel "Lote e água" ----------
@@ -164,7 +285,7 @@ function montarEditor(conteudo, r, cat, leitura) {
     res.fermentaveis.forEach((x, i) => calculados.get(r.fermentaveis[i])?.(x));
     res.lupulos.forEach((x, i) => calculados.get(r.lupulos[i])?.(x));
     for (const t of totais) t(res);
-    const estilo = cat.estilos.find((e) => e.id === r.estilo_id);
+    const estilo = estiloAtual();
     vital.atualizar(res, estilo, { mudanca: montado && !leitura, campo: campo ?? document.activeElement });
     const v = res.volumes;
     corpoBloco(pNumeros,
@@ -209,8 +330,8 @@ function montarEditor(conteudo, r, cat, leitura) {
         corpo.append(el("tr", {},
           colunas.map((c) => el("td", { class: c.num ? "num" : "", dataset: { rotulo: c.r } }, comRotulo(c.campo(item, i), c.r))),
           leitura ? null : el("td", { class: "acoes-linha" },
-            i > 0 ? el("button", { type: "button", class: "icone", title: "Subir", "aria-label": "Subir", text: "↑", on: { click: () => { [r[chave][i - 1], r[chave][i]] = [r[chave][i], r[chave][i - 1]]; desenhar(); mudou(); } } }) : null,
-            el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover", text: "×", on: { click: () => { r[chave].splice(i, 1); desenhar(); mudou(); } } }))));
+            i > 0 ? el("button", { type: "button", class: "icone", title: "Subir", "aria-label": "Subir", text: "↑", on: { click: () => acao(() => { [r[chave][i - 1], r[chave][i]] = [r[chave][i], r[chave][i - 1]]; desenhar(); mudou(); }) } }) : null,
+            el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover", text: "×", on: { click: () => acao(() => { r[chave].splice(i, 1); desenhar(); mudou(); }) } }))));
       });
       atualizarResultados();
     };
@@ -282,11 +403,11 @@ function montarEditor(conteudo, r, cat, leitura) {
     el("label", {}, el("span", { text: "Equipamento" }), campoSelect(r, "equipamento_id",
       cat.equipamentos.map((e) => [e.id, e.nome]), {
         desabilitado: des, vazio: cat.equipamentos.length ? "— nenhum —" : "— cadastre em Cadastros —", rotulo: "Equipamento",
-        aoMudar: () => {
+        aoMudar: () => acao(() => {
           const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
           if (eq) { aplicarEquipamento(r, eq); desenharParametros(); avisar("Parâmetros copiados do equipamento."); }
           mudou();
-        },
+        }),
       })));
 
   const parametros = el("div", { class: "grade-form" });
@@ -311,11 +432,12 @@ function montarEditor(conteudo, r, cat, leitura) {
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
 
-  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, total, montarLinha }) {
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, montarLinha }) {
     const lista = el("ol", { class: `linhas-ing ${classe}` });
     const totalEl = el("span", { class: "total-secao" });
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
-      el("div", { class: "titulo-linha" }, el("h3", {}, titulo, " ", totalEl), leitura ? null : adicionar()),
+      el("div", { class: "titulo-linha" }, el("h3", {}, titulo, " ", totalEl),
+        leitura ? null : el("div", { class: "titulo-acoes" }, ferramenta, adicionar())),
       lista);
     totais.push((res) => { totalEl.textContent = r[chave].length ? total(res) : ""; });
 
@@ -331,13 +453,27 @@ function montarEditor(conteudo, r, cat, leitura) {
       }
       const mover = (para) => {
         if (para < 0 || para >= r[chave].length || para === i) return;
-        const [x] = r[chave].splice(i, 1);
-        r[chave].splice(para, 0, x);
-        desenhar();
-        mudou();
+        acao(() => {
+          const [x] = r[chave].splice(i, 1);
+          r[chave].splice(para, 0, x);
+          desenhar();
+          mudou();
+        });
         lista.querySelectorAll(".ing-alca")[para]?.focus();
       };
-      const remover = () => { abertos.delete(item); r[chave].splice(i, 1); desenhar(); mudou(); };
+      const remover = () => acao(() => { abertos.delete(item); r[chave].splice(i, 1); desenhar(); mudou(); });
+      const nomeItem = String(item.nome ?? "").trim() || "item sem nome";
+      const trava = leitura ? el("span", { class: "ing-trava", "aria-hidden": "true" }) : el("button", {
+        type: "button", class: "icone ing-trava", "aria-pressed": String(Boolean(item.travado)),
+        title: "Cadeado: este item não muda em “Chegar à OG” e “Chegar ao IBU”",
+        "aria-label": `Cadeado de ${nomeItem} (não muda nos ajustes automáticos)`,
+        on: { click: () => acao(() => {
+          item.travado = !item.travado;
+          trava.setAttribute("aria-pressed", String(item.travado));
+          preencher(trava, iconeCadeado(item.travado));
+          trava.closest("li").classList.toggle("travado", item.travado);
+        }) },
+      }, iconeCadeado(Boolean(item.travado)));
       const idDet = `det-${chave}-${i}`;
       const aberto = abertos.has(item);
       const det = el("div", { class: "ing-detalhes", id: idDet, hidden: !aberto },
@@ -365,7 +501,7 @@ function montarEditor(conteudo, r, cat, leitura) {
           pointerdown: (e) => arrastar(e, i, mover),
         },
       });
-      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub), partes.colunas, botaoMais, det);
+      const li = el("li", { class: item.travado ? "ing travado" : "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub), partes.colunas, trava, botaoMais, det);
       refrescar();
       calculados.set(item, partes.aoCalcular);
       return li;
@@ -422,10 +558,12 @@ function montarEditor(conteudo, r, cat, leitura) {
   }
   const focos = {};
   const adicionarItem = (chave, item, livre) => {
-    r[chave].push(item);
-    if (livre) abertos.add(item);
-    secoes[chave]();
-    mudou();
+    acao(() => {
+      r[chave].push(item);
+      if (livre) abertos.add(item);
+      secoes[chave]();
+      mudou();
+    });
     focos[chave]?.(livre);
   };
 
@@ -434,6 +572,7 @@ function montarEditor(conteudo, r, cat, leitura) {
     classe: "ferm",
     vazio: "Nenhum fermentável. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
+    ferramenta: el("button", { type: "button", class: "secundario pequeno", text: "Chegar à OG…", title: "Ajusta os fermentáveis para uma OG alvo", on: { click: () => ajustarOG() } }),
     adicionar: botaoAdicionar("fermentaveis",
       (f) => adicionarItem("fermentaveis", { fermentavel_id: f.id, nome: f.nome, tipo: f.tipo, rendimento_pct: num0(f.rendimento_pct), umidade_pct: num0(f.umidade_pct), cor_srm: num0(f.cor_srm), fermentavel_pct: num0(f.fermentavel_pct, 100), quantidade_kg: null, etapa: ["GRAO", "OUTRO"].includes(f.tipo) ? "MOSTURA" : "FERVURA" }),
       () => adicionarItem("fermentaveis", { fermentavel_id: null, nome: "", tipo: "GRAO", rendimento_pct: 80, umidade_pct: 4, cor_srm: 2, fermentavel_pct: 100, quantidade_kg: null, etapa: "MOSTURA" }, true)),
@@ -475,6 +614,7 @@ function montarEditor(conteudo, r, cat, leitura) {
     classe: "lup",
     vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
+    ferramenta: el("button", { type: "button", class: "secundario pequeno", text: "Chegar ao IBU…", title: "Ajusta o lúpulo de amargor para um IBU alvo", on: { click: () => ajustarIBU() } }),
     adicionar: botaoAdicionar("lupulos",
       (h) => adicionarItem("lupulos", { lupulo_id: h.id, nome: h.nome, forma: h.forma, alfa_pct: num0(h.alfa_pct), quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }),
       () => adicionarItem("lupulos", { lupulo_id: null, nome: "", forma: "PELLET", alfa_pct: 5, quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }, true)),
@@ -522,9 +662,7 @@ function montarEditor(conteudo, r, cat, leitura) {
 
   /** Leveduras e outros (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
   const adicionarLinhaTabela = (chave, item, focar) => {
-    r[chave].push(item);
-    secoes[chave]();
-    mudou();
+    acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
     document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`)?.focus();
   };
 
@@ -560,7 +698,7 @@ function montarEditor(conteudo, r, cat, leitura) {
       () => adicionarLinhaTabela("outros", { outro_id: null, nome: "", tipo: "OUTRO", quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Nome")),
   });
 
-  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "secundario pequeno", text: "+ Passo", on: { click: () => { r[chave].push(novo()); secoes[chave](); mudou(); } } });
+  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "secundario pequeno", text: "+ Passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
   const mostura = secaoLista("mostura", "Mostura", {
     vazio: "Sem passos.",
     colunas: [
@@ -591,17 +729,21 @@ function montarEditor(conteudo, r, cat, leitura) {
     parametros);
 
   conteudo.classList.add("com-vital");
-  preencher(conteudo,
-    el("div", { class: "editor-topo" }, nomeInput, estiloCampo, acoes),
-    msg,
-    vital.elemento,
-    el("div", { class: "editor" },
-      el("div", { class: "editor-corpo" },
-        lote, fermentaveis, lupulos, leveduras, outros, mostura, fermentacao, geral, notas),
-      painel));
-  atualizarResultados();
+  const topo = el("div", { class: "editor-topo" }, nomeInput, estiloCampo, acoes);
+  const corpo = el("div", { class: "editor" },
+    el("div", { class: "editor-corpo" },
+      lote, fermentaveis, lupulos, leveduras, outros, mostura, fermentacao, geral, notas),
+    painel);
+  // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
+  for (const n of [topo, corpo]) n.addEventListener("focusin", () => { if (t.timer) registrar(); });
+  preencher(conteudo, topo, msg, vital.elemento, corpo);
+  vital.definirReferencia(t.ref?.res ?? null);
+  if (resAnterior) vital.atualizar(resAnterior, estiloAtual());     // desfazer/refazer: a barra mostra a diferença
+  else atualizarResultados();
   montado = true;
-  if (!r.id && !leitura) nomeInput.focus();
+  if (resAnterior) atualizarResultados("historico");
+  atualizarFerramentas();
+  if (!r.id && !leitura && !resAnterior) nomeInput.focus();
 }
 
 /** Dá nome acessível ao campo da tabela (o cabeçalho da coluna). */

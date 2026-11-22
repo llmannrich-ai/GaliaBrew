@@ -1,8 +1,8 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança. Computador: fixa abaixo do topo. Celular: fixa no rodapé (compacta).
-import { el, svg, numeroBR } from "./ui.js?v=20261122d";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122d";
-import * as O from "./opcoes.js?v=20261122d";
+import { el, svg, numeroBR } from "./ui.js?v=20261122e";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261122e";
+import * as O from "./opcoes.js?v=20261122e";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -43,8 +43,9 @@ export function copo() {
  * Cria a barra. atualizar(res, estilo, { mudanca, campo }) a cada cálculo; mudanca = true quando veio de uma edição
  * (aí aparece a diferença em relação ao valor de antes da edição); campo = de onde veio (a diferença acumula no mesmo campo).
  */
-export function criarBarraVital() {
+export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
   const defs = indicadores();
+  let referencia = null;          // números da tentativa fixada (para comparar), ou null
   const vidro = copo();
   const itens = new Map();
   const leitor = el("p", { class: "so-leitor", role: "status" });
@@ -61,7 +62,11 @@ export function criarBarraVital() {
     const n = {
       rot: el("span", { class: "vital-rot", text: d.rot }),
       estado: el("span", { class: "vital-estado" }),
-      val: el("span", { class: "vital-val" }),
+      // OG e IBU: o número é um botão que abre "chegar a um valor alvo".
+      val: aoAjustar[d.chave]
+        ? el("button", { type: "button", class: "vital-val ajustavel", title: `Clique para chegar a ${d.chave === "og" ? "uma OG" : "um IBU"} alvo`, on: { click: aoAjustar[d.chave] } })
+        : el("span", { class: "vital-val" }),
+      ref: el("div", { class: "vital-ref" }),
       extra: el("span", { class: "vital-extra" }),
       delta: el("span", { class: "vital-delta", "aria-hidden": "true" }),
       faixa: el("span", { class: "regua-faixa" }),
@@ -74,7 +79,8 @@ export function criarBarraVital() {
       el("div", { class: "vital-cab" }, n.rot, n.estado),
       el("div", { class: "vital-linha" }, n.val, n.delta),
       n.regua,
-      el("div", { class: "vital-pe" }, n.faixaTxt, n.extra));
+      el("div", { class: "vital-pe" }, n.faixaTxt, n.extra),
+      n.ref);
     itens.set(d.chave, n);
   }
   const buGu = el("span", { class: "vital-val" });
@@ -91,6 +97,7 @@ export function criarBarraVital() {
         el("div", { class: "vital-linha" }, atenuacao))),
     botaoMais,
     aviso,
+    ferramentas,
     leitor);
 
   // Altura da barra para o CSS (no celular ela cobre o rodapé e o conteúdo precisa de espaço embaixo).
@@ -133,6 +140,14 @@ export function criarBarraVital() {
       }
       falas.push(`${d.rot} ${n.val.textContent}${est ? `, ${est.texto}` : ""}`);
 
+      // Comparação com a referência fixada (fica enquanto a referência existir).
+      if (referencia) {
+        const rv = arred(d.valor(referencia), d.casas);
+        const dif = arred(v - rv, d.casas);
+        n.ref.textContent = `ref. ${fmt(rv)}${d.sufixo ?? ""} · ${dif === 0 ? "igual" : `${dif > 0 ? "+" : "−"}${fmt(Math.abs(dif))}`}`;
+        n.ref.classList.toggle("diferente", dif !== 0);
+      } else n.ref.textContent = "";
+
       // Diferença: acumula enquanto a pessoa mexe no mesmo campo; some DIFERENCA_MS depois da última mudança.
       if (outroCampo) esconderDiferenca(n);
       if (mudanca && n.ultimo !== undefined && v !== n.ultimo) {
@@ -163,5 +178,11 @@ export function criarBarraVital() {
     n.delta.classList.remove("visivel");
   }
 
-  return { elemento: barra, atualizar };
+  /** Fixa (res) ou solta (null) a referência; a próxima chamada de atualizar() mostra a comparação. */
+  function definirReferencia(res) {
+    referencia = res;
+    barra.classList.toggle("com-referencia", Boolean(res));
+  }
+
+  return { elemento: barra, atualizar, definirReferencia };
 }

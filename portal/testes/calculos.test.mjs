@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   platoDeSg, sgDePlato, platoDeAcucar, abv, utilizacaoTinseth, ibuTinseth, srmMorey, ebcDeSrm,
-  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo,
+  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -165,6 +165,62 @@ test("Contribuição por item: % do peso, % do açúcar, pontos da OG e g/L", ()
   const vazio = calcularReceita({ fermentaveis: [{ quantidade_kg: 0 }], lupulos: [{ quantidade_g: 10 }] });
   assert.equal(vazio.fermentaveis[0].pct_peso, 0);
   assert.equal(vazio.lupulos[0].g_l, 0);
+});
+
+test("Chegar à OG: escala os fermentáveis destravados na mesma proporção", () => {
+  const base = {
+    volume_lote_l: 20, perda_panela_l: 1, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
+    fermentaveis: [
+      { tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 2, quantidade_kg: 4, etapa: "MOSTURA" },
+      { tipo: "GRAO", rendimento_pct: 78, umidade_pct: 4, cor_srm: 9, quantidade_kg: 0.5, etapa: "MOSTURA" },
+    ],
+  };
+  const a = ajustarParaOG(base, 1.052);
+  assert.equal(a.ok, true);
+  perto(a.og, 1.052, 0.0002);                                     // quantidades arredondadas ao grama
+  perto(a.quantidades[0] / a.quantidades[1], 8, 0.01);              // proporção mantida
+  // Para baixo também.
+  perto(ajustarParaOG(base, 1.040).og, 1.040, 0.0002);
+  // Travado não muda; o outro compensa.
+  const travado = { ...base, fermentaveis: [{ ...base.fermentaveis[0] }, { ...base.fermentaveis[1], travado: true }] };
+  const t = ajustarParaOG(travado, 1.052);
+  assert.equal(t.quantidades[1], 0.5);
+  perto(t.og, 1.052, 0.0002);
+  // Casos impossíveis.
+  assert.equal(ajustarParaOG({ ...base, fermentaveis: base.fermentaveis.map((f) => ({ ...f, travado: true })) }, 1.05).motivo, "SEM_LIVRES");
+  const grande = { ...base, fermentaveis: [{ ...base.fermentaveis[0], quantidade_kg: 8, travado: true }, base.fermentaveis[1]] };
+  assert.equal(ajustarParaOG(grande, 1.040).motivo, "TRAVADOS_PASSAM");
+  assert.equal(ajustarParaOG(base, 1.25).motivo, "INALCANCAVEL");
+});
+
+test("Chegar ao IBU: muda só o lúpulo de amargor (o de mais tempo)", () => {
+  const base = {
+    volume_lote_l: 20, perda_panela_l: 1, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
+    fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 2, quantidade_kg: 4.5, etapa: "MOSTURA" }],
+    lupulos: [
+      { alfa_pct: 5, quantidade_g: 20, etapa: "FERVURA", tempo_min: 10 },
+      { alfa_pct: 12, quantidade_g: 15, etapa: "FERVURA", tempo_min: 60 },
+      { alfa_pct: 10, quantidade_g: 50, etapa: "DRY_HOP", dia: 3 },
+    ],
+  };
+  assert.deepEqual(lupulosAjustaveis(base).map((x) => x.i), [1, 0]);
+  const a = ajustarParaIBU(base, 40);
+  assert.equal(a.ok, true);
+  assert.equal(a.indice, 1);
+  perto(a.ibu, 40, 0.1);
+  // Escolhendo o de 10 min, ele precisa de muito mais gramas.
+  const b = ajustarParaIBU(base, 40, 0);
+  assert.equal(b.indice, 0);
+  assert.ok(b.gramas > a.gramas);
+  perto(b.ibu, 40, 0.1);
+  // Travado sai da lista; dry hop nunca entra.
+  const t = ajustarParaIBU({ ...base, lupulos: [base.lupulos[0], { ...base.lupulos[1], travado: true }, base.lupulos[2]] }, 40);
+  assert.equal(t.indice, 0);
+  assert.equal(ajustarParaIBU({ ...base, lupulos: [base.lupulos[2]] }, 40).motivo, "SEM_AMARGOR");
+  // Os outros já passam do alvo.
+  const o = ajustarParaIBU(base, 1, 1);
+  assert.equal(o.motivo, "OUTROS_PASSAM");
+  assert.ok(o.ibuOutros > 1);
 });
 
 test("Régua do estilo (barra vital)", () => {

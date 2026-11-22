@@ -272,6 +272,69 @@ export function compararComEstilo(res, e) {
   };
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Ajustes automáticos (E3): chegar a uma OG ou a um IBU. Item com `travado: true` não muda.
+// ---------------------------------------------------------------------------------------------------------------
+/** Etapas de lúpulo que entram no IBU (Tinseth). */
+export const ETAPAS_IBU = new Set(["FERVURA", "PRIMEIRO_MOSTO"]);
+
+const comQuantidades = (r, chave, campo, fn) => ({ ...r, [chave]: (r[chave] ?? []).map((x, i) => ({ ...x, [campo]: fn(x, i) })) });
+const arredonda = (v, casas) => Number(v.toFixed(casas));
+
+/**
+ * Escala os fermentáveis destravados (com quantidade > 0) pelo MESMO fator até a OG chegar ao alvo.
+ * A OG cresce com o fator (função monótona): busca por bisseção. Quantidades arredondadas ao grama.
+ * Devolve { ok: true, quantidades, fator, og } ou { ok: false, motivo: SEM_LIVRES | TRAVADOS_PASSAM | INALCANCAVEL }.
+ */
+export function ajustarParaOG(r, alvo) {
+  const fs = r.fermentaveis ?? [];
+  const livre = fs.map((f) => !f.travado && num(f.quantidade_kg) > 0);
+  if (!livre.some(Boolean)) return { ok: false, motivo: "SEM_LIVRES" };
+  const ogCom = (fator) => calcularReceita(comQuantidades(r, "fermentaveis", "quantidade_kg", (f, i) => (livre[i] ? num(f.quantidade_kg) * fator : num(f.quantidade_kg)))).og;
+  if (ogCom(0) >= alvo) return { ok: false, motivo: "TRAVADOS_PASSAM" };
+  let hi = 1;
+  while (ogCom(hi) < alvo && hi < 1024) hi *= 2;
+  if (ogCom(hi) < alvo) return { ok: false, motivo: "INALCANCAVEL" };
+  let lo = 0;
+  for (let k = 0; k < 60; k++) {
+    const meio = (lo + hi) / 2;
+    if (ogCom(meio) < alvo) lo = meio;
+    else hi = meio;
+  }
+  const fator = (lo + hi) / 2;
+  const quantidades = fs.map((f, i) => (livre[i] ? arredonda(num(f.quantidade_kg) * fator, 3) : f.quantidade_kg ?? null));
+  const og = calcularReceita(comQuantidades(r, "fermentaveis", "quantidade_kg", (f, i) => quantidades[i])).og;
+  return { ok: true, quantidades, fator, og };
+}
+
+/** Lúpulos que podem ser ajustados para o IBU: destravados, na fervura (tempo > 0) ou no primeiro mosto. */
+export function lupulosAjustaveis(r) {
+  const fervura = num(r.fervura_min);
+  return (r.lupulos ?? [])
+    .map((h, i) => ({ i, minutos: h.etapa === "PRIMEIRO_MOSTO" ? fervura : num(h.tempo_min) }))
+    .filter(({ i, minutos }) => !r.lupulos[i].travado && ETAPAS_IBU.has(r.lupulos[i].etapa) && minutos > 0)
+    .sort((a, b) => b.minutos - a.minutos);           // o de amargor (mais tempo) primeiro
+}
+
+/**
+ * Muda só UM lúpulo (o de amargor = mais tempo, ou o `indice` escolhido) até o IBU total chegar ao alvo.
+ * IBU é proporcional aos gramas (a gravidade não depende do lúpulo): regra de três. Gramas com 1 casa.
+ * Devolve { ok: true, indice, gramas, ibu } ou { ok: false, motivo: SEM_AMARGOR | SEM_EFEITO | OUTROS_PASSAM, ibuOutros }.
+ */
+export function ajustarParaIBU(r, alvo, indice) {
+  const ajustaveis = lupulosAjustaveis(r);
+  if (!ajustaveis.length) return { ok: false, motivo: "SEM_AMARGOR" };
+  const i = ajustaveis.some((a) => a.i === indice) ? indice : ajustaveis[0].i;
+  const ibuOutros = calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? 0 : num(h.quantidade_g)))).ibu;
+  const porGrama = calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? 1 : 0))).lupulos[i].ibu;
+  if (!(porGrama > 0)) return { ok: false, motivo: "SEM_EFEITO", indice: i, ibuOutros };
+  const gramas = (alvo - ibuOutros) / porGrama;
+  if (gramas < 0) return { ok: false, motivo: "OUTROS_PASSAM", indice: i, ibuOutros };
+  const g = arredonda(gramas, 1);
+  const ibu = calcularReceita(comQuantidades(r, "lupulos", "quantidade_g", (h, j) => (j === i ? g : num(h.quantidade_g)))).ibu;
+  return { ok: true, indice: i, gramas: g, ibu };
+}
+
 /**
  * Régua do estilo (barra vital): onde o valor cai em relação à faixa do estilo.
  * O eixo vai da faixa menos `folga` × largura até a faixa mais `folga` × largura (para ver o quanto está fora).
