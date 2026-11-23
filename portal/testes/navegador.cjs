@@ -22,7 +22,12 @@ const jwt = () => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: USUARIO.id,
 
 const db = {
   perfis: [{ user_id: USUARIO.id, nome: "Leo", papel: "usuario" }],
-  estilos: [{ id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 }],
+  estilos: [
+    { id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", categoria: "Pale Bitter European Beer", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 },
+    { id: "e2", dono: null, guia: "BJCP 2021", codigo: "10A", nome: "Weissbier", categoria: "German Wheat Beer", og_min: 1.044, og_max: 1.053, fg_min: 1.008, fg_max: 1.014, ibu_min: 8, ibu_max: 15, cor_srm_min: 2, cor_srm_max: 6, abv_min_pct: 4.3, abv_max_pct: 5.6 },
+    { id: "e3", dono: null, guia: "BJCP 2021", codigo: "21A", nome: "American IPA", categoria: "IPA", og_min: 1.056, og_max: 1.07, fg_min: 1.008, fg_max: 1.014, ibu_min: 40, ibu_max: 70, cor_srm_min: 6, cor_srm_max: 14, abv_min_pct: 5.5, abv_max_pct: 7.5 },
+    { id: "e4", dono: null, guia: "BJCP 2021", codigo: "3A", nome: "Czech Pale Lager", categoria: "Czech Lager", og_min: 1.028, og_max: 1.044, fg_min: 1.008, fg_max: 1.014, ibu_min: 20, ibu_max: 35, cor_srm_min: 3, cor_srm_max: 6, abv_min_pct: 3, abv_max_pct: 4.1 },
+  ],
   fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária",
     extras: { fonte: "Ficha técnica oficial (Agrária), consultada em 23/11/2026", url: "https://www.agraria.com.br/malte/teste" } }],
   lupulos: [], leveduras: [], outros: [], aguas: [{ id: "ag-tor", dono: null, nome: "Torneira teste", calcio_ppm: 20, magnesio_ppm: 4, sodio_ppm: 10, sulfato_ppm: 10, cloreto_ppm: 15, bicarbonato_ppm: 60 }, { id: "ag-alvo", dono: null, nome: "Alvo IPA", calcio_ppm: 110, magnesio_ppm: 10, sodio_ppm: 10, sulfato_ppm: 255, cloreto_ppm: 50, bicarbonato_ppm: 0 }], equipamentos: [], receitas: [],
@@ -189,6 +194,15 @@ const erros = [];
   });
   verificar(fontes === "GENERICA:- GENERICA:- FABRICANTE:https://theswaen.com/products/x ANALISE:https://www.infoteca.cnptia.embrapa.br/x.pdf FABRICANTE:- PROPRIA:- DESCONHECIDA:-",
     `fontes: genérico, Swaen (fabricante via Brewtarget), Embrapa (análise), link só https, meu (${fontes})`);
+  // Cadastro de estilos: a mesma busca do editor (termo em português, código), em ordem de código (3A antes de 10A).
+  await pagina.click('.abas >> text=Estilos');
+  await pagina.waitForSelector("td >> text=German Pils");
+  const codigos = () => pagina.$$eval("tbody tr", (ls) => ls.map((l) => l.textContent));
+  verificar((await codigos()).findIndex((t) => t.includes("Czech Pale Lager")) < (await codigos()).findIndex((t) => t.includes("Weissbier")), "cadastro de estilos em ordem de código (3A antes de 10A)");
+  await pagina.fill('input[aria-label="Buscar"]', "trigo");
+  verificar((await codigos()).length === 1 && (await codigos())[0].includes("Weissbier"), "cadastro de estilos: \"trigo\" acha só a Weissbier");
+  await pagina.fill('input[aria-label="Buscar"]', "21a");
+  verificar((await codigos()).length === 1 && (await codigos())[0].includes("American IPA"), "cadastro de estilos: busca pelo código 21A");
   await pagina.click('.abas >> text=Equipamentos');
   await pagina.waitForSelector("text=Nenhum item ainda");
   await pagina.click("button:has-text('Novo')");
@@ -216,7 +230,17 @@ const erros = [];
   await pagina.waitForSelector(".titulo-receita");
   verificar(await pagina.inputValue('input[aria-label="Volume no fermentador (L)"]') === "23,0", "equipamento único já preenche os parâmetros");
   await pagina.fill(".titulo-receita", "Pils da Galia");
-  await pagina.selectOption('select[aria-label="Estilo"]', "e1");
+  // Estilo: botão abre a busca; o código acha o estilo e Enter escolhe.
+  const botaoEstilo = 'button.escolha[aria-label="Estilo"]';
+  verificar((await pagina.textContent(botaoEstilo)).includes("sem estilo"), "receita nova começa sem estilo");
+  await pagina.click(botaoEstilo);
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await pagina.textContent("dialog.busca h3") === "Escolher estilo", "estilo abre a janela de busca");
+  verificar(!(await pagina.isVisible("dialog.busca .busca-grupo >> text=Mais perto da receita")), "sem ingredientes não sugere estilo pela receita");
+  await pagina.fill("dialog.busca .busca-campo", "5d");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar((await pagina.textContent(botaoEstilo)).includes("5D German Pils"), "código 5D + Enter escolhe a German Pils");
   const adicionar = (secao) => pagina.click(`[data-secao="${secao}"] button.adicionar`);
   const focado = () => pagina.evaluate(() => document.activeElement?.getAttribute("aria-label"));
 
@@ -313,6 +337,28 @@ const erros = [];
   verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
   verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
   verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
+  // Busca de estilo com a receita pronta: atual no topo, sugestão pelos números, termos em português, filtro "Combina".
+  await pagina.click(botaoEstilo);
+  await pagina.waitForSelector("dialog.busca");
+  const opcoesEstilo = () => pagina.$$eval("dialog.busca .busca-opcao-nome", (ls) => ls.map((l) => l.textContent));
+  const grupos = await pagina.$$eval("dialog.busca .busca-grupo", (ls) => ls.map((l) => l.textContent));
+  verificar(grupos[0] === "Atual" && (await opcoesEstilo())[0].startsWith("5D German Pils"), "busca de estilo: o atual vem primeiro, marcado");
+  verificar(grupos[1] === "Mais perto da receita" && (await opcoesEstilo())[1].startsWith("3A Czech Pale Lager"),
+    "OG 1,041, IBU 23, cor clara: sugere Czech Pale Lager pelos números da receita");
+  verificar(await pagina.$$eval("dialog.busca .busca-opcao-resumo", (ls) => ls.every((l) => /receita em \d de \d faixas/.test(l.textContent))),
+    "resumo de cada estilo diz em quantas faixas a receita cabe");
+  await pagina.fill("dialog.busca .busca-campo", "trigo");
+  verificar((await opcoesEstilo()).length === 1 && (await opcoesEstilo())[0].startsWith("10A Weissbier"), "\"trigo\" acha a Weissbier (catálogo em inglês)");
+  await pagina.fill("dialog.busca .busca-campo", "ale");
+  verificar(!(await opcoesEstilo()).some((t) => t.includes("Czech Pale Lager")), "\"ale\" casa com começo de palavra: não acha Pale Lager");
+  await pagina.fill("dialog.busca .busca-campo", "");
+  await pagina.click('dialog.busca .chip:has-text("Combina com a receita")');
+  const combinam = await opcoesEstilo();
+  verificar(combinam[0].startsWith("3A Czech Pale Lager") && !combinam.some((t) => t.includes("American IPA")), "filtro \"Combina com a receita\": mais parecido primeiro, IPA fora");
+  await pagina.screenshot({ path: `${SAIDA}/p3b-busca-estilo.png` });
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar((await pagina.textContent(botaoEstilo)).includes("5D German Pils"), "Esc fecha a busca sem trocar o estilo");
   const linhaF = '[data-secao="fermentaveis"] li.ing';
   const linhaL = '[data-secao="lupulos"] li.ing';
   verificar(await pagina.textContent(`${linhaF} .d1 .ing-dado-val`) === "100,0%" && await pagina.textContent(`${linhaF} .d2 .ing-dado-val`) === `+${br((esperado.og - 1) * 1000, 0)}`,

@@ -6,6 +6,15 @@ Leia `docs/PRD.md` antes de qualquer tarefa. Este arquivo resume as regras que n
 Aplicativo web de receitas de cerveja (criação, cálculo de OG/FG/ABV/IBU/cor, brassagem). Começou para uso pessoal
 e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 
+## PLATAFORMA-ALVO: CELULAR (regra nº 0, ordem do responsável em 23/11/2026)
+- O GaliaBrew é usado no CELULAR (iPhone, aberto como app pela Tela de Início). NÃO é um programa de computador.
+  Melhorar o layout de desktop não tem valor para o responsável: não gastar tempo nisso.
+- Todo pedido de tela/layout/visual sem plataforma dita = CELULAR. Desenhar, ajustar e conferir PRIMEIRO em 390 px e
+  320 px com toque (`navegador.cjs`, contexto `isMobile + hasTouch`); as capturas mostradas ao responsável são as do
+  celular (`p5*`, `p6*`), nunca as de 1366 px.
+- Desktop só precisa não quebrar (os testes do navegador já cobrem). Nada de propor ou fazer melhoria só de desktop.
+- Erro a não repetir (23/11/2026): o pedido de contraste e layout foi feito e mostrado em capturas de computador.
+
 ## Stack decidida
 - Supabase: projeto `GaliaBrew`, ref `hzomsyfujxakcuaaedmh`, org "Versa" (plano Free), região sa-east-1.
   API: https://hzomsyfujxakcuaaedmh.supabase.co. Plano Free: pausa após 7 dias sem acesso (reativar no painel).
@@ -105,7 +114,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - HTML + módulos JS sem build: `index.html`, `app.js` (login, rotas `#/receitas`, `#/receita/<id|nova>`,
   `#/cadastros/<tabela>`, `#/perfil`), `menu.js` (menu lateral), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente e de estilo), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -119,7 +128,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  151 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  165 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -143,6 +152,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
   seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
   (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
+- Busca de estilo (23/11/2026, sem migração): o Estilo do topo do editor é um botão que abre a mesma janela do `busca.js`
+  (`TIPOS_BUSCA.estilos`). Acha por código (21A, casa exato e vem primeiro), nome, categoria e termos em português
+  (`TERMOS_ESTILO`: trigo, azeda, defumada, belga, pilsen, oktoberfest...; o catálogo BJCP está em inglês). No estilo
+  cada termo casa com o COMEÇO de uma palavra ("ale" não acha "Pale Lager"). Filtros: Receita ("Combina com a receita"
+  = no máximo 1 parâmetro fora), Família, Cor, Amargor, Álcool. Sem busca: "Atual", "Mais perto da receita" (5, por
+  `encaixeEstilo` do calculos.js: parâmetros dentro da faixa e distância em larguras), recentes, catálogo em ordem de
+  código (`ordemCodigo`: 3A antes de 10A). "Sem estilo" limpa. Cadastros → Estilos usa a mesma busca (`buscarItens`).
 - Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
   fermentáveis destravados pelo mesmo fator (bisseção, `ajustarParaOG`); "Chegar ao IBU" muda só um lúpulo (o de mais
   tempo ou o escolhido; regra de três, `ajustarParaIBU`). Abrem pelo número da OG/IBU na barra ou pelo botão da seção,
