@@ -213,6 +213,15 @@ a { color: var(--destaque-escuro); }
 .espaco { flex: 1; }
 .selo { display: inline-block; font-size: var(--t-rotulo); padding: .05rem .45rem; border-radius: 99px; background: var(--fundo); border: 1px solid var(--linha); color: var(--suave); margin-left: .4rem; vertical-align: middle; }
 .selo.meu { color: var(--destaque-escuro); border-color: var(--destaque); }
+/* Fonte dos dados de um ingrediente (fontes.js): fabricante, análise, genérico, meu. */
+.selo.fonte.fabricante { color: var(--lupulo); border-color: var(--lupulo); background: var(--faixa-estilo); font-weight: 600; }
+.selo.fonte.analise { color: var(--ambar); border-color: var(--ambar); font-weight: 600; }
+.selo.fonte.generica { color: var(--suave); border-style: dashed; }
+td > .selo.fonte, .busca-opcao-resumo > .selo.fonte, .fonte-dados > .selo.fonte { margin-left: 0; }
+.busca-opcao-resumo > .selo.fonte { margin-right: .15rem; }
+.fonte-dados { margin: .2rem 0 0; font-size: var(--t-p); color: var(--suave); line-height: 1.5; }
+.fonte-dados .fonte-rot { display: block; font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: .1rem; }
+.fonte-dados .selo.fonte { margin-right: .2rem; }
 
 /* ---------- formulários ---------- */
 label { display: grid; gap: .25rem; font-size: var(--t-p); color: var(--suave); }
