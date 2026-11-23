@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123r");
+    const m = await import("./fontes.js?v=20261123s");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -384,7 +384,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123r");
+    const m = await import("./calculos.js?v=20261123s");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -445,7 +445,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123r");
+    const m = await import("./calculos.js?v=20261123s");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -464,7 +464,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123r");
+    const m = await import("./calculos.js?v=20261123s");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -549,7 +549,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123r");
+    const m = await import("./calculos.js?v=20261123s");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -768,6 +768,7 @@ const erros = [];
   await pagina.waitForSelector("text=Somente leitura");
   verificar(await pagina.isDisabled('input[aria-label="Qtd (kg)"]'), "receita de outro abre só para leitura");
   verificar(!(await pagina.isVisible("button:has-text('Salvar')")), "sem botão Salvar na receita de outro");
+  verificar(await pagina.locator("button:has-text('Excluir')").count() === 0, "sem botão Excluir na receita de outro");
   await pagina.click("button:has-text('Nova a partir desta')");
   await pagina.waitForSelector("text=Receita nova a partir de");
   verificar((await pagina.evaluate(() => location.hash)) === "#/receita/nova/r-outro", "abre a receita nova a partir da de outro");
@@ -781,6 +782,23 @@ const erros = [];
   await pagina.waitForSelector('input[aria-label="Nº do lote"]');
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "2", "receita nova recebe o próximo nº (2)");
   verificar(db.receitas.find((x) => x.id === "r-outro").nome === "IPA do Vizinho", "a receita anterior não muda");
+
+  // Excluir só dentro da receita: a lista não tem botão; no editor pede confirmação (Cancelar não apaga).
+  const idCopia = (await pagina.evaluate(() => location.hash)).split("/").pop();
+  await pagina.goto(`${ORIGEM}/#/receitas`);
+  await pagina.waitForSelector("td >> text=IPA do Vizinho");
+  verificar(await pagina.locator("main button:has-text('×'), main button[aria-label^='Excluir']").count() === 0, "lista de receitas sem botão de excluir");
+  await pagina.click("td >> text=IPA do Vizinho");
+  await pagina.waitForSelector(".acoes-receita button:has-text('Excluir receita')");
+  await pagina.click(".acoes-receita button:has-text('Excluir receita')");
+  await pagina.click("dialog.confirmar button:has-text('Cancelar')");
+  verificar(db.receitas.some((x) => x.id === idCopia), "excluir: cancelar mantém a receita");
+  await pagina.click(".acoes-receita button:has-text('Excluir receita')");
+  verificar((await pagina.textContent("dialog.confirmar p")).includes("IPA do Vizinho"), "excluir pede confirmação com o nome");
+  await pagina.click("dialog.confirmar button:has-text('Excluir')");
+  await pagina.waitForFunction(() => location.hash === "#/receitas");
+  await pagina.waitForSelector("td >> text=Pils da Galia");
+  verificar(!db.receitas.some((x) => x.id === idCopia) && !(await pagina.isVisible("td >> text=IPA do Vizinho")), "excluir apaga a receita e volta à lista");
 
   // Nova receita em branco oferece "começar a partir de" com as minhas receitas.
   await pagina.goto(`${ORIGEM}/#/receita/nova`);
@@ -844,6 +862,7 @@ const erros = [];
   await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
   verificar(await cel.locator(".receita-cartao").count() === db.receitas.filter((x) => x.dono === USUARIO.id).length && await larguraSobra() <= 1,
     "toque: lista de receitas em cartões, sem rolagem para o lado");
+  verificar(await cel.locator(".receita-cartao button").count() === 0, "toque: cartão da lista sem botão de excluir");
   await conferirLateral("toque, lista");
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
@@ -852,6 +871,8 @@ const erros = [];
   await cel.waitForSelector(".barra-app");
   verificar(!(await cel.isVisible("header.barra-movel")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
     "toque: no editor o menu geral some e a barra do app mostra voltar, nome, desfazer e Salvar");
+  verificar(await cel.isVisible(".acoes-receita button:has-text('Excluir receita')"), "toque: Excluir receita fica dentro da receita");
+  await cel.screenshot({ path: `${SAIDA}/p6x-celular-excluir.png` });
   const qtdCel = cel.locator('input[aria-label="Qtd (kg)"]').first();
   const maisF = '[data-secao="fermentaveis"] li.ing button.passo[aria-label="Mais 250 g"]';
   await tocar(maisF);
@@ -979,6 +1000,9 @@ const erros = [];
   await cel.setViewportSize({ width: 320, height: 568 });
   await cel.waitForTimeout(200);
   verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(150);
+  await cel.screenshot({ path: `${SAIDA}/p6y-320-excluir.png` });
   await cel.locator('input[aria-label="Qtd (kg)"]').first().focus();
   await cel.waitForTimeout(300);
   const estouroVital = await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item:not(.secundario)")].filter((n) => n.offsetParent).map((n) => {
@@ -1237,7 +1261,9 @@ const erros = [];
   // Excluir a receita leva as fotos dela junto.
   await cel.evaluate(() => { window.GaliaTema.aplicar("auto"); location.hash = "#/receitas"; });
   await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
-  await tocar('.receita-cartao button[aria-label="Excluir Pils da Galia"]');
+  await tocar(".receita-cartao >> text=Pils da Galia");
+  await cel.waitForSelector(".acoes-receita button.excluir-receita");
+  await tocar(".acoes-receita button.excluir-receita");
   await cel.waitForSelector("dialog.confirmar[open]");
   await tocar("dialog.confirmar button.perigo");
   await cel.waitForSelector(".aviso >> text=Receita excluída");
