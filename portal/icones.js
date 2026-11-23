@@ -1,6 +1,6 @@
 // icones.js — ícones do GaliaBrew, desenho próprio (grade 24 × 24, traço 1,75, pontas arredondadas, cor = texto).
 // Em JS (e não num arquivo .svg): saem pelo svg() do ui.js, sem requisição extra e dentro da CSP.
-import { svg } from "./ui.js?v=20261123k";
+import { svg } from "./ui.js?v=20261123l";
 
 // Cada ícone = lista de elementos [tag, atributos]. "c" = círculo, "p" = caminho, "e" = elipse.
 export const DESENHOS = {
@@ -96,6 +96,7 @@ export const DESENHOS = {
   recolher: [["p", { d: "M11 17l-5-5 5-5M18 17l-5-5 5-5" }]],
   menu: [["p", { d: "M4 6.5h16M4 12h16M4 17.5h16" }]],
   fechar: [["p", { d: "M6 6l12 12M18 6L6 18" }]],
+  certo: [["p", { d: "M5 12.5l4.5 4.5L19 7.5" }]],
 };
 
 /** Ícone por nome. Decorativo (aria-hidden): o texto ao lado ou o aria-label do botão dá o nome. */
