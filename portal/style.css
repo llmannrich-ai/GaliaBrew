@@ -535,19 +535,17 @@ dialog form { display: grid; gap: .9rem; }
 .aviso.erro { background: var(--erro); color: var(--sobre-destaque); }
 
 /* ---------- telas menores ---------- */
-@media (max-width: 1180px) {
-  .vital-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6rem 1rem; }
-  .vital-item.secundario { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; padding: .3rem 0 0; border-left: none; border-top: 1px dashed var(--linha); }
-  .vital-item.secundario .vital-cab + .vital-linha + .vital-cab { margin: 0 0 0 .8rem; }
-  .vital-item.secundario .vital-val { font-size: var(--t-corpo); }
-  .vital-val { font-size: 1.65rem; }
-}
-@media (max-width: 1180px) {
-  /* Coluna única: os ingredientes ganham a largura toda; o painel "Lote e água" vai para baixo, em 3 colunas. */
-  .editor { grid-template-columns: minmax(0, 1fr); }
-  .painel-lote { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 1rem; align-items: start; }
-  .notas-painel { grid-column: 1 / -1; }
-}
+/* Editor estreito = área de conteúdo (ao lado do menu) com até 1180 px: classe "estreito" posta pelo menu.js. Sem menu
+   lateral é o mesmo que tela até 1180 px. :where() não soma especificidade (as regras de celular abaixo continuam valendo). */
+:where(.casca.estreito) .vital-grade { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6rem 1rem; }
+:where(.casca.estreito) .vital-item.secundario { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; padding: .3rem 0 0; border-left: none; border-top: 1px dashed var(--linha); }
+:where(.casca.estreito) .vital-item.secundario .vital-cab + .vital-linha + .vital-cab { margin: 0 0 0 .8rem; }
+:where(.casca.estreito) .vital-item.secundario .vital-val { font-size: var(--t-corpo); }
+:where(.casca.estreito) .vital-val { font-size: 1.65rem; }
+/* Coluna única: os ingredientes ganham a largura toda; o painel "Lote e água" vai para baixo, em 3 colunas. */
+:where(.casca.estreito) .editor { grid-template-columns: minmax(0, 1fr); }
+:where(.casca.estreito) .painel-lote { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 1rem; align-items: start; }
+:where(.casca.estreito) .notas-painel { grid-column: 1 / -1; }
 @media (max-width: 640px) {
   .barra-movel { position: static; }
   .conteudo { padding: .8rem; }

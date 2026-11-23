@@ -6,6 +6,7 @@ import { icone } from "./icones.js?v=20261123a";
 import { copo } from "./vital.js?v=20261123a";
 
 const LARGURA_CELULAR = "(max-width: 959px)";
+const LARGURA_EDITOR_ESTREITO = 1180;
 // Tela média: o menu fica só com ícones, sem a pessoa escolher (o editor precisa da largura).
 const LARGURA_COMPACTA = "(min-width: 960px) and (max-width: 1180px)";
 
@@ -130,6 +131,11 @@ export function montarCasca({ sair }) {
     lateral,
     el("div", { class: "veu", "aria-hidden": "true", on: { click: fecharMenu } }),
     el("div", { class: "principal" }, barra, el("main", { id: "conteudo", class: "conteudo" })));
+  // O editor passa a uma coluna pela largura que sobra ao lado do menu (até 1180 px), não pela largura da tela.
+  const principal = raiz.querySelector(".principal");
+  const medir = () => raiz.classList.toggle("estreito", principal.getBoundingClientRect().width <= LARGURA_EDITOR_ESTREITO);
+  if (window.ResizeObserver) new ResizeObserver(medir).observe(principal);
+  else raiz.classList.add("estreito");
   return { raiz, barra };
 }
 

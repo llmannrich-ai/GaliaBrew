@@ -442,10 +442,23 @@ const erros = [];
   await pagina.emulateMedia({ colorScheme: "dark" });
   await pagina.screenshot({ path: `${SAIDA}/p3c-editor-escuro.png` });
   await pagina.emulateMedia({ colorScheme: "light" });
+  // Linhas de ingrediente dentro do cartão (o menu lateral tira largura do editor).
+  const sobraLinhas = () => pagina.evaluate(() => Math.max(...[...document.querySelectorAll("li.ing")].map((li) => {
+    const sec = li.closest("section").getBoundingClientRect();
+    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - sec.right);
+  })));
+  for (const [w, recolher] of [[1366, false], [1366, true], [1280, false], [1440, false]]) {
+    if (recolher !== Boolean(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("recolhido")))) await pagina.click("button.recolher");
+    await pagina.setViewportSize({ width: w, height: 900 });
+    await pagina.waitForTimeout(400);
+    const sobra = await sobraLinhas();
+    verificar(sobra <= -8, `computador ${w} px, menu ${recolher ? "recolhido" : "completo"}: linhas de ingrediente cabem no cartão (folga ${-sobra} px)`);
+  }
   await pagina.setViewportSize({ width: 1024, height: 768 });
   await pagina.waitForTimeout(400); // o menu passa a só ícones com animação
   verificar(await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 1, "tablet (1024 px): página não passa da largura");
   verificar(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("compacto") && document.querySelector(".lateral").getBoundingClientRect().width < 100), "tablet (1024 px): menu lateral fica só com ícones");
+  verificar(await sobraLinhas() <= -8, "tablet (1024 px): linhas de ingrediente cabem no cartão");
   await pagina.screenshot({ path: `${SAIDA}/p3d-editor-tablet.png` });
   await pagina.setViewportSize({ width: 1366, height: 900 });
 
