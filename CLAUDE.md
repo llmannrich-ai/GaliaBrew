@@ -92,7 +92,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (26 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (32 testes, com os do pdf.js). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -114,7 +114,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - HTML + módulos JS sem build: `index.html`, `app.js` (login, rotas `#/receitas`, `#/receita/<id|nova>`,
   `#/cadastros/<tabela>`, `#/perfil`), `menu.js` (menu lateral), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente e de estilo), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `tema.js` (temas de cor), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente e de estilo), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `relatorio.js` + `pdf.js` (relatório da receita em PDF), `graficos.js` (grist e linha do tempo), `tema.js` (temas de cor), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -128,7 +128,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  182 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  201 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -201,7 +201,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123m.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123n.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -243,6 +243,22 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   style.css + linha no `TEMAS` do tema.js + reconferir o contraste.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
   ingrediente só ficam compactas até 640 px.
+
+## Relatório da receita em PDF (23/11/2026, pedido do responsável; sem migração)
+- Botão com ícone de relatório AO LADO do nome da receita (`.nome-linha` no topo do editor; vale também na só leitura).
+  Abre `abrirRelatorio` (`portal/relatorio.js`): janela (`dialog.relatorio`, tela inteira no celular) com as folhas A4, zoom
+  100/150/200/300% e o botão "Compartilhar" (folha de compartilhamento do celular: `navigator.share({ files })`; aparelho
+  sem isso = "Baixar PDF"). Arquivo `GaliaBrew-<nº>-<nome>.pdf`. Usa a receita como está na tela (salva ou não).
+- `portal/pdf.js`: gerador de PDF PRÓPRIO (sem biblioteca, sem CDN; módulo puro, testado em `portal/testes/pdf.test.mjs`).
+  Página = lista de itens (texto, retângulo, linha) em pontos; Helvetica/Helvetica-Bold padrão, WinAnsi, texto em
+  hexadecimal (arquivo todo ASCII). `limparTexto` troca o que a fonte não tem (CO₂ → CO2; emoji vira "?").
+- O visualizador desenha em SVG os MESMOS itens que vão para o PDF (com `textLength` = largura das métricas da Helvetica):
+  não é um leitor de PDF genérico, mas o que se vê é o que sai no arquivo. Mudou o conteúdo = mexer só em
+  `montarRelatorio` (cabeçalho com cor da cerveja, números com faixa do estilo, fermentáveis, lúpulos, leveduras, outros,
+  mostura, fermentação, água e volumes com sais/ácidos/íons, parâmetros, lote, notas; rodapé com data e página).
+  Tabela curta não se divide entre páginas; cabeçalho de tabela se repete na página seguinte.
+- Conferido em 23/11/2026 com leitor independente (pdftoppm/pdftotext/pypdf). Falta conferir no iPhone real a folha de
+  compartilhamento com arquivo (WhatsApp, Arquivos, AirDrop).
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.

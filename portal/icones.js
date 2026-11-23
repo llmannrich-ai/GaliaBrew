@@ -1,6 +1,6 @@
 // icones.js — ícones do GaliaBrew, desenho próprio (grade 24 × 24, traço 1,75, pontas arredondadas, cor = texto).
 // Em JS (e não num arquivo .svg): saem pelo svg() do ui.js, sem requisição extra e dentro da CSP.
-import { svg } from "./ui.js?v=20261123m";
+import { svg } from "./ui.js?v=20261123n";
 
 // Cada ícone = lista de elementos [tag, atributos]. "c" = círculo, "p" = caminho, "e" = elipse.
 export const DESENHOS = {
@@ -97,6 +97,15 @@ export const DESENHOS = {
   menu: [["p", { d: "M4 6.5h16M4 12h16M4 17.5h16" }]],
   fechar: [["p", { d: "M6 6l12 12M18 6L6 18" }]],
   certo: [["p", { d: "M5 12.5l4.5 4.5L19 7.5" }]],
+  // folha de relatório (canto dobrado e linhas)
+  relatorio: [
+    ["p", { d: "M6.5 3h8l4 4v13a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" }],
+    ["p", { d: "M14.5 3v4h4" }],
+    ["p", { d: "M9 11.5h6M9 14.5h6M9 17.5h3.5" }],
+  ],
+  // compartilhar (caixa com seta para cima, como no celular)
+  compartilhar: [["p", { d: "M12 14.5V3.5" }], ["p", { d: "M8 7.5l4-4 4 4" }], ["p", { d: "M8.5 10.5H6v10h12v-10h-2.5" }]],
+  baixar: [["p", { d: "M12 3.5v11" }], ["p", { d: "M8 10.5l4 4 4-4" }], ["p", { d: "M5 19.5h14" }]],
 };
 
 /** Ícone por nome. Decorativo (aria-hidden): o texto ao lado ou o aria-label do botão dá o nome. */
