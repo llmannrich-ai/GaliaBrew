@@ -125,7 +125,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122g.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123a.
+
+## Layout (23/11/2026, só style.css)
+- Contraste: página branca; texto #15120e (18:1), rótulos/notas #4a4339 (~9:1), bordas de campo ≥ 3:1, botão âmbar
+  #9a520a com texto branco (5,9:1); escuro também ≥ 7:1 (botão com texto escuro). Conferir a razão ao mudar uma cor.
+- Seções sem contorno: `.cartao` não tem borda nem sombra; o título (`.cartao > h3` ou `> .titulo-linha`) fica numa faixa
+  `--painel` com marca âmbar à esquerda. Painel de resultados = fundo `--painel`. Topo escuro (`--topo`, theme-color).
+- Sem margem lateral sobrando: `.conteudo` sem largura máxima, margem `--lado` (.75rem; .55rem no celular).
+- Ferramentas em colunas CSS (`columns`), para não sobrar buraco entre cartões de alturas diferentes.
+- Teste do navegador: seletor por estrutura (`section:has(h3...)`), nunca por distância visual (`:near`).
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
