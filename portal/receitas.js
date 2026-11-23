@@ -1,16 +1,16 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123p";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123p";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123p";
-import { abrirBusca } from "./busca.js?v=20261123p";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123p";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123p";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123p";
-import * as O from "./opcoes.js?v=20261123p";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123p";
-import { icone } from "./icones.js?v=20261123p";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123p";
-import { abrirRelatorio } from "./relatorio.js?v=20261123p";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123r";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123r";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123r";
+import { abrirBusca } from "./busca.js?v=20261123r";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123r";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123r";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123r";
+import * as O from "./opcoes.js?v=20261123r";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123r";
+import { icone } from "./icones.js?v=20261123r";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123r";
+import { abrirRelatorio } from "./relatorio.js?v=20261123r";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -620,7 +620,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const nome = el("strong", { class: "ing-nome-txt" });
       const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
       const partes = montarLinha(item, ctx);
-      // Linha de dados abaixo do nome só quando a seção a define (fermentáveis não têm desde 23/11/2026, pedido do responsável).
+      // Linha de dados abaixo do nome só quando a seção a define (fermentáveis: só a cor, desde 23/11/2026).
       const sub = partes.sub ? el("span", { class: "ing-sub" }) : null;
       function refrescar() {
         nome.textContent = String(item.nome ?? "").trim() || "(sem nome)";
@@ -756,6 +756,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const campo = { desabilitado: des, aoMudar: ctx.mudou };
       return {
         visual: amostra,
+        // Linha pequena abaixo do nome: só a cor do malte, na unidade do perfil (EBC padrão). Pedido do responsável, 23/11/2026.
+        sub: () => [item.cor_srm != null && item.cor_srm !== "" ? `${numeroBR(O.corParaTela(Number(item.cor_srm)), 1).replace(/,0$/, "")} ${O.unidadeCor()}` : null],
         refrescar: () => { amostra.style.background = corHexDeSrm(item.cor_srm ?? 0); },
         colunas: [
           el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_kg", { casas: 3, passo: passoG / 1000, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "kg", rotulo: "Qtd (kg)", desabilitado: des, aoMudar: (c) => mudou(c) })),

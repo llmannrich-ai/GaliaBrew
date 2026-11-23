@@ -1,11 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261123p";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261123p";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261123p";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261123p";
-import { telaFerramentas } from "./ferramentas.js?v=20261123p";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261123p";
-import { icone } from "./icones.js?v=20261123p";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261123r";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261123r";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261123r";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261123r";
+import { telaFerramentas } from "./ferramentas.js?v=20261123r";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261123r";
+import { icone } from "./icones.js?v=20261123r";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
