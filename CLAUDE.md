@@ -132,7 +132,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
   218 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
-  cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
@@ -153,7 +153,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
   (`pct_peso`, `pontos_og`, `g_l` no calculos.js), cor do malte em texto pequeno abaixo do nome (`.ing-sub`, unidade do perfil, 23/11/2026), totais no cabeçalho (fermentáveis: kg em destaque + água/malte efetiva = água da mostura ÷ grão da mostura, 23/11/2026), ⋯ = detalhes (dados do cadastro, subir,
   descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
-  seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
+  seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, SEM filtros em botões
+  (retirados de todas as buscas em 23/11/2026, pedido do responsável: no celular ocupavam a tela), recentes
   (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
 - Busca de estilo (23/11/2026, sem migração): o Estilo do topo do editor é um botão que abre a mesma janela do `busca.js`
   (`TIPOS_BUSCA.estilos`). Acha por código (21A, casa exato e vem primeiro), nome, categoria e termos em português
@@ -204,7 +205,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123r.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123s.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -377,7 +378,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fonte dos dados na tela (23/11/2026, sem migração): `portal/fontes.js` classifica pelo `extras.fonte` → selo
   "Fabricante" (ficha oficial; Swaen = fabricante transcrita pelo Brewtarget, link tirado das notas), "Análise"
   (Embrapa), "Genérico" (beer-analytics / fontes públicas / GaliaBrew), "Meu" (dono preenchido). Aparece na busca de
-  ingrediente (selo + filtro "Fonte"), na coluna "Fonte" e no formulário dos Cadastros de ingrediente (com link "Ver a
+  ingrediente (selo; o filtro "Fonte" saiu com os demais filtros), na coluna "Fonte" e no formulário dos Cadastros de ingrediente (com link "Ver a
   ficha", só https) e nos detalhes (⋯) do malte/lúpulo na receita (`fonteNaReceita`: fonte do item ligado do catálogo;
   sem ligação = "Da receita", caso das 102 importadas do Brewfather). Carga nova de catálogo: gravar `extras.fonte`
   ("Ficha técnica oficial (Marca)…") e `extras.url` para o selo sair certo.
