@@ -1,8 +1,10 @@
 // busca.js — janela de busca de ingrediente (no lugar do <select> com centenas de itens).
 // Filtra enquanto digita (nome, produtor, origem, tipo; sem diferença de acento ou maiúscula), filtros rápidos por
 // tipo de ingrediente, "Recentes" e "Meus" no topo. Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
+// Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
+// azeda, belga...); filtros por família, cor, amargor e álcool; "Mais perto da receita" pelos números do editor.
 import { el, preencher, numeroBR } from "./ui.js?v=20261123a";
-import { corHexDeSrm } from "./calculos.js?v=20261123a";
+import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123a";
 import * as O from "./opcoes.js?v=20261123a";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
@@ -43,6 +45,64 @@ function faixasDeCor() {
     { rot: `Torrado (${lim(100)}+)`, teste: (x) => entre(x.cor_srm, 100, Infinity) },
   ];
 }
+
+
+// ---------- estilos ----------
+// Termos em português para achar estilo pelo jeito que se fala aqui (o catálogo BJCP está em inglês).
+// [expressão, termos acrescentados à busca, só no nome?]. O 1º termo de cada linha serve de família no filtro.
+// "Ale" e "lupulada" olham só o nome: as categorias "Pale/Amber Bitter European Beer" têm lagers (German Pils).
+// Na busca de estilo cada termo casa com o COMEÇO de uma palavra ("ale" não acha "Pale Lager").
+const TERMOS_ESTILO = [
+  [/lager|pils|bock|helles|marzen|festbier|schwarz|dunkel|keller|vienna|rauch|leicht|czech|baltic|cream ale|kolsch|california common/, "lager baixa fermentacao"],
+  [/\bale\b|ipa|stout|porter|bitter|saison|altbier|kolsch|weiss|weizen|wit|barleywine|wee heavy|dubbel|tripel|quad|mild|biere de garde/, "ale alta fermentacao", true],
+  [/wheat|weizen|weiss|wit|gose|berliner|lambic|gueuze/, "trigo"],
+  [/sour|wild|lambic|gueuze|gose|berliner|flanders|oud bruin|brett|catharina/, "azeda acida selvagem sour"],
+  [/smoked|rauch|grodzisk|piwo/, "defumada fumaca"],
+  [/fruit|grape|catharina|cherry|kriek|framboise/, "fruta frutas"],
+  [/spice|herb|winter|pumpkin|autumn/, "especiarias temperada"],
+  [/stout|porter|schwarz|dunkel|dark|black|brown|bruin/, "escura preta"],
+  [/pale|helles|pils|blonde|light|kolsch|cream|wit/, "clara"],
+  [/strong|imperial|double|bock|barleywine|wee heavy|tripel|quad|eisbock|wheatwine|old ale/, "forte alcoolica"],
+  [/ipa|hop|pale ale|bitter/, "lupulada amarga", true],
+  [/belgian|monastic|saison|tripel|dubbel|biere|wit|flanders|lambic|gueuze/, "belga"],
+  [/british|english|scottish|irish|wee heavy|mild|old ale/, "britanica inglesa"],
+  [/german|kolsch|\balt|marzen|festbier|munich|weizen|weiss|helles|bock|rauch|dortmund|gose|berliner|keller|schwarz/, "alema"],
+  [/american|california|cream ale|kentucky|steam/, "americana"],
+  [/czech|bohemian/, "tcheca"],
+  [/brazil|catharina/, "brasileira"], [/argentin/, "argentina"], [/italian/, "italiana"], [/new zealand/, "neozelandesa"],
+  [/specialty|mixed|experimental|alternative|historical/, "especial"],
+  // Nomes como se fala aqui.
+  [/pils/, "pilsen pilsener pilsner"], [/vienna/, "viena"], [/munich/, "munique"], [/marzen|festbier/, "oktoberfest"],
+  [/brown|bruin/, "marrom"], [/\bred\b/, "vermelha"], [/amber/, "ambar"], [/golden|blond|dorada|helles/, "dourada loira"],
+  [/light|leicht/, "leve"], [/oatmeal/, "aveia"], [/sweet stout/, "doce milk stout leite lactose"], [/hazy/, "neipa turva new england"],
+  [/double ipa/, "dipa imperial"], [/wheatwine/, "trigo"], [/catharina/, "catarina"], [/weissbier/, "hefeweizen"], [/bock/, "bock"],
+];
+const indiceTermos = new WeakMap();
+function termosEstilo(x) {
+  let t = indiceTermos.get(x);
+  if (t === undefined) {
+    const nome = semAcento(x.nome);
+    const base = `${nome} ${semAcento(x.categoria)}`;
+    t = TERMOS_ESTILO.filter(([re, , soNome]) => re.test(soNome ? nome : base)).map(([, termos]) => termos).join(" ");
+    indiceTermos.set(x, t);
+  }
+  return t;
+}
+const temTermo = (x, termo) => termosEstilo(x).split(" ").includes(termo);
+const media = (a, b) => (a != null && b != null ? (Number(a) + Number(b)) / 2 : a ?? b);
+const corTela = (srm) => (srm == null ? null : O.corParaTela(Number(srm)));
+/** "1A" < "1B" < "2A" < "10A"; códigos fora do padrão (X1, de usuário) depois. */
+export function ordemCodigo(a, b) {
+  const p = (c) => { const m = /^(\d+)([A-Z]*)$/i.exec(String(c ?? "").trim()); return m ? [0, Number(m[1]), m[2].toUpperCase()] : [1, 0, String(c ?? "")]; };
+  const [x, y] = [p(a.codigo), p(b.codigo)];
+  return x[0] - y[0] || x[1] - y[1] || x[2].localeCompare(y[2]) || String(a.nome).localeCompare(String(b.nome));
+}
+/** Ordena do mais parecido com a receita ao menos parecido. */
+export function maisPertoDaReceita(itens, res) {
+  return itens.map((x) => [encaixeEstilo(x, res), x]).filter(([e]) => e.total >= 3)
+    .sort(([a], [b]) => (b.dentro / b.total) - (a.dentro / a.total) || a.distancia - b.distancia).map(([, x]) => x);
+}
+const receitaTemNumeros = (res) => res?.og > 1.001;
 
 export const TIPOS_BUSCA = {
   fermentaveis: {
@@ -97,6 +157,54 @@ export const TIPOS_BUSCA = {
       { nome: "Tipo", opcoes: O.TIPO_OUTRO.filter(([v]) => itens.some((x) => x.tipo === v)).map(([v, t]) => ({ rot: t, teste: (x) => x.tipo === v })) },
     ],
   },
+  estilos: {
+    titulo: "Escolher estilo",
+    placeholder: "Código, nome, categoria (ex.: 21A, pils, trigo, belga)…",
+    acao: "escolhe",
+    prefixo: true,
+    livre: "Sem estilo",
+    ordenar: (itens) => [...itens].sort(ordemCodigo),
+    nome: (x) => `${x.codigo ? x.codigo + " " : ""}${x.nome}`,
+    texto: (x) => [x.codigo, x.nome, x.categoria, x.guia, termosEstilo(x), r(O.TIPO_ESTILO, x.tipo)],
+    resumo: (x, res) => {
+      const e = receitaTemNumeros(res) ? encaixeEstilo(x, res) : null;
+      return [x.categoria,
+        faixa(x.og_min, x.og_max, 3) ? `OG ${faixa(x.og_min, x.og_max, 3)}` : null,
+        faixa(x.ibu_min, x.ibu_max, 0) ? `IBU ${faixa(x.ibu_min, x.ibu_max, 0)}` : null,
+        faixa(corTela(x.cor_srm_min), corTela(x.cor_srm_max), 0) ? `${O.unidadeCor()} ${faixa(corTela(x.cor_srm_min), corTela(x.cor_srm_max), 0)}` : null,
+        faixa(x.abv_min_pct, x.abv_max_pct, 1, "%") ? `ABV ${faixa(x.abv_min_pct, x.abv_max_pct, 1, "%")}` : null,
+        e?.total ? `receita em ${e.dentro} de ${e.total} faixas` : null];
+    },
+    cor: (x) => media(x.cor_srm_min, x.cor_srm_max),
+    filtros: (itens, res) => {
+      const lim = (srm) => numeroBR(O.corParaTela(srm), 0);
+      const cor = (x) => media(x.cor_srm_min, x.cor_srm_max);
+      return [
+        receitaTemNumeros(res) ? { nome: "Receita", opcoes: [
+          { rot: "Combina com a receita", teste: (x) => { const e = encaixeEstilo(x, res); return e.total >= 3 && e.dentro >= e.total - 1; }, ordenar: (l) => maisPertoDaReceita(l, res) },
+        ] } : null,
+        { nome: "Família", opcoes: [
+          ["Lager", "lager"], ["Ale", "ale"], ["Trigo", "trigo"], ["Azeda", "azeda"], ["Defumada", "defumada"], ["Frutas/especiarias", null],
+        ].map(([rot, termo]) => ({ rot, teste: termo ? (x) => temTermo(x, termo) : (x) => temTermo(x, "fruta") || temTermo(x, "especiarias") })) },
+        { nome: "Cor", opcoes: [
+          { rot: `Clara (até ${lim(6)} ${O.unidadeCor()})`, teste: (x) => entre(cor(x), 0, 6) },
+          { rot: `Âmbar (${lim(6)}–${lim(15)})`, teste: (x) => entre(cor(x), 6, 15) },
+          { rot: `Marrom (${lim(15)}–${lim(25)})`, teste: (x) => entre(cor(x), 15, 25) },
+          { rot: `Escura (${lim(25)}+)`, teste: (x) => entre(cor(x), 25, Infinity) },
+        ] },
+        { nome: "Amargor", opcoes: [
+          { rot: "até 20 IBU", teste: (x) => entre(media(x.ibu_min, x.ibu_max), 0, 20) },
+          { rot: "20–40", teste: (x) => entre(media(x.ibu_min, x.ibu_max), 20, 40) },
+          { rot: "40+", teste: (x) => entre(media(x.ibu_min, x.ibu_max), 40, Infinity) },
+        ] },
+        { nome: "Álcool", opcoes: [
+          { rot: "até 5%", teste: (x) => entre(media(x.abv_min_pct, x.abv_max_pct), 0, 5) },
+          { rot: "5–7%", teste: (x) => entre(media(x.abv_min_pct, x.abv_max_pct), 5, 7) },
+          { rot: "7%+", teste: (x) => entre(media(x.abv_min_pct, x.abv_max_pct), 7, Infinity) },
+        ] },
+      ].filter(Boolean);
+    },
+  },
 };
 
 const indice = new WeakMap();        // item → texto normalizado (calculado uma vez)
@@ -110,11 +218,16 @@ export function buscarItens(itens, tipo, consulta, testes = []) {
     if (!testes.every((t) => t(x))) continue;
     if (!termos.length) { saida.push([0, x]); continue; }
     let txt = indice.get(x);
-    if (txt === undefined) { txt = semAcento(def.texto(x).filter(Boolean).join(" ")); indice.set(x, txt); }
-    if (!termos.every((t) => txt.includes(t))) continue;
+    if (txt === undefined) {
+      txt = semAcento(def.texto(x).filter(Boolean).join(" "));
+      if (def.prefixo) txt = ` ${txt.replace(/[^a-z0-9]+/g, " ")} `;
+      indice.set(x, txt);
+    }
+    if (!termos.every((t) => txt.includes(def.prefixo ? ` ${t}` : t))) continue;
     const nome = semAcento(def.nome(x));
     const t0 = termos[0];
-    const nota = nome.startsWith(t0) ? 0 : nome.split(/[\s\-/(]+/).some((p) => p.startsWith(t0)) ? 1 : nome.includes(t0) ? 2 : 3;
+    const nota = x.codigo && semAcento(x.codigo) === t0 ? -1 : nome.startsWith(t0) ? 0 :
+      def.prefixo && txt.includes(` ${t0} `) ? 1 : nome.split(/[\s\-/(]+/).some((p) => p.startsWith(t0)) ? 1 : nome.includes(t0) ? 2 : 3;
     saida.push([nota, x]);
   }
   if (termos.length) saida.sort((a, b) => a[0] - b[0]);
@@ -122,12 +235,14 @@ export function buscarItens(itens, tipo, consulta, testes = []) {
 }
 
 /**
- * Abre a janela. aoEscolher(item) com o item do cadastro; aoLivre() para "Item livre".
+ * Abre a janela. aoEscolher(item) com o item do cadastro; aoLivre() para "Item livre" (estilo: "Sem estilo").
  * Chamados DEPOIS de fechar a janela (o foco pode ir para o campo novo).
+ * contexto: resultado de calcularReceita (estilos: "Mais perto da receita"); atualId: item já escolhido (vai no topo).
  */
-export function abrirBusca({ tipo, itens, aoEscolher, aoLivre }) {
+export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contexto = null, atualId = null }) {
   const def = TIPOS_BUSCA[tipo];
-  const filtros = def.filtros(itens);
+  const itens = def.ordenar ? def.ordenar(recebidos) : recebidos;
+  const filtros = def.filtros(itens, contexto);
   const ativos = new Map();                // grupo → índice da opção ligada
   let consulta = "";
   let mostrados = [];
@@ -135,7 +250,7 @@ export function abrirBusca({ tipo, itens, aoEscolher, aoLivre }) {
   const idLista = `busca-lista-${Date.now()}`;
 
   const campo = el("input", {
-    type: "search", class: "busca-campo", placeholder: "Nome, produtor, origem…", "aria-label": "Buscar",
+    type: "search", class: "busca-campo", placeholder: def.placeholder ?? "Nome, produtor, origem…", "aria-label": "Buscar",
     role: "combobox", "aria-expanded": "true", "aria-controls": idLista, "aria-autocomplete": "list", autocomplete: "off",
     on: {
       input: (e) => { consulta = e.target.value; desenhar(); },
@@ -174,8 +289,8 @@ export function abrirBusca({ tipo, itens, aoEscolher, aoLivre }) {
       el("button", { type: "button", class: "icone fechar", "aria-label": "Fechar", text: "×", on: { click: () => janela.close() } })),
     campo, chips, info, lista,
     el("div", { class: "busca-rodape" },
-      el("span", { class: "nota", text: "↑ ↓ escolhe · Enter adiciona · Esc fecha" }),
-      el("button", { type: "button", class: "secundario pequeno", text: "Item livre (digitar os dados)", on: { click: () => fecharE(aoLivre) } })));
+      el("span", { class: "nota", text: def.acao ? `↑ ↓ navega · Enter ${def.acao} · Esc fecha` : "↑ ↓ escolhe · Enter adiciona · Esc fecha" }),
+      aoLivre ? el("button", { type: "button", class: "secundario pequeno", text: def.livre ?? "Item livre (digitar os dados)", on: { click: () => fecharE(aoLivre) } }) : null));
   janela.addEventListener("close", () => janela.remove());
   janela.addEventListener("click", (e) => { if (e.target === janela) janela.close(); });   // clique fora
 
@@ -199,7 +314,7 @@ export function abrirBusca({ tipo, itens, aoEscolher, aoLivre }) {
   }
 
   function opcao(x, i) {
-    const resumo = def.resumo(x).filter(Boolean).join(" · ");
+    const resumo = def.resumo(x, contexto).filter(Boolean).join(" · ");
     let amostra = null;
     if (def.cor) {
       amostra = el("span", { class: "amostra", "aria-hidden": "true" });
@@ -211,25 +326,36 @@ export function abrirBusca({ tipo, itens, aoEscolher, aoLivre }) {
     },
     amostra,
     el("div", { class: "busca-opcao-texto" },
-      el("span", { class: "busca-opcao-nome" }, def.nome(x), x.dono ? el("span", { class: "selo meu", text: "meu" }) : null),
+      el("span", { class: "busca-opcao-nome" }, def.nome(x), x.dono ? el("span", { class: "selo meu", text: "meu" }) : null,
+        x.id === atualId ? el("span", { class: "selo", text: "atual" }) : null),
       resumo ? el("span", { class: "busca-opcao-resumo", text: resumo }) : null));
   }
 
   function desenhar() {
-    const testes = [...ativos].map(([g, i]) => g.opcoes[i].teste);
+    const ligadas = [...ativos].map(([g, i]) => g.opcoes[i]);
+    const testes = ligadas.map((o) => o.teste);
     const filtrado = consulta.trim() || testes.length;
     const grupos = [];
     if (!filtrado) {
       // Sem busca: recentes e meus primeiro, depois o catálogo.
+      // Estilos: o atual e os mais parecidos com a receita antes.
       const porId = new Map(itens.map((x) => [x.id, x]));
-      const recentes = (lerRecentes()[tipo] ?? []).map((id) => porId.get(id)).filter(Boolean);
-      const meus = itens.filter((x) => x.dono && !recentes.includes(x));
-      const resto = itens.filter((x) => !x.dono && !recentes.includes(x));
+      const atual = atualId && porId.get(atualId) ? [porId.get(atualId)] : [];
+      const perto = tipo === "estilos" && receitaTemNumeros(contexto)
+        ? maisPertoDaReceita(itens, contexto).filter((x) => !atual.includes(x)).slice(0, 5) : [];
+      const usados = [...atual, ...perto];
+      const recentes = (lerRecentes()[tipo] ?? []).map((id) => porId.get(id)).filter((x) => x && !usados.includes(x));
+      const meus = itens.filter((x) => x.dono && !recentes.includes(x) && !usados.includes(x));
+      const resto = itens.filter((x) => !x.dono && !recentes.includes(x) && !usados.includes(x));
+      if (atual.length) grupos.push(["Atual", atual]);
+      if (perto.length) grupos.push(["Mais perto da receita", perto]);
       if (recentes.length) grupos.push(["Recentes", recentes]);
       if (meus.length) grupos.push(["Meus", meus]);
-      grupos.push([recentes.length || meus.length ? "Catálogo" : null, resto]);
+      grupos.push([grupos.length ? "Catálogo" : null, resto]);
     } else {
-      grupos.push([null, buscarItens(itens, tipo, consulta, testes)]);
+      let achados = buscarItens(itens, tipo, consulta, testes);
+      for (const o of ligadas) if (o.ordenar) achados = o.ordenar(achados);
+      grupos.push([null, achados]);
     }
     const total = grupos.reduce((s, [, l]) => s + l.length, 0);
     mostrados = [];

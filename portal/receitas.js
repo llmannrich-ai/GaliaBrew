@@ -498,8 +498,25 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
     leitura ? null : botaoSalvarApp);
 
-  const estiloCampo = el("label", { class: "estilo-topo" }, el("span", { text: "Estilo" }), campoSelect(r, "estilo_id",
-    cat.estilos.map((e) => [e.id, `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}`]), { aoMudar: mudou, desabilitado: des, vazio: "— sem estilo —", rotulo: "Estilo" }));
+  // Estilo: botão que abre a busca (código, nome, termos em português, filtros, "Mais perto da receita").
+  const nomeEstilo = el("span", { class: "escolha-texto" });
+  const mostrarEstilo = () => {
+    const e = estiloAtual();
+    nomeEstilo.textContent = e ? `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}` : "— sem estilo —";
+  };
+  const trocarEstilo = (id) => {
+    if (r.estilo_id !== id) { r.estilo_id = id; mostrarEstilo(); mudou(); }
+    botaoEstilo.focus();
+  };
+  const botaoEstilo = el("button", {
+    type: "button", class: "escolha", disabled: des, "aria-label": "Estilo", "aria-haspopup": "dialog",
+    on: { click: () => abrirBusca({
+      tipo: "estilos", itens: cat.estilos, contexto: calcularReceita(r), atualId: r.estilo_id,
+      aoEscolher: (e) => trocarEstilo(e.id), aoLivre: () => trocarEstilo(null),
+    }) },
+  }, nomeEstilo, el("span", { class: "escolha-seta", "aria-hidden": "true", text: "▾" }));
+  mostrarEstilo();
+  const estiloCampo = el("div", { class: "estilo-topo" }, el("span", { class: "rotulo-campo", text: "Estilo" }), botaoEstilo);
 
   const geral = el("section", { class: "cartao" },
     tituloSecao("geral", "Dados gerais"),

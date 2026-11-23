@@ -3,6 +3,7 @@ import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campo
 import { sb, sessao } from "./estado.js?v=20261123a";
 import * as O from "./opcoes.js?v=20261123a";
 import { corHexDeSrm } from "./calculos.js?v=20261123a";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261123a";
 
 // Tipos de campo: texto | numero (casas) | cor (SRM no banco) | select (opcoes) | bool | area
 export const CADASTROS = {
@@ -155,7 +156,7 @@ export async function telaCadastros(conteudo, chave) {
   preencher(conteudo, 
     el("h2", { text: "Cadastros" }), abas,
     el("div", { class: "barra" },
-      el("input", { type: "search", placeholder: `Buscar em ${def.titulo.toLowerCase()}`, "aria-label": "Buscar", on: { input: (e) => { filtro.texto = e.target.value; desenhar(); } } }),
+      el("input", { type: "search", placeholder: chave === "estilos" ? "Buscar estilo: 21A, pils, trigo, belga…" : `Buscar em ${def.titulo.toLowerCase()}`, "aria-label": "Buscar", on: { input: (e) => { filtro.texto = e.target.value; desenhar(); } } }),
       el("button", { type: "button", text: "Novo", on: { click: () => abrirFormulario(chave, def.novo(), recarregar) } })),
     def.catalogo ? el("p", { class: "nota", text: "Itens “Sistema” são do catálogo comum (todos veem; só o admin altera). Os seus só você vê." }) : null,
     corpo);
@@ -171,7 +172,9 @@ export async function telaCadastros(conteudo, chave) {
   }
   function desenhar() {
     const t = filtro.texto.trim().toLowerCase();
-    const lista = t ? itens.filter((x) => def.colunas.some(([k]) => String(x[k] ?? "").toLowerCase().includes(t))) : itens;
+    // Estilos: a mesma busca do editor (código, nome, categoria, termos em português, sem acento), em ordem de código.
+    const lista = chave === "estilos" ? buscarItens([...itens].sort(ordemCodigo), "estilos", t)
+      : t ? itens.filter((x) => def.colunas.some(([k]) => String(x[k] ?? "").toLowerCase().includes(t))) : itens;
     const cab = el("tr", {}, def.colunas.map(([, r, f]) => el("th", { class: typeof f === "number" || f === "cor" ? "num" : "", text: f === "cor" ? `${r} (${O.unidadeCor()})` : r })),
       def.catalogo ? el("th", { text: "Origem" }) : null);
     const linhas = lista.map((x) => el("tr", { class: "clicavel", tabindex: 0, on: { click: () => abrirFormulario(chave, x, recarregar), keydown: (e) => { if (e.key === "Enter") abrirFormulario(chave, x, recarregar); } } },
