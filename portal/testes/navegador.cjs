@@ -60,6 +60,7 @@ async function supabaseSimulado(rota) {
   const url = new URL(req.url());
   const metodo = req.method();
   if (metodo === "OPTIONS") return responder(rota, 204);
+  if (url.pathname.startsWith("/storage/v1/")) return storageSimulado(rota, req, url, metodo);
   const corpo = req.postData() ? JSON.parse(req.postData()) : null;
   chamadas.push({ metodo, caminho: url.pathname + url.search, corpo });
 
@@ -133,6 +134,53 @@ async function supabaseSimulado(rota) {
   return responder(rota, 400, { message: "não simulado" });
 }
 
+// ---- Storage (bucket fotos-brassagem da 0011): guarda os bytes enviados e aplica o limite do bucket (400 kB, JPEG) ----
+const fotosGuardadas = new Map();      // caminho → Buffer
+const BALDE = "fotos-brassagem";
+function medidasJpeg(b) {
+  for (let i = 2; i + 9 < b.length;) {
+    if (b[i] !== 0xff) return null;
+    const m = b[i + 1];
+    if (m >= 0xc0 && m <= 0xc2) return { altura: b.readUInt16BE(i + 5), largura: b.readUInt16BE(i + 7) };
+    i += 2 + b.readUInt16BE(i + 2);
+  }
+  return null;
+}
+async function storageSimulado(rota, req, url, metodo) {
+  const caminho = decodeURIComponent(url.pathname.replace("/storage/v1/object/", ""));
+  chamadas.push({ metodo, caminho: url.pathname, corpo: null });
+  if (metodo === "GET" && caminho.startsWith(`sign/${BALDE}/`)) {
+    const f = fotosGuardadas.get(caminho.slice(`sign/${BALDE}/`.length));
+    return f ? rota.fulfill({ status: 200, contentType: "image/jpeg", body: f }) : responder(rota, 404, { message: "Object not found" });
+  }
+  if (metodo === "POST" && caminho === `list/${BALDE}`) {
+    const { prefix } = JSON.parse(req.postData());
+    return responder(rota, 200, [...fotosGuardadas.keys()].filter((k) => k.startsWith(prefix + "/")).sort()
+      .map((k) => ({ name: k.slice(prefix.length + 1), id: uuid(), created_at: new Date().toISOString(), metadata: { size: fotosGuardadas.get(k).length } })));
+  }
+  if (metodo === "POST" && caminho === `sign/${BALDE}`) {
+    const { paths } = JSON.parse(req.postData());
+    return responder(rota, 200, paths.map((p) => ({ error: null, path: p, signedURL: `/object/sign/${BALDE}/${p}?token=t` })));
+  }
+  if (metodo === "DELETE" && caminho === BALDE) {
+    const { prefixes } = JSON.parse(req.postData());
+    const apagados = prefixes.filter((k) => fotosGuardadas.delete(k));
+    return responder(rota, 200, apagados.map((k) => ({ name: k, bucket_id: BALDE })));
+  }
+  if (metodo === "POST" && caminho.startsWith(`${BALDE}/`)) {
+    // O corpo é multipart (FormData do supabase-js): o arquivo vai do início ao fim do JPEG.
+    const bruto = req.postDataBuffer();
+    const ini = bruto.indexOf(Buffer.from([0xff, 0xd8, 0xff])), fim = bruto.lastIndexOf(Buffer.from([0xff, 0xd9]));
+    if (ini < 0 || fim < 0) return responder(rota, 415, { statusCode: "415", error: "invalid_mime_type", message: "mime type not supported" });
+    const arq = bruto.subarray(ini, fim + 2);
+    if (arq.length > 409600) return responder(rota, 413, { statusCode: "413", error: "Payload too large", message: "The object exceeded the maximum allowed size" });
+    const destino = caminho.slice(BALDE.length + 1);
+    fotosGuardadas.set(destino, Buffer.from(arq));
+    return responder(rota, 200, { Key: `${BALDE}/${destino}`, Id: uuid() });
+  }
+  return responder(rota, 400, { message: "storage não simulado" });
+}
+
 const TIPOS = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 async function site(rota) {
   const url = new URL(rota.request().url());
@@ -181,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123u");
+    const m = await import("./fontes.js?v=20261123w");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -332,7 +380,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123u");
+    const m = await import("./calculos.js?v=20261123w");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -393,7 +441,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123u");
+    const m = await import("./calculos.js?v=20261123w");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -412,7 +460,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123u");
+    const m = await import("./calculos.js?v=20261123w");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -504,7 +552,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123u");
+    const m = await import("./calculos.js?v=20261123w");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -664,6 +712,15 @@ const erros = [];
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
   await pagina.locator('[data-secao="fermentaveis"] .titulo-linha').screenshot({ path: `${SAIDA}/p9-celular-total-fermentaveis.png` });
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
+  // Adicionar = só o "+", sem borda, na mesma linha do título da seção (390 px aqui; 320 px mais abaixo).
+  const botoesMais = () => pagina.evaluate(() => [...document.querySelectorAll(".editor-corpo .titulo-linha button.adicionar")].map((b) => {
+    const t = b.closest(".titulo-linha").querySelector("h3").getBoundingClientRect(), r = b.getBoundingClientRect(), cs = getComputedStyle(b);
+    return { secao: b.closest("[data-secao]").dataset.secao, texto: b.textContent, rotulo: b.getAttribute("aria-label"),
+      borda: cs.borderTopWidth, alinhado: r.top < t.bottom && r.bottom > t.top, toque: r.width >= 44 && r.height >= 44 };
+  }));
+  const mais390 = await botoesMais();
+  verificar(mais390.length === 6 && mais390.every((b) => b.texto === "+" && b.rotulo?.startsWith("Adicionar") && b.borda === "0px" && b.alinhado && b.toque),
+    `celular 390 px: "+" sem borda ao lado do título em todas as seções (${JSON.stringify(mais390.filter((b) => !(b.alinhado && b.toque && b.borda === "0px")))})`);
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
   // Sal da água: nome, gramas e × na mesma linha (390 e 320 px), sem passar da largura do bloco.
@@ -679,7 +736,17 @@ const erros = [];
   verificar(sal390.alinhado && sal390.ordem && sal390.cabe && sal390.altura <= 60, `celular: cada sal da água numa linha só (${JSON.stringify(sal390)})`);
   await pagina.evaluate(() => document.querySelector(".bloco-agua").scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5g-celular-sais.png` });
+  // Papel de parede próprio em cada água (23/11/2026): mostura e lavagem em tons diferentes entre si e da seção, com desenho.
+  const fundosAgua = await pagina.evaluate(() => ["[data-secao=\"agua\"]", ".bloco-agua.mostura", ".bloco-agua.lavagem"].map((s) => {
+    const cs = getComputedStyle(document.querySelector(s)); return { cor: cs.backgroundColor, desenho: cs.backgroundImage.startsWith("url(") };
+  }));
+  verificar(new Set(fundosAgua.map((f) => f.cor)).size === 3 && fundosAgua.every((f) => f.desenho),
+    `celular: água da mostura e de lavagem com papel de parede próprio (${fundosAgua.map((f) => f.cor).join(" | ")})`);
+  await pagina.evaluate(() => { document.querySelector(".bloco-agua.lavagem").scrollIntoView(); window.scrollBy(0, -70); });
+  await pagina.screenshot({ path: `${SAIDA}/p5i-celular-lavagem.png` });
   await pagina.setViewportSize({ width: 320, height: 700 });
+  const mais320 = await botoesMais();
+  verificar(mais320.every((b) => b.alinhado && b.toque), `celular 320 px: "+" na linha do título (${JSON.stringify(mais320.filter((b) => !b.alinhado))})`);
   const sal320 = await linhaDoSal();
   verificar(sal320.alinhado && sal320.ordem && sal320.cabe && sal320.select >= 100, `celular 320 px: sal numa linha só (${JSON.stringify(sal320)})`);
   await pagina.screenshot({ path: `${SAIDA}/p5h-celular-sais-320.png` });
@@ -1082,6 +1149,108 @@ const erros = [];
   await cel.waitForSelector("dialog.relatorio", { state: "detached", timeout: 3000 }).catch(() => {});
   verificar(await cel.locator("dialog.relatorio").count() === 0, "Esc fecha o relatório");
 
+  // Fotos da brassagem (seção Notas): a foto do celular é reduzida no aparelho antes de subir para o Storage.
+  const idPils = (await cel.evaluate(() => location.hash)).split("/").pop();
+  const fotosTxt = () => cel.evaluate(() => ({ conta: document.querySelector(".fotos-conta").textContent, estado: document.querySelector(".fotos-estado")?.textContent ?? "", minis: document.querySelectorAll(".foto-mini").length }));
+  await cel.locator('[data-secao="notas"] .fotos').evaluate((n) => n.scrollIntoView({ block: "center" }));
+  await cel.waitForFunction(() => document.querySelector(".fotos-estado")?.textContent === "");
+  const botaoFoto = await cel.locator(".fotos-adicionar").boundingBox();
+  verificar((await fotosTxt()).conta === "0 de 12" && botaoFoto.height >= 44 && botaoFoto.width >= 300,
+    `fotos: bloco na seção Notas, "0 de 12", botão Adicionar foto largo para o dedo (${Math.round(botaoFoto.width)} × ${Math.round(botaoFoto.height)} px)`);
+  // Foto de celular simulada: 4000 × 3000 cheia de detalhe (ruído), vários MB.
+  const fazerFoto = (l, a) => cel.evaluate(async ([largura, altura]) => {
+    const grao = document.createElement("canvas");
+    grao.width = grao.height = 256;
+    const g = grao.getContext("2d"), dados = g.createImageData(256, 256);
+    for (let i = 0; i < dados.data.length; i += 65536) crypto.getRandomValues(dados.data.subarray(i, i + 65536));
+    for (let i = 3; i < dados.data.length; i += 4) dados.data[i] = 255;
+    g.putImageData(dados, 0, 0);
+    const tela = document.createElement("canvas");
+    tela.width = largura; tela.height = altura;
+    const c = tela.getContext("2d");
+    c.fillStyle = c.createPattern(grao, "repeat");
+    c.fillRect(0, 0, largura, altura);
+    const blob = await new Promise((r) => tela.toBlob(r, "image/jpeg", 0.9));
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let txt = "";
+    for (let i = 0; i < bytes.length; i += 32768) txt += String.fromCharCode(...bytes.subarray(i, i + 32768));
+    return btoa(txt);
+  }, [l, a]).then((b) => Buffer.from(b, "base64"));
+  const fotoGrande = await fazerFoto(4000, 3000);
+  await cel.setInputFiles('.fotos input[type="file"]', { name: "IMG_0001.jpg", mimeType: "image/jpeg", buffer: fotoGrande });
+  await cel.waitForSelector(".foto-mini");
+  await cel.waitForFunction(() => /gravada/.test(document.querySelector(".fotos-estado").textContent));
+  const [caminho1, enviada1] = [...fotosGuardadas.entries()][0];
+  const med1 = medidasJpeg(enviada1);
+  verificar(fotoGrande.length > 2_000_000 && enviada1.length <= 300_000 && Math.max(med1.largura, med1.altura) <= 1600 && Math.abs(med1.largura / med1.altura - 4 / 3) < 0.01,
+    `foto de ${(fotoGrande.length / 1e6).toFixed(1)} MB (4000 × 3000) sobe com ${Math.round(enviada1.length / 1000)} kB (${med1.largura} × ${med1.altura}), ${Math.round(fotoGrande.length / enviada1.length)}× menor`);
+  verificar(new RegExp(`^${USUARIO.id}/${idPils}/[0-9a-z-]+\\.jpg$`).test(caminho1), "foto gravada na pasta <dono>/<receita>/ do bucket fotos-brassagem");
+  const depois1 = await fotosTxt();
+  verificar(depois1.conta === "1 de 12" && /^Foto gravada: \d+ kB \(a original tinha [\d,]+ MB\)\.$/.test(depois1.estado), `tela mostra a economia: "${depois1.estado}"`);
+  // Foto pequena em pé não é ampliada; duas de uma vez.
+  const fotoPequena = await fazerFoto(300, 400);
+  await cel.setInputFiles('.fotos input[type="file"]', [{ name: "a.jpg", mimeType: "image/jpeg", buffer: fotoPequena }, { name: "b.jpg", mimeType: "image/jpeg", buffer: fotoPequena }]);
+  await cel.waitForFunction(() => document.querySelectorAll(".foto-mini").length === 3 && /2 fotos gravadas/.test(document.querySelector(".fotos-estado").textContent));
+  const med2 = medidasJpeg([...fotosGuardadas.values()][1]);
+  verificar(med2.largura === 300 && med2.altura === 400 && fotosGuardadas.size === 3, "foto pequena (300 × 400) não é ampliada; duas fotos escolhidas de uma vez sobem as duas");
+  // Arquivo que não é imagem: aviso, nada sobe.
+  await cel.setInputFiles('.fotos input[type="file"]', { name: "nota.txt", mimeType: "text/plain", buffer: Buffer.from("não é foto") });
+  await cel.waitForSelector(".aviso.erro >> text=Não consegui ler esta imagem");
+  verificar(fotosGuardadas.size === 3 && (await fotosTxt()).minis === 3, "arquivo que não é imagem: aviso e nada é enviado");
+  await cel.locator('[data-secao="notas"] .fotos').evaluate((n) => n.scrollIntoView({ block: "center" }));
+  const grade = await cel.evaluate(() => {
+    const m = [...document.querySelectorAll(".foto-mini")].map((n) => n.getBoundingClientRect());
+    return { mesmaLinha: m.every((b) => Math.abs(b.top - m[0].top) < 1), quadrada: m.every((b) => Math.abs(b.width - b.height) < 1), lado: Math.round(m[0].width),
+      carregadas: [...document.querySelectorAll(".foto-mini img")].every((i) => i.complete && i.naturalWidth > 0) };
+  });
+  verificar(grade.mesmaLinha && grade.quadrada && grade.lado >= 110 && grade.carregadas && await larguraSobra() <= 1,
+    `390 px: 3 miniaturas quadradas por linha (${grade.lado} px), sem rolagem para o lado`);
+  await cel.screenshot({ path: `${SAIDA}/p6n-celular-fotos.png` });
+  await tocar(".foto-mini");
+  await cel.waitForSelector("dialog.foto-janela[open]");
+  await cel.waitForFunction(() => document.querySelector(".foto-grande").naturalWidth > 0);
+  const janFoto = await cel.locator("dialog.foto-janela").boundingBox();
+  const fotoAberta = await cel.evaluate(() => { const i = document.querySelector(".foto-grande"), b = i.getBoundingClientRect(); return { nat: i.naturalWidth, largura: Math.round(b.width), titulo: document.querySelector(".foto-janela .rel-titulo").textContent }; });
+  verificar(janFoto.x === 0 && janFoto.y === 0 && janFoto.width === 390 && janFoto.height === 844 && fotoAberta.nat === med1.largura && fotoAberta.largura === 390 && fotoAberta.titulo === "Foto 1 de 3",
+    "toque na miniatura abre a foto inteira numa janela que ocupa a tela");
+  await cel.screenshot({ path: `${SAIDA}/p6o-celular-foto-aberta.png` });
+  await tocar('.foto-janela button[aria-label="Próxima foto"]');
+  verificar(await cel.textContent(".foto-janela .rel-titulo") === "Foto 2 de 3", "próxima foto");
+  await tocar(".foto-janela button.foto-excluir");
+  await cel.waitForSelector("dialog.confirmar[open]");
+  await tocar("dialog.confirmar button.perigo");
+  await cel.waitForFunction(() => document.querySelectorAll(".foto-mini").length === 2);
+  verificar(fotosGuardadas.size === 2 && fotosGuardadas.has(caminho1) && await cel.textContent(".foto-janela .rel-titulo") === "Foto 2 de 2" && (await fotosTxt()).conta === "2 de 12",
+    "excluir a foto (com confirmação) apaga do Storage e segue na foto seguinte");
+  await tocar(".foto-janela button.rel-fechar");
+  await cel.waitForSelector("dialog.foto-janela", { state: "detached", timeout: 3000 }).catch(() => {});
+  // Reabrir a receita: as fotos vêm do Storage por link assinado (a CSP precisa deixar a imagem do Supabase entrar).
+  cel.once("dialog", (d) => d.accept());      // a receita tem alteração pendente dos testes anteriores
+  await cel.evaluate(() => { location.hash = "#/receitas"; });
+  await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  await tocar(".receita-cartao >> text=Pils da Galia");
+  await cel.waitForSelector(".foto-mini");
+  await cel.locator('[data-secao="notas"] .fotos').evaluate((n) => n.scrollIntoView({ block: "center" }));
+  await cel.waitForFunction(() => [...document.querySelectorAll(".foto-mini img")].every((i) => i.complete && i.naturalWidth > 0));
+  const reaberta = await cel.evaluate(() => [...document.querySelectorAll(".foto-mini img")].map((i) => new URL(i.src).host + "|" + i.naturalWidth));
+  verificar(reaberta.length === 2 && reaberta[0] === `hzomsyfujxakcuaaedmh.supabase.co|${med1.largura}` && (await fotosTxt()).conta === "2 de 12",
+    "ao reabrir a receita as 2 fotos aparecem, vindas do Storage");
+  await cel.setViewportSize({ width: 320, height: 640 });
+  await cel.waitForTimeout(200);
+  await cel.locator('[data-secao="notas"] .fotos').evaluate((n) => n.scrollIntoView({ block: "center" }));
+  verificar(await larguraSobra() <= 1 && await cel.evaluate(() => { const m = [...document.querySelectorAll(".foto-mini")].map((n) => n.getBoundingClientRect()); return m[0].top === m[1].top && m[1].right <= window.innerWidth; }),
+    "320 px: fotos sem rolagem para o lado");
+  await cel.screenshot({ path: `${SAIDA}/p6p-celular-fotos-320.png` });
+  await cel.setViewportSize({ width: 390, height: 844 });
+  // Receita nova (ainda sem id): só o aviso.
+  await cel.evaluate(() => { location.hash = "#/receita/nova"; });
+  await cel.waitForFunction(() => document.querySelector(".fotos .nota")?.textContent === "Salve a receita para adicionar fotos.");
+  verificar(await cel.locator('.fotos input[type="file"]').count() === 0, "receita nova ainda não salva: pede para salvar antes de pôr fotos");
+  await cel.evaluate(() => { location.hash = "#/receitas"; });
+  await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  await tocar(".receita-cartao >> text=Pils da Galia");
+  await cel.waitForSelector(".barra-app");
+
   // Temas (Meu perfil → Aparência): troca na hora, fica salvo no aparelho, vale depois de recarregar.
   await cel.keyboard.press("Escape");
   cel.once("dialog", (d) => d.accept());
@@ -1130,6 +1299,18 @@ const erros = [];
     await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-${rota.split("/").pop()}.png` });
   }
   cel.off("dialog", aceitar);
+  await cel.setViewportSize({ width: 390, height: 844 });
+  // Excluir a receita leva as fotos dela junto.
+  await cel.evaluate(() => { window.GaliaTema.aplicar("auto"); location.hash = "#/receitas"; });
+  await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  await tocar(".receita-cartao >> text=Pils da Galia");
+  await cel.waitForSelector(".acoes-receita button.excluir-receita");
+  await tocar(".acoes-receita button.excluir-receita");
+  await cel.waitForSelector("dialog.confirmar[open]");
+  await tocar("dialog.confirmar button.perigo");
+  await cel.waitForSelector(".aviso >> text=Receita excluída");
+  await cel.waitForTimeout(300);
+  verificar(fotosGuardadas.size === 0 && !db.receitas.some((x) => x.id === idPils), "excluir a receita apaga também as fotos dela do Storage");
   await ctxCel.close();
 
   // O 400 é o da senha errada, testada de propósito (uma vez só).

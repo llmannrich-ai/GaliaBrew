@@ -1,16 +1,17 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123u";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123u";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123u";
-import { abrirBusca } from "./busca.js?v=20261123u";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123u";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123u";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123u";
-import * as O from "./opcoes.js?v=20261123u";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123u";
-import { icone } from "./icones.js?v=20261123u";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123u";
-import { abrirRelatorio } from "./relatorio.js?v=20261123u";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123w";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123w";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123w";
+import { abrirBusca } from "./busca.js?v=20261123w";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123w";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123w";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123w";
+import * as O from "./opcoes.js?v=20261123w";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123w";
+import { icone } from "./icones.js?v=20261123w";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123w";
+import { abrirRelatorio } from "./relatorio.js?v=20261123w";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261123w";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -432,11 +433,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return sec;
   }
 
-  /** Botão "+ Adicionar" que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
+  /** Botão "+" (só o sinal, sem borda) que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
   const botaoAdicionar = (tipo, aoEscolher, aoLivre) => () => el("button", {
-    type: "button", class: "secundario adicionar",
+    type: "button", class: "adicionar", text: "+", title: "Adicionar", "aria-label": "Adicionar",
     on: { click: () => abrirBusca({ tipo, itens: cat[tipo], aoEscolher, aoLivre }) },
-  }, icone("mais"), "Adicionar");
+  });
 
   const num = (k, casas, extra = {}) => (item) => campoNumero(item, k, { casas, aoMudar: mudou, desabilitado: des, ...extra });
   const txt = (k, extra = {}) => (item) => campoTexto(item, k, { aoMudar: mudou, desabilitado: des, classe: "nome", ...extra });
@@ -486,6 +487,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       if (!(await confirmar(`Excluir a receita “${r.nome || "sem nome"}”? Não dá para desfazer.`, { ok: "Excluir", perigo: true }))) return;
       const { error: erro } = await sb.from("receitas").delete().eq("id", r.id);
       if (erro) { msg.textContent = mensagemErro(erro); return; }
+      apagarFotosDaReceita(r.dono, r.id).catch(() => {});      // as fotos saem do Storage junto (sem travar a tela)
       editor.sujo = false;
       avisar("Receita excluída.");
       location.hash = "#/receitas";
@@ -740,7 +742,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const fermentaveis = secaoLinhas("fermentaveis", "Fermentáveis", {
     iconeSecao: "malte", grafico: grist.elemento,
     classe: "ferm",
-    vazio: "Nenhum fermentável. Use “+ Adicionar”.",
+    vazio: "Nenhum fermentável. Toque em “+” para adicionar.",
     total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
     destaque: true,
     // Razão efetiva (água da mostura ÷ grão da mostura): já considera o limite da água total.
@@ -785,7 +787,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const lupulos = secaoLinhas("lupulos", "Lúpulos", {
     iconeSecao: "lupulo", grafico: tempo.elemento,
     classe: "lup",
-    vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
+    vazio: "Nenhum lúpulo. Toque em “+” para adicionar.",
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
     // Sem botão "Chegar ao IBU" na seção (retirado em 23/11/2026, pedido do responsável): abre pelo número do IBU na barra.
     adicionar: botaoAdicionar("lupulos",
@@ -1063,7 +1065,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       () => adicionarLinhaTabela("outros", { outro_id: null, nome: "", tipo: "OUTRO", quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Nome")),
   });
 
-  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "secundario pequeno", text: "+ Passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
+  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "adicionar", text: "+", title: "Adicionar passo", "aria-label": "Adicionar passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
   const mostura = secaoLista("mostura", "Mostura", {
     iconeSecao: "mostura",
     vazio: "Sem passos.",
@@ -1087,7 +1089,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   });
 
   const notas = el("section", { class: "cartao", dataset: { secao: "notas" } }, tituloSecao("notas", "Notas"),
-    el("textarea", { rows: 4, maxlength: 8000, disabled: des, value: r.notas ?? "", "aria-label": "Notas", on: { input: (e) => { r.notas = e.target.value; mudou(); } } }));
+    el("textarea", { rows: 4, maxlength: 8000, disabled: des, value: r.notas ?? "", "aria-label": "Notas", on: { input: (e) => { r.notas = e.target.value; mudou(); } } }),
+    // Fotos da brassagem: gravadas na hora no Storage (fora do Salvar e do desfazer); não vão na cópia "a partir de".
+    blocoFotos({ receitaId: r.id, dono: r.dono, leitura }));
 
   // Lote: uma linha de resumo; os parâmetros abrem ao clicar. Receita nova sem equipamento já abre (falta o volume).
   const lote = el("details", { class: "cartao lote", open: !r.id && !r.equipamento_id && !leitura },

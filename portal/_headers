@@ -1,6 +1,6 @@
 # Cabeçalhos de segurança (Cloudflare Pages). Só scripts do próprio site; conexões só com o Supabase do GaliaBrew.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://hzomsyfujxakcuaaedmh.supabase.co wss://hzomsyfujxakcuaaedmh.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://hzomsyfujxakcuaaedmh.supabase.co; font-src 'self'; connect-src 'self' https://hzomsyfujxakcuaaedmh.supabase.co wss://hzomsyfujxakcuaaedmh.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin

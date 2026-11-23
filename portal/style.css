@@ -278,6 +278,16 @@ button.perigo { background: var(--erro); border-color: var(--erro); color: var(-
 button.link { background: none; border: none; color: var(--destaque-escuro); padding: 0; text-decoration: underline; justify-self: start; font-weight: 400; }
 button.pequeno { padding: .25rem .6rem; font-size: var(--t-p); }
 button.icone { padding: .1rem .45rem; background: transparent; color: var(--suave); border-color: var(--borda-campo); font-weight: 400; }
+/* Adicionar = só o sinal "+" na fonte do app, sem borda nem fundo; área de toque de 44 px. */
+button.adicionar {
+  width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: transparent; color: var(--destaque-escuro);
+  font-size: 2.25rem; font-weight: 700; line-height: 1; border-radius: 50%;
+}
+button.adicionar:hover { background: color-mix(in srgb, var(--destaque) 14%, transparent); border: none; color: var(--destaque-escuro); }
+/* Com o "+" a linha do título não quebra: o sinal fica à direita, o título quebra por dentro. */
+.cartao > .titulo-linha:has(button.adicionar) { flex-wrap: nowrap; }
+.cartao > .titulo-linha:has(button.adicionar) > h3 { flex: 1 1 auto; min-width: 0; }
+.titulo-linha button.adicionar, .titulo-acoes:has(> button.adicionar) { flex: none; }
 button.icone.perigo:hover { color: var(--sobre-destaque); background: var(--erro); border-color: var(--erro); }
 .segmentos { display: inline-flex; border: 1px solid var(--borda-campo); border-radius: var(--raio-p); overflow: hidden; }
 .segmentos button { border: none; border-radius: 0; background: var(--cartao); color: var(--tinta); font-weight: 400; }
@@ -623,6 +633,10 @@ dialog form { display: grid; gap: .9rem; }
   --pp-lev-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' fill='none' stroke='%236b6356' stroke-opacity='.16' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(52 50) rotate(0) scale(1.55)'><g transform='translate(0 0) rotate(15)'><ellipse rx='11' ry='8.5'/><circle cx='1.6' cy='-0.9' r='2.7'/><circle cx='-3.8' cy='3' r='1'/><circle cx='-8.3' cy='-2.3' r='1.3'/><circle cx='-5' cy='-5.6' r='1.3'/><ellipse cx='15' cy='0' rx='5' ry='4.2'/><path d='M9.8 -2.2Q12 0 9.8 2.2'/></g><g transform='translate(-19 14) rotate(-30)'><ellipse rx='9' ry='7'/><circle cx='1.3' cy='-0.7' r='2.2'/><circle cx='-3.1' cy='2.4' r='1'/><circle cx='-6.8' cy='-1.9' r='1.3'/></g><g transform='translate(4 20) rotate(60)'><ellipse rx='7.5' ry='6'/><circle cx='1.1' cy='-0.6' r='1.9'/><circle cx='-2.6' cy='2.1' r='1'/><ellipse cx='10.1' cy='0' rx='3.2' ry='2.7'/><path d='M6.3 -2.2Q8.5 0 6.3 2.2'/></g><g transform='translate(-14 -15) rotate(10)'><ellipse rx='6.5' ry='5.2'/><circle cx='1' cy='-0.5' r='1.7'/><circle cx='-2.3' cy='1.8' r='1'/></g></g><g transform='translate(112 118) rotate(140) scale(0.95)'><g transform='translate(0 0) rotate(15)'><ellipse rx='11' ry='8.5'/><circle cx='1.6' cy='-0.9' r='2.7'/><circle cx='-3.8' cy='3' r='1'/><circle cx='-8.3' cy='-2.3' r='1.3'/><circle cx='-5' cy='-5.6' r='1.3'/><ellipse cx='15' cy='0' rx='5' ry='4.2'/><path d='M9.8 -2.2Q12 0 9.8 2.2'/></g><g transform='translate(-19 14) rotate(-30)'><ellipse rx='9' ry='7'/><circle cx='1.3' cy='-0.7' r='2.2'/><circle cx='-3.1' cy='2.4' r='1'/><circle cx='-6.8' cy='-1.9' r='1.3'/></g><g transform='translate(4 20) rotate(60)'><ellipse rx='7.5' ry='6'/><circle cx='1.1' cy='-0.6' r='1.9'/><circle cx='-2.6' cy='2.1' r='1'/><ellipse cx='10.1' cy='0' rx='3.2' ry='2.7'/><path d='M6.3 -2.2Q8.5 0 6.3 2.2'/></g><g transform='translate(-14 -15) rotate(10)'><ellipse rx='6.5' ry='5.2'/><circle cx='1' cy='-0.5' r='1.7'/><circle cx='-2.3' cy='1.8' r='1'/></g></g></svg>");
   --pp-agua-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' fill='none' stroke='%231f5f8b' stroke-opacity='.16' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(45 50) rotate(0) scale(1.0)'><path d='M0 -14C5 -6 9 -1 9 4A9 9 0 0 1 -9 4C-9 -1 -5 -6 0 -14Z M-4 3A4.5 4.5 0 0 0 0 8M-30 22q7.5-6 15 0t15 0t15 0t15 0M-24 30q6-4.5 12 0t12 0t12 0t12 0'/></g><g transform='translate(112 115) rotate(0) scale(0.65)'><path d='M0 -14C5 -6 9 -1 9 4A9 9 0 0 1 -9 4C-9 -1 -5 -6 0 -14Z M-4 3A4.5 4.5 0 0 0 0 8M-30 22q7.5-6 15 0t15 0t15 0t15 0M-24 30q6-4.5 12 0t12 0t12 0t12 0'/></g></svg>");
   --pp-notas-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56' fill='none' stroke='%234d4237' stroke-opacity='.1' stroke-width='1.4' stroke-linecap='round'><path d='M0 27.5h56M0 55.5h56'/></svg>");
+  /* blocos da água (23/11/2026): mostura âmbar com grãos e vapor; lavagem água-marinha com gotas (aspersão) */
+  --pp-mostura: #fcecda; --pp-lavagem: #dcf2ef; --pp-mostura-cor: #8f4413; --pp-lavagem-cor: #166a66;
+  --pp-mostura-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='%238f4413' stroke-opacity='.17' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(26 52) scale(1)'><path d='M0 0c-5 -5 5 -9 0 -14s5 -9 0 -14M9 2c-5 -5 5 -9 0 -14s5 -9 0 -14'/></g><g transform='translate(18 76) rotate(-25) scale(1)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(34 82) rotate(20) scale(1)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(26 96) rotate(70) scale(0.9)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(88 108) scale(0.8)'><path d='M0 0c-5 -5 5 -9 0 -14s5 -9 0 -14M9 2c-5 -5 5 -9 0 -14s5 -9 0 -14'/></g><g transform='translate(80 22) rotate(40) scale(1)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(98 30) rotate(-15) scale(0.9)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(90 46) rotate(95) scale(0.85)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(64 66) rotate(10) scale(0.75)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g></svg>");
+  --pp-lavagem-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='%23166a66' stroke-opacity='.17' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(22 22) scale(1)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M30 36l-3 9'/><g transform='translate(70 14) scale(0.8)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M58 30l-3 9'/><g transform='translate(100 44) scale(1)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M108 58l-3 9'/><g transform='translate(44 66) scale(0.9)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M52 80l-3 9'/><g transform='translate(16 98) scale(0.75)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M86 84l-3 9'/><g transform='translate(84 104) scale(0.9)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M26 112l-3 9'/></svg>");
 }
 [data-modo="escuro"] {
   --pp-ferm: #2a2310; --pp-lup: #16220e; --pp-lev: #1b1915; --pp-agua: #0f1c27; --pp-neutro: #1f1a15; --pp-liso: #13100d;
@@ -632,6 +646,9 @@ dialog form { display: grid; gap: .9rem; }
   --pp-lev-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' fill='none' stroke='%23cbbfae' stroke-opacity='.12' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(52 50) rotate(0) scale(1.55)'><g transform='translate(0 0) rotate(15)'><ellipse rx='11' ry='8.5'/><circle cx='1.6' cy='-0.9' r='2.7'/><circle cx='-3.8' cy='3' r='1'/><circle cx='-8.3' cy='-2.3' r='1.3'/><circle cx='-5' cy='-5.6' r='1.3'/><ellipse cx='15' cy='0' rx='5' ry='4.2'/><path d='M9.8 -2.2Q12 0 9.8 2.2'/></g><g transform='translate(-19 14) rotate(-30)'><ellipse rx='9' ry='7'/><circle cx='1.3' cy='-0.7' r='2.2'/><circle cx='-3.1' cy='2.4' r='1'/><circle cx='-6.8' cy='-1.9' r='1.3'/></g><g transform='translate(4 20) rotate(60)'><ellipse rx='7.5' ry='6'/><circle cx='1.1' cy='-0.6' r='1.9'/><circle cx='-2.6' cy='2.1' r='1'/><ellipse cx='10.1' cy='0' rx='3.2' ry='2.7'/><path d='M6.3 -2.2Q8.5 0 6.3 2.2'/></g><g transform='translate(-14 -15) rotate(10)'><ellipse rx='6.5' ry='5.2'/><circle cx='1' cy='-0.5' r='1.7'/><circle cx='-2.3' cy='1.8' r='1'/></g></g><g transform='translate(112 118) rotate(140) scale(0.95)'><g transform='translate(0 0) rotate(15)'><ellipse rx='11' ry='8.5'/><circle cx='1.6' cy='-0.9' r='2.7'/><circle cx='-3.8' cy='3' r='1'/><circle cx='-8.3' cy='-2.3' r='1.3'/><circle cx='-5' cy='-5.6' r='1.3'/><ellipse cx='15' cy='0' rx='5' ry='4.2'/><path d='M9.8 -2.2Q12 0 9.8 2.2'/></g><g transform='translate(-19 14) rotate(-30)'><ellipse rx='9' ry='7'/><circle cx='1.3' cy='-0.7' r='2.2'/><circle cx='-3.1' cy='2.4' r='1'/><circle cx='-6.8' cy='-1.9' r='1.3'/></g><g transform='translate(4 20) rotate(60)'><ellipse rx='7.5' ry='6'/><circle cx='1.1' cy='-0.6' r='1.9'/><circle cx='-2.6' cy='2.1' r='1'/><ellipse cx='10.1' cy='0' rx='3.2' ry='2.7'/><path d='M6.3 -2.2Q8.5 0 6.3 2.2'/></g><g transform='translate(-14 -15) rotate(10)'><ellipse rx='6.5' ry='5.2'/><circle cx='1' cy='-0.5' r='1.7'/><circle cx='-2.3' cy='1.8' r='1'/></g></g></svg>");
   --pp-agua-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150' fill='none' stroke='%2379b6e0' stroke-opacity='.13' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(45 50) rotate(0) scale(1.0)'><path d='M0 -14C5 -6 9 -1 9 4A9 9 0 0 1 -9 4C-9 -1 -5 -6 0 -14Z M-4 3A4.5 4.5 0 0 0 0 8M-30 22q7.5-6 15 0t15 0t15 0t15 0M-24 30q6-4.5 12 0t12 0t12 0t12 0'/></g><g transform='translate(112 115) rotate(0) scale(0.65)'><path d='M0 -14C5 -6 9 -1 9 4A9 9 0 0 1 -9 4C-9 -1 -5 -6 0 -14Z M-4 3A4.5 4.5 0 0 0 0 8M-30 22q7.5-6 15 0t15 0t15 0t15 0M-24 30q6-4.5 12 0t12 0t12 0t12 0'/></g></svg>");
   --pp-notas-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56' fill='none' stroke='%23cbbfae' stroke-opacity='.08' stroke-width='1.4' stroke-linecap='round'><path d='M0 27.5h56M0 55.5h56'/></svg>");
+  --pp-mostura: #2b1d12; --pp-lavagem: #0d2523; --pp-mostura-cor: #e9a06a; --pp-lavagem-cor: #6fcfc6;
+  --pp-mostura-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='%23e9a06a' stroke-opacity='.13' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(26 52) scale(1)'><path d='M0 0c-5 -5 5 -9 0 -14s5 -9 0 -14M9 2c-5 -5 5 -9 0 -14s5 -9 0 -14'/></g><g transform='translate(18 76) rotate(-25) scale(1)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(34 82) rotate(20) scale(1)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(26 96) rotate(70) scale(0.9)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(88 108) scale(0.8)'><path d='M0 0c-5 -5 5 -9 0 -14s5 -9 0 -14M9 2c-5 -5 5 -9 0 -14s5 -9 0 -14'/></g><g transform='translate(80 22) rotate(40) scale(1)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(98 30) rotate(-15) scale(0.9)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(90 46) rotate(95) scale(0.85)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g><g transform='translate(64 66) rotate(10) scale(0.75)'><path d='M0 -6.5C3.6 -6.5 4.2 -2 4.2 0S3.6 6.5 0 6.5S-4.2 2 -4.2 0S-3.6 -6.5 0 -6.5ZM0 -4.6V4.6'/></g></svg>");
+  --pp-lavagem-motivo: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120' fill='none' stroke='%236fcfc6' stroke-opacity='.13' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'><g transform='translate(22 22) scale(1)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M30 36l-3 9'/><g transform='translate(70 14) scale(0.8)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M58 30l-3 9'/><g transform='translate(100 44) scale(1)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M108 58l-3 9'/><g transform='translate(44 66) scale(0.9)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M52 80l-3 9'/><g transform='translate(16 98) scale(0.75)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M86 84l-3 9'/><g transform='translate(84 104) scale(0.9)'><path d='M0 -7C3 -2.5 4.6 0 4.6 2.4A4.6 4.6 0 0 1 -4.6 2.4C-4.6 0 -3 -2.5 0 -7Z'/></g><path d='M26 112l-3 9'/></svg>");
 }
 .editor-corpo > .cartao {
   --pp: var(--pp-neutro); --pp-cor: var(--destaque); --pp-motivo: none;
@@ -713,6 +730,8 @@ dialog form { display: grid; gap: .9rem; }
   --pp-ferm: #fff4c2; --pp-lup: #e1f0d2; --pp-lev: #ffffff; --pp-agua: #d9eaf7; --pp-neutro: #f2f2f2; --pp-liso: #ffffff;
   --pp-ferm-cor: #5c4700; --pp-lup-cor: #1f5410; --pp-lev-cor: #262626; --pp-agua-cor: #0f4570;
   --pp-ferm-motivo: none; --pp-lup-motivo: none; --pp-lev-motivo: none; --pp-agua-motivo: none; --pp-notas-motivo: none;
+  --pp-mostura: #ffeed6; --pp-lavagem: #dbf3f0; --pp-mostura-cor: #7a3000; --pp-lavagem-cor: #0b4f4b;
+  --pp-mostura-motivo: none; --pp-lavagem-motivo: none;
   --menu-fundo: #000000; --menu-fundo-2: #111111; --menu-tinta: #ffffff; --menu-suave: #e0e0e0; --menu-cobre: #ffb066;
 }
 [data-tema="sol"] :is(input, select, textarea) { border-width: 2px; }
@@ -993,14 +1012,17 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .perfil-agua td.longe { color: var(--destaque-escuro); font-weight: 700; }
 .resumo-agua { margin-top: .6rem; }
 /* Água da mostura e água de lavagem: um bloco para cada, com tudo o que vai nela (23/11/2026, pedido do responsável:
-   no celular não ficava claro a que água pertencia cada sal). Fundo liso sobre o papel de parede da seção, faixa de cor
-   à esquerda (cobre = mostura, azul = lavagem), título grande e os litros em destaque. */
+   no celular não ficava claro a que água pertencia cada sal). Faixa de cor à esquerda, título grande e os litros em
+   destaque. Papel de parede próprio, em tom diferente do azul da seção (23/11/2026, pedido do responsável): mostura
+   âmbar (água quente com o grão: grãos e vapor), lavagem água-marinha (gotas caindo, como a aspersão). Tokens
+   --pp-mostura* e --pp-lavagem* junto dos outros papéis de parede; texto e estados ≥ 4,5:1 nos dois fundos. */
 .bloco-agua {
-  --bloco-cor: var(--destaque);
-  background: var(--cartao); border-left: 5px solid var(--bloco-cor); border-radius: var(--raio-p);
+  --bloco-cor: var(--pp-mostura-cor); --pp-cor: var(--bloco-cor);
+  background-color: var(--pp-mostura); background-image: var(--pp-mostura-motivo);
+  border-left: 5px solid var(--bloco-cor); border-radius: var(--raio-p);
   padding: .8rem .85rem .9rem; margin: 1.1rem 0; box-shadow: var(--sombra);
 }
-.bloco-agua.lavagem { --bloco-cor: var(--pp-agua-cor, #1f5f8b); }
+.bloco-agua.lavagem { --bloco-cor: var(--pp-lavagem-cor); background-color: var(--pp-lavagem); background-image: var(--pp-lavagem-motivo); }
 .bloco-agua-topo { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
 .bloco-agua-titulo { margin: 0; font-size: var(--t-m); font-weight: 800; color: var(--bloco-cor); text-transform: none; letter-spacing: 0; }
 .bloco-agua-litros { font-size: var(--t-m); font-weight: 800; color: var(--tinta); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -1008,10 +1030,39 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .bloco-agua-litros-campo { display: flex; flex-direction: column; gap: .25rem; max-width: 16rem; }
 .bloco-agua h5 { font-size: var(--t-p); font-weight: 700; color: var(--tinta); margin: 1rem 0 .3rem; }
 .bloco-agua .titulo-linha { margin-bottom: .2rem; }
-.bloco-agua .resumo-agua { border-top: 1px solid var(--linha); padding-top: .4rem; }
+.bloco-agua .resumo-agua { border-top: 1px solid color-mix(in srgb, var(--bloco-cor) 30%, transparent); padding-top: .4rem; }
 @media (max-width: 640px) {
   .perfil-agua { font-size: .82rem; width: 100%; }
   .perfil-agua th, .perfil-agua td { padding-left: .25rem; padding-right: .25rem; }
   .perfil-agua .ion-longo { display: none; }
   .perfil-agua .ion-curto { display: inline; }
+}
+
+/* Fotos da brassagem (seção Notas): miniaturas quadradas (3 por linha no celular) e janela para ver a foto inteira. */
+.fotos { margin-top: 1rem; }
+.fotos-cab { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.fotos-cab h4 { margin: 0 0 .4rem; }
+.fotos-conta { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; }
+.fotos-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .4rem; }
+.fotos-grade:empty { display: none; }
+button.foto-mini { padding: 0; border: 1px solid var(--borda-campo); border-radius: var(--raio-p); background: var(--painel); overflow: hidden; aspect-ratio: 1; display: block; }
+.foto-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fotos-estado:empty { display: none; }
+.fotos-adicionar { position: relative; margin-top: .6rem; min-height: 2.75rem; gap: .45rem; background: var(--cartao); }
+.fotos-adicionar:focus-within { outline: 2px solid var(--destaque); outline-offset: 2px; }
+.fotos-adicionar.desligado { opacity: .6; cursor: default; pointer-events: none; }
+.fotos-dica { margin-bottom: 0; }
+dialog.foto-janela { padding: 0; width: 100%; max-width: min(900px, 96vw); height: min(92vh, 1100px); max-height: 92vh; overflow: hidden; }
+dialog.foto-janela[open] { display: flex; flex-direction: column; }
+.foto-janela button.foto-excluir { flex: none; min-height: 2.75rem; }
+.foto-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: #0c0a09; }
+.foto-grande { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.foto-pe { display: flex; justify-content: center; gap: 1.2rem; padding: .4rem .7rem; border-top: 1px solid var(--linha); background: var(--cartao); }
+.foto-pe button.icone { width: 3.5rem; height: 2.75rem; padding: 0; justify-content: center; font-size: 1.5rem; color: var(--tinta); }
+@media (max-width: 640px) {
+  .fotos-grade { grid-template-columns: repeat(3, 1fr); }
+  .fotos-adicionar { width: 100%; }
+  dialog.foto-janela { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
+  .foto-janela .rel-topo { padding-top: max(.5rem, env(safe-area-inset-top)); }
+  .foto-pe { padding-bottom: max(.4rem, env(safe-area-inset-bottom)); }
 }
