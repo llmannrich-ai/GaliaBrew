@@ -2,11 +2,11 @@
 // Filtra enquanto digita (nome, produtor, origem, tipo; sem diferença de acento ou maiúscula), filtros rápidos por
 // tipo de ingrediente, "Recentes" e "Meus" no topo. Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
 // Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
-// azeda, belga...); filtros por família, cor, amargor e álcool; "Mais perto da receita" pelos números do editor.
-import { el, preencher, numeroBR } from "./ui.js?v=20261123f";
-import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123f";
-import * as O from "./opcoes.js?v=20261123f";
-import { fonteDados, seloFonte } from "./fontes.js?v=20261123f";
+// azeda, belga...), sem filtros (no celular tomavam a tela); "Mais perto da receita" pelos números do editor.
+import { el, preencher, numeroBR } from "./ui.js?v=20261123g";
+import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123g";
+import * as O from "./opcoes.js?v=20261123g";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261123g";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
@@ -95,7 +95,6 @@ function termosEstilo(x) {
   }
   return t;
 }
-const temTermo = (x, termo) => termosEstilo(x).split(" ").includes(termo);
 const media = (a, b) => (a != null && b != null ? (Number(a) + Number(b)) / 2 : a ?? b);
 const corTela = (srm) => (srm == null ? null : O.corParaTela(Number(srm)));
 /** "1A" < "1B" < "2A" < "10A"; códigos fora do padrão (X1, de usuário) depois. */
@@ -168,7 +167,7 @@ export const TIPOS_BUSCA = {
   },
   estilos: {
     titulo: "Escolher estilo",
-    placeholder: "Código, nome, categoria (ex.: 21A, pils, trigo, belga)…",
+    placeholder: "Código ou nome (21A, pils, trigo)",
     acao: "escolhe",
     prefixo: true,
     livre: "Sem estilo",
@@ -185,34 +184,9 @@ export const TIPOS_BUSCA = {
         e?.total ? `receita em ${e.dentro} de ${e.total} faixas` : null];
     },
     cor: (x) => media(x.cor_srm_min, x.cor_srm_max),
-    filtros: (itens, res) => {
-      const lim = (srm) => numeroBR(O.corParaTela(srm), 0);
-      const cor = (x) => media(x.cor_srm_min, x.cor_srm_max);
-      return [
-        receitaTemNumeros(res) ? { nome: "Receita", opcoes: [
-          { rot: "Combina com a receita", teste: (x) => { const e = encaixeEstilo(x, res); return e.total >= 3 && e.dentro >= e.total - 1; }, ordenar: (l) => maisPertoDaReceita(l, res) },
-        ] } : null,
-        { nome: "Família", opcoes: [
-          ["Lager", "lager"], ["Ale", "ale"], ["Trigo", "trigo"], ["Azeda", "azeda"], ["Defumada", "defumada"], ["Frutas/especiarias", null],
-        ].map(([rot, termo]) => ({ rot, teste: termo ? (x) => temTermo(x, termo) : (x) => temTermo(x, "fruta") || temTermo(x, "especiarias") })) },
-        { nome: "Cor", opcoes: [
-          { rot: `Clara (até ${lim(6)} ${O.unidadeCor()})`, teste: (x) => entre(cor(x), 0, 6) },
-          { rot: `Âmbar (${lim(6)}–${lim(15)})`, teste: (x) => entre(cor(x), 6, 15) },
-          { rot: `Marrom (${lim(15)}–${lim(25)})`, teste: (x) => entre(cor(x), 15, 25) },
-          { rot: `Escura (${lim(25)}+)`, teste: (x) => entre(cor(x), 25, Infinity) },
-        ] },
-        { nome: "Amargor", opcoes: [
-          { rot: "até 20 IBU", teste: (x) => entre(media(x.ibu_min, x.ibu_max), 0, 20) },
-          { rot: "20–40", teste: (x) => entre(media(x.ibu_min, x.ibu_max), 20, 40) },
-          { rot: "40+", teste: (x) => entre(media(x.ibu_min, x.ibu_max), 40, Infinity) },
-        ] },
-        { nome: "Álcool", opcoes: [
-          { rot: "até 5%", teste: (x) => entre(media(x.abv_min_pct, x.abv_max_pct), 0, 5) },
-          { rot: "5–7%", teste: (x) => entre(media(x.abv_min_pct, x.abv_max_pct), 5, 7) },
-          { rot: "7%+", teste: (x) => entre(media(x.abv_min_pct, x.abv_max_pct), 7, Infinity) },
-        ] },
-      ].filter(Boolean);
-    },
+    // Sem filtros (23/11/2026, pedido do responsável): no celular ocupavam a tela toda. "Mais perto da receita" e
+    // os termos em português (trigo, azeda, defumada...) cobrem a escolha.
+    filtros: () => [],
   },
 };
 
@@ -277,8 +251,9 @@ export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contex
   });
   const lista = el("ul", { class: "busca-lista", id: idLista, role: "listbox", "aria-label": "Resultados" });
   const info = el("p", { class: "busca-info", "aria-live": "polite" });
-  const chips = el("div", { class: "busca-filtros" },
-    filtros.filter((g) => g.opcoes.length).map((g) => el("div", { class: "busca-grupo-filtro", role: "group", "aria-label": g.nome },
+  const comOpcoes = filtros.filter((g) => g.opcoes.length);
+  const chips = !comOpcoes.length ? null : el("div", { class: "busca-filtros" },
+    comOpcoes.map((g) => el("div", { class: "busca-grupo-filtro", role: "group", "aria-label": g.nome },
       el("span", { class: "busca-filtro-rot", text: g.nome }),
       g.opcoes.map((o, i) => el("button", {
         type: "button", class: "chip", "aria-pressed": "false", text: o.rot,
