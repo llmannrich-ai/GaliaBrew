@@ -679,7 +679,7 @@ dialog form { display: grid; gap: .9rem; }
    Cada seção do editor é um "copo" e começa com um colarinho de espuma de cerveja que sobe por cima da seção anterior:
    borda de bolhas grandes e pequenas com um traço na cor da seção, bolhas vazadas dentro da espuma e bolhinhas soltas
    subindo. Desenho próprio, em duas máscaras SVG (ladrilho 240 × 32 px, repete na horizontal): a forma da espuma
-   (::after, na cor da espuma) e o aro = a mesma forma 1,6 px acima + as bolhinhas soltas (::before, cor da seção). Como
+   (::after, na cor da própria seção) e o aro = a mesma forma 1,6 px acima + as bolhinhas soltas (::before, cor da seção). Como
    é máscara, a cor vem das variáveis: vale em todos os temas e nos dois modos sem outro arquivo. Só no celular (as seções
    encostam uma na outra); no computador as seções seguem separadas pelo espaço. Sem toque (pointer-events: none). */
 :root {
@@ -935,9 +935,7 @@ dialog form { display: grid; gap: .9rem; }
   .editor-corpo > .cartao { margin: 0 calc(-1 * var(--lado)); border-radius: 0; padding: 1rem var(--lado) 1.1rem; }
   /* colarinho de espuma (arte no bloco do papel de parede): 32 px, 18 px acima da seção e 14 px dentro dela; o espaço
      de cima e de baixo de cada seção cresce para a espuma não encostar no conteúdo. */
-  .editor-corpo > .cartao { position: relative; padding-top: 1.45rem; padding-bottom: calc(1.1rem + 6px); --espuma-x: 0px;
-    --espuma: color-mix(in srgb, var(--pp) 40%, #fff); }
-  [data-modo="escuro"] .editor-corpo > .cartao { --espuma: color-mix(in srgb, var(--pp) 62%, var(--pp-cor)); }
+  .editor-corpo > .cartao { position: relative; padding-top: 1.45rem; padding-bottom: calc(1.1rem + 6px); --espuma-x: 0px; }
   .editor-corpo > .cartao:nth-child(3n+2) { --espuma-x: -83px; }
   .editor-corpo > .cartao:nth-child(3n) { --espuma-x: -161px; }
   .editor-corpo > .cartao::before, .editor-corpo > .cartao::after {
@@ -946,7 +944,8 @@ dialog form { display: grid; gap: .9rem; }
     -webkit-mask-position: var(--espuma-x) 0; mask-position: var(--espuma-x) 0;
   }
   .editor-corpo > .cartao::before { background: color-mix(in srgb, var(--pp-cor) 50%, var(--pp)); -webkit-mask-image: var(--espuma-aro); mask-image: var(--espuma-aro); }
-  .editor-corpo > .cartao::after { background: var(--espuma); -webkit-mask-image: var(--espuma-forma); mask-image: var(--espuma-forma); }
+  /* a espuma tem a cor da própria seção: nasce do fundo de baixo, sem emenda (23/11/2026, print do iPhone) */
+  .editor-corpo > .cartao::after { background: var(--pp); -webkit-mask-image: var(--espuma-forma); mask-image: var(--espuma-forma); }
   /* Teclado aberto: sobra ~350 px de tela. A barra vira UMA linha fina (~44 px) com os 6 números, colada no teclado,
      sem puxador, régua, aviso nem a margem do entalhe (o teclado já cobre essa área). A diferença da última mudança
      aparece no lugar do rótulo (por 3 s), para caber em 320 px. Rótulos curtos (EBC, pH), letra ≥ 12 px (regra nº 0). */
