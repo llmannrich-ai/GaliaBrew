@@ -92,7 +92,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (25 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (26 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -128,13 +128,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  165 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  170 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
   priming e temperatura da água no painel, tela Ferramentas (água da mostura, priming, refratômetro, correção do densímetro), água da
-  receita (perfil de íons e sulfato/cloreto, pH estimado e ácido),
+  receita (perfil de íons e sulfato/cloreto, pH estimado e ácido, volumes das águas informados),
   receita de outro, sair; e um bloco de celular com toque: barra do app, toque/segurar no ±, teclado aberto,
   cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
@@ -275,6 +275,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   destilada < 5,4). É ESTIMATIVA ±0,1-0,2. `receitas.acidos` (jsonb [{acido, ml}], só mostura). Teste
   `supabase/testes/0008_acidos.sql`. Card Água: lista de ácidos, pH estimado com faixa e botão "Adicionar o lático"
   (alvo 5,4).
+- Volumes das águas informados (0010, aplicada em 23/11/2026, pedido do responsável): `receitas.agua_mostura_l` (> 0) e
+  `agua_lavagem_l` (≥ 0; 0 = sem lavagem/BIAB); nulo = sugestão (mostura = kg × relação água/grão; lavagem = necessária
+  − mostura), por isso as receitas antigas/importadas não mudam. Sais (ppm), pH e temperatura da água da mostura usam os
+  litros informados. `res.volumes`: `agua_total_l` = mostura + lavagem; `agua_necessaria_l` = pré-fervura + absorção +
+  tina; `agua_diferenca_l`; `*_sugerida_l`; `*_informada`; `relacao_agua_grao_l_kg` resultante. Card Água → "Volumes":
+  dois campos com a sugestão de fundo e aviso quando a soma não fecha com a necessária (≥ 0,5 L); painel mostra "Água
+  necessária" quando difere. "Criar a partir de" copia os volumes. Teste `supabase/testes/0010_volumes_agua.sql`
+  (7 ok, ensaiado no banco em transação desfeita antes de aplicar). A 0009 (catálogo de marcas) é de outra sessão.
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
@@ -333,7 +341,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   responsável). 1ª publicação assim: PR #3 (editor novo, celular, arte), 22/11/2026.
 - Pendente na proteção da `main`: marcar o teste "Cálculos e versões" como obrigatório e "Require branches to be up
   to date" (Settings → Branches → Edit). Sem isso, o GitHub não barra PR desatualizado.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0009 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0010 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   desligar a extensão http no painel.
@@ -343,6 +351,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fase 2 (2b) feita em 22/11/2026: refratômetro e correção do densímetro (Ferramentas).
 - Fase 3 (química da água) começada em 22/11/2026: sais e perfil de íons (0007).
 - 22/11/2026: química da água com ácido e pH estimado (0008).
+- 23/11/2026: água da mostura e da lavagem informadas pelo cervejeiro (0010).
 - Próximo: (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho

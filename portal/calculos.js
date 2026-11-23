@@ -458,13 +458,22 @@ export function calcularReceita(r) {
   }
   const corSrm = srmMorey(mcu);
 
-  // Água: grão na mostura absorve; mostura = kg de grão × relação água/grão; o resto é lavagem.
+  // Água: grão na mostura absorve. Necessária = pré-fervura + absorção + perda na tina. A água da mostura e a de
+  // lavagem são as que o cervejeiro informa (0010); campo vazio = sugestão: mostura = kg de grão × relação água/grão,
+  // lavagem = o que falta para a necessária. Sais, pH e temperatura da água usam os litros informados.
   const graosKg = fermentaveis
     .filter((f) => f.etapa === "MOSTURA" && !ACUCAR_PRONTO.has(f.tipo))
     .reduce((s, f) => s + num(f.quantidade_kg), 0);
   const absorcao = graosKg * num(r.absorcao_grao_l_kg, 1);
-  const aguaTotal = preFervura + absorcao + (graosKg > 0 ? num(r.perda_tina_l) : 0);
-  const aguaMostura = Math.min(aguaTotal, graosKg * num(r.relacao_agua_grao_l_kg, 3));
+  const aguaNecessaria = preFervura + absorcao + (graosKg > 0 ? num(r.perda_tina_l) : 0);
+  const informado = (v) => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v));
+  const mosturaInformada = informado(r.agua_mostura_l) && Number(r.agua_mostura_l) > 0;
+  const lavagemInformada = informado(r.agua_lavagem_l) && Number(r.agua_lavagem_l) >= 0;
+  const mosturaSugerida = Math.min(aguaNecessaria, graosKg * num(r.relacao_agua_grao_l_kg, 3));
+  const aguaMostura = mosturaInformada ? Number(r.agua_mostura_l) : mosturaSugerida;
+  const lavagemSugerida = Math.max(0, aguaNecessaria - aguaMostura);
+  const aguaLavagem = lavagemInformada ? Number(r.agua_lavagem_l) : lavagemSugerida;
+  const aguaTotal = aguaMostura + aguaLavagem;
   // Temperatura da água da mostura: para chegar ao 1º passo da mostura com o grão na temperatura informada.
   const primeiroPasso = (r.mostura ?? []).find((m) => Number.isFinite(Number(m.temperatura_c)) && m.temperatura_c !== null);
   const tempAguaMostura = graosKg > 0 && primeiroPasso
@@ -473,8 +482,7 @@ export function calcularReceita(r) {
   // Água do dia: origem (cópia na receita) + diluição; sais separados por água — os da mostura dissolvidos na água da
   // mostura, os da lavagem na água de lavagem (cada perfil é calculado à parte). "Panela" = as duas juntas (o que
   // chega à fervura: sabor, sulfato/cloreto).
-  const aguaLavagem = aguaTotal - aguaMostura;
-  const sais = (r.sais ?? []).map((x) => ({ ...x, etapa: etapaSal(x) }));
+  const sais =(r.sais ?? []).map((x) => ({ ...x, etapa: etapaSal(x) }));
   const temAgua = r.agua_origem || sais.length;
   const perfilDe = (lista, litros) => ({
     ...perfilAgua({ origem: r.agua_origem ?? {}, diluicaoPct: r.agua_diluicao_pct, sais: lista, litros }),
@@ -544,10 +552,17 @@ export function calcularReceita(r) {
       graos_kg: graosKg,
       fermentaveis_kg: kgTotal,
       absorcao_l: absorcao,
-      agua_total_l: aguaTotal,
+      agua_total_l: aguaTotal,                       // mostura + lavagem (as usadas nos cálculos)
+      agua_necessaria_l: aguaNecessaria,             // para chegar ao pré-fervura planejado
+      agua_diferenca_l: aguaTotal - aguaNecessaria,  // > 0 sobra, < 0 falta (só quando o cervejeiro informa)
       agua_mostura_l: aguaMostura,
+      agua_mostura_sugerida_l: mosturaSugerida,
+      agua_mostura_informada: mosturaInformada,
+      relacao_agua_grao_l_kg: graosKg > 0 ? aguaMostura / graosKg : null,
       temperatura_agua_mostura_c: tempAguaMostura,
-      agua_lavagem_l: aguaTotal - aguaMostura,
+      agua_lavagem_l: aguaLavagem,
+      agua_lavagem_sugerida_l: lavagemSugerida,
+      agua_lavagem_informada: lavagemInformada,
     },
     // Por item: % do peso do grist, % do açúcar e a parte da OG que vem dele (pontos da OG × fração do açúcar).
     fermentaveis: porItem.map((x, i) => {
