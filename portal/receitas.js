@@ -1,14 +1,14 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122n";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122n";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261122n";
-import { abrirBusca } from "./busca.js?v=20261122n";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122n";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122n";
-import * as O from "./opcoes.js?v=20261122n";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122n";
-import { icone } from "./icones.js?v=20261122n";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261122n";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123a";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123a";
+import { abrirBusca } from "./busca.js?v=20261123a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123a";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123a";
+import * as O from "./opcoes.js?v=20261123a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123a";
+import { icone } from "./icones.js?v=20261123a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
