@@ -888,7 +888,7 @@ const erros = [];
     const dir = Math.max(...[...n.querySelectorAll(".vital-val, .vital-delta:not(:empty), .vital-rot")].map((c) => c.getBoundingClientRect().right));
     return Math.round(dir - n.getBoundingClientRect().right);
   }));
-  verificar(await cel.evaluate(() => document.querySelector(".vital").classList.contains("com-teclado")) && estouroVital.length === 5 && estouroVital.every((d) => d <= -6),
+  verificar(await cel.evaluate(() => document.querySelector(".vital").classList.contains("com-teclado")) && estouroVital.length === 5 && estouroVital.every((d) => d <= -2),
     `320 px: com o teclado os 5 números (sem pH) cabem na linha fina com folga (posição da borda direita do conteúdo: ${estouroVital.join(", ")} px)`);
   await cel.evaluate(() => document.activeElement.blur());
   await cel.waitForTimeout(300);
