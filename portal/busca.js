@@ -4,10 +4,10 @@
 // Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
 // Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
 // azeda, belga...); "Mais perto da receita" pelos números do editor.
-import { el, preencher, numeroBR } from "./ui.js?v=20261123w";
-import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123w";
-import * as O from "./opcoes.js?v=20261123w";
-import { fonteDados, seloFonte } from "./fontes.js?v=20261123w";
+import { el, preencher, numeroBR } from "./ui.js?v=20261123x";
+import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123x";
+import * as O from "./opcoes.js?v=20261123x";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261123x";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;

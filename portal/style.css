@@ -252,7 +252,7 @@ label.linha { display: flex; align-items: center; gap: .5rem; color: var(--tinta
 label small { color: var(--suave); }
 input, select, textarea, button, .botao { font: inherit; }
 input[type="text"], input[type="email"], input[type="password"], input[type="search"], select, textarea {
-  width: 100%; padding: .35rem .5rem; border: 1px solid var(--borda-campo); border-radius: var(--raio-p); background: var(--cartao); color: var(--tinta);
+  width: 100%; padding: .25rem .45rem; border: 1px solid var(--borda-campo); border-radius: var(--raio-p); background: var(--cartao); color: var(--tinta);
 }
 ::placeholder { color: var(--apagado); opacity: 1; font-style: italic; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--destaque); outline-offset: -1px; border-color: transparent; }
@@ -323,7 +323,7 @@ button.botao-relatorio .ico { width: 1.45rem; height: 1.45rem; }
 .titulo-receita { flex: 1 1 auto; width: auto; min-width: 0; font-size: var(--t-g) !important; font-weight: 700; padding: .4rem .6rem !important; }
 .estilo-topo { flex: 0 1 22rem; min-width: 14rem; display: grid; gap: .25rem; font-size: var(--t-p); color: var(--suave); }
 /* Campo que abre uma busca (estilo): parece um select, mas abre a janela de busca. */
-button.escolha { width: 100%; justify-content: space-between; gap: .5rem; padding: .35rem .5rem; border: 1px solid var(--linha);
+button.escolha { width: 100%; justify-content: space-between; gap: .5rem; padding: .25rem .45rem; border: 1px solid var(--linha);
   background: var(--cartao); color: var(--tinta); font-weight: 400; text-align: left; }
 button.escolha:hover { background: var(--cartao); border-color: var(--destaque); }
 button.escolha:disabled { background: var(--fundo); color: var(--suave); opacity: 1; }
@@ -407,7 +407,7 @@ button.ing-nome[aria-expanded="true"] .ing-seta { transform: rotate(90deg); }
 .ing-detalhes input, .ing-detalhes select { background: var(--cartao); }
 .acoes-detalhes { display: flex; gap: .5rem; align-items: center; margin-top: .8rem; flex-wrap: wrap; }
 .ing-quando { display: flex; align-items: center; gap: .35rem; }
-.ing-quando select.etapa { width: auto; min-width: 7.5rem; padding: .3rem .4rem; }
+.ing-quando select.etapa { width: auto; min-width: 7.5rem; padding: .2rem .35rem; }
 .ing-tempo { display: inline-flex; align-items: center; gap: .3rem; }
 .ing-tempo:empty { display: none; }
 input.num.curto { width: 3.4rem; }
@@ -415,11 +415,11 @@ input.num.curto { width: 3.4rem; }
 
 /* quantidade com − e + */
 .campo-qtd { display: inline-flex; align-items: center; gap: .25rem; }
-.campo-qtd input.qtd { width: 5.4rem; font-size: 1.05rem; font-weight: 700; padding: .3rem .45rem; }
+.campo-qtd input.qtd { width: 5.1rem; font-size: 1rem; font-weight: 700; padding: .2rem .4rem; }
 .campo-qtd .unidade { color: var(--suave); font-size: var(--t-p); min-width: 1.3rem; }
 button.passo {
-  width: 2.1rem; height: 2.1rem; padding: 0; border: 1px solid var(--borda-campo); border-radius: var(--raio-p);
-  background: var(--cartao); color: var(--tinta); font-size: 1.15rem; font-weight: 600; line-height: 1;
+  width: 2rem; height: 2rem; padding: 0; border: 1px solid var(--borda-campo); border-radius: var(--raio-p);
+  background: var(--cartao); color: var(--tinta); font-size: 1.1rem; font-weight: 600; line-height: 1;
 }
 button.passo:hover { background: var(--painel); border-color: var(--destaque); color: var(--destaque-escuro); }
 button.passo:disabled { visibility: hidden; }
@@ -821,8 +821,8 @@ dialog form { display: grid; gap: .9rem; }
   .tabela.editavel input.num, .tabela.editavel input.nome, .tabela.editavel select { width: 100%; min-width: 0; }
   .titulo-linha { flex-wrap: wrap; }
 
-  /* Linhas de ingrediente em 2–3 linhas: nome em cima, quantidade (com ± de 40 px) e números embaixo.
-     Campos e ± ~10% menores em 23/11/2026 (pedido do responsável: estavam maiores que o necessário). */
+  /* Linhas de ingrediente em 2–3 linhas: nome em cima, quantidade (com ± de 36 px) e números embaixo.
+     Campos e ± ~20% menores em 23/11/2026 (duas rodadas) (pedido do responsável: estavam maiores que o necessário). */
   .ing { gap: .4rem .5rem; }
   .linhas-ing.ferm .ing {
     grid-template-columns: 1.8rem 1.2rem minmax(0, 1fr) 3.4rem 2.8rem;
@@ -840,8 +840,8 @@ dialog form { display: grid; gap: .9rem; }
   .ing-dado.d2 { grid-area: d2; }
   .ing-quando { grid-area: quando; }
   .ing-detalhes { grid-area: det; }
-  .campo-qtd input.qtd { width: 4.6rem; }
-  button.passo { width: 2.5rem; height: 2.5rem; }
+  .campo-qtd input.qtd { width: 4.3rem; }
+  button.passo { width: 2.25rem; height: 2.25rem; }
 
   dialog.busca { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
   dialog.relatorio { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
