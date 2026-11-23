@@ -181,7 +181,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123n");
+    const m = await import("./fontes.js?v=20261123o");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -336,7 +336,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123n");
+    const m = await import("./calculos.js?v=20261123o");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -396,7 +396,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123n");
+    const m = await import("./calculos.js?v=20261123o");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -415,7 +415,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123n");
+    const m = await import("./calculos.js?v=20261123o");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -500,7 +500,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123n");
+    const m = await import("./calculos.js?v=20261123o");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -933,6 +933,80 @@ const erros = [];
   verificar(jan320.x >= 0 && jan320.x + jan320.width <= 320 && await cel.evaluate(() => document.querySelector("dialog.alvo").scrollWidth <= document.querySelector("dialog.alvo").clientWidth),
     "320 px: janela de Chegar ao IBU cabe na tela");
   await cel.screenshot({ path: `${SAIDA}/p6e-celular-320-ibu.png` });
+
+  // Relatório em PDF: botão ao lado do nome, visualizador próprio (janela) e exportação para compartilhar.
+  await cel.keyboard.press("Escape");
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  const linhaNome = await cel.evaluate(() => {
+    const c = (s) => document.querySelector(s).getBoundingClientRect();
+    const [campo, botao] = [c(".titulo-receita"), c("button.botao-relatorio")];
+    return { mesmaLinha: Math.abs((campo.top + campo.bottom) / 2 - (botao.top + botao.bottom) / 2) < 3, depois: botao.left >= campo.right, dentro: botao.right <= window.innerWidth, lado: Math.round(botao.width), campo: Math.round(campo.width) };
+  });
+  verificar(linhaNome.mesmaLinha && linhaNome.depois && linhaNome.dentro && linhaNome.lado >= 44 && linhaNome.campo >= 180,
+    `320 px: botão do relatório ao lado do nome, na mesma linha (campo ${linhaNome.campo} px, botão ${linhaNome.lado} px)`);
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(200);
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.screenshot({ path: `${SAIDA}/p6k-celular-botao-relatorio.png` });
+  // Folha de compartilhamento do celular simulada: guarda o arquivo recebido.
+  await cel.evaluate(() => {
+    window.__compartilhado = null;
+    Object.defineProperty(navigator, "canShare", { configurable: true, value: (d) => Boolean(d?.files?.length) });
+    Object.defineProperty(navigator, "share", { configurable: true, value: async (d) => {
+      const f = d.files[0];
+      window.__compartilhado = { nome: f.name, tipo: f.type, titulo: d.title, bytes: Array.from(new Uint8Array(await f.arrayBuffer())) };
+    } });
+  });
+  const ogBarra = (await cel.textContent('.vital [data-metrica="og"] .vital-val')).trim();
+  await tocar("button.botao-relatorio");
+  await cel.waitForSelector("dialog.relatorio[open]");
+  const janRel = await cel.locator("dialog.relatorio").boundingBox();
+  verificar(janRel.x === 0 && janRel.y === 0 && janRel.width === 390 && janRel.height === 844, "relatório abre numa janela que ocupa a tela do celular");
+  const textoRel = await cel.evaluate(() => [...document.querySelectorAll("dialog.relatorio .rel-folha text")].map((t) => t.textContent));
+  const nPaginas = await cel.locator("dialog.relatorio .rel-pagina").count();
+  verificar(nPaginas >= 1 && textoRel.includes("Pils da Galia") && textoRel.includes("Fermentáveis") && textoRel.includes("Lúpulos") && textoRel.includes("Água e volumes")
+    && textoRel.includes(ogBarra) && textoRel.some((t) => /página 1 de \d/.test(t)),
+    `relatório mostra a receita (nome, seções, OG ${ogBarra} igual à barra; ${nPaginas} página(s))`);
+  const folha = await cel.evaluate(() => {
+    const a = document.querySelector(".rel-area"), f = document.querySelector(".rel-folha").getBoundingClientRect();
+    const fora = [...document.querySelectorAll(".rel-folha")].flatMap((s) => {
+      const caixa = s.viewBox.baseVal;
+      return [...s.querySelectorAll("text")].filter((t) => { const b = t.getBBox(); return b.x < 0 || b.x + b.width > caixa.width + .5 || b.y + b.height > caixa.height; }).map((t) => t.textContent);
+    });
+    return { cabe: a.scrollWidth <= a.clientWidth, proporcao: f.height / f.width, fora };
+  });
+  verificar(folha.cabe && Math.abs(folha.proporcao - 841.89 / 595.28) < 0.01 && folha.fora.length === 0,
+    `folha A4 inteira na largura da tela, nenhum texto fora da folha (${folha.fora.join(" | ")})`);
+  await cel.screenshot({ path: `${SAIDA}/p6l-celular-relatorio.png` });
+  await tocar('dialog.relatorio button[aria-label="Ampliar"]');
+  await tocar('dialog.relatorio button[aria-label="Ampliar"]');
+  verificar(await cel.textContent(".rel-zoom-valor") === "200%" && await cel.evaluate(() => { const a = document.querySelector(".rel-area"); return a.scrollWidth > a.clientWidth * 1.9; }),
+    "ampliar: folha a 200%, com rolagem para os lados");
+  await cel.screenshot({ path: `${SAIDA}/p6m-celular-relatorio-200.png` });
+  verificar((await cel.textContent("button.rel-compartilhar")).trim() === "Compartilhar", "celular com folha de compartilhamento: botão Compartilhar");
+  await tocar("button.rel-compartilhar");
+  await cel.waitForFunction(() => window.__compartilhado);
+  const comp = await cel.evaluate(() => window.__compartilhado);
+  const pdf = Buffer.from(comp.bytes);
+  fs.writeFileSync(`${SAIDA}/relatorio-celular.pdf`, pdf);
+  const pdfTxt = pdf.toString("latin1");
+  const xref = Number(pdfTxt.match(/startxref\n(\d+)\n%%EOF\n$/)?.[1]);
+  verificar(/^GaliaBrew-\d+-pils-da-galia\.pdf$/.test(comp.nome) && comp.tipo === "application/pdf" && comp.titulo === "Pils da Galia",
+    `compartilhar entrega o arquivo ${comp.nome} (application/pdf)`);
+  verificar(pdfTxt.startsWith("%PDF-1.4") && pdfTxt.slice(xref, xref + 4) === "xref" && Number(pdfTxt.match(/\/Count (\d+)/)[1]) === nPaginas,
+    `arquivo é um PDF com as mesmas ${nPaginas} página(s) do visualizador (${Math.round(pdf.length / 1024)} kB)`);
+  await tocar("dialog.relatorio button.rel-fechar");
+  await cel.waitForSelector("dialog.relatorio", { state: "detached", timeout: 3000 }).catch(() => {});      // o "close" da janela chega depois do toque
+  verificar(await cel.locator("dialog.relatorio").count() === 0, "fechar tira o relatório da tela");
+  // Aparelho sem compartilhamento de arquivo: o botão baixa o PDF.
+  await cel.evaluate(() => { Object.defineProperty(navigator, "canShare", { configurable: true, value: undefined }); });
+  await tocar("button.botao-relatorio");
+  await cel.waitForSelector("dialog.relatorio[open]");
+  const [baixado] = await Promise.all([cel.waitForEvent("download"), tocar("button.rel-compartilhar")]);
+  verificar((await cel.textContent("button.rel-compartilhar")).trim() === "Baixar PDF" && baixado.suggestedFilename() === comp.nome, "sem compartilhamento: botão Baixar PDF baixa o arquivo");
+  await cel.keyboard.press("Escape");
+  await cel.waitForSelector("dialog.relatorio", { state: "detached", timeout: 3000 }).catch(() => {});
+  verificar(await cel.locator("dialog.relatorio").count() === 0, "Esc fecha o relatório");
 
   // Temas (Meu perfil → Aparência): troca na hora, fica salvo no aparelho, vale depois de recarregar.
   await cel.keyboard.press("Escape");
