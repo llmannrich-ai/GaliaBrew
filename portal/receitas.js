@@ -1,15 +1,16 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123n";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123n";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123n";
-import { abrirBusca } from "./busca.js?v=20261123n";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123n";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123n";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123n";
-import * as O from "./opcoes.js?v=20261123n";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123n";
-import { icone } from "./icones.js?v=20261123n";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123n";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123o";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123o";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123o";
+import { abrirBusca } from "./busca.js?v=20261123o";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123o";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123o";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123o";
+import * as O from "./opcoes.js?v=20261123o";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123o";
+import { icone } from "./icones.js?v=20261123o";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123o";
+import { abrirRelatorio } from "./relatorio.js?v=20261123o";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -459,6 +460,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   // ---------- cabeçalho ----------
   const nomeInput = campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
+  // Relatório em PDF (ao lado do nome): mostra a receita como está na tela, salva ou não; também na só leitura.
+  const botaoRelatorio = el("button", {
+    type: "button", class: "secundario botao-relatorio", title: "Relatório da receita (PDF)", "aria-label": "Relatório da receita em PDF", "aria-haspopup": "dialog",
+    on: { click: () => abrirRelatorio(r, calcularReceita(r), { estilo: estiloAtual(), equipamento: cat.equipamentos.find((e) => e.id === r.equipamento_id) }) },
+  }, icone("relatorio"));
   const msg = el("p", { class: "erro-form", role: "alert" });
   const botaoSalvar = el("button", { type: "button", class: "so-largo", text: "Salvar", on: { click: () => salvar() } });
   const botaoSalvarApp = el("button", { type: "button", class: "app-salvar", text: "Salvar", on: { click: () => salvar() } });
@@ -1087,7 +1093,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     parametros);
 
   conteudo.classList.add("com-vital");
-  const topo = el("div", { class: "editor-topo" }, nomeInput, estiloCampo, acoes);
+  const topo = el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
       inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas),
