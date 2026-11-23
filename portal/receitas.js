@@ -1,15 +1,15 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123e";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123e";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123e";
-import { abrirBusca } from "./busca.js?v=20261123e";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123e";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123e";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123e";
-import * as O from "./opcoes.js?v=20261123e";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123e";
-import { icone } from "./icones.js?v=20261123e";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123e";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123f";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123f";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123f";
+import { abrirBusca } from "./busca.js?v=20261123f";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123f";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123f";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123f";
+import * as O from "./opcoes.js?v=20261123f";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123f";
+import { icone } from "./icones.js?v=20261123f";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123f";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
