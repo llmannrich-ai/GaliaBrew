@@ -216,8 +216,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   nome, menos vão entre seções (1,25rem), régua com trilho mais escuro (`--trilho` #e0d4c1).
 - Papel de parede por seção (23/11/2026, pedido do responsável: "layout cansativo"): cada seção do editor
   (`.editor-corpo > .cartao`, pelo `data-secao`) é um bloco de cor clara com desenho apagado em SVG no próprio CSS
-  (data URI; a CSP aceita `img-src data:`): Fermentáveis amarelo/grãos, Lúpulos verde/folhas, Leveduras branco/bolhas,
-  Água azul/ondas (cores pedidas pelo responsável); Notas creme com pauta; demais alternam creme e branco liso. No
+  (data URI; a CSP aceita `img-src data:`): Fermentáveis amarelo/ramo de cevada com grãos e barbas, Lúpulos verde/flor (cone de
+  brácteas) e folha palmada, Leveduras branco/células brotando com vacúolo, Água azul/gota e ondas (cores e desenhos
+  pedidos pelo responsável; arte própria, traço 1,3 em ladrilho de 150 px, 23/11/2026); Notas creme com pauta; demais alternam creme e branco liso. No
   celular os blocos vão de ponta a ponta e encostam um no outro (a cor separa); título sem faixa, ícone na cor da
   seção. Tokens `--pp-*` no style.css (claro e escuro); texto e estados ≥ 4,6:1 em todos os fundos.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
