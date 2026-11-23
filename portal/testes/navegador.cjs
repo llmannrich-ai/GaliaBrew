@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123s");
+    const m = await import("./fontes.js?v=20261123t");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -299,7 +299,7 @@ const erros = [];
   await pagina.keyboard.type("agraria");
   verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Pilsen (sistema)", "busca sem acento: 'agraria' acha o malte da Agrária");
   verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .selo.fonte') === "Fabricante"
-    && await pagina.isVisible('.busca-grupo-filtro[aria-label="Fonte"]'), "busca mostra o selo da fonte e tem o filtro 'Fonte'");
+    && await pagina.locator("dialog.busca .chip, dialog.busca .busca-filtros").count() === 0, "busca mostra o selo da fonte e não tem filtros");
   await pagina.keyboard.press("Enter");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
   verificar(await focado() === "Qtd (kg)", "Enter adiciona o malte e o foco vai direto para a quantidade");
@@ -314,7 +314,7 @@ const erros = [];
   await pagina.keyboard.type("60");
   verificar(await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60", "lúpulo adicionado só com o teclado (Adicionar, 'saaz', Enter, 60)");
 
-  // Levedura: catálogo de 901 itens, filtros, Esc fecha sem adicionar; depois item livre.
+  // Levedura: catálogo de 901 itens, Esc fecha sem adicionar; depois item livre.
   await adicionar("leveduras");
   await pagina.waitForSelector("dialog.busca");
   verificar((await pagina.textContent(".busca-info")).startsWith("901 itens · mostrando 60"), "busca mostra 60 de 901 leveduras sem travar");
@@ -327,11 +327,7 @@ const erros = [];
   });
   verificar(ms < 100 && await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Fermentis SafLager W-34/70 Fermentação baixa",
     `busca em 901 leveduras com dois termos responde em ${Math.round(ms)} ms`);
-  await pagina.fill(".busca-campo", "");
-  await pagina.click('.busca-grupo-filtro[aria-label="Tipo"] >> text=Lager');
-  await pagina.click('.busca-grupo-filtro[aria-label="Atenuação"] >> text=78%+');
-  const lagersFortes = db.leveduras.filter((y) => y.tipo === "LAGER" && (y.atenuacao_min_pct + y.atenuacao_max_pct) / 2 >= 78).length;
-  verificar((await pagina.textContent(".busca-info")).startsWith(`${lagersFortes} itens`), `filtros Lager + atenuação 78%+ = ${lagersFortes} itens`);
+  await pagina.fill(".busca-campo", "");   // campo de busca com texto: o 1º Esc só limpa o texto
   await pagina.screenshot({ path: `${SAIDA}/p3e-busca.png` });
   await pagina.keyboard.press("Escape");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
@@ -384,7 +380,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123s");
+    const m = await import("./calculos.js?v=20261123t");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -445,7 +441,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123s");
+    const m = await import("./calculos.js?v=20261123t");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -464,7 +460,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123s");
+    const m = await import("./calculos.js?v=20261123t");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -549,7 +545,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123s");
+    const m = await import("./calculos.js?v=20261123t");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -958,6 +954,15 @@ const erros = [];
     "toque: leveduras, outros, mostura e fermentação em cartões, sem rolagem para o lado");
   await cel.evaluate(() => document.querySelector('[data-secao="leveduras"]').scrollIntoView());
   await cel.screenshot({ path: `${SAIDA}/p6b-celular-cartoes.png` });
+
+  // Busca de ingrediente no celular: sem filtros, a lista começa logo abaixo do campo.
+  await tocar('[data-secao="fermentaveis"] button.adicionar');
+  await cel.waitForSelector("dialog.busca");
+  const topoMaltes = (await cel.locator("dialog.busca .busca-opcao").first().boundingBox()).y;
+  verificar(await cel.locator("dialog.busca .chip").count() === 0 && topoMaltes < 300, `toque: busca de malte sem filtros, 1º item a ${Math.round(topoMaltes)} px do topo`);
+  await cel.screenshot({ path: `${SAIDA}/p6h-celular-busca-malte.png` });
+  await cel.keyboard.press("Escape");
+  await cel.waitForSelector("dialog.busca", { state: "detached" });
 
   // Busca de estilo no celular: sem filtros, os estilos começam logo abaixo do campo.
   await tocar(botaoEstilo);
