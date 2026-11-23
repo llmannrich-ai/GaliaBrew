@@ -102,8 +102,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   sem a umidade a OG sai ~4% alta. `receitas.relacao_agua_grao_l_kg` e `perda_tina_l` (água da mostura × lavagem).
 
 ## Portal (`portal/`, 22/11/2026, migração 0003)
-- HTML + módulos JS sem build: `index.html`, `app.js` (login, menu, rotas `#/receitas`, `#/receita/<id|nova>`,
-  `#/cadastros/<tabela>`, `#/perfil`), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
+- HTML + módulos JS sem build: `index.html`, `app.js` (login, rotas `#/receitas`, `#/receita/<id|nova>`,
+  `#/cadastros/<tabela>`, `#/perfil`), `menu.js` (menu lateral), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
   `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
@@ -119,7 +119,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  131 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  141 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
@@ -152,7 +152,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Histórico e referência somem ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
 - CELULAR PRIMEIRO (decisão de 22/11/2026: o responsável e a maioria das pessoas usam pelo celular). Toda tela nova se
   desenha e testa primeiro em 390 px e 320 px com toque (contexto `isMobile + hasTouch` no navegador.cjs).
-  Etapa de celular (22/11/2026): no editor o menu geral some e entra a `barra-app` presa no topo (‹ voltar, nome,
+  Etapa de celular (22/11/2026): no editor o menu geral (hoje a `barra-movel`) some e entra a `barra-app` presa no topo (‹ voltar, nome,
   ↶ desfazer, Salvar com ponto quando há alteração pendente); a barra de números acompanha o teclado
   (`visualViewport` → `--teclado`) e o campo em foco rola para cima dela (rolagem instantânea: toque durante rolagem
   suave não vira clique); ± com toque no soltar (rolar a tela por cima não conta) e segurar repete; tabelas
@@ -174,7 +174,15 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261122n.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123a.
+- Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre) nos dois temas;
+  ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
+  arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
+  960–1180 px: só ícones automaticamente (classe `compacto`; o editor precisa da largura). ≤ 959 px: `barra-movel` escura
+  no topo e o menu vira gaveta (fecha ao escolher, no véu ou com Esc; trava a rolagem enquanto aberta). `--topo-h` =
+  altura da `barra-movel` (0 no computador). No editor do celular (≤ 640 px) a `barra-movel` some, como antes o topo.
+- Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
+  ingrediente só ficam compactas até 640 px.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
