@@ -153,7 +153,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
   (`pct_peso`, `pontos_og`, `g_l` no calculos.js), cor do malte em texto pequeno abaixo do nome (`.ing-sub`, unidade do perfil, 23/11/2026), totais no cabeçalho (fermentáveis: kg em destaque + água/malte efetiva = água da mostura ÷ grão da mostura, 23/11/2026), tocar no item (nome com seta ›, cor ou números; não nos campos) = detalhes (dados do cadastro, subir,
   descer, remover; o botão ⋯ foi retirado em 23/11/2026, pedido do responsável), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
-  seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, SEM filtros em botões
+  seguem em tabela. O "+" do título da seção (23/11/2026, pedido do responsável: só o sinal, sem borda, 2,25rem negrito na fonte do
+  app, cor `--destaque-escuro`, 44 px de toque, `aria-label` "Adicionar"; vale também para os passos de mostura/fermentação)
+  abre a busca (`busca.js`): sem acento, vários termos, SEM filtros em botões
   (retirados de todas as buscas em 23/11/2026, pedido do responsável: no celular ocupavam a tela), recentes
   (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
 - Busca de estilo (23/11/2026, sem migração): o Estilo do topo do editor é um botão que abre a mesma janela do `busca.js`

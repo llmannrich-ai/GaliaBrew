@@ -433,11 +433,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return sec;
   }
 
-  /** Botão "+ Adicionar" que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
+  /** Botão "+" (só o sinal, sem borda) que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
   const botaoAdicionar = (tipo, aoEscolher, aoLivre) => () => el("button", {
-    type: "button", class: "secundario adicionar",
+    type: "button", class: "adicionar", text: "+", title: "Adicionar", "aria-label": "Adicionar",
     on: { click: () => abrirBusca({ tipo, itens: cat[tipo], aoEscolher, aoLivre }) },
-  }, icone("mais"), "Adicionar");
+  });
 
   const num = (k, casas, extra = {}) => (item) => campoNumero(item, k, { casas, aoMudar: mudou, desabilitado: des, ...extra });
   const txt = (k, extra = {}) => (item) => campoTexto(item, k, { aoMudar: mudou, desabilitado: des, classe: "nome", ...extra });
@@ -742,7 +742,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const fermentaveis = secaoLinhas("fermentaveis", "Fermentáveis", {
     iconeSecao: "malte", grafico: grist.elemento,
     classe: "ferm",
-    vazio: "Nenhum fermentável. Use “+ Adicionar”.",
+    vazio: "Nenhum fermentável. Toque em “+” para adicionar.",
     total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
     destaque: true,
     // Razão efetiva (água da mostura ÷ grão da mostura): já considera o limite da água total.
@@ -787,7 +787,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const lupulos = secaoLinhas("lupulos", "Lúpulos", {
     iconeSecao: "lupulo", grafico: tempo.elemento,
     classe: "lup",
-    vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
+    vazio: "Nenhum lúpulo. Toque em “+” para adicionar.",
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
     // Sem botão "Chegar ao IBU" na seção (retirado em 23/11/2026, pedido do responsável): abre pelo número do IBU na barra.
     adicionar: botaoAdicionar("lupulos",
@@ -1065,7 +1065,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       () => adicionarLinhaTabela("outros", { outro_id: null, nome: "", tipo: "OUTRO", quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Nome")),
   });
 
-  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "secundario pequeno", text: "+ Passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
+  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "adicionar", text: "+", title: "Adicionar passo", "aria-label": "Adicionar passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
   const mostura = secaoLista("mostura", "Mostura", {
     iconeSecao: "mostura",
     vazio: "Sem passos.",

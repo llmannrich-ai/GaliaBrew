@@ -712,6 +712,15 @@ const erros = [];
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
   await pagina.locator('[data-secao="fermentaveis"] .titulo-linha').screenshot({ path: `${SAIDA}/p9-celular-total-fermentaveis.png` });
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
+  // Adicionar = só o "+", sem borda, na mesma linha do título da seção (390 px aqui; 320 px mais abaixo).
+  const botoesMais = () => pagina.evaluate(() => [...document.querySelectorAll(".editor-corpo .titulo-linha button.adicionar")].map((b) => {
+    const t = b.closest(".titulo-linha").querySelector("h3").getBoundingClientRect(), r = b.getBoundingClientRect(), cs = getComputedStyle(b);
+    return { secao: b.closest("[data-secao]").dataset.secao, texto: b.textContent, rotulo: b.getAttribute("aria-label"),
+      borda: cs.borderTopWidth, alinhado: r.top < t.bottom && r.bottom > t.top, toque: r.width >= 44 && r.height >= 44 };
+  }));
+  const mais390 = await botoesMais();
+  verificar(mais390.length === 6 && mais390.every((b) => b.texto === "+" && b.rotulo?.startsWith("Adicionar") && b.borda === "0px" && b.alinhado && b.toque),
+    `celular 390 px: "+" sem borda ao lado do título em todas as seções (${JSON.stringify(mais390.filter((b) => !(b.alinhado && b.toque && b.borda === "0px")))})`);
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
   // Sal da água: nome, gramas e × na mesma linha (390 e 320 px), sem passar da largura do bloco.
@@ -736,6 +745,8 @@ const erros = [];
   await pagina.evaluate(() => { document.querySelector(".bloco-agua.lavagem").scrollIntoView(); window.scrollBy(0, -70); });
   await pagina.screenshot({ path: `${SAIDA}/p5i-celular-lavagem.png` });
   await pagina.setViewportSize({ width: 320, height: 700 });
+  const mais320 = await botoesMais();
+  verificar(mais320.every((b) => b.alinhado && b.toque), `celular 320 px: "+" na linha do título (${JSON.stringify(mais320.filter((b) => !b.alinhado))})`);
   const sal320 = await linhaDoSal();
   verificar(sal320.alinhado && sal320.ordem && sal320.cabe && sal320.select >= 100, `celular 320 px: sal numa linha só (${JSON.stringify(sal320)})`);
   await pagina.screenshot({ path: `${SAIDA}/p5h-celular-sais-320.png` });
