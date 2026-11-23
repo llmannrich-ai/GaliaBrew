@@ -1,10 +1,10 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261123p";
-import { sb, sessao } from "./estado.js?v=20261123p";
-import * as O from "./opcoes.js?v=20261123p";
-import { corHexDeSrm } from "./calculos.js?v=20261123p";
-import { buscarItens, ordemCodigo } from "./busca.js?v=20261123p";
-import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261123p";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261123r";
+import { sb, sessao } from "./estado.js?v=20261123r";
+import * as O from "./opcoes.js?v=20261123r";
+import { corHexDeSrm } from "./calculos.js?v=20261123r";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261123r";
+import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261123r";
 
 // Cadastros de ingrediente: mostram de onde vêm os dados (fabricante, genérico, análise, meu).
 const INGREDIENTES = new Set(["fermentaveis", "lupulos", "leveduras", "outros"]);
@@ -184,16 +184,17 @@ export async function telaCadastros(conteudo, chave) {
     const cab = el("tr", {}, def.colunas.map(([, r, f]) => el("th", { class: typeof f === "number" || f === "cor" ? "num" : "", text: f === "cor" ? `${r} (${O.unidadeCor()})` : r })),
       def.catalogo ? el("th", { text: INGREDIENTES.has(chave) ? "Fonte" : "Origem" }) : null);
     const linhas = lista.map((x) => el("tr", { class: "clicavel", tabindex: 0, on: { click: () => abrirFormulario(chave, x, recarregar), keydown: (e) => { if (e.key === "Enter") abrirFormulario(chave, x, recarregar); } } },
-      def.colunas.map(([k, , f]) => {
-        if (f === "cor") return el("td", { class: "num" }, amostraCor(x[k]), numeroBR(O.corParaTela(x[k]), 1));
-        if (typeof f === "number") return el("td", { class: "num", text: numeroBR(x[k], f) });
-        if (typeof f === "function") return el("td", { text: f(x[k], x) });
-        return el("td", { text: x[k] ?? "" });
+      // data-rotulo: no celular a linha vira cartão e cada dado leva o nome da coluna na frente (style.css).
+      def.colunas.map(([k, r, f]) => {
+        if (f === "cor") return el("td", { class: "num", "data-rotulo": `${r} (${O.unidadeCor()})` }, amostraCor(x[k]), numeroBR(O.corParaTela(x[k]), 1));
+        if (typeof f === "number") return el("td", { class: "num", "data-rotulo": r, text: numeroBR(x[k], f) });
+        if (typeof f === "function") return el("td", { "data-rotulo": r, text: f(x[k], x) });
+        return el("td", { "data-rotulo": r, text: x[k] ?? "" });
       }),
-      def.catalogo ? el("td", {}, INGREDIENTES.has(chave) ? seloFonte(fonteDados(x))
+      def.catalogo ? el("td", { class: "origem" }, INGREDIENTES.has(chave) ? seloFonte(fonteDados(x))
         : el("span", { class: x.dono ? "selo meu" : "selo", text: x.dono ? "Meu" : "Sistema" })) : null));
     preencher(corpo, lista.length
-      ? el("table", { class: "tabela" }, el("thead", {}, cab), el("tbody", {}, linhas))
+      ? el("table", { class: "tabela lista-cad" }, el("thead", {}, cab), el("tbody", {}, linhas))
       : el("p", { class: "nota", text: itens.length ? "Nada encontrado." : "Nenhum item ainda. Use “Novo”." }));
   }
   await recarregar();
