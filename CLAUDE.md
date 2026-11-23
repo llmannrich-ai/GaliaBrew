@@ -148,7 +148,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Editor (E2, 22/11/2026): fermentáveis e lúpulos em linhas (`secaoLinhas` no receitas.js) com a quantidade em
   destaque (`campoQuantidade` do ui.js: botões ± que não roubam o foco, ↑/↓ = 1 passo, Shift = 10; passo no perfil,
   padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
-  (`pct_peso`, `pontos_og`, `g_l` no calculos.js), totais no cabeçalho (fermentáveis: kg em destaque + água/malte efetiva = água da mostura ÷ grão da mostura, 23/11/2026), ⋯ = detalhes (dados do cadastro, subir,
+  (`pct_peso`, `pontos_og`, `g_l` no calculos.js), cor do malte em texto pequeno abaixo do nome (`.ing-sub`, unidade do perfil, 23/11/2026), totais no cabeçalho (fermentáveis: kg em destaque + água/malte efetiva = água da mostura ÷ grão da mostura, 23/11/2026), ⋯ = detalhes (dados do cadastro, subir,
   descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
   seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
   (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
@@ -201,7 +201,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123p.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123q.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
