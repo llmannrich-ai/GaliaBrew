@@ -114,7 +114,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - HTML + módulos JS sem build: `index.html`, `app.js` (login, rotas `#/receitas`, `#/receita/<id|nova>`,
   `#/cadastros/<tabela>`, `#/perfil`), `menu.js` (menu lateral), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente e de estilo), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente e de estilo), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `tema.js` (temas de cor), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -128,7 +128,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  174 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  182 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -200,8 +200,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123k.
-- Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre) nos dois temas;
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123l.
+- Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
   960–1180 px: só ícones automaticamente (classe `compacto`; o editor precisa da largura). ≤ 959 px: `barra-movel` escura
@@ -229,6 +229,17 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   pedidos pelo responsável; arte própria, traço 1,3 em ladrilho de 150 px, 23/11/2026); Notas creme com pauta; demais alternam creme e branco liso. No
   celular os blocos vão de ponta a ponta e encostam um no outro (a cor separa); título sem faixa, ícone na cor da
   seção. Tokens `--pp-*` no style.css (claro e escuro); texto e estados ≥ 4,6:1 em todos os fundos.
+- Temas de cor (23/11/2026, pedido do responsável; sem migração): Meu perfil → Aparência, 9 opções em cartões com
+  miniatura do app: Automático (padrão: Clássico de dia, Adega à noite, segue o celular sem recarregar), Clássico, Adega,
+  Pilsen, IPA, Red Ale (claros), Stout, Black IPA (escuros) e Sol forte (alto contraste para a brassagem ao ar livre:
+  preto no branco, borda de campo 2 px, sem desenho de fundo). Escolha em `preferencias.tema` (localStorage: vale no
+  aparelho). `tema.js` é script COMUM no `<head>`, sem defer (entra antes da 1ª pintura, não pisca): lista dos temas,
+  põe `data-tema` e `data-modo` (claro|escuro) no `<html>` e a cor do `theme-color`; `window.GaliaTema` para o perfil.
+  CSS: o modo escuro NÃO usa mais `prefers-color-scheme`; é `[data-modo="escuro"]`. Cada tema = bloco
+  `[data-tema="..."]` (sem :root, para valer nas miniaturas) que troca só o que muda sobre a base, inclusive o menu
+  (`--menu-*`; o destaque do menu usa color-mix da `--menu-cobre`). Contraste conferido por script em todos os temas
+  (texto ≥ 7:1 no fundo e ≥ 4,5:1 nos fundos de seção; estados e destaque ≥ 4,5:1; borda ≥ 3:1). Tema novo: bloco no
+  style.css + linha no `TEMAS` do tema.js + reconferir o contraste.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
   ingrediente só ficam compactas até 640 px.
 
