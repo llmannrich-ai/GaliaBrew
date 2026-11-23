@@ -1,15 +1,15 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123g";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123g";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123g";
-import { abrirBusca } from "./busca.js?v=20261123g";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123g";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123g";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123g";
-import * as O from "./opcoes.js?v=20261123g";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123g";
-import { icone } from "./icones.js?v=20261123g";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123g";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123h";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123h";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123h";
+import { abrirBusca } from "./busca.js?v=20261123h";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123h";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123h";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123h";
+import * as O from "./opcoes.js?v=20261123h";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123h";
+import { icone } from "./icones.js?v=20261123h";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123h";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -521,7 +521,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   mostrarEstilo();
   const estiloCampo = el("div", { class: "estilo-topo" }, el("span", { class: "rotulo-campo", text: "Estilo" }), botaoEstilo);
 
-  const geral = el("section", { class: "cartao" },
+  const geral = el("section", { class: "cartao", dataset: { secao: "geral" } },
     tituloSecao("geral", "Dados gerais"),
     el("div", { class: "grade-form" },
       el("label", {}, el("span", { text: "Tipo" }), campoSelect(r, "tipo", O.TIPO_RECEITA, { aoMudar: mudou, desabilitado: des, rotulo: "Tipo" })),
@@ -558,7 +558,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       el("label", {}, el("span", {}, "Açúcar do priming", info(O.AJUDA_VOLUME.priming_acucar)),
         campoSelect(r, "priming_acucar", O.ACUCAR_PRIMING, { aoMudar: mudou, desabilitado: des, vazio: "Açúcar comum (sacarose)", rotulo: "Açúcar do priming" }))));
 
-  const inicio = !r.id && !leitura ? el("section", { class: "cartao" },
+  const inicio = !r.id && !leitura ? el("section", { class: "cartao", dataset: { secao: "inicio" } },
     origem
       ? el("p", { class: "nota", text: `Receita nova a partir de ${origem.lote_numero ? "nº " + origem.lote_numero + " – " : ""}${origem.nome}. A anterior não muda; dados do lote e notas começam em branco.` })
       : seletorOrigem()) : null;
@@ -995,7 +995,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         el("p", { class: "nota", text: `Mostura: ${numeroBR(a.mostura.sais_g, 1)} g de sais em ${numeroBR(a.mostura.litros, 1)} L. Lavagem: ${numeroBR(a.lavagem.sais_g, 1)} g em ${numeroBR(a.lavagem.litros, 1)} L. Panela = as duas águas juntas.` }));
     });
 
-    const sec = el("section", { class: "cartao" },
+    const sec = el("section", { class: "cartao", dataset: { secao: "agua" } },
       el("div", { class: "titulo-linha" }, tituloSecao("agua", "Água")),
       el("div", { class: "grade-form" },
         escolha("agua_origem", "Água de origem", O.AJUDA_VOLUME.agua_origem, "— nenhuma (só destilada) —"),
@@ -1065,7 +1065,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     adicionar: botaoPasso("fermentacao", () => ({ nome: "", temperatura_c: 2, dias: 3 })),
   });
 
-  const notas = el("section", { class: "cartao" }, tituloSecao("notas", "Notas"),
+  const notas = el("section", { class: "cartao", dataset: { secao: "notas" } }, tituloSecao("notas", "Notas"),
     el("textarea", { rows: 4, maxlength: 8000, disabled: des, value: r.notas ?? "", "aria-label": "Notas", on: { input: (e) => { r.notas = e.target.value; mudou(); } } }));
 
   // Lote: uma linha de resumo; os parâmetros abrem ao clicar. Receita nova sem equipamento já abre (falta o volume).
