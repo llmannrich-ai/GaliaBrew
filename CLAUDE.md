@@ -92,7 +92,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (32 testes, com os do pdf.js). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (39 testes, com os do pdf.js e das faixas da roleta). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -131,7 +131,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  238 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  254 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -207,7 +207,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123y.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123z.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -268,6 +268,29 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   style.css + linha no `TEMAS` do tema.js + reconferir o contraste.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
   ingrediente só ficam compactas até 640 px.
+
+## Roleta para números no celular (23/11/2026, pedido do responsável: digitar quantidade era ruim; sem migração)
+- Tela de toque (`pointer: coarse`): todo `campoNumero` com faixa vira "botão" da roleta (somente leitura, o teclado não
+  abre); tocar abre `abrirRoleta` (`portal/roleta.js`): folha no rodapé, NÃO modal, com rodas de rolagem nativa +
+  scroll-snap (inércia do aparelho), item de 44 px, 5 à vista, o do meio na faixa cobre. Duas rodas (inteiro | ,fração)
+  para kg, %, L; uma roda (passo único ou segmentos: fino nos pequenos, maior nos grandes) para g, min, cor, densidade.
+  O valor vai para o campo AO VIVO (a barra de números do editor vira a linha fina logo acima da roleta, como com o
+  teclado: `vital.js` lê a altura da `.roleta` e o evento "roleta"). OK / tocar fora / Enter confirmam; Cancelar / Esc
+  voltam ao valor de antes; "Digitar o número" fecha e abre o teclado no campo (volta a somente leitura ao sair);
+  botão de deixar vazio só onde vazio tem sentido (`vazio` na faixa: água = sugestão, CO₂ = sem priming...).
+  Histórico: a roleta inteira = 1 passo do desfazer (`registrarQuandoLivre` espera fechar). Computador: nada muda.
+- Faixas em `portal/faixas.js` (módulo puro, testado em `portal/testes/faixas.test.mjs`): `FAIXAS` pela chave do campo
+  (unidades do banco; cor na unidade da tela por `faixaCor`), `FAIXAS_LUGAR` para chaves repetidas (temperatura/tempo da
+  mostura, fermentação, whirlpool, outros; campos das Ferramentas). Campo passa `roleta: faixa | { inicial } | false`.
+  Valor atual fora da grade/da faixa entra na roda (abrir e fechar não muda o número).
+- Valor de partida com o campo vazio ("o mais provável"): `roleta.inicial` do campo > número do placeholder (sugestão)
+  > `inicial` da faixa. Malte (`presetFermentavel`): 1º grão claro 4 kg, outro claro 1 kg, 5-15 SRM 0,5 kg, cristal/
+  torrado 0,25 kg, açúcar 0,5 kg; lúpulo (`presetLupulo`): amargor 20 g, ≤ 20 min 30 g, whirlpool 40 g, dry hop 50 g;
+  ambos × volume do lote ÷ 20 L. OG/FG medidas começam na calculada; volume real no do lote; levedura 1 pacote / 11 g /
+  100 mL. Ingrediente novo do cadastro abre a roleta já na quantidade (`editarCampo` do ui.js). Nº do lote fica no teclado.
+- Teste do navegador (bloco "roleta:"): abrir sem teclado, barra fina acima, girar com o dedo (toque via CDP, arrasto
+  lento sem inércia), OG acompanha, Cancelar, OK, desfazer num passo, Digitar, lúpulo novo no preset, 320 px, Ferramentas.
+  Capturas `p6r` (390 px) e `p6s` (320 px). Falta conferir no iPhone real (inércia + snap do Safari).
 
 ## Relatório da receita em PDF (23/11/2026, pedido do responsável; sem migração)
 - Botão com ícone de relatório AO LADO do nome da receita (`.nome-linha` no topo do editor; vale também na só leitura).

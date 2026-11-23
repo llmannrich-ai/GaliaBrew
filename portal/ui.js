@@ -1,4 +1,6 @@
 // ui.js — utilidades de tela. Texto do usuário entra SEMPRE como texto (textContent), nunca como HTML.
+import { abrirRoleta } from "./roleta.js?v=20261123z";
+import { FAIXAS } from "./faixas.js?v=20261123z";
 
 /** Cria um elemento. attrs: class, text, on: {evento: fn}, dataset, e demais atributos. Filhos: nós ou textos. */
 export function el(tag, attrs = {}, ...filhos) {
@@ -102,8 +104,13 @@ export function numeroBR(v, casas = 2, { milhar = false } = {}) {
   return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas, useGrouping: milhar });
 }
 
-/** Campo numérico com vírgula: guarda o número em obj[chave] (com conversão opcional para a tela). */
-export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, para = (x) => x, desabilitado = false, classe = "num", rotulo, placeholder } = {}) {
+/**
+ * Campo numérico com vírgula: guarda o número em obj[chave] (com conversão opcional para a tela).
+ * Celular (tela de toque): tocar no campo abre a ROLETA (roleta.js) em vez do teclado, com a faixa do campo
+ * (faixas.js: pela chave, ou `roleta` = faixa própria / { inicial } para trocar só o valor de partida; false = sem roleta).
+ * Valor de partida com o campo vazio: roleta.inicial > número do placeholder (a sugestão) > inicial da faixa.
+ */
+export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, para = (x) => x, desabilitado = false, classe = "num", rotulo, placeholder, roleta, unidade = "" } = {}) {
   const valorTela = obj[chave] === null || obj[chave] === undefined ? "" : numeroBR(de(Number(obj[chave])), casas);
   const input = el("input", {
     type: "text", inputmode: "decimal", class: classe, value: valorTela, disabled: desabilitado,
@@ -121,7 +128,53 @@ export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, par
       },
     },
   });
+  const faixa = roleta === false ? null : roleta?.min !== undefined ? roleta : FAIXAS[chave] ? { ...FAIXAS[chave], ...(roleta ?? {}) } : null;
+  if (faixa && !desabilitado && telaDeToque()) ligarRoleta(input, { obj, chave, faixa, casas, de, para, aoMudar, unidade, inicialProprio: roleta?.inicial });
   return input;
+}
+
+const telaDeToque = () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(pointer: coarse)").matches);
+
+/** Campo vira "botão" da roleta: somente leitura (o teclado não abre); "Digitar o número" libera o teclado até sair. */
+function ligarRoleta(input, { obj, chave, faixa, casas, de, para, aoMudar, unidade, inicialProprio }) {
+  input.readOnly = true;
+  input.dataset.roleta = "1";
+  input.setAttribute("aria-haspopup", "dialog");
+  const lerAtual = () => (obj[chave] === null || obj[chave] === undefined || obj[chave] === "" ? null : de(Number(obj[chave])));
+  const definir = (v) => {
+    obj[chave] = v === null ? null : para(v);
+    input.value = v === null ? "" : numeroBR(v, casas);
+    input.classList.remove("invalido");
+    aoMudar?.();
+  };
+  const doPlaceholder = () => { const m = /^-?\d[\d.,]*/.exec(input.placeholder ?? ""); return m ? lerNumero(m[0]) : null; };
+  const digitar = () => {
+    input.readOnly = false;
+    input.focus();
+    input.setSelectionRange?.(0, input.value.length);
+  };
+  input.abrirRoleta = () => abrirRoleta({
+    campo: input, casas, unidade, rotulo: input.getAttribute("aria-label") ?? "", valor: lerAtual(),
+    faixa: { ...faixa, inicial: () => {
+      const ini = typeof inicialProprio === "function" ? inicialProprio() : inicialProprio;
+      if (Number.isFinite(ini)) return ini;
+      const ph = doPlaceholder();
+      if (Number.isFinite(ph)) return ph;
+      return typeof faixa.inicial === "function" ? faixa.inicial() : faixa.inicial;
+    } },
+    aoEscolher: definir, aoDigitar: digitar,
+  });
+  input.addEventListener("mousedown", (e) => { if (input.readOnly) e.preventDefault(); });      // sem foco = sem teclado
+  input.addEventListener("click", (e) => { if (!input.readOnly || input.disabled) return; e.preventDefault(); input.abrirRoleta(); });
+  input.addEventListener("keydown", (e) => { if (input.readOnly && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); input.abrirRoleta(); } });
+  input.addEventListener("blur", () => { input.readOnly = true; });
+}
+
+/** Leva a pessoa a editar o campo: no celular abre a roleta; no computador põe o foco (o teclado já está à mão). */
+export function editarCampo(input) {
+  if (!input) return;
+  if (input.abrirRoleta && input.readOnly) input.abrirRoleta();
+  else input.focus();
 }
 
 /**
@@ -129,8 +182,8 @@ export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, par
  * passo na unidade guardada (ex.: 0,05 kg). Os botões não roubam o foco (no celular não abrem o teclado).
  * aoMudar(input) recebe o campo, para a barra vital saber de onde veio a mudança.
  */
-export function campoQuantidade(obj, chave, { casas = 2, passo = 1, passoTxt = String(passo), unidade = "", aoMudar, desabilitado = false, rotulo } = {}) {
-  const input = campoNumero(obj, chave, { casas, desabilitado, rotulo, aoMudar: () => aoMudar?.(input), classe: "num qtd" });
+export function campoQuantidade(obj, chave, { casas = 2, passo = 1, passoTxt = String(passo), unidade = "", aoMudar, desabilitado = false, rotulo, roleta } = {}) {
+  const input = campoNumero(obj, chave, { casas, desabilitado, rotulo, aoMudar: () => aoMudar?.(input), classe: "num qtd", unidade, roleta });
   input.setAttribute("role", "spinbutton");
   // Toque: ao entrar no campo, o número fica selecionado; digitar já troca o valor (sem apagar "0,000" na mão).
   // No iOS a seleção feita no próprio "focus" se perde: vai no quadro seguinte.
