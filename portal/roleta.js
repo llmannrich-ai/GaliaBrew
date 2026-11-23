@@ -156,7 +156,8 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
   setTimeout(() => {
     if (!campo?.isConnected || atual?.folha !== folha) return;
     const barra = document.querySelector(".vital.com-teclado");
-    const topoLivre = Math.min(folha.getBoundingClientRect().top, barra ? barra.getBoundingClientRect().top : Infinity) - 12;
+    // Topo final da roleta (offsetHeight: a animação de subida ainda pode estar no meio).
+    const topoLivre = Math.min(window.innerHeight - folha.offsetHeight, barra ? barra.getBoundingClientRect().top : Infinity) - 12;
     const app = document.querySelector(".barra-app, .barra-movel");
     const topo = app && app.getBoundingClientRect().bottom > 0 ? app.getBoundingClientRect().bottom + 8 : 8;
     const r = campo.getBoundingClientRect();

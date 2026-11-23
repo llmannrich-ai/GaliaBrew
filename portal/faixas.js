@@ -55,7 +55,8 @@ export function rodasDaFaixa(f, valor, fmt) {
     const valores = valoresDaFaixa(f);
     const indice = incluir(valores, valor);
     const casas = Math.max(casasDe(f.passo ?? 1), ...(f.segmentos ?? []).map(([, p]) => casasDe(p)));
-    return [{ valores, textos: valores.map((v) => fmt(v, f.casasRoda ?? casas)), indice }];
+    // O valor fora da grade (ex.: 12,5 g numa roda de 1 em 1) aparece com as próprias casas.
+    return [{ valores, textos: valores.map((v) => fmt(v, Math.max(casas, Math.min(3, casasDe(v))))), indice }];
   }
   const casas = casasDe(f.passo);
   const inteiro = Math.floor(valor + 1e-9);
