@@ -265,11 +265,21 @@ const erros = [];
   await pagina.click("button:has-text('Adicionar o lático')");
   const phDepois = await pagina.textContent("section:has(h3:text('Água'))");
   verificar(/pH estimado da mostura[\s\S]*?(5,40|5,39|5,41)/.test(phDepois) && phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
+  // Volumes das duas águas (0010): vazio mostra a sugestão; informados mudam ppm/pH e avisam se não fecham.
+  verificar(await pagina.getAttribute('input[aria-label="Água da mostura (L)"]', "placeholder") === "14,4 (sugestão)"
+    && await pagina.getAttribute('input[aria-label="Água de lavagem (L)"]', "placeholder") === "18,4 (sugestão)", "volumes vazios mostram a sugestão (14,4 L + 18,4 L)");
+  await pagina.fill('input[aria-label="Água da mostura (L)"]', "18");
+  await pagina.fill('input[aria-label="Água de lavagem (L)"]', "14");
+  await pagina.waitForTimeout(150);
+  const textoVol = await pagina.textContent("section:has(h3:text('Água'))");
+  verificar(textoVol.includes("Total 32,0 L · 3,8 L/kg na mostura") && textoVol.includes("faltam 0,8 L") && textoVol.includes("Água da mostura (18,0 L)") && textoVol.includes("Água de lavagem (14,0 L)"),
+    "volumes informados: total, L/kg, aviso de falta 0,8 L e litros nas tabelas de sais");
+  verificar((await pagina.textContent(".painel-lote")).includes("Água necessária"), "painel mostra a água necessária quando o informado não fecha");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122n");
+    const m = await import("./calculos.js?v=20261123a");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -305,7 +315,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122n");
+    const m = await import("./calculos.js?v=20261123a");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -324,7 +334,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122n");
+    const m = await import("./calculos.js?v=20261123a");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -405,7 +415,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261122n");
+    const m = await import("./calculos.js?v=20261123a");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -456,6 +466,8 @@ const erros = [];
     "lote vai com OG 1048 → 1,048, data e número automático");
   verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
     && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6,"etapa":"MOSTURA"},{"sal":"CLORETO_CALCIO","gramas":2,"etapa":"LAVAGEM"}]', "água vai como cópia (sem id) e sais em gramas, cada um com a sua água");
+  verificar(salvo.corpo.p.agua_mostura_l === 18 && salvo.corpo.p.agua_lavagem_l === 14, "água da mostura e da lavagem vão em litros");
+  verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "água da mostura reabre com 18,0 L");
   verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");

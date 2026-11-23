@@ -1,14 +1,14 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261122n";
-import { sb, sessao, preferencias } from "./estado.js?v=20261122n";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261122n";
-import { abrirBusca } from "./busca.js?v=20261122n";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261122n";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261122n";
-import * as O from "./opcoes.js?v=20261122n";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261122n";
-import { icone } from "./icones.js?v=20261122n";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261122n";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123a";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123a";
+import { abrirBusca } from "./busca.js?v=20261123a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123a";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123a";
+import * as O from "./opcoes.js?v=20261123a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123a";
+import { icone } from "./icones.js?v=20261123a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -126,7 +126,7 @@ const PADRAO = () => ({
   volume_lote_l: 20, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, perda_panela_l: 1, absorcao_grao_l_kg: 1,
   relacao_agua_grao_l_kg: 3, perda_tina_l: 0, temp_grao_c: 20, publica: false, notas: "",
   lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null, co2_alvo_vol: null, priming_acucar: null,
-  agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, sais: [], acidos: [],
+  agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, agua_mostura_l: null, agua_lavagem_l: null, sais: [], acidos: [],
   fermentaveis: [], lupulos: [], leveduras: [], outros: [],
   mostura: [{ nome: "Sacarificação", tipo: "INFUSAO", temperatura_c: 66, tempo_min: 60 }],
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
@@ -207,6 +207,7 @@ function copiaDe(o, cat) {
     outros: o.outros.map((x) => ({ ...sem(x), outro_id: visivel(cat.outros, x.outro_id) })),
     mostura: o.mostura.map(sem),
     agua_origem: o.agua_origem ?? null, agua_alvo: o.agua_alvo ?? null, agua_diluicao_pct: o.agua_diluicao_pct ?? null,
+    agua_mostura_l: o.agua_mostura_l ?? null, agua_lavagem_l: o.agua_lavagem_l ?? null,
     sais: (o.sais ?? []).map((x) => ({ ...x })),
     acidos: (o.acidos ?? []).map((x) => ({ ...x })),
     fermentacao: o.fermentacao.map(sem),
@@ -369,7 +370,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const pAgua = blocoPainel("Água", !celular);
   const pNotas = el("div", { class: "notas-painel" });
   preencher(painel, pMedido, pPriming, pNumeros, pVolumes, pAgua, pNotas);
-  const corpoBloco = (bloco, ...linhas) => { while (bloco.children.length > 1) bloco.lastChild.remove(); bloco.append(...linhas); };
+  const corpoBloco = (bloco, ...linhas) => { while (bloco.children.length > 1) bloco.lastChild.remove(); bloco.append(...linhas.filter(Boolean)); };
   const linha = (rot, valor, ajuda) => el("div", { class: "metrica" }, el("span", { class: "rot" }, rot, info(ajuda)), el("span", { class: "val", text: valor }));
 
   const aoRecalcular = [];   // partes do editor que mostram resultado fora do painel (ex.: perfil da água)
@@ -403,7 +404,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       linha("Água total", `${numeroBR(v.agua_total_l, 1)} L`, O.AJUDA_VOLUME.agua_total_l),
       linha("Água da mostura", `${numeroBR(v.agua_mostura_l, 1)} L`, O.AJUDA_VOLUME.agua_mostura_l),
       v.temperatura_agua_mostura_c != null ? linha("Temperatura da água da mostura", `${numeroBR(v.temperatura_agua_mostura_c, 1)} °C`, O.AJUDA_VOLUME.temperatura_agua_mostura_c) : null,
-      linha("Água de lavagem", `${numeroBR(v.agua_lavagem_l, 1)} L`, O.AJUDA_VOLUME.agua_lavagem_l));
+      linha("Água de lavagem", `${numeroBR(v.agua_lavagem_l, 1)} L`, O.AJUDA_VOLUME.agua_lavagem_l),
+      Math.abs(v.agua_diferenca_l) >= 0.05 ? linha("Água necessária", `${numeroBR(v.agua_necessaria_l, 1)} L`, O.AJUDA_VOLUME.agua_necessaria_l) : null);
     preencher(pNotas,
       estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : el("p", { class: "nota", text: "Escolha um estilo no topo para ver as faixas." }),
       el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
@@ -912,6 +914,27 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           : m.ph < 5.2 ? el("p", { class: "nota alerta", text: "pH baixo: use água com mais alcalinidade (bicarbonato) ou menos malte torrado/ácido." }) : null);
     });
 
+    // Volumes das duas águas: o cervejeiro informa; vazio = sugestão (aparece como texto de fundo do campo).
+    const campoMostura = campoNumero(r, "agua_mostura_l", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: "Água da mostura (L)" });
+    const campoLavagem = campoNumero(r, "agua_lavagem_l", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: "Água de lavagem (L)" });
+    const notaVolumes = el("p", { class: "nota largo", "aria-live": "polite" });
+    aoRecalcular.push((res) => {
+      const v = res.volumes;
+      campoMostura.placeholder = `${numeroBR(v.agua_mostura_sugerida_l, 1)} (sugestão)`;
+      campoLavagem.placeholder = `${numeroBR(v.agua_lavagem_sugerida_l, 1)} (sugestão)`;
+      const partes = [`Total ${numeroBR(v.agua_total_l, 1)} L`];
+      if (v.relacao_agua_grao_l_kg != null) partes.push(`${numeroBR(v.relacao_agua_grao_l_kg, 1)} L/kg na mostura`);
+      const informou = v.agua_mostura_informada || v.agua_lavagem_informada;
+      const dif = v.agua_diferenca_l;
+      const longe = informou && Math.abs(dif) >= 0.5;
+      notaVolumes.classList.toggle("alerta", longe);
+      notaVolumes.textContent = `${partes.join(" · ")}. ` + (!informou
+        ? "Campos vazios usam a sugestão (kg de grão × relação água/grão; a lavagem completa a água necessária)."
+        : longe
+          ? `A receita precisa de ${numeroBR(v.agua_necessaria_l, 1)} L para chegar a ${numeroBR(v.pre_fervura_l, 1)} L na pré-fervura: ${dif > 0 ? "sobram" : "faltam"} ${numeroBR(Math.abs(dif), 1)} L.`
+          : `Bate com a água necessária (${numeroBR(v.agua_necessaria_l, 1)} L).`);
+    });
+
     const perfil = el("div", { class: "tabela-rolagem" });
     const resumo = el("div", { class: "resumo-agua" });
     aoRecalcular.push((res) => {
@@ -951,6 +974,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         el("label", {}, el("span", {}, "Diluição com destilada (%)", info(O.AJUDA_VOLUME.agua_diluicao_pct)),
           campoNumero(r, "agua_diluicao_pct", { casas: 0, aoMudar: mudou, desabilitado: des, rotulo: "Diluição com destilada (%)", placeholder: "0" })),
         escolha("agua_alvo", "Perfil alvo", O.AJUDA_VOLUME.agua_alvo, "— sem alvo —")),
+      el("h4", {}, "Volumes", info(O.AJUDA_VOLUME.volumes_agua)),
+      el("div", { class: "grade-form" },
+        el("label", {}, el("span", {}, "Água da mostura (L)", info(O.AJUDA_VOLUME.agua_mostura_l)), campoMostura),
+        el("label", {}, el("span", {}, "Água de lavagem (L)", info(O.AJUDA_VOLUME.agua_lavagem_l)), campoLavagem),
+        notaVolumes),
       el("h4", {}, "Sais", info(O.AJUDA_VOLUME.sais_agua)),
       tabelaSais("MOSTURA", "Água da mostura"),
       tabelaSais("LAVAGEM", "Água de lavagem",
@@ -1094,6 +1122,9 @@ function validar(r) {
   if (r.volume_final_l != null && !(r.volume_final_l > 0)) p.push("Volume real deve ser maior que zero.");
   if (r.co2_alvo_vol != null && !(r.co2_alvo_vol > 0 && r.co2_alvo_vol <= 6)) p.push("CO₂ desejado: entre 0 e 6 volumes (ex.: 2,4).");
   if (r.agua_diluicao_pct != null && !(r.agua_diluicao_pct >= 0 && r.agua_diluicao_pct <= 100)) p.push("Diluição: de 0 a 100%.");
+  if (r.agua_mostura_l != null && !(r.agua_mostura_l > 0 && r.agua_mostura_l <= 1000)) p.push("Água da mostura: maior que zero (ou deixe vazio para usar a sugestão).");
+  if (r.agua_lavagem_l != null && !(r.agua_lavagem_l >= 0 && r.agua_lavagem_l <= 1000)) p.push("Água de lavagem: zero ou mais (0 = sem lavagem; vazio = sugestão).");
+  if (r.agua_lavagem_l === 0 && (r.sais ?? []).some((x) => etapaSal(x) === "LAVAGEM")) p.push("Há sais na lavagem, mas a água de lavagem está em 0 L.");
   if ((r.sais ?? []).some((x) => !x.sal || !(x.gramas > 0))) p.push("Sais: escolha o sal e os gramas (> 0).");
   if ((r.acidos ?? []).some((x) => !x.acido || !(x.ml > 0))) p.push("Ácidos: escolha o ácido e os mL (> 0).");
   const falta = (lista, teste) => lista.some((x) => !teste(x));
@@ -1113,7 +1144,7 @@ function montarPayload(r, res) {
     ...so(r, ["id", "nome", "tipo", "autor", "estilo_id", "equipamento_id", "volume_lote_l", "eficiencia_pct", "fervura_min", "evaporacao_l_h",
       "perda_panela_l", "absorcao_grao_l_kg", "relacao_agua_grao_l_kg", "perda_tina_l", "temp_grao_c", "publica", "notas",
       "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l", "co2_alvo_vol", "priming_acucar",
-      "agua_origem", "agua_alvo", "agua_diluicao_pct"]),
+      "agua_origem", "agua_alvo", "agua_diluicao_pct", "agua_mostura_l", "agua_lavagem_l"]),
     sais: (r.sais ?? []).map((x) => ({ sal: x.sal, gramas: x.gramas, etapa: etapaSal(x) })),
     acidos: (r.acidos ?? []).map((x) => ({ acido: x.acido, ml: x.ml })),
     fervura_min: Math.round(r.fervura_min ?? 60),

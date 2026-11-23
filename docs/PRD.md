@@ -66,7 +66,7 @@ fórmulas publicadas, não do código.
 | ABV | Método HMRC (Reino Unido); conferir contra (OG − FG) × 131,25 |
 | IBU | Tinseth: utilização = 1,65 × 0,000125^(SG fervura − 1) × (1 − e^(−0,04 × min)) ÷ 4,15; IBU = utilização × alfa × g × 1000 ÷ L. Whirlpool: Tinseth pelos minutos do whirlpool × fator de isomerização na temperatura (Malowicz: 2,39 × 10¹¹ × e^(−9773/K); sem temperatura = 80 °C); lúpulos da fervura somam o que isomerizam durante o whirlpool. Dry hop = 0 |
 | Cor | MCU = Σ (lb × °L) ÷ galão; SRM = 1,4922 × MCU^0,6859 (Morey); EBC = SRM × 1,97 |
-| Volumes | Pré-fervura = lote + perda da panela + evaporação × horas de fervura; água total = pré-fervura + absorção do grão × kg |
+| Volumes | Pré-fervura = lote + perda da panela + evaporação × horas de fervura; água necessária = pré-fervura + absorção do grão × kg + perda na tina. Água da mostura e de lavagem: o cervejeiro informa (0010); vazio = sugestão (kg × relação água/grão; lavagem = o que falta). Sais, pH e temperatura da água usam os litros informados |
 
 Testes: receitas de exemplo do Brewtarget (`testData/`, `data/DefaultContent005-Fermentables-Recipes.beer`)
 como gabarito.
