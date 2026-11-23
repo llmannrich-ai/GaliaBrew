@@ -690,11 +690,53 @@ const erros = [];
   const campoTeclado = await atenuacao.boundingBox();
   verificar(Math.abs(vitalTeclado.y + vitalTeclado.height - 500) <= 1, `toque: com o teclado aberto a barra de números fica logo acima dele (fundo em ${Math.round(vitalTeclado.y + vitalTeclado.height)} px)`);
   verificar(campoTeclado.y + campoTeclado.height <= vitalTeclado.y, "toque: o campo em foco rola para cima da barra");
+  verificar(vitalTeclado.height <= 52 && !(await cel.isVisible(".vital .vital-mais")) && !(await cel.isVisible(".vital .regua")),
+    `toque: com o teclado a barra vira uma linha fina com os 6 números (${Math.round(vitalTeclado.height)} px de altura)`);
   await cel.screenshot({ path: `${SAIDA}/p6a-celular-teclado.png` });
   await teclado(null);
   await cel.evaluate(() => document.activeElement.blur());
+  await cel.waitForTimeout(300);          // a barra espera ~120 ms depois de sair do campo (trocar de campo não pisca)
   const vitalSem = await cel.locator(".vital").boundingBox();
-  verificar(Math.abs(vitalSem.y + vitalSem.height - 844) <= 1, "toque: teclado fechado, a barra volta ao rodapé");
+  verificar(Math.abs(vitalSem.y + vitalSem.height - 844) <= 1 && vitalSem.height > 100, "toque: teclado fechado, a barra volta ao rodapé (completa)");
+
+  // iPhone de verdade (print de 23/11/2026): o iOS encolhe a área visível E a rola para cima do teclado
+  // (offsetTop = innerHeight − altura). Antes a conta descontava o offsetTop, dava "sem teclado" e a barra ficava
+  // grande, cobrindo o campo de quantidade de um malte novo.
+  const tecladoIOS = (altura) => cel.evaluate((h) => {
+    const vv = window.visualViewport;
+    if (h === null) { delete vv.height; delete vv.offsetTop; }
+    else {
+      Object.defineProperty(vv, "height", { configurable: true, get: () => h });
+      Object.defineProperty(vv, "offsetTop", { configurable: true, get: () => window.innerHeight - h });
+    }
+    vv.dispatchEvent(new Event("resize"));
+  }, altura);
+  const qtd2 = cel.locator('[data-secao="fermentaveis"] input[aria-label="Qtd (kg)"]').last();
+  await qtd2.evaluate((n) => n.scrollIntoView({ block: "center" }));
+  const [qx, qy] = await centro('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
+  await cel.touchscreen.tap(qx, qy);
+  // Pior caso: o campo termina bem embaixo da área visível (onde a barra fica), como no print.
+  await qtd2.evaluate((n) => window.scrollBy(0, n.getBoundingClientRect().bottom - (window.innerHeight - 20)));
+  await tecladoIOS(480);
+  await cel.waitForTimeout(500);
+  const sel = await qtd2.evaluate((n) => [n.selectionStart, n.selectionEnd, n.value.length]);
+  verificar(sel[0] === 0 && sel[1] === sel[2] && sel[2] > 0, "toque: tocar na quantidade seleciona o número (digitar já troca o valor)");
+  const ios = await cel.evaluate(() => {
+    const v = document.querySelector(".vital").getBoundingClientRect();
+    const c = document.activeElement.getBoundingClientRect();
+    const topo = window.visualViewport.offsetTop;
+    return { classe: document.querySelector(".vital").classList.contains("com-teclado"), alturaBarra: v.height, fundoBarra: v.bottom,
+      fundoVisivel: topo + window.visualViewport.height, campoTopo: c.top - topo, campoFundo: c.bottom, barraTopo: v.top };
+  });
+  verificar(ios.classe && ios.alturaBarra <= 52, `iPhone: com a área visível rolada pelo iOS a barra também fica fina (${Math.round(ios.alturaBarra)} px)`);
+  verificar(Math.abs(ios.fundoBarra - ios.fundoVisivel) <= 1, "iPhone: a barra fica colada no teclado");
+  verificar(ios.campoFundo <= ios.barraTopo && ios.campoTopo >= 0, `iPhone: o campo da quantidade fica à vista, acima da barra (${Math.round(ios.barraTopo - ios.campoFundo)} px de folga)`);
+  await cel.keyboard.type("0,5");
+  verificar(await qtd2.inputValue() === "0,5", "toque: digitar 0,5 troca a quantidade inteira (sem apagar à mão)");
+  await cel.screenshot({ path: `${SAIDA}/p6g-iphone-teclado.png` });
+  await tecladoIOS(null);
+  await cel.evaluate(() => document.activeElement.blur());
+  await cel.waitForTimeout(300);
 
   // Tabelas viram cartões, sem rolagem para o lado.
   const rolagemTabelas = await cel.evaluate(() => [...document.querySelectorAll(".tabela-rolagem")].map((t) => t.scrollWidth - t.clientWidth));
@@ -735,6 +777,13 @@ const erros = [];
   await cel.setViewportSize({ width: 320, height: 568 });
   await cel.waitForTimeout(200);
   verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
+  await cel.locator('input[aria-label="Qtd (kg)"]').first().focus();
+  await cel.waitForTimeout(300);
+  const estouroVital = await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item:not(.secundario)")].map((n) => n.scrollWidth - n.clientWidth));
+  verificar(await cel.evaluate(() => document.querySelector(".vital").classList.contains("com-teclado")) && estouroVital.every((d) => d <= 0),
+    `320 px: com o teclado os 6 números cabem na linha fina (sobra ${estouroVital.join(", ")} px)`);
+  await cel.evaluate(() => document.activeElement.blur());
+  await cel.waitForTimeout(300);
   const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
     return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - sec.right);
