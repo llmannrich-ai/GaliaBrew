@@ -410,12 +410,6 @@ dialog.busca[open] { display: flex; flex-direction: column; }
 .busca-topo { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1.1rem .5rem; }
 .busca-topo h3 { margin: 0; }
 .busca-campo { margin: 0 1.1rem; width: auto !important; font-size: 1.05rem; padding: .6rem .7rem !important; }
-.busca-filtros { display: grid; gap: .35rem; padding: .6rem 1.1rem 0; }
-.busca-grupo-filtro { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
-.busca-filtro-rot { font-size: .7rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); min-width: 5.2rem; }
-button.chip { padding: .2rem .65rem; border-radius: 99px; background: var(--cartao); color: var(--tinta); border: 1px solid var(--borda-campo); font-weight: 400; font-size: var(--t-p); }
-button.chip:hover { background: var(--painel); border-color: var(--destaque); }
-button.chip[aria-pressed="true"] { background: var(--destaque); color: var(--sobre-destaque); border-color: var(--destaque); }
 .busca-info { font-size: .8rem; color: var(--suave); margin: .55rem 1.1rem .3rem; }
 .busca-lista { list-style: none; margin: 0; padding: .3rem .5rem; overflow-y: auto; flex: 1; min-height: 8rem; border-top: 1px solid var(--linha); }
 .busca-opcao { display: flex; gap: .6rem; align-items: center; padding: .5rem .6rem; border-radius: 8px; cursor: pointer; }
@@ -803,7 +797,6 @@ dialog form { display: grid; gap: .9rem; }
   .rel-pe { padding-bottom: max(.4rem, env(safe-area-inset-bottom)); }
   .rel-folhas { padding: .5rem; gap: .5rem; }
   .busca-rodape .nota { display: none; }
-  .busca-filtro-rot { min-width: 100%; }
   #avisos { left: 1rem; bottom: calc(var(--vital-h, 0px) + .8rem); }
 
   /* Barra vital no rodapé: puxador "detalhes" em cima e 2 linhas de 3 cartões (OG FG ABV / IBU Cor pH), cada um com
