@@ -319,7 +319,9 @@ button.escolha:hover { background: var(--cartao); border-color: var(--destaque);
 button.escolha:disabled { background: var(--fundo); color: var(--suave); opacity: 1; }
 .escolha-texto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .escolha-seta { color: var(--suave); flex: none; }
-.acoes-receita { display: flex; gap: .5rem; align-items: center; }
+.acoes-receita { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+button.excluir-receita { color: var(--erro); border-color: var(--erro); }
+button.excluir-receita:hover { color: var(--sobre-destaque); background: var(--erro); border-color: var(--erro); }
 .editor { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 1rem; align-items: start; }
 .editor-corpo, .painel-lote, .cartao { min-width: 0; }
 .painel-lote { position: sticky; top: calc(var(--topo-h, 3.4rem) + var(--vital-h, 8rem) + 1.6rem); }
@@ -559,7 +561,7 @@ button.icone .ico, .app-voltar .ico { margin: 0; width: 1.35rem; height: 1.35rem
 /* lista de receitas em cartões (celular) */
 .lista-receitas { list-style: none; margin: 0; padding: 0; display: grid; gap: .55rem; }
 .receita-cartao {
-  display: grid; grid-template-columns: 2.2rem minmax(0, 1fr) auto; gap: .2rem .75rem; align-items: center;
+  display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: .2rem .75rem; align-items: center;
   padding: .7rem .8rem; background: var(--painel); border: none; border-radius: var(--raio);
   cursor: pointer;
 }
@@ -571,7 +573,6 @@ button.icone .ico, .app-voltar .ico { margin: 0; width: 1.35rem; height: 1.35rem
 .rc-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rc-sub { font-size: .82rem; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rc-numeros { font-size: .82rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.receita-cartao button.icone { width: 2.75rem; height: 2.75rem; }
 
 /* ---------- janelas e avisos ---------- */
 dialog { border: 1px solid var(--borda-campo); border-radius: var(--raio); padding: 1.2rem; background: var(--cartao); color: var(--tinta); max-width: min(760px, 95vw); width: 100%; }
