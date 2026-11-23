@@ -181,7 +181,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123k");
+    const m = await import("./fontes.js?v=20261123l");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -336,7 +336,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123k");
+    const m = await import("./calculos.js?v=20261123l");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -396,7 +396,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123k");
+    const m = await import("./calculos.js?v=20261123l");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -415,7 +415,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123k");
+    const m = await import("./calculos.js?v=20261123l");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -500,7 +500,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123k");
+    const m = await import("./calculos.js?v=20261123l");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -533,7 +533,12 @@ const erros = [];
   verificar(await vital("og", "vital-ref") === "" && await pagina.isVisible('.vital-ferramentas button:has-text("Fixar referência")'), "Soltar para de comparar");
   await pagina.evaluate(() => window.scrollTo(0, 0));
   await pagina.screenshot({ path: `${SAIDA}/p3-editor.png` });
+  verificar(await pagina.evaluate(() => document.documentElement.dataset.modo + "/" + document.documentElement.dataset.tema) === "claro/classico",
+    "tema Automático com o aparelho claro = Clássico");
   await pagina.emulateMedia({ colorScheme: "dark" });
+  await pagina.waitForFunction(() => document.documentElement.dataset.modo === "escuro", null, { timeout: 2000 }).catch(() => {});
+  verificar(await pagina.evaluate(() => document.documentElement.dataset.modo + "/" + document.documentElement.dataset.tema) === "escuro/adega",
+    "tema Automático acompanha o aparelho no escuro sem recarregar (Adega)");
   await pagina.screenshot({ path: `${SAIDA}/p3c-editor-escuro.png` });
   await pagina.emulateMedia({ colorScheme: "light" });
   // Linhas de ingrediente dentro do cartão (o menu lateral tira largura do editor).
@@ -857,6 +862,42 @@ const erros = [];
   verificar(jan320.x >= 0 && jan320.x + jan320.width <= 320 && await cel.evaluate(() => document.querySelector("dialog.alvo").scrollWidth <= document.querySelector("dialog.alvo").clientWidth),
     "320 px: janela de Chegar ao IBU cabe na tela");
   await cel.screenshot({ path: `${SAIDA}/p6e-celular-320-ibu.png` });
+
+  // Temas (Meu perfil → Aparência): troca na hora, fica salvo no aparelho, vale depois de recarregar.
+  await cel.keyboard.press("Escape");
+  cel.once("dialog", (d) => d.accept());
+  await cel.evaluate(() => { location.hash = "#/perfil"; });
+  await cel.waitForSelector(".tema-opcao");
+  const temasIds = await cel.$$eval(".tema-opcao", (ls) => ls.map((l) => l.dataset.opcao));
+  verificar(temasIds.length === 9 && temasIds[0] === "auto" && await cel.isChecked('.tema-opcao[data-opcao="auto"] input'),
+    "perfil: 9 temas, Automático marcado por padrão");
+  verificar(await larguraSobra() <= 1, "320 px: temas do perfil sem rolagem para o lado");
+  await cel.locator(".temas").evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-temas.png` });
+  await cel.setViewportSize({ width: 390, height: 844 });
+  const corFundo = () => cel.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const fundoAntes = await corFundo();
+  await tocar('.tema-opcao[data-opcao="stout"]');
+  verificar(await cel.evaluate(() => document.documentElement.dataset.tema + "/" + document.documentElement.dataset.modo) === "stout/escuro"
+    && await corFundo() === "rgb(12, 10, 9)" && fundoAntes === "rgb(255, 255, 255)", "toque no tema Stout troca as cores na hora (fundo preto)");
+  verificar(await cel.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).tema) === "stout"
+    && await cel.getAttribute('meta[name="theme-color"]', "content") === "#050404", "tema fica salvo no aparelho e pinta a barra do sistema");
+  await cel.locator(".temas").evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.screenshot({ path: `${SAIDA}/p6h-celular-temas-stout.png` });
+  await cel.reload();
+  await cel.waitForSelector(".tema-opcao");
+  verificar(await cel.evaluate(() => document.documentElement.dataset.tema) === "stout" && await cel.isChecked('.tema-opcao[data-opcao="stout"] input'),
+    "depois de recarregar o tema continua (e aparece marcado)");
+  await cel.evaluate(() => { location.hash = "#/receitas"; });
+  await tocar(".receita-cartao >> text=Pils da Galia");
+  await cel.waitForSelector(".barra-app");
+  await cel.screenshot({ path: `${SAIDA}/p6i-celular-editor-stout.png` });
+  for (const t of ["pilsen", "ipa", "red-ale", "black-ipa", "sol"]) {
+    await cel.evaluate((id) => window.GaliaTema.aplicar(id), t);
+    await cel.screenshot({ path: `${SAIDA}/p6j-celular-editor-${t}.png` });
+  }
+  verificar(await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="fermentaveis"]')).backgroundImage) === "none",
+    "Sol forte: seções sem desenho de fundo");
   await ctxCel.close();
 
   // O 400 é o da senha errada, testada de propósito (uma vez só).
