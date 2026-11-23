@@ -1,16 +1,16 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123r";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123r";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123r";
-import { abrirBusca } from "./busca.js?v=20261123r";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123r";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123r";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123r";
-import * as O from "./opcoes.js?v=20261123r";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123r";
-import { icone } from "./icones.js?v=20261123r";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123r";
-import { abrirRelatorio } from "./relatorio.js?v=20261123r";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123s";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123s";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123s";
+import { abrirBusca } from "./busca.js?v=20261123s";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123s";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123s";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123s";
+import * as O from "./opcoes.js?v=20261123s";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123s";
+import { icone } from "./icones.js?v=20261123s";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123s";
+import { abrirRelatorio } from "./relatorio.js?v=20261123s";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -52,20 +52,6 @@ export async function telaReceitas(conteudo) {
       return;
     }
     const abrir = (r) => { location.hash = `#/receita/${r.id}`; };
-    const botaoExcluir = (r) => (r.dono === sessao.usuario.id ? el("button", {
-      type: "button", class: "icone perigo", title: "Excluir", "aria-label": `Excluir ${r.nome}`, text: "×",
-      on: {
-        click: async (e) => {
-          e.stopPropagation();
-          if (!(await confirmar(`Excluir a receita “${r.nome}”? Não dá para desfazer.`, { ok: "Excluir", perigo: true }))) return;
-          const { error: erro } = await sb.from("receitas").delete().eq("id", r.id);
-          if (erro) return avisar(mensagemErro(erro), "erro");
-          receitas.splice(receitas.indexOf(r), 1);
-          avisar("Receita excluída.");
-          desenhar();
-        },
-      },
-    }) : null);
     const estiloTxt = (r) => (r.estilo ? `${r.estilo.codigo ? r.estilo.codigo + " " : ""}${r.estilo.nome}` : "");
 
     // Celular: cartões (copo na cor da cerveja, nº e nome, estilo e data, números principais). Computador: tabela.
@@ -90,13 +76,12 @@ export async function telaReceitas(conteudo) {
             el("strong", { class: "rc-nome", text: r.nome }),
             r.publica ? el("span", { class: "selo", text: "pública" }) : null),
           el("div", { class: "rc-sub", text: [estiloTxt(r), dataDoDia(r.data_brassagem)].filter(Boolean).join(" · ") }),
-          numeros ? el("div", { class: "rc-numeros", text: numeros }) : null),
-        botaoExcluir(r));
+          numeros ? el("div", { class: "rc-numeros", text: numeros }) : null));
       })));
       return;
     }
     preencher(corpo, el("table", { class: "tabela" },
-      el("thead", {}, el("tr", {}, ["", "Nº", "Nome", "Estilo", "Brassagem", "OG", "FG", "ABV", "IBU", `Cor (${O.unidadeCor()})`, ""].map((h, i) => el("th", { class: i === 1 || (i >= 5 && i <= 9) ? "num" : "", text: h })))),
+      el("thead", {}, el("tr", {}, ["", "Nº", "Nome", "Estilo", "Brassagem", "OG", "FG", "ABV", "IBU", `Cor (${O.unidadeCor()})`].map((h, i) => el("th", { class: i === 1 || (i >= 5 && i <= 9) ? "num" : "", text: h })))),
       el("tbody", {}, lista.map((r) => el("tr", {
         class: "clicavel", tabindex: 0,
         on: { click: () => abrir(r), keydown: (e) => { if (e.key === "Enter") abrir(r); } },
@@ -110,8 +95,7 @@ export async function telaReceitas(conteudo) {
       el("td", { class: "num", text: numeroBR(r.fg_calc, 3) }),
       el("td", { class: "num", text: r.abv_calc_pct == null ? "" : `${numeroBR(r.abv_calc_pct, 1)}%` }),
       el("td", { class: "num", text: numeroBR(r.ibu_calc, 0) }),
-      el("td", { class: "num", text: r.cor_srm_calc == null ? "" : numeroBR(O.corParaTela(r.cor_srm_calc), 1) }),
-      el("td", {}, botaoExcluir(r)))))));
+      el("td", { class: "num", text: r.cor_srm_calc == null ? "" : numeroBR(O.corParaTela(r.cor_srm_calc), 1) }))))));
   }
   // Troca tabela ↔ cartões quando a tela muda de largura (girar o celular, janela do computador).
   const celular = window.matchMedia("(max-width: 640px)");
@@ -496,6 +480,15 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       if (!leitura && editor.sujo && !(await confirmar("Há alterações não salvas. A receita nova é feita do que está salvo. Continuar?"))) return;
       editor.sujo = false;
       location.hash = `#/receita/nova/${r.id}`;
+    } } }) : null,
+    // Excluir só existe aqui dentro (a lista não tem botão de excluir): receita salva e do próprio usuário.
+    r.id && !leitura ? el("button", { type: "button", class: "secundario excluir-receita", text: "Excluir receita", on: { click: async () => {
+      if (!(await confirmar(`Excluir a receita “${r.nome || "sem nome"}”? Não dá para desfazer.`, { ok: "Excluir", perigo: true }))) return;
+      const { error: erro } = await sb.from("receitas").delete().eq("id", r.id);
+      if (erro) { msg.textContent = mensagemErro(erro); return; }
+      editor.sujo = false;
+      avisar("Receita excluída.");
+      location.hash = "#/receitas";
     } } }) : null,
     el("a", { href: "#/receitas", class: "botao secundario so-largo", text: "Voltar" }));
 
