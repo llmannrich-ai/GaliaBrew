@@ -207,7 +207,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123v.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123w.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -225,6 +225,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   do painel lateral, login e cartões da lista = fundo `--painel`, sem borda. Página sem largura máxima, margem lateral
   `--lado` (.75rem; .55rem no celular; a `barra-app` usa o mesmo valor na margem negativa). Ferramentas em `columns`.
   Testes de largura das linhas de ingrediente: folga ≥ 0 até a borda da seção (não há mais margem interna de 17 px).
+- Campos mais enxutos (23/11/2026, pedido do responsável: "levemente acima do necessário"; só style.css): no celular
+  ± 40×40 px (eram 44), quantidade 74×36 (80×40), campos de texto/número e seletores ~36 px de altura (40), com a
+  letra de 16 px mantida nos campos (abaixo disso o iPhone dá zoom ao tocar). "+" de adicionar, × de remover e botões
+  da barra do app continuam com 44 px.
 - Leitura no celular (23/11/2026, regra nº 0; fim do bloco `max-width: 640px` do style.css): nenhum texto abaixo de
   ~12 px (rótulos em maiúsculas da barra vital, dos cartões de tabela e GRIST/OG/IBU iam a 10,9 px), dado do
   ingrediente (`.ing-sub`) e legenda do grist quebram linha em vez de cortar, × de remover no canto do cartão ao lado do
