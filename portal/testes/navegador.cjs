@@ -181,7 +181,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123q");
+    const m = await import("./fontes.js?v=20261123r");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -336,7 +336,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123q");
+    const m = await import("./calculos.js?v=20261123r");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -397,7 +397,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123q");
+    const m = await import("./calculos.js?v=20261123r");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -416,7 +416,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123q");
+    const m = await import("./calculos.js?v=20261123r");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -469,8 +469,15 @@ const erros = [];
   await pagina.keyboard.press("ArrowDown");
   verificar(await pagina.inputValue(`${linhaL}:nth-child(2) input[aria-label="Qtd (g)"]`) === "20,0" && (await focado()).includes("posição 2 de 2"),
     "seta ↓ na alça desce o item e o foco acompanha");
-  await pagina.click(`${segunda} .ing-mais`);
-  verificar(await pagina.getAttribute(`${segunda} .ing-mais`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "⋯ abre os detalhes (alfa, forma, nome)");
+  verificar(await pagina.locator(".ing-mais").count() === 0, "sem o botão ⋯ nas linhas de ingrediente");
+  await pagina.click(`${segunda} .ing-dado.d1`);
+  verificar(await pagina.getAttribute(`${segunda} button.ing-nome`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes`), "clicar nos números da linha abre os detalhes");
+  await pagina.click(`${segunda} button.ing-nome`);
+  verificar(await pagina.getAttribute(`${segunda} button.ing-nome`, "aria-expanded") === "false" && !(await pagina.isVisible(`${segunda} .ing-detalhes`)), "clicar no nome fecha os detalhes");
+  await pagina.click(`${segunda} input[aria-label="Qtd (g)"]`);
+  verificar(!(await pagina.isVisible(`${segunda} .ing-detalhes`)), "clicar na quantidade não abre os detalhes");
+  await pagina.click(`${segunda} button.ing-nome`);
+  verificar(await pagina.getAttribute(`${segunda} button.ing-nome`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "clicar no nome do item abre os detalhes (alfa, forma, nome)");
   verificar((await pagina.textContent(`${segunda} .ing-detalhes .fonte-dados`)).includes("Cadastrado por você"), "detalhes do lúpulo na receita mostram a fonte dos dados");
   await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
   await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
@@ -501,7 +508,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123q");
+    const m = await import("./calculos.js?v=20261123r");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -882,6 +889,17 @@ const erros = [];
   await tecladoIOS(null);
   await cel.evaluate(() => document.activeElement.blur());
   await cel.waitForTimeout(300);
+
+  // Detalhes do ingrediente: tocar no nome abre e fecha (sem o botão ⋯).
+  const nomeMalte = '[data-secao="fermentaveis"] li.ing:first-of-type button.ing-nome';
+  await cel.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), nomeMalte);
+  const tamNome = await cel.locator(nomeMalte).boundingBox();
+  await tocar(nomeMalte);
+  verificar(tamNome.height >= 44 && await cel.getAttribute(nomeMalte, "aria-expanded") === "true" && await cel.isVisible('[data-secao="fermentaveis"] li.ing:first-of-type .ing-detalhes'),
+    `toque: tocar no nome do malte abre os detalhes (alvo de ${Math.round(tamNome.height)} px)`);
+  await cel.screenshot({ path: `${SAIDA}/p6i-celular-detalhes-toque.png` });
+  await tocar(nomeMalte);
+  verificar(await cel.getAttribute(nomeMalte, "aria-expanded") === "false", "toque: tocar de novo no nome fecha os detalhes");
 
   // Tabelas viram cartões, sem rolagem para o lado.
   const rolagemTabelas = await cel.evaluate(() => [...document.querySelectorAll(".tabela-rolagem")].map((t) => t.scrollWidth - t.clientWidth));
