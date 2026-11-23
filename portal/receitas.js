@@ -595,15 +595,20 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
 
-  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, montarLinha, iconeSecao, grafico }) {
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico }) {
     const lista = el("ol", { class: `linhas-ing ${classe}` });
-    const totalEl = el("span", { class: "total-secao" });
+    const totalEl = el("span", { class: destaque ? "total-secao destaque" : "total-secao" });
+    // extra: dado complementar ao lado do total (ex.: água/malte nos fermentáveis); some quando não há valor.
+    const extraEl = extra ? el("span", { class: "total-extra" }) : null;
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
-      el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo, " ", totalEl),
-        leitura ? null : el("div", { class: "titulo-acoes" }, ferramenta, adicionar())),
+      el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo, " ", totalEl, extraEl),
+        leitura ? null : el("div", { class: "titulo-acoes" }, ferramenta ?? null, adicionar())),
       grafico ?? null,
       lista);
-    totais.push((res) => { totalEl.textContent = r[chave].length ? total(res) : ""; });
+    totais.push((res) => {
+      totalEl.textContent = r[chave].length ? total(res) : "";
+      if (extraEl) extraEl.textContent = r[chave].length ? (extra(res) ?? "") : "";
+    });
 
     function linha(item, i) {
       const nome = el("strong", { class: "ing-nome-txt" });
@@ -729,7 +734,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     classe: "ferm",
     vazio: "Nenhum fermentável. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
-    ferramenta: el("button", { type: "button", class: "secundario pequeno", text: "Chegar à OG…", title: "Ajusta os fermentáveis para uma OG alvo", on: { click: () => ajustarOG() } }),
+    destaque: true,
+    // Razão efetiva (água da mostura ÷ grão da mostura): já considera o limite da água total.
+    extra: (res) => (res.volumes.graos_kg > 0 ? `${numeroBR(res.volumes.agua_mostura_l / res.volumes.graos_kg, 1)} L/kg água/malte` : null),
+    // Sem botão "Chegar à OG" na seção (retirado em 23/11/2026, pedido do responsável): abre pelo número da OG na barra.
     adicionar: botaoAdicionar("fermentaveis",
       (f) => adicionarItem("fermentaveis", { fermentavel_id: f.id, nome: f.nome, tipo: f.tipo, rendimento_pct: num0(f.rendimento_pct), umidade_pct: num0(f.umidade_pct), cor_srm: num0(f.cor_srm), fermentavel_pct: num0(f.fermentavel_pct, 100), quantidade_kg: null, etapa: ["GRAO", "OUTRO"].includes(f.tipo) ? "MOSTURA" : "FERVURA" }),
       () => adicionarItem("fermentaveis", { fermentavel_id: null, nome: "", tipo: "GRAO", rendimento_pct: 80, umidade_pct: 4, cor_srm: 2, fermentavel_pct: 100, quantidade_kg: null, etapa: "MOSTURA" }, true)),
@@ -773,7 +781,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     classe: "lup",
     vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
-    ferramenta: el("button", { type: "button", class: "secundario pequeno", text: "Chegar ao IBU…", title: "Ajusta o lúpulo de amargor para um IBU alvo", on: { click: () => ajustarIBU() } }),
+    // Sem botão "Chegar ao IBU" na seção (retirado em 23/11/2026, pedido do responsável): abre pelo número do IBU na barra.
     adicionar: botaoAdicionar("lupulos",
       (h) => adicionarItem("lupulos", { lupulo_id: h.id, nome: h.nome, forma: h.forma, alfa_pct: num0(h.alfa_pct), quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }),
       () => adicionarItem("lupulos", { lupulo_id: null, nome: "", forma: "PELLET", alfa_pct: 5, quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }, true)),

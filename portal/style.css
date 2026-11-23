@@ -340,6 +340,11 @@ details.lote .grade-form + .grade-form { margin-top: .7rem; }
 
 /* ---------- linhas de ingrediente (fermentáveis e lúpulos) ---------- */
 .titulo-linha h3 .total-secao { font-size: var(--t-p); font-weight: 400; color: var(--suave); font-variant-numeric: tabular-nums; margin-left: .4rem; }
+.titulo-linha h3 .total-secao.destaque { font-size: var(--t-g); font-weight: 800; color: var(--tinta); letter-spacing: -.01em; }
+.titulo-linha h3 .total-extra { font-size: var(--t-p); font-weight: 500; color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.titulo-linha h3 .total-extra:empty { display: none; }
+/* Título com total grande: quebra linha se faltar largura (celular 320-390 px) em vez de passar da tela. */
+.titulo-linha h3.titulo-secao { flex-wrap: wrap; row-gap: .1rem; min-width: 0; }
 .linhas-ing { list-style: none; margin: 0; padding: 0; }
 .ing {
   display: grid; align-items: center; gap: .35rem .8rem; padding: .55rem 0; border-top: 1px solid var(--linha);

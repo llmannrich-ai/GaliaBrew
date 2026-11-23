@@ -380,6 +380,10 @@ const erros = [];
   verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
     "totais no cabeçalho das seções");
+  verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-extra') === "3,8 L/kg água/malte" // 18 L informados ÷ 4,8 kg
+    && await pagina.locator('[data-secao="lupulos"] .total-extra').count() === 0
+    && await pagina.$eval('[data-secao="fermentaveis"] .total-secao', (n) => parseFloat(getComputedStyle(n).fontSize)) >= 24,
+    "fermentáveis: total em destaque e água/malte ao lado (usa a água da mostura informada)");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
   const textoPainel = await pagina.textContent(".painel-lote");
@@ -475,6 +479,9 @@ const erros = [];
   verificar((await vital("og", "vital-delta")).startsWith("−"), "depois de desfazer, a barra mostra a diferença");
 
   // ---- E3: chegar à OG (pelo número da OG na barra) ----
+  verificar(await pagina.locator('.titulo-acoes button:has-text("Chegar à OG"), .titulo-acoes button:has-text("Chegar ao IBU")').count() === 0
+    && await pagina.locator('.vital [data-metrica="og"] button.vital-val, .vital [data-metrica="ibu"] button.vital-val').count() === 2,
+    "sem os botões Chegar à OG/IBU nas seções (abrem pelo número na barra)");
   await pagina.click('.vital [data-metrica="og"] button.vital-val');
   await pagina.waitForSelector("dialog.alvo");
   await pagina.fill('dialog.alvo input[aria-label="OG desejada"]', "46");
@@ -639,6 +646,7 @@ const erros = [];
   await pagina.waitForSelector(".titulo-receita");
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
+  await pagina.locator('[data-secao="fermentaveis"] .titulo-linha').screenshot({ path: `${SAIDA}/p9-celular-total-fermentaveis.png` });
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
