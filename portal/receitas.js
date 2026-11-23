@@ -1,17 +1,17 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123v";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123v";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123v";
-import { abrirBusca } from "./busca.js?v=20261123v";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123v";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123v";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123v";
-import * as O from "./opcoes.js?v=20261123v";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123v";
-import { icone } from "./icones.js?v=20261123v";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123v";
-import { abrirRelatorio } from "./relatorio.js?v=20261123v";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261123v";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123w";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123w";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123w";
+import { abrirBusca } from "./busca.js?v=20261123w";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123w";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123w";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123w";
+import * as O from "./opcoes.js?v=20261123w";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123w";
+import { icone } from "./icones.js?v=20261123w";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123w";
+import { abrirRelatorio } from "./relatorio.js?v=20261123w";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261123w";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
