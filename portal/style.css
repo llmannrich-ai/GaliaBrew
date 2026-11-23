@@ -817,6 +817,23 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .perfil-agua .ion-curto { display: none; text-decoration: none; }
 .perfil-agua td.longe { color: var(--destaque-escuro); font-weight: 700; }
 .resumo-agua { margin-top: .6rem; }
+/* Água da mostura e água de lavagem: um bloco para cada, com tudo o que vai nela (23/11/2026, pedido do responsável:
+   no celular não ficava claro a que água pertencia cada sal). Fundo liso sobre o papel de parede da seção, faixa de cor
+   à esquerda (cobre = mostura, azul = lavagem), título grande e os litros em destaque. */
+.bloco-agua {
+  --bloco-cor: var(--destaque);
+  background: var(--cartao); border-left: 5px solid var(--bloco-cor); border-radius: var(--raio-p);
+  padding: .8rem .85rem .9rem; margin: 1.1rem 0; box-shadow: var(--sombra);
+}
+.bloco-agua.lavagem { --bloco-cor: var(--pp-agua-cor, #1f5f8b); }
+.bloco-agua-topo { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; }
+.bloco-agua-titulo { margin: 0; font-size: var(--t-m); font-weight: 800; color: var(--bloco-cor); text-transform: none; letter-spacing: 0; }
+.bloco-agua-litros { font-size: var(--t-m); font-weight: 800; color: var(--tinta); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bloco-agua > .nota { margin: .25rem 0 .7rem; }
+.bloco-agua-litros-campo { display: flex; flex-direction: column; gap: .25rem; max-width: 16rem; }
+.bloco-agua h5 { font-size: var(--t-p); font-weight: 700; color: var(--tinta); margin: 1rem 0 .3rem; }
+.bloco-agua .titulo-linha { margin-bottom: .2rem; }
+.bloco-agua .resumo-agua { border-top: 1px solid var(--linha); padding-top: .4rem; }
 @media (max-width: 640px) {
   .perfil-agua { font-size: .82rem; width: 100%; }
   .perfil-agua th, .perfil-agua td { padding-left: .25rem; padding-right: .25rem; }
