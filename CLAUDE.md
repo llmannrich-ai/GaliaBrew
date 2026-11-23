@@ -125,10 +125,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Gravação da receita só por `salvar_receita(p jsonb)` (0003, security invoker: a RLS vale): cabeçalho + partes numa
   transação; parte enviada é substituída inteira, parte ausente fica como está; `id`/`dono` do jsonb são ignorados
   (dono = quem grava). Teste `supabase/testes/0003_salvar_receita.sql`: 10 verificações ok.
+- Excluir receita (23/11/2026, pedido do responsável): SÓ dentro da receita (botão "Excluir receita" em `.acoes-receita`,
+  ao lado de "Nova a partir desta"; receita salva e do próprio usuário; confirmação com o nome; volta à lista). A lista
+  (cartões e tabela) não tem botão de excluir.
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  210 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  218 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
