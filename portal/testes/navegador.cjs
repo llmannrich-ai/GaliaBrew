@@ -22,8 +22,14 @@ const jwt = () => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: USUARIO.id,
 
 const db = {
   perfis: [{ user_id: USUARIO.id, nome: "Leo", papel: "usuario" }],
-  estilos: [{ id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 }],
-  fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária" }],
+  estilos: [
+    { id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", categoria: "Pale Bitter European Beer", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 },
+    { id: "e2", dono: null, guia: "BJCP 2021", codigo: "10A", nome: "Weissbier", categoria: "German Wheat Beer", og_min: 1.044, og_max: 1.053, fg_min: 1.008, fg_max: 1.014, ibu_min: 8, ibu_max: 15, cor_srm_min: 2, cor_srm_max: 6, abv_min_pct: 4.3, abv_max_pct: 5.6 },
+    { id: "e3", dono: null, guia: "BJCP 2021", codigo: "21A", nome: "American IPA", categoria: "IPA", og_min: 1.056, og_max: 1.07, fg_min: 1.008, fg_max: 1.014, ibu_min: 40, ibu_max: 70, cor_srm_min: 6, cor_srm_max: 14, abv_min_pct: 5.5, abv_max_pct: 7.5 },
+    { id: "e4", dono: null, guia: "BJCP 2021", codigo: "3A", nome: "Czech Pale Lager", categoria: "Czech Lager", og_min: 1.028, og_max: 1.044, fg_min: 1.008, fg_max: 1.014, ibu_min: 20, ibu_max: 35, cor_srm_min: 3, cor_srm_max: 6, abv_min_pct: 3, abv_max_pct: 4.1 },
+  ],
+  fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária",
+    extras: { fonte: "Ficha técnica oficial (Agrária), consultada em 23/11/2026", url: "https://www.agraria.com.br/malte/teste" } }],
   lupulos: [], leveduras: [], outros: [], aguas: [{ id: "ag-tor", dono: null, nome: "Torneira teste", calcio_ppm: 20, magnesio_ppm: 4, sodio_ppm: 10, sulfato_ppm: 10, cloreto_ppm: 15, bicarbonato_ppm: 60 }, { id: "ag-alvo", dono: null, nome: "Alvo IPA", calcio_ppm: 110, magnesio_ppm: 10, sodio_ppm: 10, sulfato_ppm: 255, cloreto_ppm: 50, bicarbonato_ppm: 0 }], equipamentos: [], receitas: [],
   receita_fermentaveis: [], receita_lupulos: [], receita_leveduras: [], receita_outros: [], receita_mostura_passos: [], receita_fermentacao_passos: [],
 };
@@ -168,7 +174,35 @@ const erros = [];
   // Cadastro: equipamento e lúpulo
   await pagina.click("text=Cadastros");
   await pagina.waitForSelector("text=Pilsen (sistema)");
-  verificar(await pagina.isVisible("td >> text=Sistema"), "catálogo do sistema aparece com selo");
+  verificar(await pagina.isVisible("td >> .selo.fonte.fabricante >> text=Fabricante"), "malte do catálogo com ficha da fabricante aparece com o selo 'Fabricante'");
+  await pagina.click("td >> text=Pilsen (sistema)");
+  verificar((await pagina.textContent("dialog .fonte-dados")).includes("ficha técnica da própria fabricante")
+    && await pagina.getAttribute('dialog .fonte-dados a', "href") === "https://www.agraria.com.br/malte/teste",
+    "formulário do malte mostra a fonte dos dados e o link da ficha");
+  await pagina.click('dialog button:has-text("Fechar")');
+  const fontes = await pagina.evaluate(async () => {
+    const m = await import("./fontes.js?v=20261123h");
+    return [
+      { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
+      { extras: { fonte: "fontes públicas (via Brewtarget)" } },
+      { extras: { fonte: "The Swaen (via Brewtarget)" }, notas: "SKU 1. Source: https://theswaen.com/products/x." },
+      { extras: { fonte: "Embrapa, manual (2022), tabela 1", url: "https://www.infoteca.cnptia.embrapa.br/x.pdf" } },
+      { extras: { fonte: "Ficha oficial (Hopsteiner)", url: "javascript:alert(1)" } },
+      { dono: "u1", extras: {} },
+      {},
+    ].map((x) => { const f = m.fonteDados(x); return `${f.tipo}:${f.url ?? "-"}`; }).join(" ");
+  });
+  verificar(fontes === "GENERICA:- GENERICA:- FABRICANTE:https://theswaen.com/products/x ANALISE:https://www.infoteca.cnptia.embrapa.br/x.pdf FABRICANTE:- PROPRIA:- DESCONHECIDA:-",
+    `fontes: genérico, Swaen (fabricante via Brewtarget), Embrapa (análise), link só https, meu (${fontes})`);
+  // Cadastro de estilos: a mesma busca do editor (termo em português, código), em ordem de código (3A antes de 10A).
+  await pagina.click('.abas >> text=Estilos');
+  await pagina.waitForSelector("td >> text=German Pils");
+  const codigos = () => pagina.$$eval("tbody tr", (ls) => ls.map((l) => l.textContent));
+  verificar((await codigos()).findIndex((t) => t.includes("Czech Pale Lager")) < (await codigos()).findIndex((t) => t.includes("Weissbier")), "cadastro de estilos em ordem de código (3A antes de 10A)");
+  await pagina.fill('input[aria-label="Buscar"]', "trigo");
+  verificar((await codigos()).length === 1 && (await codigos())[0].includes("Weissbier"), "cadastro de estilos: \"trigo\" acha só a Weissbier");
+  await pagina.fill('input[aria-label="Buscar"]', "21a");
+  verificar((await codigos()).length === 1 && (await codigos())[0].includes("American IPA"), "cadastro de estilos: busca pelo código 21A");
   await pagina.click('.abas >> text=Equipamentos');
   await pagina.waitForSelector("text=Nenhum item ainda");
   await pagina.click("button:has-text('Novo')");
@@ -188,6 +222,7 @@ const erros = [];
   await pagina.click('dialog button[type="submit"]');
   await pagina.waitForSelector("td >> text=Saaz");
   verificar(db.lupulos[0]?.alfa_pct === 3.5, "alfa 3,5 (vírgula) gravado como 3.5");
+  verificar(await pagina.isVisible("tr:has-text('Saaz') .selo.fonte.meu"), "lúpulo cadastrado pela pessoa aparece com o selo 'Meu'");
 
   // Receita nova
   await pagina.click("text=Receitas");
@@ -195,7 +230,17 @@ const erros = [];
   await pagina.waitForSelector(".titulo-receita");
   verificar(await pagina.inputValue('input[aria-label="Volume no fermentador (L)"]') === "23,0", "equipamento único já preenche os parâmetros");
   await pagina.fill(".titulo-receita", "Pils da Galia");
-  await pagina.selectOption('select[aria-label="Estilo"]', "e1");
+  // Estilo: botão abre a busca; o código acha o estilo e Enter escolhe.
+  const botaoEstilo = 'button.escolha[aria-label="Estilo"]';
+  verificar((await pagina.textContent(botaoEstilo)).includes("sem estilo"), "receita nova começa sem estilo");
+  await pagina.click(botaoEstilo);
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await pagina.textContent("dialog.busca h3") === "Escolher estilo", "estilo abre a janela de busca");
+  verificar(!(await pagina.isVisible("dialog.busca .busca-grupo >> text=Mais perto da receita")), "sem ingredientes não sugere estilo pela receita");
+  await pagina.fill("dialog.busca .busca-campo", "5d");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar((await pagina.textContent(botaoEstilo)).includes("5D German Pils"), "código 5D + Enter escolhe a German Pils");
   const adicionar = (secao) => pagina.click(`[data-secao="${secao}"] button.adicionar`);
   const focado = () => pagina.evaluate(() => document.activeElement?.getAttribute("aria-label"));
 
@@ -205,6 +250,8 @@ const erros = [];
   verificar(await focado() === "Buscar", "busca abre com o foco no campo");
   await pagina.keyboard.type("agraria");
   verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Pilsen (sistema)", "busca sem acento: 'agraria' acha o malte da Agrária");
+  verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .selo.fonte') === "Fabricante"
+    && await pagina.isVisible('.busca-grupo-filtro[aria-label="Fonte"]'), "busca mostra o selo da fonte e tem o filtro 'Fonte'");
   await pagina.keyboard.press("Enter");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
   verificar(await focado() === "Qtd (kg)", "Enter adiciona o malte e o foco vai direto para a quantidade");
@@ -266,11 +313,21 @@ const erros = [];
   await pagina.click("button:has-text('Adicionar o lático')");
   const phDepois = await pagina.textContent("section:has(h3:text('Água'))");
   verificar(/pH estimado da mostura[\s\S]*?(5,40|5,39|5,41)/.test(phDepois) && phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
+  // Volumes das duas águas (0010): vazio mostra a sugestão; informados mudam ppm/pH e avisam se não fecham.
+  verificar(await pagina.getAttribute('input[aria-label="Água da mostura (L)"]', "placeholder") === "14,4 (sugestão)"
+    && await pagina.getAttribute('input[aria-label="Água de lavagem (L)"]', "placeholder") === "18,4 (sugestão)", "volumes vazios mostram a sugestão (14,4 L + 18,4 L)");
+  await pagina.fill('input[aria-label="Água da mostura (L)"]', "18");
+  await pagina.fill('input[aria-label="Água de lavagem (L)"]', "14");
+  await pagina.waitForTimeout(150);
+  const textoVol = await pagina.textContent("section:has(h3:text('Água'))");
+  verificar(textoVol.includes("Total 32,0 L · 3,8 L/kg na mostura") && textoVol.includes("faltam 0,8 L") && textoVol.includes("Água da mostura (18,0 L)") && textoVol.includes("Água de lavagem (14,0 L)"),
+    "volumes informados: total, L/kg, aviso de falta 0,8 L e litros nas tabelas de sais");
+  verificar((await pagina.textContent(".painel-lote")).includes("Água necessária"), "painel mostra a água necessária quando o informado não fecha");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123h");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -290,6 +347,28 @@ const erros = [];
   verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
   verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
   verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
+  // Busca de estilo com a receita pronta: atual no topo, sugestão pelos números, termos em português, filtro "Combina".
+  await pagina.click(botaoEstilo);
+  await pagina.waitForSelector("dialog.busca");
+  const opcoesEstilo = () => pagina.$$eval("dialog.busca .busca-opcao-nome", (ls) => ls.map((l) => l.textContent));
+  const grupos = await pagina.$$eval("dialog.busca .busca-grupo", (ls) => ls.map((l) => l.textContent));
+  verificar(grupos[0] === "Atual" && (await opcoesEstilo())[0].startsWith("5D German Pils"), "busca de estilo: o atual vem primeiro, marcado");
+  verificar(grupos[1] === "Mais perto da receita" && (await opcoesEstilo())[1].startsWith("3A Czech Pale Lager"),
+    "OG 1,041, IBU 23, cor clara: sugere Czech Pale Lager pelos números da receita");
+  verificar(await pagina.$$eval("dialog.busca .busca-opcao-resumo", (ls) => ls.every((l) => /receita em \d de \d faixas/.test(l.textContent))),
+    "resumo de cada estilo diz em quantas faixas a receita cabe");
+  await pagina.fill("dialog.busca .busca-campo", "trigo");
+  verificar((await opcoesEstilo()).length === 1 && (await opcoesEstilo())[0].startsWith("10A Weissbier"), "\"trigo\" acha a Weissbier (catálogo em inglês)");
+  await pagina.fill("dialog.busca .busca-campo", "ale");
+  verificar(!(await opcoesEstilo()).some((t) => t.includes("Czech Pale Lager")), "\"ale\" casa com começo de palavra: não acha Pale Lager");
+  await pagina.fill("dialog.busca .busca-campo", "");
+  await pagina.click('dialog.busca .chip:has-text("Combina com a receita")');
+  const combinam = await opcoesEstilo();
+  verificar(combinam[0].startsWith("3A Czech Pale Lager") && !combinam.some((t) => t.includes("American IPA")), "filtro \"Combina com a receita\": mais parecido primeiro, IPA fora");
+  await pagina.screenshot({ path: `${SAIDA}/p3b-busca-estilo.png` });
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar((await pagina.textContent(botaoEstilo)).includes("5D German Pils"), "Esc fecha a busca sem trocar o estilo");
   const linhaF = '[data-secao="fermentaveis"] li.ing';
   const linhaL = '[data-secao="lupulos"] li.ing';
   verificar(await pagina.textContent(`${linhaF} .d1 .ing-dado-val`) === "100,0%" && await pagina.textContent(`${linhaF} .d2 .ing-dado-val`) === `+${br((esperado.og - 1) * 1000, 0)}`,
@@ -301,12 +380,16 @@ const erros = [];
   verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
     "totais no cabeçalho das seções");
+  verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-extra') === "3,8 L/kg água/malte" // 18 L informados ÷ 4,8 kg
+    && await pagina.locator('[data-secao="lupulos"] .total-extra').count() === 0
+    && await pagina.$eval('[data-secao="fermentaveis"] .total-secao', (n) => parseFloat(getComputedStyle(n).fontSize)) >= 24,
+    "fermentáveis: total em destaque e água/malte ao lado (usa a água da mostura informada)");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123h");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -325,7 +408,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123h");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -380,6 +463,7 @@ const erros = [];
     "seta ↓ na alça desce o item e o foco acompanha");
   await pagina.click(`${segunda} .ing-mais`);
   verificar(await pagina.getAttribute(`${segunda} .ing-mais`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "⋯ abre os detalhes (alfa, forma, nome)");
+  verificar((await pagina.textContent(`${segunda} .ing-detalhes .fonte-dados`)).includes("Cadastrado por você"), "detalhes do lúpulo na receita mostram a fonte dos dados");
   await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
   await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
   verificar(await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pelos detalhes");
@@ -395,6 +479,9 @@ const erros = [];
   verificar((await vital("og", "vital-delta")).startsWith("−"), "depois de desfazer, a barra mostra a diferença");
 
   // ---- E3: chegar à OG (pelo número da OG na barra) ----
+  verificar(await pagina.locator('.titulo-acoes button:has-text("Chegar à OG"), .titulo-acoes button:has-text("Chegar ao IBU")').count() === 0
+    && await pagina.locator('.vital [data-metrica="og"] button.vital-val, .vital [data-metrica="ibu"] button.vital-val').count() === 2,
+    "sem os botões Chegar à OG/IBU nas seções (abrem pelo número na barra)");
   await pagina.click('.vital [data-metrica="og"] button.vital-val');
   await pagina.waitForSelector("dialog.alvo");
   await pagina.fill('dialog.alvo input[aria-label="OG desejada"]', "46");
@@ -406,7 +493,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123h");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -473,6 +560,8 @@ const erros = [];
     "lote vai com OG 1048 → 1,048, data e número automático");
   verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
     && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6,"etapa":"MOSTURA"},{"sal":"CLORETO_CALCIO","gramas":2,"etapa":"LAVAGEM"}]', "água vai como cópia (sem id) e sais em gramas, cada um com a sua água");
+  verificar(salvo.corpo.p.agua_mostura_l === 18 && salvo.corpo.p.agua_lavagem_l === 14, "água da mostura e da lavagem vão em litros");
+  verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "água da mostura reabre com 18,0 L");
   verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");
@@ -557,6 +646,7 @@ const erros = [];
   await pagina.waitForSelector(".titulo-receita");
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
+  await pagina.locator('[data-secao="fermentaveis"] .titulo-linha').screenshot({ path: `${SAIDA}/p9-celular-total-fermentaveis.png` });
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });

@@ -1,9 +1,9 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
-import { el, svg, numeroBR } from "./ui.js?v=20261123b";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261123b";
-import * as O from "./opcoes.js?v=20261123b";
+import { el, svg, numeroBR } from "./ui.js?v=20261123h";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261123h";
+import * as O from "./opcoes.js?v=20261123h";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -146,9 +146,9 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
 
   for (const d of defs) {
     const n = {
-      // pH: "mostura" some na linha fina do teclado (não cabe em 1/6 da tela).
-      rot: d.chave === "ph"
-        ? el("span", { class: "vital-rot" }, "pH", el("span", { class: "rot-longo", text: " mostura" }))
+      // Linha fina do teclado (1/6 da tela): "Cor EBC" vira "EBC" e "pH mostura" vira "pH".
+      rot: d.chave === "ph" ? el("span", { class: "vital-rot" }, "pH", el("span", { class: "rot-longo", text: " mostura" }))
+        : d.chave === "cor" ? el("span", { class: "vital-rot" }, el("span", { class: "rot-longo", text: "Cor " }), O.unidadeCor())
         : el("span", { class: "vital-rot", text: d.rot }),
       estado: el("span", { class: "vital-estado" }),
       // OG e IBU: o número é um botão que abre "chegar a um valor alvo".

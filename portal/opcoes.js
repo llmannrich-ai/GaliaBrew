@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261123b";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261123b";
+import { preferencias } from "./estado.js?v=20261123h";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261123h";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -48,9 +48,11 @@ export const AJUDA_VOLUME = {
   absorcao_grao_l_kg: "Água que cada kg de grão segura depois da lavagem e não chega à panela. Entra na água total.",
   relacao_agua_grao_l_kg: "Litros de água da mostura por kg de grão. O restante da água total vai para a lavagem.",
   volume_final_l: "Quanto entrou de fato no fermentador nesta brassagem. Junto com a OG medida, dá a eficiência real.",
-  agua_total_l: "Toda a água a separar no dia: pré-fervura + absorção do grão + perda na tina.",
-  agua_mostura_l: "Água em que o grão é misturado: kg de grão × relação água/grão.",
-  agua_lavagem_l: "Água para lavar o grão: água total − água da mostura.",
+  agua_total_l: "Toda a água do dia: água da mostura + água de lavagem.",
+  agua_necessaria_l: "Água para chegar à pré-fervura planejada: pré-fervura + absorção do grão + perda na tina. Aparece quando a mostura + lavagem informadas não somam isso.",
+  agua_mostura_l: "Litros de água em que o grão é misturado (o que você mede). Os sais da mostura, o pH e a temperatura da água usam este volume. Vazio = sugestão: kg de grão × relação água/grão dos parâmetros.",
+  agua_lavagem_l: "Litros de água para lavar o grão (o que você mede). Os sais da lavagem usam este volume. Zero = sem lavagem (BIAB). Vazio = sugestão: o que falta para a água necessária.",
+  volumes_agua: "Informe as duas águas como você separa no dia: é nelas que os sais dissolvem. A tela avisa se a soma não fecha com a água que a receita precisa.",
   pre_fervura_l: "Mosto na panela ao começar a fervura: pós-fervura + o que evapora.",
   pos_fervura_l: "Mosto na panela ao fim da fervura: volume no fermentador + perda na panela. A OG prevista é deste volume.",
   temperatura_agua_mostura_c: "Temperatura da água para o grão + água chegar ao 1º passo da mostura, com o grão na temperatura dos parâmetros. Não conta o calor que a tina absorve.",
