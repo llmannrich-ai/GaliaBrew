@@ -119,7 +119,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  160 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  165 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -182,7 +182,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123c.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123d.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre) nos dois temas;
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -290,6 +290,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Rede do ambiente "GaliaBrew" liberada (23/11/2026, aprovada pelo responsável) para os sites dos fabricantes:
   weyermann.de, castlemalting.com, agraria.com.br, bestmalz.de, vikingmalt.com, dingemansmout.be, umamalta.com.br,
   crispmalt.com, yakimachief.com, johnihaas.com, barthhaas.com, hopsteiner.com, infoteca.cnptia.embrapa.br.
+- Fonte dos dados na tela (23/11/2026, sem migração): `portal/fontes.js` classifica pelo `extras.fonte` → selo
+  "Fabricante" (ficha oficial; Swaen = fabricante transcrita pelo Brewtarget, link tirado das notas), "Análise"
+  (Embrapa), "Genérico" (beer-analytics / fontes públicas / GaliaBrew), "Meu" (dono preenchido). Aparece na busca de
+  ingrediente (selo + filtro "Fonte"), na coluna "Fonte" e no formulário dos Cadastros de ingrediente (com link "Ver a
+  ficha", só https) e nos detalhes (⋯) do malte/lúpulo na receita (`fonteNaReceita`: fonte do item ligado do catálogo;
+  sem ligação = "Da receita", caso das 102 importadas do Brewfather). Carga nova de catálogo: gravar `extras.fonte`
+  ("Ficha técnica oficial (Marca)…") e `extras.url` para o selo sair certo.
 - Teste `supabase/testes/0009_catalogo_marcas.sql`: 8 ok (contagem por marca, campos preenchidos, leitura por usuário
   comum, catálogo não editável por ele, receita copia malte e lúpulo novos). Advisors: sem aviso novo.
 

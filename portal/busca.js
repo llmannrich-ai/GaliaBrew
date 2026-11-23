@@ -3,9 +3,10 @@
 // tipo de ingrediente, "Recentes" e "Meus" no topo. Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
 // Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
 // azeda, belga...); filtros por família, cor, amargor e álcool; "Mais perto da receita" pelos números do editor.
-import { el, preencher, numeroBR } from "./ui.js?v=20261123c";
-import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123c";
-import * as O from "./opcoes.js?v=20261123c";
+import { el, preencher, numeroBR } from "./ui.js?v=20261123d";
+import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123d";
+import * as O from "./opcoes.js?v=20261123d";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261123d";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
@@ -46,6 +47,12 @@ function faixasDeCor() {
   ];
 }
 
+/** Filtro "Fonte" (Fabricante / Análise / Genérico / Meus): só as opções que existem na lista. */
+function filtroFonte(itens) {
+  const tipo = (x) => fonteDados(x)?.tipo;
+  const ordem = [["FABRICANTE", "Fabricante"], ["ANALISE", "Análise"], ["GENERICA", "Genérico"], ["PROPRIA", "Meus"]];
+  return { nome: "Fonte", opcoes: ordem.filter(([t]) => itens.some((x) => tipo(x) === t)).map(([t, rot]) => ({ rot, teste: (x) => tipo(x) === t })) };
+}
 
 // ---------- estilos ----------
 // Termos em português para achar estilo pelo jeito que se fala aqui (o catálogo BJCP está em inglês).
@@ -113,9 +120,10 @@ export const TIPOS_BUSCA = {
       x.cor_srm != null ? `${numeroBR(O.corParaTela(Number(x.cor_srm)), 0)} ${O.unidadeCor()}` : null,
       x.rendimento_pct != null ? `rend. ${numeroBR(x.rendimento_pct, 0)}%` : null, x.produtor],
     cor: (x) => x.cor_srm,
-    filtros: () => [
+    filtros: (itens) => [
       { nome: "Grupo", opcoes: O.GRUPO_FERMENTAVEL.map(([v, t]) => ({ rot: t, teste: (x) => x.grupo === v })) },
       { nome: "Cor", opcoes: faixasDeCor() },
+      filtroFonte(itens),
     ],
   },
   lupulos: {
@@ -123,13 +131,14 @@ export const TIPOS_BUSCA = {
     nome: (x) => x.nome,
     texto: (x) => [x.nome, x.produtor, x.origem, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso)],
     resumo: (x) => [x.alfa_pct != null ? `alfa ${numeroBR(x.alfa_pct, 1)}%` : null, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso), x.origem],
-    filtros: () => [
+    filtros: (itens) => [
       { nome: "Uso", opcoes: O.USO_LUPULO.map(([v, t]) => ({ rot: t, teste: (x) => x.uso === v })) },
       { nome: "Alfa", opcoes: [
         { rot: "até 5%", teste: (x) => entre(x.alfa_pct, 0, 5) },
         { rot: "5–10%", teste: (x) => entre(x.alfa_pct, 5, 10) },
         { rot: "10%+", teste: (x) => entre(x.alfa_pct, 10, Infinity) },
       ] },
+      filtroFonte(itens),
     ],
   },
   leveduras: {
@@ -326,9 +335,11 @@ export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contex
     },
     amostra,
     el("div", { class: "busca-opcao-texto" },
-      el("span", { class: "busca-opcao-nome" }, def.nome(x), x.dono ? el("span", { class: "selo meu", text: "meu" }) : null,
+      el("span", { class: "busca-opcao-nome" }, def.nome(x),
+        tipo === "estilos" && x.dono ? el("span", { class: "selo meu", text: "meu" }) : null,
         x.id === atualId ? el("span", { class: "selo", text: "atual" }) : null),
-      resumo ? el("span", { class: "busca-opcao-resumo", text: resumo }) : null));
+      // Ingrediente: selo da fonte dos dados; estilo não tem (é do guia).
+      el("span", { class: "busca-opcao-resumo" }, tipo === "estilos" ? null : seloFonte(fonteDados(x)), resumo ? ` ${resumo}` : null)));
   }
 
   function desenhar() {

@@ -1,14 +1,15 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123c";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123c";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123c";
-import { abrirBusca } from "./busca.js?v=20261123c";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123c";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123c";
-import * as O from "./opcoes.js?v=20261123c";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123c";
-import { icone } from "./icones.js?v=20261123c";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123c";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123d";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123d";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123d";
+import { abrirBusca } from "./busca.js?v=20261123d";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123d";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123d";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123d";
+import * as O from "./opcoes.js?v=20261123d";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123d";
+import { icone } from "./icones.js?v=20261123d";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123d";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -753,7 +754,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           rotular("Rendimento (% base seca)", campoNumero(item, "rendimento_pct", { ...campo, casas: 1, rotulo: "Rendimento (%)" })),
           rotular("Umidade (%)", campoNumero(item, "umidade_pct", { ...campo, casas: 1, rotulo: "Umidade (%)" })),
           rotular(`Cor (${O.unidadeCor()})`, campoNumero(item, "cor_srm", { ...campo, ...cor, casas: 1, rotulo: `Cor (${O.unidadeCor()})` })),
-          rotular("Fermentável (%) — lactose = 0", campoNumero(item, "fermentavel_pct", { ...campo, casas: 0, rotulo: "Fermentável (%)" }))],
+          rotular("Fermentável (%) — lactose = 0", campoNumero(item, "fermentavel_pct", { ...campo, casas: 0, rotulo: "Fermentável (%)" })),
+          blocoFonte(fonteNaReceita(item, cat.fermentaveis, "fermentavel_id"), { classe: "largo" })],
         aoCalcular: (x) => {
           pct.textContent = `${numeroBR(x.pct_peso, 1)}%`;
           pts.textContent = `+${numeroBR(x.pontos_og, 0)}`;
@@ -805,7 +807,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         detalhes: [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
           rotular("Forma", campoSelect(item, "forma", O.FORMA_LUPULO, { ...campo, rotulo: "Forma" })),
-          rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" }))],
+          rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" })),
+          blocoFonte(fonteNaReceita(item, cat.lupulos, "lupulo_id"), { classe: "largo" })],
         aoCalcular: (x) => {
           const conta = DA_IBU.has(item.etapa);
           ibu.textContent = conta ? numeroBR(x.ibu, 1) : "—";
