@@ -1,15 +1,15 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123c";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123c";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123c";
-import { abrirBusca } from "./busca.js?v=20261123c";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123c";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123c";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123c";
-import * as O from "./opcoes.js?v=20261123c";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123c";
-import { icone } from "./icones.js?v=20261123c";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123c";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123d";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123d";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123d";
+import { abrirBusca } from "./busca.js?v=20261123d";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123d";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123d";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123d";
+import * as O from "./opcoes.js?v=20261123d";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123d";
+import { icone } from "./icones.js?v=20261123d";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123d";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -576,15 +576,20 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
 
-  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, montarLinha, iconeSecao, grafico }) {
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico }) {
     const lista = el("ol", { class: `linhas-ing ${classe}` });
-    const totalEl = el("span", { class: "total-secao" });
+    const totalEl = el("span", { class: destaque ? "total-secao destaque" : "total-secao" });
+    // extra: dado complementar ao lado do total (ex.: água/malte nos fermentáveis); some quando não há valor.
+    const extraEl = extra ? el("span", { class: "total-extra" }) : null;
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
-      el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo, " ", totalEl),
+      el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo, " ", totalEl, extraEl),
         leitura ? null : el("div", { class: "titulo-acoes" }, ferramenta, adicionar())),
       grafico ?? null,
       lista);
-    totais.push((res) => { totalEl.textContent = r[chave].length ? total(res) : ""; });
+    totais.push((res) => {
+      totalEl.textContent = r[chave].length ? total(res) : "";
+      if (extraEl) extraEl.textContent = r[chave].length ? (extra(res) ?? "") : "";
+    });
 
     function linha(item, i) {
       const nome = el("strong", { class: "ing-nome-txt" });
@@ -710,6 +715,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     classe: "ferm",
     vazio: "Nenhum fermentável. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
+    destaque: true,
+    // Razão efetiva (água da mostura ÷ grão da mostura): já considera o limite da água total.
+    extra: (res) => (res.volumes.graos_kg > 0 ? `${numeroBR(res.volumes.agua_mostura_l / res.volumes.graos_kg, 1)} L/kg água/malte` : null),
     ferramenta: el("button", { type: "button", class: "secundario pequeno", text: "Chegar à OG…", title: "Ajusta os fermentáveis para uma OG alvo", on: { click: () => ajustarOG() } }),
     adicionar: botaoAdicionar("fermentaveis",
       (f) => adicionarItem("fermentaveis", { fermentavel_id: f.id, nome: f.nome, tipo: f.tipo, rendimento_pct: num0(f.rendimento_pct), umidade_pct: num0(f.umidade_pct), cor_srm: num0(f.cor_srm), fermentavel_pct: num0(f.fermentavel_pct, 100), quantidade_kg: null, etapa: ["GRAO", "OUTRO"].includes(f.tipo) ? "MOSTURA" : "FERVURA" }),

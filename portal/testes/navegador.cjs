@@ -176,7 +176,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123c");
+    const m = await import("./fontes.js?v=20261123d");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -293,7 +293,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123c");
+    const m = await import("./calculos.js?v=20261123d");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -324,12 +324,16 @@ const erros = [];
   verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
     "totais no cabeçalho das seções");
+  verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-extra') === "3,0 L/kg água/malte"
+    && await pagina.locator('[data-secao="lupulos"] .total-extra').count() === 0
+    && await pagina.$eval('[data-secao="fermentaveis"] .total-secao', (n) => parseFloat(getComputedStyle(n).fontSize)) >= 24,
+    "fermentáveis: total em destaque e água/malte ao lado");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123c");
+    const m = await import("./calculos.js?v=20261123d");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -348,7 +352,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123c");
+    const m = await import("./calculos.js?v=20261123d");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -430,7 +434,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123c");
+    const m = await import("./calculos.js?v=20261123d");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -581,6 +585,7 @@ const erros = [];
   await pagina.waitForSelector(".titulo-receita");
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
+  await pagina.locator('[data-secao="fermentaveis"] .titulo-linha').screenshot({ path: `${SAIDA}/p9-celular-total-fermentaveis.png` });
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
