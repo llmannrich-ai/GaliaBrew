@@ -1,9 +1,10 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261123c";
-import { sb, sessao } from "./estado.js?v=20261123c";
-import * as O from "./opcoes.js?v=20261123c";
-import { corHexDeSrm } from "./calculos.js?v=20261123c";
-import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261123c";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261123d";
+import { sb, sessao } from "./estado.js?v=20261123d";
+import * as O from "./opcoes.js?v=20261123d";
+import { corHexDeSrm } from "./calculos.js?v=20261123d";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261123d";
+import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261123d";
 
 // Cadastros de ingrediente: mostram de onde vêm os dados (fabricante, genérico, análise, meu).
 const INGREDIENTES = new Set(["fermentaveis", "lupulos", "leveduras", "outros"]);
@@ -159,7 +160,7 @@ export async function telaCadastros(conteudo, chave) {
   preencher(conteudo, 
     el("h2", { text: "Cadastros" }), abas,
     el("div", { class: "barra" },
-      el("input", { type: "search", placeholder: `Buscar em ${def.titulo.toLowerCase()}`, "aria-label": "Buscar", on: { input: (e) => { filtro.texto = e.target.value; desenhar(); } } }),
+      el("input", { type: "search", placeholder: chave === "estilos" ? "Buscar estilo: 21A, pils, trigo, belga…" : `Buscar em ${def.titulo.toLowerCase()}`, "aria-label": "Buscar", on: { input: (e) => { filtro.texto = e.target.value; desenhar(); } } }),
       el("button", { type: "button", text: "Novo", on: { click: () => abrirFormulario(chave, def.novo(), recarregar) } })),
     def.catalogo ? el("p", { class: "nota", text: INGREDIENTES.has(chave)
       ? "Fonte: “Fabricante” = ficha técnica da própria marca; “Análise” = laboratório/pesquisa; “Genérico” = valores típicos, não de uma marca; “Meu” = cadastrado por você (só você vê). Itens do catálogo comum só o admin altera."
@@ -177,7 +178,9 @@ export async function telaCadastros(conteudo, chave) {
   }
   function desenhar() {
     const t = filtro.texto.trim().toLowerCase();
-    const lista = t ? itens.filter((x) => def.colunas.some(([k]) => String(x[k] ?? "").toLowerCase().includes(t))) : itens;
+    // Estilos: a mesma busca do editor (código, nome, categoria, termos em português, sem acento), em ordem de código.
+    const lista = chave === "estilos" ? buscarItens([...itens].sort(ordemCodigo), "estilos", t)
+      : t ? itens.filter((x) => def.colunas.some(([k]) => String(x[k] ?? "").toLowerCase().includes(t))) : itens;
     const cab = el("tr", {}, def.colunas.map(([, r, f]) => el("th", { class: typeof f === "number" || f === "cor" ? "num" : "", text: f === "cor" ? `${r} (${O.unidadeCor()})` : r })),
       def.catalogo ? el("th", { text: INGREDIENTES.has(chave) ? "Fonte" : "Origem" }) : null);
     const linhas = lista.map((x) => el("tr", { class: "clicavel", tabindex: 0, on: { click: () => abrirFormulario(chave, x, recarregar), keydown: (e) => { if (e.key === "Enter") abrirFormulario(chave, x, recarregar); } } },
