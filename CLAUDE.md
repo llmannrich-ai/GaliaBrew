@@ -150,7 +150,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
   (`pct_peso`, `pontos_og`, `g_l` no calculos.js), cor do malte em texto pequeno abaixo do nome (`.ing-sub`, unidade do perfil, 23/11/2026), totais no cabeçalho (fermentáveis: kg em destaque + água/malte efetiva = água da mostura ÷ grão da mostura, 23/11/2026), ⋯ = detalhes (dados do cadastro, subir,
   descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
-  seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
+  seguem em tabela. O "+" do título da seção (23/11/2026, pedido do responsável: só o sinal, sem borda, 2,25rem negrito na fonte do app, cor
+  `--destaque-escuro`, 44 px de toque, `aria-label` "Adicionar"; vale também para os passos de mostura/fermentação) abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
   (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
 - Busca de estilo (23/11/2026, sem migração): o Estilo do topo do editor é um botão que abre a mesma janela do `busca.js`
   (`TIPOS_BUSCA.estilos`). Acha por código (21A, casa exato e vem primeiro), nome, categoria e termos em português
@@ -201,7 +202,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123q.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123r.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).

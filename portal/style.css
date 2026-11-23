@@ -278,6 +278,16 @@ button.perigo { background: var(--erro); border-color: var(--erro); color: var(-
 button.link { background: none; border: none; color: var(--destaque-escuro); padding: 0; text-decoration: underline; justify-self: start; font-weight: 400; }
 button.pequeno { padding: .25rem .6rem; font-size: var(--t-p); }
 button.icone { padding: .1rem .45rem; background: transparent; color: var(--suave); border-color: var(--borda-campo); font-weight: 400; }
+/* Adicionar = só o sinal "+" na fonte do app, sem borda nem fundo; área de toque de 44 px. */
+button.adicionar {
+  width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: transparent; color: var(--destaque-escuro);
+  font-size: 2.25rem; font-weight: 700; line-height: 1; border-radius: 50%;
+}
+button.adicionar:hover { background: color-mix(in srgb, var(--destaque) 14%, transparent); border: none; color: var(--destaque-escuro); }
+/* Com o "+" a linha do título não quebra: o sinal fica à direita, o título quebra por dentro. */
+.cartao > .titulo-linha:has(button.adicionar) { flex-wrap: nowrap; }
+.cartao > .titulo-linha:has(button.adicionar) > h3 { flex: 1 1 auto; min-width: 0; }
+.titulo-linha button.adicionar, .titulo-acoes:has(> button.adicionar) { flex: none; }
 button.icone.perigo:hover { color: var(--sobre-destaque); background: var(--erro); border-color: var(--erro); }
 .segmentos { display: inline-flex; border: 1px solid var(--borda-campo); border-radius: var(--raio-p); overflow: hidden; }
 .segmentos button { border: none; border-radius: 0; background: var(--cartao); color: var(--tinta); font-weight: 400; }
