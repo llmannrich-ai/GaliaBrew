@@ -132,6 +132,21 @@ export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, par
 export function campoQuantidade(obj, chave, { casas = 2, passo = 1, passoTxt = String(passo), unidade = "", aoMudar, desabilitado = false, rotulo } = {}) {
   const input = campoNumero(obj, chave, { casas, desabilitado, rotulo, aoMudar: () => aoMudar?.(input), classe: "num qtd" });
   input.setAttribute("role", "spinbutton");
+  // Toque: ao entrar no campo, o número fica selecionado; digitar já troca o valor (sem apagar "0,000" na mão).
+  // No iOS a seleção feita no próprio "focus" se perde: vai no quadro seguinte.
+  let recemFocado = false;
+  let valorNoFoco = "";
+  // Só se nada foi digitado desde o toque (senão a seleção atrasada engoliria o que a pessoa já escreveu).
+  const selecionarTudo = () => { if (document.activeElement === input && input.value === valorNoFoco) input.setSelectionRange(0, input.value.length); };
+  input.addEventListener("focus", () => {
+    if (!window.matchMedia?.("(pointer: coarse)").matches) return;
+    recemFocado = true;
+    valorNoFoco = input.value;
+    setTimeout(selecionarTudo, 0);
+    setTimeout(() => { recemFocado = false; }, 600);
+  });
+  // O "mouseup" do mesmo toque (vem depois do focus no iOS) desfaria a seleção e poria o cursor no ponto tocado.
+  input.addEventListener("mouseup", (e) => { if (recemFocado) { e.preventDefault(); recemFocado = false; selecionarTudo(); } });
   const ajustar = (vezes) => {
     const atual = Number.isFinite(obj[chave]) ? obj[chave] : 0;
     const novo = Math.max(0, Number((atual + vezes * passo).toFixed(casas)));

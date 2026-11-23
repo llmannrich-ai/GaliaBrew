@@ -1,15 +1,16 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123l";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123l";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123l";
-import { abrirBusca } from "./busca.js?v=20261123l";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123l";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123l";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123l";
-import * as O from "./opcoes.js?v=20261123l";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123l";
-import { icone } from "./icones.js?v=20261123l";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123l";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123p";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123p";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123p";
+import { abrirBusca } from "./busca.js?v=20261123p";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123p";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123p";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123p";
+import * as O from "./opcoes.js?v=20261123p";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123p";
+import { icone } from "./icones.js?v=20261123p";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123p";
+import { abrirRelatorio } from "./relatorio.js?v=20261123p";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -459,6 +460,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   // ---------- cabeçalho ----------
   const nomeInput = campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
+  // Relatório em PDF (ao lado do nome): mostra a receita como está na tela, salva ou não; também na só leitura.
+  const botaoRelatorio = el("button", {
+    type: "button", class: "secundario botao-relatorio", title: "Relatório da receita (PDF)", "aria-label": "Relatório da receita em PDF", "aria-haspopup": "dialog",
+    on: { click: () => abrirRelatorio(r, calcularReceita(r), { estilo: estiloAtual(), equipamento: cat.equipamentos.find((e) => e.id === r.equipamento_id) }) },
+  }, icone("relatorio"));
   const msg = el("p", { class: "erro-form", role: "alert" });
   const botaoSalvar = el("button", { type: "button", class: "so-largo", text: "Salvar", on: { click: () => salvar() } });
   const botaoSalvarApp = el("button", { type: "button", class: "app-salvar", text: "Salvar", on: { click: () => salvar() } });
@@ -880,7 +886,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         for (const x of lista) {
           g.corpo.append(el("tr", {},
             el("td", { dataset: { rotulo: "Sal" } }, comRotulo(campoSelect(x, "sal", O.SAL_AGUA, { aoMudar: mudou, desabilitado: des }), "Sal")),
-            el("td", { class: "num", dataset: { rotulo: "Gramas" } }, comRotulo(campoNumero(x, "gramas", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: etapa === "MOSTURA" ? "Gramas na mostura" : "Gramas na lavagem" }), "Gramas")),
+            el("td", { class: "num", dataset: { rotulo: "Gramas", unidade: "g" } }, comRotulo(campoNumero(x, "gramas", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: etapa === "MOSTURA" ? "Gramas na mostura" : "Gramas na lavagem" }), "Gramas")),
             leitura ? null : el("td", { class: "acoes-linha" },
               el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover sal", text: "×", on: { click: () => { r.sais.splice(r.sais.indexOf(x), 1); desenharSais(); mudou(); } } }))));
         }
@@ -902,7 +908,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     const tabelaSais = (etapa, extra) => el("div", {},
       el("div", { class: "titulo-linha" }, el("h5", {}, etapa === "MOSTURA" ? "Sais na mostura" : "Sais na lavagem", info(O.AJUDA_VOLUME.sais_agua)),
         leitura ? null : el("div", { class: "acoes-sais" }, extra, el("button", { type: "button", class: "secundario pequeno", text: etapa === "MOSTURA" ? "+ Sal na mostura" : "+ Sal na lavagem", on: { click: () => novoSal(etapa) } }))),
-      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
+      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel linha-unica" },
         el("thead", {}, el("tr", {}, ["Sal", "Gramas"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
         grupos[etapa].corpo)));
 
@@ -912,7 +918,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       if (!r.acidos.length) corpoAcidos.append(el("tr", {}, el("td", { colspan: 3, class: "nota", text: "Nenhum ácido." })));
       r.acidos.forEach((x, i) => corpoAcidos.append(el("tr", {},
         el("td", { dataset: { rotulo: "Ácido" } }, comRotulo(campoSelect(x, "acido", O.ACIDO, { aoMudar: mudou, desabilitado: des }), "Ácido")),
-        el("td", { class: "num", dataset: { rotulo: "mL" } }, comRotulo(campoNumero(x, "ml", { casas: 1, aoMudar: mudou, desabilitado: des }), "mL")),
+        el("td", { class: "num", dataset: { rotulo: "mL", unidade: "mL" } }, comRotulo(campoNumero(x, "ml", { casas: 1, aoMudar: mudou, desabilitado: des }), "mL")),
         leitura ? null : el("td", { class: "acoes-linha" },
           el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover ácido", text: "×", on: { click: () => { r.acidos.splice(i, 1); desenharAcidos(); mudou(); } } })))));
       atualizarResultados();
@@ -1015,7 +1021,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         tabelaSais("MOSTURA"),
         el("div", { class: "titulo-linha" }, el("h5", {}, "Ácido na mostura", info(O.AJUDA_VOLUME.acidos)),
           leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "+ Ácido", on: { click: () => { r.acidos.push({ acido: "LATICO_88", ml: null }); desenharAcidos(); mudou(); } } })),
-        el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
+        el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel linha-unica" },
           el("thead", {}, el("tr", {}, ["Ácido", "mL"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
           corpoAcidos)),
         caixaPh,
@@ -1087,10 +1093,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     parametros);
 
   conteudo.classList.add("com-vital");
-  const topo = el("div", { class: "editor-topo" }, nomeInput, estiloCampo, acoes);
+  const topo = el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
-      inicio, lote, fermentaveis, lupulos, leveduras, outros, agua, mostura, fermentacao, brassagem, geral, notas),
+      inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas),
     painel);
   // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
   for (const n of [topo, corpo]) {

@@ -181,7 +181,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123l");
+    const m = await import("./fontes.js?v=20261123p");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -336,7 +336,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123p");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -356,7 +356,7 @@ const erros = [];
   verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
   verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
   verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
-  // Busca de estilo com a receita pronta: atual no topo, sugestão pelos números, termos em português, filtro "Combina".
+  // Busca de estilo com a receita pronta: atual no topo, sugestão pelos números, termos em português, sem filtros.
   await pagina.click(botaoEstilo);
   await pagina.waitForSelector("dialog.busca");
   const opcoesEstilo = () => pagina.$$eval("dialog.busca .busca-opcao-nome", (ls) => ls.map((l) => l.textContent));
@@ -371,9 +371,7 @@ const erros = [];
   await pagina.fill("dialog.busca .busca-campo", "ale");
   verificar(!(await opcoesEstilo()).some((t) => t.includes("Czech Pale Lager")), "\"ale\" casa com começo de palavra: não acha Pale Lager");
   await pagina.fill("dialog.busca .busca-campo", "");
-  await pagina.click('dialog.busca .chip:has-text("Combina com a receita")');
-  const combinam = await opcoesEstilo();
-  verificar(combinam[0].startsWith("3A Czech Pale Lager") && !combinam.some((t) => t.includes("American IPA")), "filtro \"Combina com a receita\": mais parecido primeiro, IPA fora");
+  verificar(await pagina.locator("dialog.busca .busca-filtros, dialog.busca .chip").count() === 0, "busca de estilo sem filtros (no celular tomavam a tela)");
   await pagina.screenshot({ path: `${SAIDA}/p3b-busca-estilo.png` });
   await pagina.keyboard.press("Escape");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
@@ -398,7 +396,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123p");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -417,7 +415,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123p");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -502,7 +500,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123p");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -664,6 +662,24 @@ const erros = [];
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
+  // Sal da água: nome, gramas e × na mesma linha (390 e 320 px), sem passar da largura do bloco.
+  const linhaDoSal = () => pagina.evaluate(() => {
+    const tr = document.querySelector('tr:has(input[aria-label="Gramas na mostura"])');
+    const bloco = tr.closest(".bloco-agua").getBoundingClientRect();
+    const r = [tr.querySelector("select"), tr.querySelector("input"), tr.querySelector("button")].map((n) => n.getBoundingClientRect());
+    const meio = r.map((x) => x.top + x.height / 2);
+    return { alinhado: Math.max(...meio) - Math.min(...meio) <= 2, ordem: r[0].right <= r[1].left && r[1].right <= r[2].left,
+      cabe: r[2].right <= bloco.right + 1, altura: Math.round(tr.getBoundingClientRect().height), select: Math.round(r[0].width) };
+  });
+  const sal390 = await linhaDoSal();
+  verificar(sal390.alinhado && sal390.ordem && sal390.cabe && sal390.altura <= 60, `celular: cada sal da água numa linha só (${JSON.stringify(sal390)})`);
+  await pagina.evaluate(() => document.querySelector(".bloco-agua").scrollIntoView());
+  await pagina.screenshot({ path: `${SAIDA}/p5g-celular-sais.png` });
+  await pagina.setViewportSize({ width: 320, height: 700 });
+  const sal320 = await linhaDoSal();
+  verificar(sal320.alinhado && sal320.ordem && sal320.cabe && sal320.select >= 100, `celular 320 px: sal numa linha só (${JSON.stringify(sal320)})`);
+  await pagina.screenshot({ path: `${SAIDA}/p5h-celular-sais-320.png` });
+  await pagina.setViewportSize({ width: 390, height: 844 });
   const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
     const filhos = [...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right);
@@ -818,11 +834,53 @@ const erros = [];
   const campoTeclado = await atenuacao.boundingBox();
   verificar(Math.abs(vitalTeclado.y + vitalTeclado.height - 500) <= 1, `toque: com o teclado aberto a barra de números fica logo acima dele (fundo em ${Math.round(vitalTeclado.y + vitalTeclado.height)} px)`);
   verificar(campoTeclado.y + campoTeclado.height <= vitalTeclado.y, "toque: o campo em foco rola para cima da barra");
+  verificar(vitalTeclado.height <= 52 && !(await cel.isVisible(".vital .vital-mais")) && !(await cel.isVisible(".vital .regua")),
+    `toque: com o teclado a barra vira uma linha fina com os 6 números (${Math.round(vitalTeclado.height)} px de altura)`);
   await cel.screenshot({ path: `${SAIDA}/p6a-celular-teclado.png` });
   await teclado(null);
   await cel.evaluate(() => document.activeElement.blur());
+  await cel.waitForTimeout(300);          // a barra espera ~120 ms depois de sair do campo (trocar de campo não pisca)
   const vitalSem = await cel.locator(".vital").boundingBox();
-  verificar(Math.abs(vitalSem.y + vitalSem.height - 844) <= 1, "toque: teclado fechado, a barra volta ao rodapé");
+  verificar(Math.abs(vitalSem.y + vitalSem.height - 844) <= 1 && vitalSem.height > 100, "toque: teclado fechado, a barra volta ao rodapé (completa)");
+
+  // iPhone de verdade (print de 23/11/2026): o iOS encolhe a área visível E a rola para cima do teclado
+  // (offsetTop = innerHeight − altura). Antes a conta descontava o offsetTop, dava "sem teclado" e a barra ficava
+  // grande, cobrindo o campo de quantidade de um malte novo.
+  const tecladoIOS = (altura) => cel.evaluate((h) => {
+    const vv = window.visualViewport;
+    if (h === null) { delete vv.height; delete vv.offsetTop; }
+    else {
+      Object.defineProperty(vv, "height", { configurable: true, get: () => h });
+      Object.defineProperty(vv, "offsetTop", { configurable: true, get: () => window.innerHeight - h });
+    }
+    vv.dispatchEvent(new Event("resize"));
+  }, altura);
+  const qtd2 = cel.locator('[data-secao="fermentaveis"] input[aria-label="Qtd (kg)"]').last();
+  await qtd2.evaluate((n) => n.scrollIntoView({ block: "center" }));
+  const [qx, qy] = await centro('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
+  await cel.touchscreen.tap(qx, qy);
+  // Pior caso: o campo termina bem embaixo da área visível (onde a barra fica), como no print.
+  await qtd2.evaluate((n) => window.scrollBy(0, n.getBoundingClientRect().bottom - (window.innerHeight - 20)));
+  await tecladoIOS(480);
+  await cel.waitForTimeout(500);
+  const sel = await qtd2.evaluate((n) => [n.selectionStart, n.selectionEnd, n.value.length]);
+  verificar(sel[0] === 0 && sel[1] === sel[2] && sel[2] > 0, "toque: tocar na quantidade seleciona o número (digitar já troca o valor)");
+  const ios = await cel.evaluate(() => {
+    const v = document.querySelector(".vital").getBoundingClientRect();
+    const c = document.activeElement.getBoundingClientRect();
+    const topo = window.visualViewport.offsetTop;
+    return { classe: document.querySelector(".vital").classList.contains("com-teclado"), alturaBarra: v.height, fundoBarra: v.bottom,
+      fundoVisivel: topo + window.visualViewport.height, campoTopo: c.top - topo, campoFundo: c.bottom, barraTopo: v.top };
+  });
+  verificar(ios.classe && ios.alturaBarra <= 52, `iPhone: com a área visível rolada pelo iOS a barra também fica fina (${Math.round(ios.alturaBarra)} px)`);
+  verificar(Math.abs(ios.fundoBarra - ios.fundoVisivel) <= 1, "iPhone: a barra fica colada no teclado");
+  verificar(ios.campoFundo <= ios.barraTopo && ios.campoTopo >= 0, `iPhone: o campo da quantidade fica à vista, acima da barra (${Math.round(ios.barraTopo - ios.campoFundo)} px de folga)`);
+  await cel.keyboard.type("0,5");
+  verificar(await qtd2.inputValue() === "0,5", "toque: digitar 0,5 troca a quantidade inteira (sem apagar à mão)");
+  await cel.screenshot({ path: `${SAIDA}/p6g-iphone-teclado.png` });
+  await tecladoIOS(null);
+  await cel.evaluate(() => document.activeElement.blur());
+  await cel.waitForTimeout(300);
 
   // Tabelas viram cartões, sem rolagem para o lado.
   const rolagemTabelas = await cel.evaluate(() => [...document.querySelectorAll(".tabela-rolagem")].map((t) => t.scrollWidth - t.clientWidth));
@@ -830,6 +888,15 @@ const erros = [];
     "toque: leveduras, outros, mostura e fermentação em cartões, sem rolagem para o lado");
   await cel.evaluate(() => document.querySelector('[data-secao="leveduras"]').scrollIntoView());
   await cel.screenshot({ path: `${SAIDA}/p6b-celular-cartoes.png` });
+
+  // Busca de estilo no celular: sem filtros, os estilos começam logo abaixo do campo.
+  await tocar(botaoEstilo);
+  await cel.waitForSelector("dialog.busca");
+  const topoEstilos = (await cel.locator("dialog.busca .busca-opcao").first().boundingBox()).y;
+  verificar(await cel.locator("dialog.busca .chip").count() === 0 && topoEstilos < 300, `toque: busca de estilo sem filtros, 1º estilo a ${Math.round(topoEstilos)} px do topo`);
+  await cel.screenshot({ path: `${SAIDA}/p6g-celular-busca-estilo.png` });
+  await cel.keyboard.press("Escape");
+  await cel.waitForSelector("dialog.busca", { state: "detached" });
 
   // Arrastar com o dedo: segundo lúpulo pela busca e arrastado para cima.
   await tocar('[data-secao="lupulos"] button.adicionar');
@@ -863,6 +930,17 @@ const erros = [];
   await cel.setViewportSize({ width: 320, height: 568 });
   await cel.waitForTimeout(200);
   verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
+  await cel.locator('input[aria-label="Qtd (kg)"]').first().focus();
+  await cel.waitForTimeout(300);
+  const estouroVital = await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item:not(.secundario)")].filter((n) => n.offsetParent).map((n) => {
+    // folga = borda direita da casinha − o que vai mais à direita (número ou diferença); medida para fontes mais largas
+    const dir = Math.max(...[...n.querySelectorAll(".vital-val, .vital-delta:not(:empty), .vital-rot")].map((c) => c.getBoundingClientRect().right));
+    return Math.round(dir - n.getBoundingClientRect().right);
+  }));
+  verificar(await cel.evaluate(() => document.querySelector(".vital").classList.contains("com-teclado")) && estouroVital.length === 5 && estouroVital.every((d) => d <= -2),
+    `320 px: com o teclado os 5 números (sem pH) cabem na linha fina com folga (posição da borda direita do conteúdo: ${estouroVital.join(", ")} px)`);
+  await cel.evaluate(() => document.activeElement.blur());
+  await cel.waitForTimeout(300);
   const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
     return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - sec.right);
@@ -881,14 +959,80 @@ const erros = [];
   await cel.screenshot({ path: `${SAIDA}/p6e-celular-320-ibu.png` });
   await cel.keyboard.press("Escape");
   await conferirLateral("320 px, editor");
-  cel.once("dialog", (d) => d.accept());      // sair do editor com alteração pendente pede confirmação
-  for (const [rota, espera] of [["#/ferramentas", ".cartao"], ["#/cadastros/fermentaveis", "table.lista-cad"], ["#/cadastros/estilos", "table.lista-cad"], ["#/cadastros/equipamentos", ".abas"], ["#/perfil", "form, .cartao"]]) {
-    await cel.evaluate((r) => { location.hash = r; }, rota);
-    await cel.waitForFunction((r) => location.hash === r, rota);
-    await cel.waitForSelector(espera);
-    await conferirLateral(`320 px, ${rota}`);
-    await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-${rota.split("/").pop()}.png` });
-  }
+
+  // Relatório em PDF: botão ao lado do nome, visualizador próprio (janela) e exportação para compartilhar.
+  await cel.keyboard.press("Escape");
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  const linhaNome = await cel.evaluate(() => {
+    const c = (s) => document.querySelector(s).getBoundingClientRect();
+    const [campo, botao] = [c(".titulo-receita"), c("button.botao-relatorio")];
+    return { mesmaLinha: Math.abs((campo.top + campo.bottom) / 2 - (botao.top + botao.bottom) / 2) < 3, depois: botao.left >= campo.right, dentro: botao.right <= window.innerWidth, lado: Math.round(botao.width), campo: Math.round(campo.width) };
+  });
+  verificar(linhaNome.mesmaLinha && linhaNome.depois && linhaNome.dentro && linhaNome.lado >= 44 && linhaNome.campo >= 180,
+    `320 px: botão do relatório ao lado do nome, na mesma linha (campo ${linhaNome.campo} px, botão ${linhaNome.lado} px)`);
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(200);
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.screenshot({ path: `${SAIDA}/p6k-celular-botao-relatorio.png` });
+  // Folha de compartilhamento do celular simulada: guarda o arquivo recebido.
+  await cel.evaluate(() => {
+    window.__compartilhado = null;
+    Object.defineProperty(navigator, "canShare", { configurable: true, value: (d) => Boolean(d?.files?.length) });
+    Object.defineProperty(navigator, "share", { configurable: true, value: async (d) => {
+      const f = d.files[0];
+      window.__compartilhado = { nome: f.name, tipo: f.type, titulo: d.title, bytes: Array.from(new Uint8Array(await f.arrayBuffer())) };
+    } });
+  });
+  const ogBarra = (await cel.textContent('.vital [data-metrica="og"] .vital-val')).trim();
+  await tocar("button.botao-relatorio");
+  await cel.waitForSelector("dialog.relatorio[open]");
+  const janRel = await cel.locator("dialog.relatorio").boundingBox();
+  verificar(janRel.x === 0 && janRel.y === 0 && janRel.width === 390 && janRel.height === 844, "relatório abre numa janela que ocupa a tela do celular");
+  const textoRel = await cel.evaluate(() => [...document.querySelectorAll("dialog.relatorio .rel-folha text")].map((t) => t.textContent));
+  const nPaginas = await cel.locator("dialog.relatorio .rel-pagina").count();
+  verificar(nPaginas >= 1 && textoRel.includes("Pils da Galia") && textoRel.includes("Fermentáveis") && textoRel.includes("Lúpulos") && textoRel.includes("Água e volumes")
+    && textoRel.includes(ogBarra) && textoRel.some((t) => /página 1 de \d/.test(t)),
+    `relatório mostra a receita (nome, seções, OG ${ogBarra} igual à barra; ${nPaginas} página(s))`);
+  const folha = await cel.evaluate(() => {
+    const a = document.querySelector(".rel-area"), f = document.querySelector(".rel-folha").getBoundingClientRect();
+    const fora = [...document.querySelectorAll(".rel-folha")].flatMap((s) => {
+      const caixa = s.viewBox.baseVal;
+      return [...s.querySelectorAll("text")].filter((t) => { const b = t.getBBox(); return b.x < 0 || b.x + b.width > caixa.width + .5 || b.y + b.height > caixa.height; }).map((t) => t.textContent);
+    });
+    return { cabe: a.scrollWidth <= a.clientWidth, proporcao: f.height / f.width, fora };
+  });
+  verificar(folha.cabe && Math.abs(folha.proporcao - 841.89 / 595.28) < 0.01 && folha.fora.length === 0,
+    `folha A4 inteira na largura da tela, nenhum texto fora da folha (${folha.fora.join(" | ")})`);
+  await cel.screenshot({ path: `${SAIDA}/p6l-celular-relatorio.png` });
+  await tocar('dialog.relatorio button[aria-label="Ampliar"]');
+  await tocar('dialog.relatorio button[aria-label="Ampliar"]');
+  verificar(await cel.textContent(".rel-zoom-valor") === "200%" && await cel.evaluate(() => { const a = document.querySelector(".rel-area"); return a.scrollWidth > a.clientWidth * 1.9; }),
+    "ampliar: folha a 200%, com rolagem para os lados");
+  await cel.screenshot({ path: `${SAIDA}/p6m-celular-relatorio-200.png` });
+  verificar((await cel.textContent("button.rel-compartilhar")).trim() === "Compartilhar", "celular com folha de compartilhamento: botão Compartilhar");
+  await tocar("button.rel-compartilhar");
+  await cel.waitForFunction(() => window.__compartilhado);
+  const comp = await cel.evaluate(() => window.__compartilhado);
+  const pdf = Buffer.from(comp.bytes);
+  fs.writeFileSync(`${SAIDA}/relatorio-celular.pdf`, pdf);
+  const pdfTxt = pdf.toString("latin1");
+  const xref = Number(pdfTxt.match(/startxref\n(\d+)\n%%EOF\n$/)?.[1]);
+  verificar(/^GaliaBrew-\d+-pils-da-galia\.pdf$/.test(comp.nome) && comp.tipo === "application/pdf" && comp.titulo === "Pils da Galia",
+    `compartilhar entrega o arquivo ${comp.nome} (application/pdf)`);
+  verificar(pdfTxt.startsWith("%PDF-1.4") && pdfTxt.slice(xref, xref + 4) === "xref" && Number(pdfTxt.match(/\/Count (\d+)/)[1]) === nPaginas,
+    `arquivo é um PDF com as mesmas ${nPaginas} página(s) do visualizador (${Math.round(pdf.length / 1024)} kB)`);
+  await tocar("dialog.relatorio button.rel-fechar");
+  await cel.waitForSelector("dialog.relatorio", { state: "detached", timeout: 3000 }).catch(() => {});      // o "close" da janela chega depois do toque
+  verificar(await cel.locator("dialog.relatorio").count() === 0, "fechar tira o relatório da tela");
+  // Aparelho sem compartilhamento de arquivo: o botão baixa o PDF.
+  await cel.evaluate(() => { Object.defineProperty(navigator, "canShare", { configurable: true, value: undefined }); });
+  await tocar("button.botao-relatorio");
+  await cel.waitForSelector("dialog.relatorio[open]");
+  const [baixado] = await Promise.all([cel.waitForEvent("download"), tocar("button.rel-compartilhar")]);
+  verificar((await cel.textContent("button.rel-compartilhar")).trim() === "Baixar PDF" && baixado.suggestedFilename() === comp.nome, "sem compartilhamento: botão Baixar PDF baixa o arquivo");
+  await cel.keyboard.press("Escape");
+  await cel.waitForSelector("dialog.relatorio", { state: "detached", timeout: 3000 }).catch(() => {});
+  verificar(await cel.locator("dialog.relatorio").count() === 0, "Esc fecha o relatório");
 
   // Temas (Meu perfil → Aparência): troca na hora, fica salvo no aparelho, vale depois de recarregar.
   await cel.keyboard.press("Escape");
@@ -925,6 +1069,19 @@ const erros = [];
   }
   verificar(await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="fermentaveis"]')).backgroundImage) === "none",
     "Sol forte: seções sem desenho de fundo");
+  // Rolagem só na vertical nas outras telas (320 px).
+  await cel.keyboard.press("Escape");
+  await cel.setViewportSize({ width: 320, height: 568 });
+  const aceitar = (d) => d.accept();          // sair do editor com alteração pendente pede confirmação
+  cel.on("dialog", aceitar);
+  for (const [rota, espera] of [["#/ferramentas", ".cartao"], ["#/cadastros/fermentaveis", "table.lista-cad"], ["#/cadastros/estilos", "table.lista-cad"], ["#/cadastros/equipamentos", ".abas"], ["#/perfil", "form, .cartao"]]) {
+    await cel.evaluate((r) => { location.hash = r; }, rota);
+    await cel.waitForFunction((r) => location.hash === r, rota);
+    await cel.waitForSelector(espera);
+    await conferirLateral(`320 px, ${rota}`);
+    await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-${rota.split("/").pop()}.png` });
+  }
+  cel.off("dialog", aceitar);
   await ctxCel.close();
 
   // O 400 é o da senha errada, testada de propósito (uma vez só).
