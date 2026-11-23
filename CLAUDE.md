@@ -262,6 +262,22 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   pelo supabase_admin; o postgres não consegue revogar). Risco prático nulo: o schema `extensions` não é exposto pela API.
   Para remover: painel → Database → Extensions → http (desligar).
 
+## Catálogo de marcas (0009, aplicada em 23/11/2026)
+- 173 maltes de marca + 22 lúpulos, `dono` nulo: Weyermann 49, BestMalz 41, Viking Malt 31, Dingemans 28, Uma Malta 9,
+  Pauls Malt 8 (fichas do site da Uma Malta, distribuidora oficial), Agrária 7; Hopsteiner Lupulin Pellets 20 (forma
+  CRIO) e Cascade/Comet "(Brasil)" (Embrapa, manual de 2022). Levantamento em 5 lojas brasileiras (nov/2026):
+  Weyermann, Castle e Agrária em todas; Viking, Crisp, Dingemans na maioria.
+- Números SÓ de fichas oficiais baixadas e lidas (URL em `extras.url`; faixa de cor em `extras.cor_ebc` e nas notas).
+  Cor = meio da faixa EBC ÷ 1,97. Sem extrato/umidade publicados (Agrária inteira, alguns acidificados/torrados):
+  valor típico do grupo, avisado na nota. Nomes levam a marca (a receita copia só o nome). Notas próprias, curtas.
+- FORA (pendente): Castle/Château e Crisp (os sites recusam acesso automatizado: HTTP 403 / sem conexão daqui),
+  Yakima Chief Cryo e LUPOMAX (sem números oficiais acessíveis), lúpulo Mantiqueira (análise não conferida).
+- Rede do ambiente "GaliaBrew" liberada (23/11/2026, aprovada pelo responsável) para os sites dos fabricantes:
+  weyermann.de, castlemalting.com, agraria.com.br, bestmalz.de, vikingmalt.com, dingemansmout.be, umamalta.com.br,
+  crispmalt.com, yakimachief.com, johnihaas.com, barthhaas.com, hopsteiner.com, infoteca.cnptia.embrapa.br.
+- Teste `supabase/testes/0009_catalogo_marcas.sql`: 8 ok (contagem por marca, campos preenchidos, leitura por usuário
+  comum, catálogo não editável por ele, receita copia malte e lúpulo novos). Advisors: sem aviso novo.
+
 ## Login (painel do Supabase, não dá para fazer por SQL)
 - DECIDIDO (22/11/2026): cadastro ABERTO ("Allow new users to sign up" ligado), para testes com amigos. A RLS protege
   os dados. Confirmação de e-mail DESLIGADA (o e-mail padrão do Supabase só entrega para membros da org Versa, então
@@ -282,7 +298,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   responsável). 1ª publicação assim: PR #3 (editor novo, celular, arte), 22/11/2026.
 - Pendente na proteção da `main`: marcar o teste "Cálculos e versões" como obrigatório e "Require branches to be up
   to date" (Settings → Branches → Edit). Sem isso, o GitHub não barra PR desatualizado.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0008 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0009 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   desligar a extensão http no painel.
