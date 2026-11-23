@@ -45,7 +45,11 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - `supabase/testes/` — testes de RLS e de funções (rodam e desfazem)
 - `portal/` — página do app (fase 1: login + receitas); `portal/testes/` — testes (calculos.js e navegador)
 - `.github/workflows/pages.yml` — publicação do portal no GitHub Pages
+- `.github/workflows/testes.yml` — testes de todo PR para a main ("Cálculos e versões": cálculo + conferir.sh, exigido
+  na proteção da main; "Portal no navegador": navegador.cjs com Playwright 1.63.0). Sessão na nuvem publica por PR
+  (modo nuvem da skill /deploy), porque só pode enviar para a própria branch.
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
+- `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
 - `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
 - `.claude/skills/deploy/` — skill `/deploy` (22/11/2026, pedida pelo responsável): publicar SEMPRE por ela. Fila entre
   sessões paralelas em `refs/fila/*` no origin (`fila.sh`), atualiza com a main, `conferir.sh` (nº de migração, `?v=`),
@@ -79,7 +83,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (20 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (25 testes). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -98,10 +102,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   sem a umidade a OG sai ~4% alta. `receitas.relacao_agua_grao_l_kg` e `perda_tina_l` (água da mostura × lavagem).
 
 ## Portal (`portal/`, 22/11/2026, migração 0003)
-- HTML + módulos JS sem build: `index.html`, `app.js` (login, menu, rotas `#/receitas`, `#/receita/<id|nova>`,
-  `#/cadastros/<tabela>`, `#/perfil`), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
+- HTML + módulos JS sem build: `index.html`, `app.js` (login, rotas `#/receitas`, `#/receita/<id|nova>`,
+  `#/cadastros/<tabela>`, `#/perfil`), `menu.js` (menu lateral), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -115,26 +119,74 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  49 verificações: login, cadastros com vírgula, editor x calculos.js, lote/nº automático, ferramentas, priming, salvar/reabrir, lista, celular 390 px, receita
-  de outro, sair). O container não acessa o supabase.co: teste real só depois de publicar.
+  146 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
+  mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
+  lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
+  priming e temperatura da água no painel, tela Ferramentas (água da mostura, priming, refratômetro, correção do densímetro), água da
+  receita (perfil de íons e sulfato/cloreto, pH estimado e ácido),
+  receita de outro, sair; e um bloco de celular com toque: barra do app, toque/segurar no ±, teclado aberto,
+  cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
+- Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
+  (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, ~157 px desde
+  22/11/2026: puxador "detalhes" + 2 linhas de 3 cartões com número e régua; com teclado aberto fica baixa, sem régua;
+  "detalhes" abre estado e faixas) com OG, FG, ABV, IBU, cor, pH da mostura (faixa fixa 5,2–5,6, ideal 5,3–5,5,
+  não depende do estilo; "—" sem grão na mostura), régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
+  folga de 25%, "perto" = últimos 10% da faixa, valor arredondado como na tela), estado com cor + ícone + texto, e a
+  diferença da última mudança (acumula no mesmo campo, some em 3 s). Estilo no topo; lote numa linha de resumo
+  (`<details>`); volumes e água no painel lateral (coluna única abaixo de 1180 px). SVG pelo `svg()` do ui.js.
+- Editor (E2, 22/11/2026): fermentáveis e lúpulos em linhas (`secaoLinhas` no receitas.js) com a quantidade em
+  destaque (`campoQuantidade` do ui.js: botões ± que não roubam o foco, ↑/↓ = 1 passo, Shift = 10; passo no perfil,
+  padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
+  (`pct_peso`, `pontos_og`, `g_l` no calculos.js), totais no cabeçalho, ⋯ = detalhes (dados do cadastro, subir,
+  descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
+  seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
+  (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
+- Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
+  fermentáveis destravados pelo mesmo fator (bisseção, `ajustarParaOG`); "Chegar ao IBU" muda só um lúpulo (o de mais
+  tempo ou o escolhido; regra de três, `ajustarParaIBU`). Abrem pelo número da OG/IBU na barra ou pelo botão da seção,
+  com prévia antes de aplicar; aceitam OG em pontos (46 = 1,046). Cadeado por item RETIRADO da tela em 22/11/2026 (pedido do
+  responsável); `travado` continua aceito no calculos.js, mas a tela não marca mais. Histórico em memória (50 passos; digitação vira passo após 0,8 s ou ao trocar de campo; ação inteira
+  = 1 passo); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y; desfazer remonta o editor e a barra mostra a diferença. "Fixar
+  referência" compara cada número com a tentativa fixada; "Voltar à referência" restaura (e pode ser desfeito).
+  Histórico e referência somem ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
+- CELULAR PRIMEIRO (decisão de 22/11/2026: o responsável e a maioria das pessoas usam pelo celular). Toda tela nova se
+  desenha e testa primeiro em 390 px e 320 px com toque (contexto `isMobile + hasTouch` no navegador.cjs).
+  Etapa de celular (22/11/2026): no editor o menu geral (hoje a `barra-movel`) some e entra a `barra-app` presa no topo (‹ voltar, nome,
+  ↶ desfazer, Salvar com ponto quando há alteração pendente); a barra de números acompanha o teclado
+  (`visualViewport` → `--teclado`) e o campo em foco rola para cima dela (rolagem instantânea: toque durante rolagem
+  suave não vira clique); ± com toque no soltar (rolar a tela por cima não conta) e segurar repete; tabelas
+  (leveduras, outros, mostura, fermentação) viram cartões com rótulo por campo (`td[data-rotulo]::before`); chip de
+  diferença com `pointer-events: none`; `touch-action: manipulation` nos elementos de toque (sem espera de toque
+  duplo). O arrastar com o dedo funciona. PENDÊNCIA: no simulador do Chrome, o 1º toque depois de arrastar a alça não
+  vira clique (preso até o toque seguinte); causa não achada (detalhes no navegador.cjs). Conferir no iPhone real.
+- Arte (E4, 22/11/2026): ícones próprios em `icones.js` (grade 24, traço 1,75, `icone(nome)` gera SVG pelo `svg()`;
+  sem arquivo .svg para não precisar de requisição nem mexer na CSP): títulos de seção com ícone num círculo, botões
+  (adicionar, desfazer, refazer, voltar) e copinho na marca. Barra do grist (cada malte na própria cor, % do peso,
+  descrição para leitor de tela) e linha do tempo da fervura (`graficos.js`: bolinha por lúpulo, tamanho ~ gramas,
+  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Lista de receitas em cartões no celular
+  (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app mantido.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
-  `_headers` e publica. Só publica da branch PADRÃO do repositório. Pré-requisito único (manual, o proxy daqui não
+  `_headers` e publica. Só publica da branch PADRÃO do repositório (a `main`). Pré-requisito único (manual, o proxy daqui não
   mexe em configuração do repositório): Settings → Pages → Source = GitHub Actions. O Pages não lê `_headers`: a CSP
   está também numa `<meta>` no index.html (frame-ancestors só vale no _headers, para um dia ir ao Cloudflare).
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
   como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123a.
-
-## Layout (23/11/2026, só style.css)
-- Contraste: página branca; texto #15120e (18:1), rótulos/notas #4a4339 (~9:1), bordas de campo ≥ 3:1, botão âmbar
-  #9a520a com texto branco (5,9:1); escuro também ≥ 7:1 (botão com texto escuro). Conferir a razão ao mudar uma cor.
-- Seções sem contorno: `.cartao` não tem borda nem sombra; o título (`.cartao > h3` ou `> .titulo-linha`) fica numa faixa
-  `--painel` com marca âmbar à esquerda. Painel de resultados = fundo `--painel`. Topo escuro (`--topo`, theme-color).
-- Sem margem lateral sobrando: `.conteudo` sem largura máxima, margem `--lado` (.75rem; .55rem no celular).
-- Ferramentas em colunas CSS (`columns`), para não sobrar buraco entre cartões de alturas diferentes.
-- Teste do navegador: seletor por estrutura (`section:has(h3...)`), nunca por distância visual (`:near`).
+- Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre) nos dois temas;
+  ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
+  arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
+  960–1180 px: só ícones automaticamente (classe `compacto`; o editor precisa da largura). ≤ 959 px: `barra-movel` escura
+  no topo e o menu vira gaveta (fecha ao escolher, no véu ou com Esc; trava a rolagem enquanto aberta). `--topo-h` =
+  altura da `barra-movel` (0 no computador). No editor do celular (≤ 640 px) a `barra-movel` some, como antes o topo.
+  Editor em coluna única pela LARGURA AO LADO DO MENU, não pela tela: classe `estreito` na `.casca` quando a `.principal`
+  tem até 1180 px (ResizeObserver no menu.js; regras com `:where(.casca.estreito)`, sem somar especificidade). Ex.: 1366 px
+  com menu completo = uma coluna; recolhido = duas.
+- Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
+  ingrediente só ficam compactas até 640 px.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
@@ -143,7 +195,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Carga: número e data tirados do nome das importadas (93 com nº, 61 com data); 9 sem número no nome ficaram nulos.
 - `calculos.js` → `res.medido`: eficiência real (OG medida no volume real + perda da panela, menos açúcar pronto,
   sobre o açúcar possível do grão), ABV real, atenuação aparente real.
-- Portal: card "Lote" (nº, data, OG/FG medidas aceitam 1,050 / 1050 / 50, volume real); lista por nº com a data;
+- Portal: card "Brassagem (lote)" no fim do editor (nº, data, OG/FG medidas aceitam 1,050 / 1050 / 50, volume real;
+  o resumo dos parâmetros de equipamento no topo passou a se chamar "Parâmetros"); bloco "Medido no lote" no painel
+  lateral (só aparece com OG/FG medida); lista por nº com a data;
   "Nova a partir desta" (rota `#/receita/nova/<id>`) e, na receita nova, "Começar a partir de uma receita anterior".
   A cópia leva tudo menos dados do lote, notas e "pública"; liga só cadastros que a pessoa enxerga. Data sem hora
   é formatada por `dataDoDia` (new Date desloca um dia no fuso do Brasil).
@@ -171,13 +225,28 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 ## Química da água: sais e perfil de íons (0007, 22/11/2026)
 - `calculos.js`: `SAIS` (ppm por g/L a partir das massas molares: gesso, CaCl₂·2H₂O, MgSO₄·7H₂O, MgCl₂·6H₂O, NaCl,
   NaHCO₃), `perfilAgua` (origem × (1 − diluição) + sais ÷ litros; relação SO₄/Cl; alcalinidade como CaCO₃ e residual
-  de Kolbach: alcalinidade − Ca/1,4 − Mg/1,7), `leituraSulfatoCloreto`. Na receita: `res.agua` na água TOTAL do dia,
-  cada sal dividido entre mostura e lavagem na proporção dos volumes.
+  de Kolbach: alcalinidade − Ca/1,4 − Mg/1,7), `leituraSulfatoCloreto`.
+- Sais separados por água (22/11/2026, sem migração): cada sal tem `etapa` MOSTURA | LAVAGEM no jsonb `sais`
+  (`etapaSal`: sem etapa = mostura). `res.agua` = { mostura, lavagem, panela }, cada um um `perfilAgua` no próprio
+  volume (+ `litros`, `sais_g`); panela = todos os sais na água total. pH estimado usa só a água/sais da mostura.
+  Receita antiga (sais sem etapa = água total) é convertida ao abrir no editor por `separarSaisAntigos` (mostura +
+  lavagem na proporção dos volumes, mesmos gramas); grava com etapa ao salvar. Card Água: tabela de sais da mostura e
+  da lavagem ("Igual à mostura" copia os sais da mostura na proporção dos volumes), perfil Origem/Mostura/Lavagem/
+  Panela/Alvo (destaque longe do alvo na mostura e na panela; no celular símbolos curtos para caber sem rolagem).
 - 0007: `receitas.agua_origem` e `agua_alvo` (jsonb, CÓPIA do perfil: nome + 6 íons; sem id, como a regra 5),
-  `agua_diluicao_pct`, `sais` (jsonb lista [{sal, gramas}], nunca nulo). Teste `supabase/testes/0007_agua_sais.sql`.
+  `agua_diluicao_pct`, `sais` (jsonb lista [{sal, gramas, etapa}], nunca nulo). Teste `supabase/testes/0007_agua_sais.sql`.
 - Portal: card "Água" no editor (origem, diluição, alvo do cadastro de águas; sais; tabela origem × final × alvo, com
   destaque no que está longe do alvo; SO₄/Cl com leitura; alcalinidade residual). "Criar a partir de" copia a água.
-- Ainda não: ácido (lático/fosfórico) e pH estimado da mostura.
+- Ácido e pH estimado da mostura (0008, 22/11/2026): `phMostura` (balanço de cargas no espírito de Troester): cada
+  malte puxa para o seu pH em água destilada com uma capacidade tampão (base 40, cristal 80, torrado 200 mEq/(kg·pH);
+  pHDI base = máx(5,2; 5,76 − 0,025 × SRM), cristal = 5,22 − 0,00504 × °L, torrado 4,7; acidificado = base + 333 mEq/kg),
+  alcalinidade (HCO₃ que vira H₂CO₃ no pH, pKa 6,35), Ca/3,5 + Mg/7 (Kolbach), ácidos (lático 88% ≈ 11,8 mmol/mL, pKa
+  3,86; fosfórico 10%/85%: 1º próton + fração do 2º). Resolve por bisseção; `ml_para(alvo)` dá o ácido que falta.
+  Classe do malte pelo nome (acid/sauer; carafa/roast/black/chocolate ou SRM ≥ 200; cara/crystal/caramel). Calibrado
+  por regras práticas (pilsen em destilada ≈ 5,7; 1% acidificado ≈ −0,07; Kolbach ≈ +0,25 por 10 °dH; stout em
+  destilada < 5,4). É ESTIMATIVA ±0,1-0,2. `receitas.acidos` (jsonb [{acido, ml}], só mostura). Teste
+  `supabase/testes/0008_acidos.sql`. Card Água: lista de ácidos, pH estimado com faixa e botão "Adicionar o lático"
+  (alvo 5,4).
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
@@ -193,6 +262,22 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   pelo supabase_admin; o postgres não consegue revogar). Risco prático nulo: o schema `extensions` não é exposto pela API.
   Para remover: painel → Database → Extensions → http (desligar).
 
+## Catálogo de marcas (0009, aplicada em 23/11/2026)
+- 173 maltes de marca + 22 lúpulos, `dono` nulo: Weyermann 49, BestMalz 41, Viking Malt 31, Dingemans 28, Uma Malta 9,
+  Pauls Malt 8 (fichas do site da Uma Malta, distribuidora oficial), Agrária 7; Hopsteiner Lupulin Pellets 20 (forma
+  CRIO) e Cascade/Comet "(Brasil)" (Embrapa, manual de 2022). Levantamento em 5 lojas brasileiras (nov/2026):
+  Weyermann, Castle e Agrária em todas; Viking, Crisp, Dingemans na maioria.
+- Números SÓ de fichas oficiais baixadas e lidas (URL em `extras.url`; faixa de cor em `extras.cor_ebc` e nas notas).
+  Cor = meio da faixa EBC ÷ 1,97. Sem extrato/umidade publicados (Agrária inteira, alguns acidificados/torrados):
+  valor típico do grupo, avisado na nota. Nomes levam a marca (a receita copia só o nome). Notas próprias, curtas.
+- FORA (pendente): Castle/Château e Crisp (os sites recusam acesso automatizado: HTTP 403 / sem conexão daqui),
+  Yakima Chief Cryo e LUPOMAX (sem números oficiais acessíveis), lúpulo Mantiqueira (análise não conferida).
+- Rede do ambiente "GaliaBrew" liberada (23/11/2026, aprovada pelo responsável) para os sites dos fabricantes:
+  weyermann.de, castlemalting.com, agraria.com.br, bestmalz.de, vikingmalt.com, dingemansmout.be, umamalta.com.br,
+  crispmalt.com, yakimachief.com, johnihaas.com, barthhaas.com, hopsteiner.com, infoteca.cnptia.embrapa.br.
+- Teste `supabase/testes/0009_catalogo_marcas.sql`: 8 ok (contagem por marca, campos preenchidos, leitura por usuário
+  comum, catálogo não editável por ele, receita copia malte e lúpulo novos). Advisors: sem aviso novo.
+
 ## Login (painel do Supabase, não dá para fazer por SQL)
 - DECIDIDO (22/11/2026): cadastro ABERTO ("Allow new users to sign up" ligado), para testes com amigos. A RLS protege
   os dados. Confirmação de e-mail DESLIGADA (o e-mail padrão do Supabase só entrega para membros da org Versa, então
@@ -204,19 +289,26 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Primeiro admin: depois de criar o próprio login, `update perfis set papel = 'admin' where user_id = ...` por SQL.
 
 ## Situação em 22/11/2026 (fim da 1ª sessão)
-- No ar: https://llmannrich-ai.github.io/GaliaBrew/ (publicado da branch padrão, hoje `claude/gallant-hypatia-oyvzpp`;
-  a `main` recebe o mesmo conteúdo a cada etapa concluída). O container de desenvolvimento NÃO acessa github.io nem
+- No ar: https://llmannrich-ai.github.io/GaliaBrew/, publicado da `main`, que é a branch padrão desde 22/11/2026
+  (antes era `claude/gallant-hypatia-oyvzpp`, hoje parada). O container de desenvolvimento NÃO acessa github.io nem
   supabase.co: conferir publicação por `gh api .../deployments` e o banco pelo MCP do Supabase.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0007 aplicadas.
+- GitHub (22/11/2026, feito pelo responsável): `main` protegida (PR obrigatório, sem aprovação; o dono pode enviar
+  direto, que é o que o /deploy das sessões no computador faz); ambiente `github-pages` aceita a `main`. Sessão na
+  nuvem não grava a `main` nem a fila: publica pelo modo nuvem do /deploy (PR + merge pela API, com pedido do
+  responsável). 1ª publicação assim: PR #3 (editor novo, celular, arte), 22/11/2026.
+- Pendente na proteção da `main`: marcar o teste "Cálculos e versões" como obrigatório e "Require branches to be up
+  to date" (Settings → Branches → Edit). Sem isso, o GitHub não barra PR desatualizado.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0009 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
-  branch padrão = main (o workflow publica da branch padrão), desligar a extensão http no painel.
+  desligar a extensão http no painel.
 - 22/11/2026: FASE 1 CONCLUÍDA (testada no iPhone; Site URL/Redirect configuradas; IBU com whirlpool).
 - Fase 2 (1) feita em 22/11/2026: "criar a partir de" + dados do lote (0005).
 - Fase 2 (2a) feita em 22/11/2026: calculadoras de água da mostura e priming (0006, página Ferramentas).
 - Fase 2 (2b) feita em 22/11/2026: refratômetro e correção do densímetro (Ferramentas).
 - Fase 3 (química da água) começada em 22/11/2026: sais e perfil de íons (0007).
-- Próximo: (3) escalar receita; água: ácido e pH estimado da mostura. Sem módulo de brassagem e sem versões.
+- 22/11/2026: química da água com ácido e pH estimado (0008).
+- Próximo: (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho
 - Fase 1 (CONCLUÍDA em 22/11/2026): 0001 aplicada ✔ → `portal/calculos.js` + testes ✔ → portal com login, cadastros e editor

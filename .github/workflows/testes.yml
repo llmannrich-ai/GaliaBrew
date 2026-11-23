@@ -1,0 +1,67 @@
+# Testes de todo pull request para a main (e de todo push na main).
+# É o "status check" que a proteção da main exige: com "Require branches to be up to date", o GitHub só deixa
+# juntar um PR que já tem toda a main e passou aqui — o mesmo que a fila do /deploy garante (ver .claude/skills/deploy).
+name: Testes
+
+on:
+  pull_request:
+    branches: [main]
+    # "edited" cobre a troca de destino do PR (ex.: de outra branch para a main): testa de novo contra a main.
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Obrigatório na proteção da main: cálculos + conferência de versões (nº de migração, ?v= dos scripts).
+  calculo-e-versoes:
+    name: Cálculos e versões
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # o conferir.sh compara com a main inteira
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Testes do cálculo
+        run: node --test portal/testes/*.test.mjs
+
+      - name: Conferência de versões (contra a main)
+        if: github.event_name == 'pull_request'
+        run: bash .claude/skills/deploy/conferir.sh
+
+  # Portal no Chromium (Supabase simulado, CSP do _headers, computador, tablet e celular com toque).
+  navegador:
+    name: Portal no navegador
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Playwright + Chromium
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+
+      - name: Teste no navegador
+        run: node portal/testes/navegador.cjs "$RUNNER_TEMP/capturas"
+
+      - name: Capturas (se falhar)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: ${{ runner.temp }}/capturas

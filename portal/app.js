@@ -1,36 +1,13 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto } from "./ui.js?v=20261123a";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261123a";
 import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261123a";
 import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261123a";
 import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261123a";
 import { telaFerramentas } from "./ferramentas.js?v=20261123a";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261123a";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
-
-function cabecalho() {
-  const links = [
-    ["#/receitas", "Receitas"],
-    ["#/cadastros/fermentaveis", "Cadastros"],
-    ["#/ferramentas", "Ferramentas"],
-    ["#/perfil", "Meu perfil"],
-  ];
-  return el("header", { class: "topo" },
-    el("a", { href: "#/receitas", class: "marca", text: "GaliaBrew" }),
-    el("nav", {}, links.map(([h, t]) => el("a", { href: h, text: t, dataset: { rota: h.split("/")[1] } }))),
-    el("div", { class: "quem" },
-      el("span", { text: sessao.perfil?.nome || sessao.usuario?.email || "" }),
-      sessao.admin ? el("span", { class: "selo", text: "admin" }) : null,
-      el("button", { type: "button", class: "secundario pequeno", text: "Sair", on: { click: sair } })));
-}
-
-function marcarMenu() {
-  const rota = location.hash.split("/")[1] || "receitas";
-  for (const a of document.querySelectorAll("header nav a")) {
-    const r = a.dataset.rota;
-    a.classList.toggle("ativo", r === rota || (r === "receitas" && rota === "receita"));
-  }
-}
 
 // ---------- login ----------
 function telaEntrar(mensagem) {
@@ -102,6 +79,7 @@ function telaDefinirSenha(tipo) {
 
 async function sair() {
   if (haAlteracoes() && !window.confirm("Há alterações não salvas. Sair mesmo assim?")) return;
+  fecharMenu();
   await sb.auth.signOut();
 }
 
@@ -133,6 +111,12 @@ function telaPerfil(conteudo) {
         el("select", { on: { change: (e) => { preferencias.cor = e.target.value; salvarPreferencias(); avisar("Preferência salva."); } } },
           ["EBC", "SRM"].map((u) => el("option", { value: u, text: u, selected: preferencias.cor === u }))))),
     el("section", { class: "cartao" },
+      el("h3", { text: "Ajuste rápido no editor" }),
+      el("p", { class: "nota", text: "Quanto os botões − e + (e as setas ↑ ↓) mudam a quantidade. Shift + seta = 10 vezes." }),
+      el("div", { class: "grade-form" },
+        [["passo_fermentavel_g", "Fermentáveis (g)"], ["passo_lupulo_g", "Lúpulos (g)"]].map(([k, rot]) => el("label", {}, rot,
+          campoNumero(preferencias, k, { casas: 0, rotulo: rot, aoMudar: () => { if (preferencias[k] > 0) salvarPreferencias(); } }))))),
+    el("section", { class: "cartao" },
       el("h3", { text: "Trocar senha" }),
       el("label", {}, "Nova senha", el("input", { type: "password", autocomplete: "new-password", on: { input: (e) => { senha.nova = e.target.value; } } })),
       el("label", {}, "Repita", el("input", { type: "password", autocomplete: "new-password", on: { input: (e) => { senha.repetir = e.target.value; } } })),
@@ -161,7 +145,10 @@ async function rotear() {
   const conteudo = $("#conteudo");
   if (!conteudo) return;
   marcarMenu();
+  fecharMenu();
   rotaAtual = location.hash;
+  conteudo.className = "conteudo";      // o editor acrescenta "com-vital"; as outras telas não
+  document.body.classList.remove("no-editor");
   try {
     if (rota === "receitas") await telaReceitas(conteudo);
     else if (rota === "receita") await telaEditor(conteudo, param, origem);
@@ -198,8 +185,14 @@ async function carregarPerfil() {
 }
 
 function montarApp() {
-  preencher(raiz(), cabecalho(), el("main", { id: "conteudo", class: "conteudo" }));
+  const { raiz: casca, barra } = montarCasca({ sair });
+  preencher(raiz(), casca);
   marcarMenu();
+  // Altura real da barra do topo para o CSS: a barra vital do editor fica fixa logo abaixo dela. No computador a barra
+  // some (o menu é lateral) e a altura vira 0.
+  const medir = () => document.documentElement.style.setProperty("--topo-h", `${barra.offsetHeight}px`);
+  medir();
+  if (window.ResizeObserver) new ResizeObserver(medir).observe(barra);
 }
 
 // ---------- início ----------

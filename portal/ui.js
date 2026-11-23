@@ -20,6 +20,20 @@ export function el(tag, attrs = {}, ...filhos) {
   return n;
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+/** Igual ao el(), para SVG (createElementNS). Atributos de apresentação (fill, stroke) são permitidos pela CSP. */
+export function svg(tag, attrs = {}, ...filhos) {
+  const n = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs ?? {})) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") n.setAttribute("class", v);
+    else if (k === "text") n.textContent = v;
+    else n.setAttribute(k, v === true ? "" : String(v));
+  }
+  for (const f of filhos.flat(Infinity)) if (f instanceof Node) n.append(f);
+  return n;
+}
+
 export const $ = (sel, raiz = document) => raiz.querySelector(sel);
 
 export function limpar(n) {
@@ -108,6 +122,64 @@ export function campoNumero(obj, chave, { casas = 2, aoMudar, de = (x) => x, par
     },
   });
   return input;
+}
+
+/**
+ * Quantidade com ajuste rápido: botões − e +, setas ↑/↓ no teclado (1 passo) e Shift+seta (10 passos).
+ * passo na unidade guardada (ex.: 0,05 kg). Os botões não roubam o foco (no celular não abrem o teclado).
+ * aoMudar(input) recebe o campo, para a barra vital saber de onde veio a mudança.
+ */
+export function campoQuantidade(obj, chave, { casas = 2, passo = 1, passoTxt = String(passo), unidade = "", aoMudar, desabilitado = false, rotulo } = {}) {
+  const input = campoNumero(obj, chave, { casas, desabilitado, rotulo, aoMudar: () => aoMudar?.(input), classe: "num qtd" });
+  input.setAttribute("role", "spinbutton");
+  const ajustar = (vezes) => {
+    const atual = Number.isFinite(obj[chave]) ? obj[chave] : 0;
+    const novo = Math.max(0, Number((atual + vezes * passo).toFixed(casas)));
+    obj[chave] = novo;
+    input.value = numeroBR(novo, casas);
+    input.classList.remove("invalido");
+    input.setAttribute("aria-valuenow", String(novo));
+    aoMudar?.(input);
+  };
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    ajustar((e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 10 : 1));
+  });
+  // Toque/clique = 1 passo (no soltar: arrastar o dedo para rolar a tela não conta). Segurar = repete, cada vez
+  // mais rápido. Teclado e leitor de tela chegam pelo "click" sem ponteiro.
+  const botao = (sinal, vezes) => {
+    let espera = null;
+    let repete = null;
+    let repetiu = false;
+    let fimPonteiro = 0;          // o "click" que vem logo depois de um toque/clique já foi contado
+    const parar = () => { clearTimeout(espera); clearInterval(repete); espera = null; repete = null; fimPonteiro = Date.now(); };
+    return el("button", {
+      type: "button", class: "passo", tabindex: -1, disabled: desabilitado, text: sinal,
+      title: `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt} (segure para repetir; seta ${vezes > 0 ? "↑" : "↓"}, Shift = ×10)`,
+      "aria-label": `${vezes > 0 ? "Mais" : "Menos"} ${passoTxt}`,
+      on: {
+        mousedown: (e) => e.preventDefault(),          // não tira o foco do campo
+        contextmenu: (e) => e.preventDefault(),        // toque longo não abre menu
+        pointerdown: (e) => {
+          if (e.button !== 0) return;
+          parar();
+          repetiu = false;
+          espera = setTimeout(() => {
+            repetiu = true;
+            ajustar(vezes);
+            let n = 0;
+            repete = setInterval(() => ajustar(vezes * (++n > 15 ? 4 : 1)), 90);
+          }, 400);
+        },
+        pointerup: () => { const toque = espera !== null && !repetiu; parar(); if (toque) ajustar(vezes); },
+        pointerleave: () => { if (espera !== null || repete !== null) parar(); },
+        pointercancel: parar,
+        click: () => { if (Date.now() - fimPonteiro < 700) return; ajustar(vezes); },
+      },
+    });
+  };
+  return el("div", { class: "campo-qtd" }, botao("−", -1), input, el("span", { class: "unidade", text: unidade, "aria-hidden": "true" }), botao("+", 1));
 }
 
 export function campoTexto(obj, chave, { aoMudar, desabilitado = false, classe = "", placeholder, rotulo, max = 200 } = {}) {

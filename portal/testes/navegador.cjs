@@ -27,6 +27,11 @@ const db = {
   lupulos: [], leveduras: [], outros: [], aguas: [{ id: "ag-tor", dono: null, nome: "Torneira teste", calcio_ppm: 20, magnesio_ppm: 4, sodio_ppm: 10, sulfato_ppm: 10, cloreto_ppm: 15, bicarbonato_ppm: 60 }, { id: "ag-alvo", dono: null, nome: "Alvo IPA", calcio_ppm: 110, magnesio_ppm: 10, sodio_ppm: 10, sulfato_ppm: 255, cloreto_ppm: 50, bicarbonato_ppm: 0 }], equipamentos: [], receitas: [],
   receita_fermentaveis: [], receita_lupulos: [], receita_leveduras: [], receita_outros: [], receita_mostura_passos: [], receita_fermentacao_passos: [],
 };
+// Catálogo grande de leveduras (como o real: ~900) para medir a busca.
+db.leveduras = Array.from({ length: 900 }, (_, i) => ({
+  id: `y${i}`, dono: null, nome: `Cepa ${i}`, produtor: i % 3 ? "Fermentis" : "Lallemand", tipo: i % 4 ? "ALE" : "LAGER", forma: "SECA",
+  atenuacao_min_pct: 68 + (i % 12), atenuacao_max_pct: 72 + (i % 12),
+})).concat([{ id: "y-saf", dono: null, nome: "SafLager W-34/70 Fermentação baixa", produtor: "Fermentis", tipo: "LAGER", forma: "SECA", atenuacao_min_pct: 80, atenuacao_max_pct: 84, temp_min_c: 9, temp_max_c: 15 }]);
 const chamadas = [];
 const uuid = () => crypto.randomUUID();
 
@@ -132,17 +137,17 @@ async function site(rota) {
   return rota.fulfill({ status: 200, contentType: TIPOS[path.extname(p)] || "application/octet-stream", headers: { "content-security-policy": CSP }, body: fs.readFileSync(p) });
 }
 
+const ok = [];
+const erros = [];
 (async () => {
   const navegador = await chromium.launch();
   const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
   const pagina = await ctx.newPage();
-  const erros = [];
   pagina.on("console", (m) => { if (["error", "warning"].includes(m.type())) erros.push(`${m.type()}: ${m.text()}`); });
   pagina.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
   await ctx.route(`${SB}/**`, supabaseSimulado);
   await ctx.route(`${ORIGEM}/**`, site);
 
-  const ok = [];
   const verificar = (cond, msg) => { if (!cond) throw new Error(`FALHOU: ${msg}`); ok.push(msg); };
 
   await pagina.goto(`${ORIGEM}/`);
@@ -156,7 +161,8 @@ async function site(rota) {
   await pagina.fill('input[type="password"]', SENHA);
   await pagina.click('button[type="submit"]');
   await pagina.waitForSelector("text=Nenhuma receita ainda");
-  verificar(await pagina.isVisible("header >> text=Leo"), "login entra e mostra o nome do perfil");
+  verificar(await pagina.isVisible(".lateral >> text=Leo"), "login entra e mostra o nome do perfil");
+  verificar(await pagina.getAttribute('.lateral nav a[data-rota="receitas"]', "aria-current") === "page", "menu lateral marca a página atual");
   await pagina.screenshot({ path: `${SAIDA}/p1-receitas-vazia.png` });
 
   // Cadastro: equipamento e lúpulo
@@ -190,23 +196,76 @@ async function site(rota) {
   verificar(await pagina.inputValue('input[aria-label="Volume no fermentador (L)"]') === "23,0", "equipamento único já preenche os parâmetros");
   await pagina.fill(".titulo-receita", "Pils da Galia");
   await pagina.selectOption('select[aria-label="Estilo"]', "e1");
-  const adicionar = pagina.locator("select.adicionar");
-  await adicionar.nth(0).selectOption("f-sis");
-  await pagina.locator('input[aria-label="Qtd (kg)"]').first().fill("4,8");
-  await adicionar.nth(1).selectOption(db.lupulos[0].id);
-  await pagina.locator('input[aria-label="Qtd (g)"]').first().fill("60");
-  await adicionar.nth(2).selectOption("__livre");
-  await pagina.locator('section:has(h3:text("Leveduras")) input[aria-label="Nome"]').first().fill("W-34/70");
+  const adicionar = (secao) => pagina.click(`[data-secao="${secao}"] button.adicionar`);
+  const focado = () => pagina.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+
+  // Fermentável: a busca ignora acento ("agraria" acha o produtor "Agrária"); Enter adiciona e o foco vai para a quantidade.
+  await adicionar("fermentaveis");
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await focado() === "Buscar", "busca abre com o foco no campo");
+  await pagina.keyboard.type("agraria");
+  verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Pilsen (sistema)", "busca sem acento: 'agraria' acha o malte da Agrária");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar(await focado() === "Qtd (kg)", "Enter adiciona o malte e o foco vai direto para a quantidade");
+  await pagina.keyboard.type("4,8");
+
+  // Lúpulo só com teclado: Adicionar → "saaz" → Enter → 60.
+  await pagina.focus('[data-secao="lupulos"] button.adicionar');
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca");
+  await pagina.keyboard.type("saaz");
+  await pagina.keyboard.press("Enter");
+  await pagina.keyboard.type("60");
+  verificar(await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60", "lúpulo adicionado só com o teclado (Adicionar, 'saaz', Enter, 60)");
+
+  // Levedura: catálogo de 901 itens, filtros, Esc fecha sem adicionar; depois item livre.
+  await adicionar("leveduras");
+  await pagina.waitForSelector("dialog.busca");
+  verificar((await pagina.textContent(".busca-info")).startsWith("901 itens · mostrando 60"), "busca mostra 60 de 901 leveduras sem travar");
+  const ms = await pagina.evaluate(() => {
+    const c = document.querySelector(".busca-campo");
+    const t = performance.now();
+    c.value = "fermentis w-34";
+    c.dispatchEvent(new Event("input"));
+    return performance.now() - t;
+  });
+  verificar(ms < 100 && await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Fermentis SafLager W-34/70 Fermentação baixa",
+    `busca em 901 leveduras com dois termos responde em ${Math.round(ms)} ms`);
+  await pagina.fill(".busca-campo", "");
+  await pagina.click('.busca-grupo-filtro[aria-label="Tipo"] >> text=Lager');
+  await pagina.click('.busca-grupo-filtro[aria-label="Atenuação"] >> text=78%+');
+  const lagersFortes = db.leveduras.filter((y) => y.tipo === "LAGER" && (y.atenuacao_min_pct + y.atenuacao_max_pct) / 2 >= 78).length;
+  verificar((await pagina.textContent(".busca-info")).startsWith(`${lagersFortes} itens`), `filtros Lager + atenuação 78%+ = ${lagersFortes} itens`);
+  await pagina.screenshot({ path: `${SAIDA}/p3e-busca.png` });
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar(await pagina.locator('[data-secao="leveduras"] tbody tr input[aria-label="Nome"]').count() === 0, "Esc fecha a busca sem adicionar");
+  await adicionar("leveduras");
+  await pagina.click("dialog.busca >> text=Item livre");
+  verificar(await focado() === "Nome", "item livre: foco no nome da linha nova");
+  await pagina.keyboard.type("W-34/70");
   await pagina.locator('input[aria-label="Atenuação %"]').first().fill("80");
   // Lote: data, OG medida digitada como 1048 (vira 1,048).
   await pagina.fill('input[aria-label="Data da brassagem"]', "2026-04-20");
   await pagina.fill('input[aria-label="OG medida"]', "1048");
+  await pagina.locator('input[aria-label="OG medida"]').blur();
+  verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "1,048", "OG medida digitada 1048 aparece como 1,048 ao sair do campo");
   await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "2,5");
   // Água: origem e alvo do cadastro (copiados), 6 g de gesso.
   await pagina.selectOption('select[aria-label="Água de origem"]', "ag-tor");
   await pagina.selectOption('select[aria-label="Perfil alvo"]', "ag-alvo");
-  await pagina.click("button:has-text('+ Sal')");
-  await pagina.locator('input[aria-label="Gramas"]').first().fill("6");
+  await pagina.click("button:has-text('+ Sal na mostura')");
+  await pagina.fill('input[aria-label="Gramas na mostura"]', "6");
+  await pagina.click("button:has-text('+ Sal na lavagem')");
+  await pagina.selectOption('section:has(h3:text("Água")) tr:has(input[aria-label="Gramas na lavagem"]) select', "CLORETO_CALCIO");
+  await pagina.fill('input[aria-label="Gramas na lavagem"]', "2");
+  await pagina.waitForTimeout(150);
+  const phAntes = await pagina.textContent("section:has(h3:text('Água'))");
+  verificar(/pH estimado da mostura[\s\S]*?5,\d\d/.test(phAntes) && phAntes.includes("Para chegar a 5,4"), "mostra o pH estimado e quanto ácido falta para 5,4");
+  await pagina.click("button:has-text('Adicionar o lático')");
+  const phDepois = await pagina.textContent("section:has(h3:text('Água'))");
+  verificar(/pH estimado da mostura[\s\S]*?(5,40|5,39|5,41)/.test(phDepois) && phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
@@ -219,25 +278,191 @@ async function site(rota) {
       leveduras: [{ atenuacao_pct: 80 }],
     });
   });
-  const textoPainel = await pagina.textContent(".resultados");
   const br = (v, c) => v.toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c });
-  verificar(textoPainel.includes(br(esperado.og, 3)), `painel mostra OG ${br(esperado.og, 3)}`);
-  verificar(textoPainel.includes(`IBU (Tinseth)${br(esperado.ibu, 0)}`), `painel mostra IBU ${br(esperado.ibu, 0)}`);
-  verificar(textoPainel.includes(br(esperado.fg, 3)), `painel mostra FG ${br(esperado.fg, 3)}`);
-  verificar(textoPainel.includes("Eficiência real"), "OG medida mostra a eficiência real");
+  const vital = (m, parte = "vital-val") => pagina.textContent(`.vital [data-metrica="${m}"] .${parte}`);
+  verificar(await vital("og") === br(esperado.og, 3), `barra vital mostra OG ${br(esperado.og, 3)}`);
+  verificar(await vital("ibu") === br(esperado.ibu, 0), `barra vital mostra IBU ${br(esperado.ibu, 0)}`);
+  verificar(await vital("fg") === br(esperado.fg, 3), `barra vital mostra FG ${br(esperado.fg, 3)}`);
+  verificar(await vital("abv") === `${br(esperado.abv_pct, 1)}%`, `barra vital mostra ABV ${br(esperado.abv_pct, 1)}%`);
+  // German Pils: OG 1,044–1,050 (receita 1,041 → abaixo); IBU 22–40 (23 → perto do mínimo); cor 2–4 SRM.
+  verificar((await vital("og", "vital-estado")).includes("abaixo do estilo") && await pagina.getAttribute('.vital [data-metrica="og"]', "class") === "vital-item estado-fora",
+    "OG fora da faixa: ▼ abaixo do estilo (cor + ícone + texto)");
+  verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
+  verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
+  verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
+  const linhaF = '[data-secao="fermentaveis"] li.ing';
+  const linhaL = '[data-secao="lupulos"] li.ing';
+  verificar(await pagina.textContent(`${linhaF} .d1 .ing-dado-val`) === "100,0%" && await pagina.textContent(`${linhaF} .d2 .ing-dado-val`) === `+${br((esperado.og - 1) * 1000, 0)}`,
+    "fermentável mostra % do grist e pontos da OG");
+  verificar(await pagina.textContent(`${linhaL} .d1 .ing-dado-val`) === br(esperado.ibu, 1) && await pagina.textContent(`${linhaL} .d2 .ing-dado-val`) === br(60 / 23, 1),
+    "lúpulo mostra IBU da adição e g/L");
+  verificar(await pagina.getAttribute(".grist", "aria-label") === "Proporção dos fermentáveis no peso: Pilsen (sistema) 100%" && await pagina.locator(".grist-seg").count() === 1,
+    "barra do grist: um segmento por malte, com descrição para leitor de tela");
+  verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
+  verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
+    "totais no cabeçalho das seções");
+  verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
+  verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
+  const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
-  const esperadoSo4 = await pagina.evaluate(async () => {
+  const esperadoAgua = await pagina.evaluate(async () => {
     const m = await import("./calculos.js?v=20261123a");
-    const total = Number(document.querySelector(".resultados").textContent.match(/Água total[^0-9]*?([0-9]+,[0-9]) L/)[1].replace(",", "."));
-    return m.perfilAgua({ origem: { sulfato_ppm: 10, cloreto_ppm: 15 }, sais: [{ sal: "GESSO", gramas: 6 }], litros: total }).ions.sulfato_ppm;
+    const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
+    const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
+    const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
+    const lavagem = m.perfilAgua({ origem: o, sais: [{ sal: "CLORETO_CALCIO", gramas: 2 }], litros: litros("Água de lavagem") }).ions;
+    const panela = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }, { sal: "CLORETO_CALCIO", gramas: 2 }], litros: litros("Água total") }).ions;
+    return { so4: [mostura, lavagem, panela].map((x) => Math.round(x.sulfato_ppm)), cl: [mostura, lavagem, panela].map((x) => Math.round(x.cloreto_ppm)) };
   });
-  verificar(textoAgua.includes(`Sulfato (SO₄)10${Math.round(esperadoSo4)}255`), `perfil da água: sulfato 10 → ${Math.round(esperadoSo4)} (alvo 255)`);
+  verificar(textoAgua.includes(`Sulfato (SO₄)SO₄10${esperadoAgua.so4.join("")}255`), `perfil da água: sulfato origem 10 → mostura/lavagem/panela ${esperadoAgua.so4.join(" / ")} (alvo 255)`);
+  verificar(textoAgua.includes(`Cloreto (Cl)Cl15${esperadoAgua.cl.join("")}`), `perfil da água: cloreto da lavagem só na lavagem e na panela (${esperadoAgua.cl.join(" / ")})`);
   verificar(/Sulfato\/cloreto[\s\S]*?\d+,\d\d \((seca e amarga|levemente amarga)\)/.test(textoAgua), "mostra a relação sulfato/cloreto com a leitura");
   verificar(/Priming.*Açúcar comum \(sacarose\)\d+ g/.test(textoPainel), "CO₂ desejado mostra os gramas de priming");
   verificar(/Temperatura da água da mostura[\s\S]{0,300}?absorve\.\d+,\d °C/.test(textoPainel), "painel mostra a temperatura da água da mostura");
-  await pagina.screenshot({ path: `${SAIDA}/p3-editor.png`, fullPage: true });
 
-  await pagina.click("button:has-text('Salvar')");
+  // Mudança mostra a diferença e a barra continua à vista com a página rolada.
+  const qtd = pagina.locator('input[aria-label="Qtd (kg)"]').first();
+  await qtd.fill("5,3");
+  await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
+  const esperado53 = await pagina.evaluate(async () => {
+    const m = await import("./calculos.js?v=20261123a");
+    const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
+      fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
+    return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
+  });
+  verificar(await vital("og", "vital-delta") === `+${br(esperado53, 3)}`, `diferença só desta mudança: 4,8 → 5,3 kg = OG +${br(esperado53, 3)}`);
+  await pagina.locator('textarea[aria-label="Notas"]').scrollIntoViewIfNeeded();
+  const caixa = await pagina.locator(".vital").boundingBox();
+  verificar(caixa.y >= 0 && caixa.y + caixa.height <= 900, `computador: barra vital à vista com a página rolada até as notas (y=${Math.round(caixa.y)})`);
+  await pagina.screenshot({ path: `${SAIDA}/p3b-editor-rolado.png` });
+  await qtd.fill("4,8");
+  await pagina.waitForTimeout(100);
+  verificar(await vital("og") === br(esperado.og, 3), "voltar a 4,8 kg volta a OG");
+
+  // Ajuste rápido: + (250 g), seta ↑ (250 g), Shift+↓ (2,5 kg).
+  await pagina.click(`${linhaF} button.passo[aria-label="Mais 250 g"]`);
+  verificar(await qtd.inputValue() === "5,050", "botão + soma 250 g");
+  await qtd.focus();
+  await pagina.keyboard.press("ArrowUp");
+  verificar(await qtd.inputValue() === "5,300", "seta ↑ soma 250 g");
+  await pagina.keyboard.press("Shift+ArrowDown");
+  verificar(await qtd.inputValue() === "2,800", "Shift+↓ tira 2,5 kg");
+  await qtd.fill("4,8");
+
+  // Segundo lúpulo pela busca (Saaz aparece em "Recentes"); mudar a etapa; arrastar; mover pelo teclado; remover.
+  await adicionar("lupulos");
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await pagina.textContent(".busca-grupo") === "Recentes", "busca mostra os recentes primeiro");
+  await pagina.keyboard.press("Enter");
+  await pagina.keyboard.type("20");
+  const segunda = `${linhaL}:nth-child(2)`;
+  await pagina.selectOption(`${segunda} select[aria-label="Etapa"]`, "DRY_HOP");
+  verificar(await pagina.isVisible(`${segunda} input[aria-label="Dia"]`) && !(await pagina.isVisible(`${segunda} input[aria-label="Tempo (min)"]`)) && await pagina.textContent(`${segunda} .d1 .ing-dado-val`) === "—",
+    "dry hop: pede o dia no lugar do tempo e o IBU fica '—'");
+  verificar(await vital("ibu") === br(esperado.ibu, 0), "dry hop não muda o IBU");
+  // E4: linha do tempo com o lúpulo da fervura (60 min = início) e o dry hop na zona própria.
+  const pontosTempo = await pagina.$$eval(".tempo-ponto", (ps) => ps.map((p) => ({ rot: p.getAttribute("aria-label"), esq: parseFloat(p.style.left) })));
+  verificar(pontosTempo.length === 2 && pontosTempo.some((p) => p.esq === 0 && p.rot.includes("60 min")) && pontosTempo.some((p) => p.rot.includes("dry hop") && p.esq > 80),
+    `linha do tempo: lúpulo de 60 min no início e dry hop na zona do fim (${pontosTempo.map((p) => Math.round(p.esq)).join(", ")}%)`);
+  await pagina.click('.tempo-ponto[aria-label*="dry hop"]');
+  verificar(await pagina.evaluate(() => document.querySelectorAll('[data-secao="lupulos"] li.ing')[1].classList.contains("destaque")), "tocar no lúpulo da linha do tempo destaca a linha dele");
+  const alca2 = await pagina.locator(`${segunda} .ing-alca`).boundingBox();
+  const linha1 = await pagina.locator(`${linhaL}:nth-child(1)`).boundingBox();
+  await pagina.mouse.move(alca2.x + alca2.width / 2, alca2.y + alca2.height / 2);
+  await pagina.mouse.down();
+  await pagina.mouse.move(alca2.x + alca2.width / 2, linha1.y + 4, { steps: 8 });
+  await pagina.mouse.up();
+  await pagina.waitForTimeout(100);
+  verificar(await pagina.inputValue(`${linhaL}:nth-child(1) input[aria-label="Qtd (g)"]`) === "20,0", "arrastar pela alça leva o lúpulo para cima");
+  await pagina.focus(`${linhaL}:nth-child(1) .ing-alca`);
+  await pagina.keyboard.press("ArrowDown");
+  verificar(await pagina.inputValue(`${linhaL}:nth-child(2) input[aria-label="Qtd (g)"]`) === "20,0" && (await focado()).includes("posição 2 de 2"),
+    "seta ↓ na alça desce o item e o foco acompanha");
+  await pagina.click(`${segunda} .ing-mais`);
+  verificar(await pagina.getAttribute(`${segunda} .ing-mais`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "⋯ abre os detalhes (alfa, forma, nome)");
+  await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
+  await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
+  verificar(await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pelos detalhes");
+
+  // ---- E3: desfazer/refazer ----
+  await pagina.keyboard.press("Control+z");
+  verificar(await pagina.locator(linhaL).count() === 2, "Ctrl+Z traz de volta o lúpulo removido");
+  await pagina.keyboard.press("Control+Shift+z");
+  verificar(await pagina.locator(linhaL).count() === 1, "Ctrl+Shift+Z refaz a remoção");
+  await qtd.fill("5,5");
+  await pagina.click('.vital-ferramentas button:has-text("Desfazer")');
+  verificar(await qtd.inputValue() === "4,800" && await vital("og") === br(esperado.og, 3), "botão Desfazer volta a quantidade digitada");
+  verificar((await vital("og", "vital-delta")).startsWith("−"), "depois de desfazer, a barra mostra a diferença");
+
+  // ---- E3: chegar à OG (pelo número da OG na barra) ----
+  await pagina.click('.vital [data-metrica="og"] button.vital-val');
+  await pagina.waitForSelector("dialog.alvo");
+  await pagina.fill('dialog.alvo input[aria-label="OG desejada"]', "46");
+  verificar((await pagina.textContent(".alvo-previa")).includes("OG 1,046"), "OG em pontos (46) vira 1,046 na prévia");
+  await pagina.click('dialog.alvo button:has-text("Meio do estilo")');
+  const previaOG = await pagina.textContent(".alvo-previa");
+  verificar(previaOG.includes("Pilsen (sistema)") && previaOG.includes("OG 1,047"), "prévia mostra o malte novo e a OG 1,047 (meio do German Pils) antes de aplicar");
+  await pagina.screenshot({ path: `${SAIDA}/p3g-chegar-og.png` });
+  await pagina.click('dialog.alvo button:has-text("Aplicar")');
+  const kgOG = Number((await qtd.inputValue()).replace(",", "."));
+  const kgEsperado = await pagina.evaluate(async () => {
+    const m = await import("./calculos.js?v=20261123a");
+    return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
+      fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
+  });
+  verificar(await vital("og") === "1,047" && kgOG === kgEsperado, `Chegar à OG aplica ${br(kgEsperado, 3)} kg e a OG fica 1,047`);
+  await pagina.keyboard.press("Control+z");
+  verificar(await qtd.inputValue() === "4,800", "Ctrl+Z desfaz o ajuste inteiro");
+
+  // ---- sem cadeado (retirado em 22/11/2026) ----
+  verificar(await pagina.locator(".ing-trava").count() === 0, "linhas de ingrediente sem o botão de cadeado");
+
+  // ---- E3: chegar ao IBU ----
+  await pagina.click('.vital [data-metrica="ibu"] button.vital-val');
+  await pagina.fill('dialog.alvo input[aria-label="IBU desejado"]', "30");
+  verificar((await pagina.textContent(".alvo-previa")).includes("Saaz"), "prévia do IBU mostra o lúpulo que muda");
+  await pagina.click('dialog.alvo button:has-text("Aplicar")');
+  const gIBU = Number((await pagina.inputValue('input[aria-label="Qtd (g)"]')).replace(",", "."));
+  verificar(await vital("ibu") === "30" && gIBU > 60, `Chegar ao IBU: 30 IBU com ${br(gIBU, 1)} g de Saaz`);
+  await pagina.keyboard.press("Control+z");
+  verificar(await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0" && await vital("ibu") === br(esperado.ibu, 0), "Ctrl+Z volta o lúpulo");
+
+  // ---- E3: referência ----
+  await pagina.click('.vital-ferramentas button:has-text("Fixar referência")');
+  verificar((await pagina.textContent(".ref-info")).startsWith("Comparando com a referência das"), "referência fixada aparece na barra");
+  await qtd.fill("5,3");
+  verificar(await vital("og", "vital-ref") === `ref. ${br(esperado.og, 3)} · +${br(esperado53, 3)}`, "barra compara com a referência (ref. e diferença)");
+  await pagina.screenshot({ path: `${SAIDA}/p3h-referencia.png` });
+  await pagina.click('.vital-ferramentas button:has-text("Voltar à referência")');
+  verificar(await qtd.inputValue() === "4,800" && await vital("og", "vital-ref") === `ref. ${br(esperado.og, 3)} · igual`, "Voltar à referência restaura a receita fixada");
+  await pagina.click('.vital-ferramentas button:has-text("Soltar")');
+  verificar(await vital("og", "vital-ref") === "" && await pagina.isVisible('.vital-ferramentas button:has-text("Fixar referência")'), "Soltar para de comparar");
+  await pagina.evaluate(() => window.scrollTo(0, 0));
+  await pagina.screenshot({ path: `${SAIDA}/p3-editor.png` });
+  await pagina.emulateMedia({ colorScheme: "dark" });
+  await pagina.screenshot({ path: `${SAIDA}/p3c-editor-escuro.png` });
+  await pagina.emulateMedia({ colorScheme: "light" });
+  // Linhas de ingrediente dentro do cartão (o menu lateral tira largura do editor).
+  const sobraLinhas = () => pagina.evaluate(() => Math.max(...[...document.querySelectorAll("li.ing")].map((li) => {
+    const sec = li.closest("section").getBoundingClientRect();
+    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - sec.right);
+  })));
+  for (const [w, recolher] of [[1366, false], [1366, true], [1280, false], [1440, false]]) {
+    if (recolher !== Boolean(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("recolhido")))) await pagina.click("button.recolher");
+    await pagina.setViewportSize({ width: w, height: 900 });
+    await pagina.waitForTimeout(400);
+    const sobra = await sobraLinhas();
+    verificar(sobra <= -8, `computador ${w} px, menu ${recolher ? "recolhido" : "completo"}: linhas de ingrediente cabem no cartão (folga ${-sobra} px)`);
+  }
+  await pagina.setViewportSize({ width: 1024, height: 768 });
+  await pagina.waitForTimeout(400); // o menu passa a só ícones com animação
+  verificar(await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 1, "tablet (1024 px): página não passa da largura");
+  verificar(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("compacto") && document.querySelector(".lateral").getBoundingClientRect().width < 100), "tablet (1024 px): menu lateral fica só com ícones");
+  verificar(await sobraLinhas() <= -8, "tablet (1024 px): linhas de ingrediente cabem no cartão");
+  await pagina.screenshot({ path: `${SAIDA}/p3d-editor-tablet.png` });
+  await pagina.setViewportSize({ width: 1366, height: 900 });
+
+  await pagina.click(".acoes-receita button:has-text('Salvar')");
   await pagina.waitForFunction(() => /#\/receita\/[0-9a-f-]{36}$/.test(location.hash));
   await pagina.waitForSelector(".titulo-receita");
   const salvo = chamadas.find((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita"));
@@ -246,7 +471,8 @@ async function site(rota) {
   verificar(salvo.corpo.p.og_medida === 1.048 && salvo.corpo.p.data_brassagem === "2026-04-20" && salvo.corpo.p.lote_numero === null,
     "lote vai com OG 1048 → 1,048, data e número automático");
   verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
-    && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6}]', "água vai como cópia (sem id) e sais em gramas");
+    && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6,"etapa":"MOSTURA"},{"sal":"CLORETO_CALCIO","gramas":2,"etapa":"LAVAGEM"}]', "água vai como cópia (sem id) e sais em gramas, cada um com a sua água");
+  verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");
   verificar(await pagina.inputValue(".titulo-receita") === "Pils da Galia", "receita reabre do banco com o nome");
@@ -259,7 +485,7 @@ async function site(rota) {
   verificar(await pagina.isVisible("td >> text=20/04/2026"), "lista mostra a data da brassagem sem erro de fuso");
 
   // Ferramentas: valores padrão (5 kg, 3 L/kg, grão 20 °C, parada 66 °C; 20 L, 2,4 vol, 20 °C, sacarose).
-  await pagina.click("header nav >> text=Ferramentas");
+  await pagina.click(".lateral nav >> text=Ferramentas");
   await pagina.waitForSelector("h3:text('Priming')");
   const ferr = await pagina.textContent(".ferramentas");
   verificar(ferr.includes("Água da mostura15,0 L") && ferr.includes("Temperatura da água72,3 °C"), "água da mostura: 15,0 L a 72,3 °C");
@@ -282,16 +508,83 @@ async function site(rota) {
   verificar(await pagina.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).fator_refratometro) === 1.049, "fator fica salvo no navegador");
   verificar((await pagina.textContent("section:has(h3:text('Densímetro'))")).includes("Densidade corrigida1,051"), "densímetro: 1,050 a 25 °C (calibrado a 20 °C) → 1,051");
   await pagina.screenshot({ path: `${SAIDA}/p6-ferramentas.png`, fullPage: true });
-  await pagina.click("header nav >> text=Receitas");
+  await pagina.click(".lateral nav >> text=Receitas");
+  await pagina.waitForSelector("td >> text=Pils da Galia");
   await pagina.screenshot({ path: `${SAIDA}/p4-lista.png` });
+
+  // Menu recolhível: só ícones, fica salvo no navegador e continua assim ao recarregar.
+  const larguraMenu = () => pagina.evaluate(() => document.querySelector(".lateral").getBoundingClientRect().width);
+  const menuAberto = await larguraMenu();
+  await pagina.click("button.recolher");
+  await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().width < 100);
+  verificar(menuAberto > 200 && !(await pagina.isVisible(".lateral nav >> text=Receitas")), `recolher deixa o menu só com ícones (${Math.round(menuAberto)} → ${Math.round(await larguraMenu())} px)`);
+  await pagina.screenshot({ path: `${SAIDA}/p4b-menu-recolhido.png` });
+  await pagina.reload();
+  await pagina.waitForSelector("td >> text=Pils da Galia");
+  verificar(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("recolhido")), "menu recolhido continua recolhido ao recarregar");
+  await pagina.click('.lateral nav a[data-rota="ferramentas"]');
+  await pagina.waitForSelector("h3:text('Priming')");
+  verificar(true, "menu recolhido navega pelos ícones");
+  await pagina.click("button.recolher");
+  await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().width > 200);
+  await pagina.click(".lateral nav >> text=Receitas");
+  await pagina.waitForSelector("td >> text=Pils da Galia");
 
   // Celular
   await pagina.setViewportSize({ width: 390, height: 844 });
-  await pagina.click("td >> text=Pils da Galia");
+  await pagina.waitForTimeout(400); // fim da animação da gaveta
+  verificar(!(await pagina.isVisible(".lateral nav >> text=Receitas")) && await pagina.isVisible("button.abrir-menu"), "celular: menu escondido, botão de abrir na barra do topo");
+  await pagina.click("button.abrir-menu");
+  await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().left >= 0);
+  verificar(await pagina.isVisible(".lateral nav >> text=Cadastros") && await pagina.evaluate(() => document.body.classList.contains("travado")), "celular: botão abre a gaveta com os nomes e trava a rolagem da página");
+  await pagina.screenshot({ path: `${SAIDA}/p5f-celular-menu.png` });
+  await pagina.click(".lateral nav >> text=Cadastros");
+  await pagina.waitForSelector("text=Pilsen (sistema)");
+  await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
+  verificar(!(await pagina.evaluate(() => document.body.classList.contains("travado"))), "celular: escolher um item fecha a gaveta");
+  await pagina.click("button.abrir-menu");
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
+  verificar(true, "celular: Esc fecha a gaveta");
+  await pagina.click("button.abrir-menu");
+  await pagina.click(".veu", { position: { x: 370, y: 400 } });
+  await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
+  verificar(true, "celular: tocar fora fecha a gaveta");
+  await pagina.click("button.abrir-menu");
+  await pagina.click(".lateral nav >> text=Receitas");
+  await pagina.click(".receita-cartao >> text=Pils da Galia");
   await pagina.waitForSelector(".titulo-receita");
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   verificar(larguraExtra <= 1, `celular: página não passa da largura (${larguraExtra}px)`);
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
+  await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
+  await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
+  const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
+    const sec = li.closest("section").getBoundingClientRect();
+    const filhos = [...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right);
+    return Math.round(Math.max(...filhos) - (sec.right - 17));
+  }));
+  verificar(estouro.every((d) => d <= 1), `celular: linhas de ingrediente cabem no cartão (sobra ${estouro.join(", ")} px)`);
+  await pagina.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await pagina.waitForTimeout(100);
+  const barraCel = await pagina.locator(".vital").boundingBox();
+  verificar(Math.abs(barraCel.y + barraCel.height - 844) <= 1, `celular: barra vital presa no rodapé (altura ${Math.round(barraCel.height)}px)`);
+  const fimNotas = await pagina.locator('textarea[aria-label="Notas"]').boundingBox();
+  verificar(fimNotas.y + fimNotas.height <= barraCel.y, "celular: a barra não cobre o fim da receita");
+  verificar(await pagina.isVisible('.vital [data-metrica="ibu"] .vital-val') && !(await pagina.isVisible('.vital [data-metrica="ibu"] .vital-estado')), "celular: barra compacta (números sem textos)");
+  await pagina.screenshot({ path: `${SAIDA}/p5b-celular-rolado.png` });
+  await pagina.click(".vital-mais");
+  verificar(await pagina.getAttribute(".vital-mais", "aria-expanded") === "true" && await pagina.isVisible('.vital [data-metrica="og"] .vital-estado'), "celular: 'detalhes' abre estado e faixas");
+  verificar(await pagina.isVisible('.vital-ferramentas button:has-text("Desfazer")'), "celular: desfazer e referência ficam nos detalhes da barra");
+  await pagina.screenshot({ path: `${SAIDA}/p5c-celular-detalhes.png` });
+  await pagina.click(".vital-mais");
+  await pagina.evaluate(() => window.scrollTo(0, 0));
+  await adicionar("fermentaveis");
+  await pagina.waitForSelector("dialog.busca");
+  const janela = await pagina.locator("dialog.busca").boundingBox();
+  verificar(janela.width === 390 && janela.height === 844, "celular: busca em tela cheia");
+  await pagina.screenshot({ path: `${SAIDA}/p5d-celular-busca.png` });
+  await pagina.keyboard.press("Escape");
 
   // Receita pública de outro usuário: só leitura + duplicar
   const outro = "22222222-2222-2222-2222-222222222222";
@@ -310,7 +603,7 @@ async function site(rota) {
   verificar((await pagina.evaluate(() => location.hash)) === "#/receita/nova/r-outro", "abre a receita nova a partir da de outro");
   verificar(!(await pagina.isDisabled('input[aria-label="Qtd (kg)"]')) && await pagina.inputValue(".titulo-receita") === "IPA do Vizinho", "receita nova vem editável, com os dados da anterior");
   verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "", "dados do lote começam em branco");
-  await pagina.click("button:has-text('Salvar')");
+  await pagina.click(".acoes-receita button:has-text('Salvar')");
   await pagina.waitForFunction(() => /#\/receita\/[0-9a-f-]{36}$/.test(location.hash));
   const copia = chamadas.filter((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita")).pop().corpo.p;
   verificar(copia.id === null && copia.publica === false && copia.og_medida === null && copia.lote_numero === null, "salva como receita nova, privada, sem dados do lote");
@@ -334,6 +627,131 @@ async function site(rota) {
   verificar(aviso.includes("não salvas"), "sair com receita nova não salva pede confirmação");
   verificar(true, "sair volta para o login");
 
+  // ================= Celular de verdade: tela de toque (isMobile + hasTouch), 390 px e 320 px =================
+  const ctxCel = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await ctxCel.route(`${SB}/**`, supabaseSimulado);
+  await ctxCel.route(`${ORIGEM}/**`, site);
+  const cel = await ctxCel.newPage();
+  cel.on("console", (m) => { if (["error", "warning"].includes(m.type())) erros.push(`${m.type()}: ${m.text()}`); });
+  cel.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
+  const cdp = await ctxCel.newCDPSession(cel);
+  const toque = async (tipo, x, y) => cdp.send("Input.dispatchTouchEvent", { type: tipo, touchPoints: tipo === "touchEnd" ? [] : [{ x, y }] });
+  const centro = async (sel) => {
+    await cel.locator(sel).first().evaluate((n) => n.scrollIntoView({ block: "center" }));
+    const b = await cel.locator(sel).first().boundingBox();
+    return [b.x + b.width / 2, b.y + b.height / 2];
+  };
+  const tocar = async (sel) => { const [x, y] = await centro(sel); await cel.touchscreen.tap(x, y); };
+  const larguraSobra = () => cel.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+
+  await cel.goto(`${ORIGEM}/`);
+  await cel.fill('input[type="email"]', USUARIO.email);
+  await cel.fill('input[type="password"]', SENHA);
+  await cel.click('button[type="submit"]');
+  await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  verificar(await cel.locator(".receita-cartao").count() === db.receitas.filter((x) => x.dono === USUARIO.id).length && await larguraSobra() <= 1,
+    "toque: lista de receitas em cartões, sem rolagem para o lado");
+  verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
+    "toque: cartão mostra estilo, data e números");
+  await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
+  await tocar(".receita-cartao >> text=Pils da Galia");
+  await cel.waitForSelector(".barra-app");
+  verificar(!(await cel.isVisible("header.barra-movel")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
+    "toque: no editor o menu geral some e a barra do app mostra voltar, nome, desfazer e Salvar");
+  const qtdCel = cel.locator('input[aria-label="Qtd (kg)"]').first();
+  const maisF = '[data-secao="fermentaveis"] li.ing button.passo[aria-label="Mais 250 g"]';
+  await tocar(maisF);
+  verificar(await qtdCel.inputValue() === "5,050", "toque: um toque no + soma exatamente 250 g (sem contar duas vezes)");
+  verificar(await cel.getAttribute(".barra-app .app-salvar", "class") === "app-salvar pendente", "toque: Salvar mostra o ponto de alteração pendente");
+  await cel.waitForTimeout(900);
+  const [mx, my] = await centro(maisF);
+  await toque("touchStart", mx, my);
+  await cel.waitForTimeout(1300);
+  await toque("touchEnd");
+  const depoisSegurar = Number((await qtdCel.inputValue()).replace(",", "."));
+  verificar(depoisSegurar >= 5.05 + 0.25 * 8, `toque: segurar o + repete (${br(depoisSegurar, 3)} kg em 1,3 s)`);
+  await tocar(".barra-app .app-desfazer");
+  verificar(await qtdCel.inputValue() === "5,050", "toque: ↶ da barra do app desfaz o segurar inteiro");
+  await tocar(".barra-app .app-desfazer");
+  verificar(await qtdCel.inputValue() === "4,800", "toque: ↶ de novo desfaz o toque");
+
+  // Teclado aberto (simulado: a visual viewport encolhe para 500 px) → a barra de números sobe junto.
+  const teclado = (altura) => cel.evaluate((h) => {
+    if (h === null) delete window.visualViewport.height;
+    else Object.defineProperty(window.visualViewport, "height", { configurable: true, get: () => h });
+    window.visualViewport.dispatchEvent(new Event("resize"));
+  }, altura);
+  await teclado(500);
+  const atenuacao = cel.locator('input[aria-label="Atenuação %"]').first();
+  await atenuacao.focus();
+  await cel.waitForTimeout(1000);
+  const vitalTeclado = await cel.locator(".vital").boundingBox();
+  const campoTeclado = await atenuacao.boundingBox();
+  verificar(Math.abs(vitalTeclado.y + vitalTeclado.height - 500) <= 1, `toque: com o teclado aberto a barra de números fica logo acima dele (fundo em ${Math.round(vitalTeclado.y + vitalTeclado.height)} px)`);
+  verificar(campoTeclado.y + campoTeclado.height <= vitalTeclado.y, "toque: o campo em foco rola para cima da barra");
+  await cel.screenshot({ path: `${SAIDA}/p6a-celular-teclado.png` });
+  await teclado(null);
+  await cel.evaluate(() => document.activeElement.blur());
+  const vitalSem = await cel.locator(".vital").boundingBox();
+  verificar(Math.abs(vitalSem.y + vitalSem.height - 844) <= 1, "toque: teclado fechado, a barra volta ao rodapé");
+
+  // Tabelas viram cartões, sem rolagem para o lado.
+  const rolagemTabelas = await cel.evaluate(() => [...document.querySelectorAll(".tabela-rolagem")].map((t) => t.scrollWidth - t.clientWidth));
+  verificar(rolagemTabelas.every((d) => d <= 0) && await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="leveduras"] tbody tr')).display) === "grid",
+    "toque: leveduras, outros, mostura e fermentação em cartões, sem rolagem para o lado");
+  await cel.evaluate(() => document.querySelector('[data-secao="leveduras"]').scrollIntoView());
+  await cel.screenshot({ path: `${SAIDA}/p6b-celular-cartoes.png` });
+
+  // Arrastar com o dedo: segundo lúpulo pela busca e arrastado para cima.
+  await tocar('[data-secao="lupulos"] button.adicionar');
+  await cel.waitForSelector("dialog.busca");
+  await cel.keyboard.type("saaz");
+  await cel.keyboard.press("Enter");
+  await cel.keyboard.type("20");
+  const linhaLCel = '[data-secao="lupulos"] li.ing';
+  const [ax, ay] = await centro(`${linhaLCel}:nth-child(2) .ing-alca`);
+  const l1 = await cel.locator(`${linhaLCel}:nth-child(1)`).boundingBox();
+  await toque("touchStart", ax, ay);
+  for (let k = 1; k <= 8; k++) { await toque("touchMove", ax, ay + ((l1.y + 6 - ay) * k) / 8); await cel.waitForTimeout(16); }   // ritmo de dedo (60 Hz)
+  await toque("touchEnd");
+  await cel.waitForTimeout(100);
+  verificar(await cel.inputValue(`${linhaLCel}:nth-child(1) input[aria-label="Qtd (g)"]`) === "20,0", "toque: arrastar a alça com o dedo leva o lúpulo para cima");
+
+  // PENDÊNCIA (conferir no iPhone real): no simulador do Chrome (toque via CDP), depois de arrastar a alça o PRIMEIRO
+  // toque não vira "click" (o clique fica preso até o toque seguinte). Não acontece com arrasto em elemento sem código.
+  // Investigado sem sucesso: captura do ponteiro, redesenho da lista, foco, rolagem suave, toque duplo, ritmo do arrasto.
+  // Aqui, um toque neutro (título da seção) encerra a sequência antes de seguir.
+  await tocar('[data-secao="lupulos"] .titulo-linha h3');
+  // Janela "Chegar à OG" cabe na tela.
+  await tocar('.vital [data-metrica="og"] button.vital-val');
+  await cel.waitForSelector("dialog.alvo");
+  const jan = await cel.locator("dialog.alvo").boundingBox();
+  verificar(jan.x >= 0 && jan.x + jan.width <= 390 && await cel.isVisible('dialog.alvo button:has-text("Aplicar")'), "toque: janela de Chegar à OG cabe na tela");
+  await cel.screenshot({ path: `${SAIDA}/p6c-celular-chegar-og.png` });
+  await tocar('dialog.alvo button:has-text("Cancelar")');
+
+  // 320 px (iPhone SE de 1ª geração, Androids pequenos).
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(200);
+  verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
+  const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
+    const sec = li.closest("section").getBoundingClientRect();
+    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - (sec.right - 17));
+  }));
+  verificar(estouro320.every((d) => d <= 1), `320 px: linhas de ingrediente cabem no cartão (sobra ${estouro320.join(", ")} px)`);
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.screenshot({ path: `${SAIDA}/p6d-celular-320.png` });
+  await tocar('[data-secao="fermentaveis"] button.adicionar');
+  await cel.waitForSelector("dialog.busca");
+  verificar(await cel.evaluate(() => document.querySelector("dialog.busca").scrollWidth <= 320), "320 px: busca cabe na tela");
+  await cel.keyboard.press("Escape");
+  await tocar('.vital [data-metrica="ibu"] button.vital-val');
+  const jan320 = await cel.locator("dialog.alvo").boundingBox();
+  verificar(jan320.x >= 0 && jan320.x + jan320.width <= 320 && await cel.evaluate(() => document.querySelector("dialog.alvo").scrollWidth <= document.querySelector("dialog.alvo").clientWidth),
+    "320 px: janela de Chegar ao IBU cabe na tela");
+  await cel.screenshot({ path: `${SAIDA}/p6e-celular-320-ibu.png` });
+  await ctxCel.close();
+
   // O 400 é o da senha errada, testada de propósito (uma vez só).
   const esperados = erros.filter((e) => /status of 400/.test(e));
   const relevantes = erros.filter((e) => !/favicon/.test(e) && !/status of 400/.test(e));
@@ -341,4 +759,9 @@ async function site(rota) {
   console.log(ok.map((x) => `ok - ${x}`).join("\n"));
   console.log(relevantes.length ? `\nERROS NO CONSOLE:\n${relevantes.join("\n")}` : "\nsem erros no console (CSP ativa)");
   await navegador.close();
-})().catch(async (e) => { console.error(e.message); process.exit(1); });
+})().catch(async (e) => {
+  console.log(ok.map((x) => `ok - ${x}`).join("\n"));
+  if (erros.length) console.log(`\nERROS NO CONSOLE:\n${erros.join("\n")}`);
+  console.error(e.message);
+  process.exit(1);
+});
