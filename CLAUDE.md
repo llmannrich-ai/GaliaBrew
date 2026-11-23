@@ -338,10 +338,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (style.css, bloco de 640 px): seletor do sal | quantidade + unidade (`data-unidade`, g ou mL) | ×, sem rótulo em cima;
   o nome longo corta no seletor fechado. Teste do navegador confere em 390 e 320 px (capturas `p5g`, `p5h`).
 
-## Fotos da brassagem (0011, 23/11/2026, pedido do responsável) — MIGRAÇÃO AINDA NÃO APLICADA
-- SITUAÇÃO: arquivo `0011_fotos_brassagem.sql` e teste prontos, portal pronto na branch; o ensaio no banco parou numa
-  confirmação do Supabase sem resposta (o teste tem `delete`). Falta: ensaiar, aplicar, rodar os advisors e só então
-  publicar o portal (sem o bucket a tela avisa "o armazenamento de fotos ainda não foi criado"). Atualizar esta nota.
+## Fotos da brassagem (0011, aplicada em 23/11/2026, pedido do responsável)
+- Aplicada pelo MCP (md5 igual ao arquivo). Teste: 14 das 16 verificações ok em transação desfeita; as 2 que usam
+  `delete` (12: B não apaga foto de A; 14: A apaga foto de receita excluída) NÃO rodaram: o MCP pede uma confirmação
+  que não chega ao responsável. Para rodar o teste inteiro: colar `supabase/testes/0011_fotos_brassagem.sql` no SQL
+  Editor do painel. Advisors: aviso novo só o esperado (`fotos_cabem` é security definer executável por authenticated,
+  de propósito: a política de envio a usa e ela só conta as fotos de quem chama).
 - Storage: bucket PRIVADO `fotos-brassagem`, caminho `<dono>/<receita>/<arquivo>.jpg`, limite do bucket 400 kB e só
   `image/jpeg` (quem enviar sem reduzir é barrado pelo próprio Storage). Sem tabela nova: a lista vem da pasta.
 - Políticas em `storage.objects` (só `to authenticated`): ler = minha pasta ou receita que eu enxergo (pública de outro);
@@ -419,7 +421,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   responsável). 1ª publicação assim: PR #3 (editor novo, celular, arte), 22/11/2026.
 - Pendente na proteção da `main`: marcar o teste "Cálculos e versões" como obrigatório e "Require branches to be up
   to date" (Settings → Branches → Edit). Sem isso, o GitHub não barra PR desatualizado.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0010 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0011 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   desligar a extensão http no painel.
@@ -430,6 +432,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fase 3 (química da água) começada em 22/11/2026: sais e perfil de íons (0007).
 - 22/11/2026: química da água com ácido e pH estimado (0008).
 - 23/11/2026: água da mostura e da lavagem informadas pelo cervejeiro (0010).
+- 23/11/2026: fotos da brassagem na seção Notas, reduzidas no aparelho (0011, Storage).
 - Próximo: (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho

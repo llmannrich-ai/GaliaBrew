@@ -14,7 +14,7 @@ begin
   insert into auth.users (id, email) values (a, 'teste-a@galiabrew.invalid'), (b, 'teste-b@galiabrew.invalid');
 
   select concat_ws('|', public, file_size_limit, array_to_string(allowed_mime_types, ',')) into txt from storage.buckets where id = 'fotos-brassagem';
-  res := res || format(E'\n01 bucket privado, até 400 kB, só JPEG: %s', case when txt = 'false|409600|image/jpeg' then 'ok' else 'FALHOU (' || coalesce(txt, 'sem bucket') || ')' end);
+  res := res || format(E'\n01 bucket privado, até 400 kB, só JPEG: %s', case when txt = 'f|409600|image/jpeg' then 'ok' else 'FALHOU (' || coalesce(txt, 'sem bucket') || ')' end);
 
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
   set local role authenticated;
@@ -97,7 +97,7 @@ begin
   select count(*) into n from pg_policy where polrelid = 'storage.objects'::regclass and polname like 'fotos_brassagem_%' and polroles = array[(select oid from pg_roles where rolname = 'authenticated')];
   res := res || format(E'\n15 3 políticas, todas só para authenticated: %s', case when n = 3 then 'ok' else 'FALHOU (' || n || ')' end);
   select concat_ws('|', has_function_privilege('anon', 'public.fotos_cabem(text)', 'execute'), has_function_privilege('authenticated', 'public.fotos_cabem(text)', 'execute')) into txt;
-  res := res || format(E'\n16 fotos_cabem: anon não executa, authenticated sim: %s', case when txt = 'false|true' then 'ok' else 'FALHOU (' || txt || ')' end);
+  res := res || format(E'\n16 fotos_cabem: anon não executa, authenticated sim: %s', case when txt = 'f|t' then 'ok' else 'FALHOU (' || txt || ')' end);
 
   raise exception 'RESULTADO DO TESTE (tudo desfeito):%', res;
 end $$;
