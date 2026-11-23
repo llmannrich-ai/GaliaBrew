@@ -1,10 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261123j";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261123j";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261123j";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261123j";
-import { telaFerramentas } from "./ferramentas.js?v=20261123j";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261123j";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261123k";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261123k";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261123k";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261123k";
+import { telaFerramentas } from "./ferramentas.js?v=20261123k";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261123k";
+import { icone } from "./icones.js?v=20261123k";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -84,6 +85,30 @@ async function sair() {
 }
 
 // ---------- perfil ----------
+/** Aparência: um cartão por tema, com a miniatura do app nas cores dele. Troca na hora e fica salvo no aparelho. */
+function secaoTemas() {
+  const T = window.GaliaTema;
+  const escolhido = T.atual();
+  // O "Automático" mostra as duas metades (Clássico de dia, Adega à noite).
+  const metade = (tema, modo) => el("div", { "data-tema": tema, "data-modo": modo },
+    el("div", { class: "tm-menu" }, el("i"), el("i"), el("i")),
+    el("div", { class: "tm-pagina" }, el("div", { class: "tm-faixa" }), el("div", { class: "tm-texto" }), el("div", { class: "tm-texto s" }),
+      el("div", { class: "tm-pe" }, el("span", { class: "tm-botao" }), el("b"), el("b"), el("b"))));
+  return el("section", { class: "cartao" },
+    el("h3", { text: "Aparência" }),
+    el("fieldset", { class: "temas" },
+      el("legend", { class: "nota", text: "Tema de cores. Vale neste aparelho e muda na hora." }),
+      T.lista.map((t) => el("label", { class: "tema-opcao", dataset: { opcao: t.id } },
+        el("input", {
+          type: "radio", name: "tema", value: t.id, checked: t.id === escolhido,
+          on: { change: () => { preferencias.tema = t.id; salvarPreferencias(); T.aplicar(t.id); } },
+        }),
+        el("div", { class: "tema-mini", "aria-hidden": "true" },
+          t.modo === "auto" ? [metade("classico", "claro"), metade("adega", "escuro")] : metade(t.id, t.modo)),
+        el("span", { class: "tema-nome" }, t.nome, icone("certo")),
+        el("span", { class: "tema-desc", text: t.descricao })))));
+}
+
 function telaPerfil(conteudo) {
   const p = { nome: sessao.perfil?.nome ?? "" };
   const senha = { nova: "", repetir: "" };
@@ -105,6 +130,7 @@ function telaPerfil(conteudo) {
           },
         },
       })),
+    secaoTemas(),
     el("section", { class: "cartao" },
       el("h3", { text: "Unidades" }),
       el("label", {}, "Cor",
