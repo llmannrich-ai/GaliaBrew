@@ -177,7 +177,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   novo): o iOS encolhe a área visível E a rola para cima do teclado (`offsetTop`), e a conta antiga descontava o
   offsetTop → "sem teclado", barra grande. Agora teclado aberto = `innerHeight − vv.height > 120` OU campo de digitar
   em foco em tela de toque (classe `com-teclado` na barra e `teclado-aberto` no html). Com teclado a barra vira UMA
-  linha de 6 números (~47 px; rótulos curtos EBC/pH, letra ≥ 12 px; a diferença aparece no lugar do rótulo), sem
+  linha de 6 números (~47 px; em ≤ 360 px 5, sem o pH, porque "−0,037" não cabia com a fonte do GitHub; rótulos curtos EBC/pH, letra ≥ 12 px; a diferença aparece no lugar do rótulo), sem
   puxador/régua/aviso/margem do entalhe, e "detalhes" fecha; a página ganha 55vh embaixo para os últimos campos
   subirem; `manterAcimaDaBarra` só age no campo EM FOCO e só ao abrir o teclado/trocar de campo (rolar a tela com o
   teclado aberto não puxa de volta). Quantidade (`campoQuantidade`): no toque o número vem selecionado (digitar troca

@@ -789,7 +789,10 @@ dialog form { display: grid; gap: .9rem; }
   .vital-item { padding-left: .4rem; padding-right: .4rem; }
   .vital-rot { font-size: .7rem; letter-spacing: 0; }
   .vital-val, button.vital-val.ajustavel { font-size: 1.25rem; }
-  .vital.com-teclado .vital-grade { gap: .2rem; }
+  /* 320 px com teclado: 1/6 da tela não cabe "−0,037" com folga (a fonte varia por aparelho); o pH sai da linha fina
+     (volta ao fechar o teclado) e os 5 números ficam com ~59 px cada. */
+  .vital.com-teclado .vital-grade { gap: .2rem; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .vital.com-teclado .vital-item[data-metrica="ph"] { display: none; }
   .vital.com-teclado .vital-val, .vital.com-teclado button.vital-val.ajustavel { font-size: .875rem; letter-spacing: -.02em; }
   .vital.com-teclado .vital-item { padding-left: .15rem; padding-right: .15rem; }
 }

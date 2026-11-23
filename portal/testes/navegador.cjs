@@ -878,9 +878,13 @@ const erros = [];
   verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
   await cel.locator('input[aria-label="Qtd (kg)"]').first().focus();
   await cel.waitForTimeout(300);
-  const estouroVital = await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item:not(.secundario)")].map((n) => n.scrollWidth - n.clientWidth));
-  verificar(await cel.evaluate(() => document.querySelector(".vital").classList.contains("com-teclado")) && estouroVital.every((d) => d <= 0),
-    `320 px: com o teclado os 6 números cabem na linha fina (sobra ${estouroVital.join(", ")} px)`);
+  const estouroVital = await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item:not(.secundario)")].filter((n) => n.offsetParent).map((n) => {
+    // folga = borda direita da casinha − o que vai mais à direita (número ou diferença); medida para fontes mais largas
+    const dir = Math.max(...[...n.querySelectorAll(".vital-val, .vital-delta:not(:empty), .vital-rot")].map((c) => c.getBoundingClientRect().right));
+    return Math.round(dir - n.getBoundingClientRect().right);
+  }));
+  verificar(await cel.evaluate(() => document.querySelector(".vital").classList.contains("com-teclado")) && estouroVital.length === 5 && estouroVital.every((d) => d <= -6),
+    `320 px: com o teclado os 5 números (sem pH) cabem na linha fina com folga (posição da borda direita do conteúdo: ${estouroVital.join(", ")} px)`);
   await cel.evaluate(() => document.activeElement.blur());
   await cel.waitForTimeout(300);
   const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
