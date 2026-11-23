@@ -3,10 +3,10 @@
 // tipo de ingrediente, "Recentes" e "Meus" no topo. Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
 // Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
 // azeda, belga...); filtros por família, cor, amargor e álcool; "Mais perto da receita" pelos números do editor.
-import { el, preencher, numeroBR } from "./ui.js?v=20261123h";
-import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123h";
-import * as O from "./opcoes.js?v=20261123h";
-import { fonteDados, seloFonte } from "./fontes.js?v=20261123h";
+import { el, preencher, numeroBR } from "./ui.js?v=20261123k";
+import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123k";
+import * as O from "./opcoes.js?v=20261123k";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261123k";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
