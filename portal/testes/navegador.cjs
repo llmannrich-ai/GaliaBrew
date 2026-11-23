@@ -270,7 +270,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123b");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -306,7 +306,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123b");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -325,7 +325,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123b");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -406,7 +406,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123b");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -452,13 +452,14 @@ const erros = [];
     await pagina.setViewportSize({ width: w, height: 900 });
     await pagina.waitForTimeout(400);
     const sobra = await sobraLinhas();
-    verificar(sobra <= -8, `computador ${w} px, menu ${recolher ? "recolhido" : "completo"}: linhas de ingrediente cabem no cartão (folga ${-sobra} px)`);
+    // seção sem margem interna desde 23/11/2026 (layout sem contorno): a linha pode encostar na borda, não passar dela
+    verificar(sobra <= 0, `computador ${w} px, menu ${recolher ? "recolhido" : "completo"}: linhas de ingrediente cabem na seção (folga ${-sobra} px)`);
   }
   await pagina.setViewportSize({ width: 1024, height: 768 });
   await pagina.waitForTimeout(400); // o menu passa a só ícones com animação
   verificar(await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 1, "tablet (1024 px): página não passa da largura");
   verificar(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("compacto") && document.querySelector(".lateral").getBoundingClientRect().width < 100), "tablet (1024 px): menu lateral fica só com ícones");
-  verificar(await sobraLinhas() <= -8, "tablet (1024 px): linhas de ingrediente cabem no cartão");
+  verificar(await sobraLinhas() <= 0, "tablet (1024 px): linhas de ingrediente cabem na seção");
   await pagina.screenshot({ path: `${SAIDA}/p3d-editor-tablet.png` });
   await pagina.setViewportSize({ width: 1366, height: 900 });
 
@@ -562,7 +563,7 @@ const erros = [];
   const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
     const filhos = [...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right);
-    return Math.round(Math.max(...filhos) - (sec.right - 17));
+    return Math.round(Math.max(...filhos) - sec.right);
   }));
   verificar(estouro.every((d) => d <= 1), `celular: linhas de ingrediente cabem no cartão (sobra ${estouro.join(", ")} px)`);
   await pagina.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -736,7 +737,7 @@ const erros = [];
   verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
   const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
-    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - (sec.right - 17));
+    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - sec.right);
   }));
   verificar(estouro320.every((d) => d <= 1), `320 px: linhas de ingrediente cabem no cartão (sobra ${estouro320.join(", ")} px)`);
   await cel.evaluate(() => window.scrollTo(0, 0));
