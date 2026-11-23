@@ -607,7 +607,7 @@ dialog form { display: grid; gap: .9rem; }
 .editor-corpo > [data-secao="leveduras"] { --pp: var(--pp-lev); --pp-cor: var(--pp-lev-cor); --pp-motivo: var(--pp-lev-motivo); }
 .editor-corpo > [data-secao="agua"] { --pp: var(--pp-agua); --pp-cor: var(--pp-agua-cor); --pp-motivo: var(--pp-agua-motivo); }
 /* sem cor pedida: alternam creme (padrão) e branco liso, para duas seções vizinhas não se emendarem */
-.editor-corpo > :is([data-secao="inicio"], [data-secao="fermentacao"], [data-secao="geral"]) { --pp: var(--pp-liso); }
+.editor-corpo > :is([data-secao="inicio"], [data-secao="outros"], [data-secao="fermentacao"], [data-secao="geral"]) { --pp: var(--pp-liso); }
 .editor-corpo > [data-secao="notas"] { --pp-motivo: var(--pp-notas-motivo); }
 /* o título deixa de ser faixa: o fundo da seção já separa; o ícone leva a cor da seção */
 .editor-corpo > .cartao > h3, .editor-corpo > .cartao > .titulo-linha, .editor-corpo > details.lote > summary {

@@ -1,15 +1,15 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123l";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123l";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123l";
-import { abrirBusca } from "./busca.js?v=20261123l";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123l";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123l";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123l";
-import * as O from "./opcoes.js?v=20261123l";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123l";
-import { icone } from "./icones.js?v=20261123l";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123l";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123m";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123m";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123m";
+import { abrirBusca } from "./busca.js?v=20261123m";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123m";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123m";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123m";
+import * as O from "./opcoes.js?v=20261123m";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123m";
+import { icone } from "./icones.js?v=20261123m";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123m";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -1090,7 +1090,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const topo = el("div", { class: "editor-topo" }, nomeInput, estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
-      inicio, lote, fermentaveis, lupulos, leveduras, outros, agua, mostura, fermentacao, brassagem, geral, notas),
+      inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas),
     painel);
   // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
   for (const n of [topo, corpo]) {
