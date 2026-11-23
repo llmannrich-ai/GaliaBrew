@@ -156,7 +156,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (`TIPOS_BUSCA.estilos`). Acha por código (21A, casa exato e vem primeiro), nome, categoria e termos em português
   (`TERMOS_ESTILO`: trigo, azeda, defumada, belga, pilsen, oktoberfest...; o catálogo BJCP está em inglês). No estilo
   cada termo casa com o COMEÇO de uma palavra ("ale" não acha "Pale Lager"). Filtros: Receita ("Combina com a receita"
-  = no máximo 1 parâmetro fora), Família, Cor, Amargor, Álcool. Sem busca: "Atual", "Mais perto da receita" (5, por
+  = no máximo 1 parâmetro fora), Família, Cor, Amargor, Álcool — RETIRADOS em 23/11/2026 (no celular ocupavam a tela
+  toda; pedido do responsável): a busca de estilo não tem filtros. Sem busca: "Atual", "Mais perto da receita" (5, por
   `encaixeEstilo` do calculos.js: parâmetros dentro da faixa e distância em larguras), recentes, catálogo em ordem de
   código (`ordemCodigo`: 3A antes de 10A). "Sem estilo" limpa. Cadastros → Estilos usa a mesma busca (`buscarItens`).
 - Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
@@ -200,7 +201,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123m.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123n.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
