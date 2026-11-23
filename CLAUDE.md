@@ -334,6 +334,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   panela. `.bloco-agua` (style.css): fundo liso sobre o papel de parede, faixa à esquerda cobre (mostura) / azul
   (lavagem), título e litros em `--t-m`. Teste do navegador confere que cada sal e o ácido ficam no bloco certo.
 
+- Sais e ácidos numa linha só no celular (23/11/2026, pedido do responsável): tabela com classe `linha-unica`
+  (style.css, bloco de 640 px): seletor do sal | quantidade + unidade (`data-unidade`, g ou mL) | ×, sem rótulo em cima;
+  o nome longo corta no seletor fechado. Teste do navegador confere em 390 e 320 px (capturas `p5g`, `p5h`).
+
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
   todos com `dono` nulo e a origem em `extras.fonte`. O próprio banco baixou os arquivos do Brewtarget travados no

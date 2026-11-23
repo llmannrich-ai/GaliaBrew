@@ -886,7 +886,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         for (const x of lista) {
           g.corpo.append(el("tr", {},
             el("td", { dataset: { rotulo: "Sal" } }, comRotulo(campoSelect(x, "sal", O.SAL_AGUA, { aoMudar: mudou, desabilitado: des }), "Sal")),
-            el("td", { class: "num", dataset: { rotulo: "Gramas" } }, comRotulo(campoNumero(x, "gramas", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: etapa === "MOSTURA" ? "Gramas na mostura" : "Gramas na lavagem" }), "Gramas")),
+            el("td", { class: "num", dataset: { rotulo: "Gramas", unidade: "g" } }, comRotulo(campoNumero(x, "gramas", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: etapa === "MOSTURA" ? "Gramas na mostura" : "Gramas na lavagem" }), "Gramas")),
             leitura ? null : el("td", { class: "acoes-linha" },
               el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover sal", text: "×", on: { click: () => { r.sais.splice(r.sais.indexOf(x), 1); desenharSais(); mudou(); } } }))));
         }
@@ -908,7 +908,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     const tabelaSais = (etapa, extra) => el("div", {},
       el("div", { class: "titulo-linha" }, el("h5", {}, etapa === "MOSTURA" ? "Sais na mostura" : "Sais na lavagem", info(O.AJUDA_VOLUME.sais_agua)),
         leitura ? null : el("div", { class: "acoes-sais" }, extra, el("button", { type: "button", class: "secundario pequeno", text: etapa === "MOSTURA" ? "+ Sal na mostura" : "+ Sal na lavagem", on: { click: () => novoSal(etapa) } }))),
-      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
+      el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel linha-unica" },
         el("thead", {}, el("tr", {}, ["Sal", "Gramas"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
         grupos[etapa].corpo)));
 
@@ -918,7 +918,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       if (!r.acidos.length) corpoAcidos.append(el("tr", {}, el("td", { colspan: 3, class: "nota", text: "Nenhum ácido." })));
       r.acidos.forEach((x, i) => corpoAcidos.append(el("tr", {},
         el("td", { dataset: { rotulo: "Ácido" } }, comRotulo(campoSelect(x, "acido", O.ACIDO, { aoMudar: mudou, desabilitado: des }), "Ácido")),
-        el("td", { class: "num", dataset: { rotulo: "mL" } }, comRotulo(campoNumero(x, "ml", { casas: 1, aoMudar: mudou, desabilitado: des }), "mL")),
+        el("td", { class: "num", dataset: { rotulo: "mL", unidade: "mL" } }, comRotulo(campoNumero(x, "ml", { casas: 1, aoMudar: mudou, desabilitado: des }), "mL")),
         leitura ? null : el("td", { class: "acoes-linha" },
           el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover ácido", text: "×", on: { click: () => { r.acidos.splice(i, 1); desenharAcidos(); mudou(); } } })))));
       atualizarResultados();
@@ -1021,7 +1021,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         tabelaSais("MOSTURA"),
         el("div", { class: "titulo-linha" }, el("h5", {}, "Ácido na mostura", info(O.AJUDA_VOLUME.acidos)),
           leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "+ Ácido", on: { click: () => { r.acidos.push({ acido: "LATICO_88", ml: null }); desenharAcidos(); mudou(); } } })),
-        el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel" },
+        el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel linha-unica" },
           el("thead", {}, el("tr", {}, ["Ácido", "mL"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
           corpoAcidos)),
         caixaPh,

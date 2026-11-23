@@ -662,6 +662,24 @@ const erros = [];
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
+  // Sal da água: nome, gramas e × na mesma linha (390 e 320 px), sem passar da largura do bloco.
+  const linhaDoSal = () => pagina.evaluate(() => {
+    const tr = document.querySelector('tr:has(input[aria-label="Gramas na mostura"])');
+    const bloco = tr.closest(".bloco-agua").getBoundingClientRect();
+    const r = [tr.querySelector("select"), tr.querySelector("input"), tr.querySelector("button")].map((n) => n.getBoundingClientRect());
+    const meio = r.map((x) => x.top + x.height / 2);
+    return { alinhado: Math.max(...meio) - Math.min(...meio) <= 2, ordem: r[0].right <= r[1].left && r[1].right <= r[2].left,
+      cabe: r[2].right <= bloco.right + 1, altura: Math.round(tr.getBoundingClientRect().height), select: Math.round(r[0].width) };
+  });
+  const sal390 = await linhaDoSal();
+  verificar(sal390.alinhado && sal390.ordem && sal390.cabe && sal390.altura <= 60, `celular: cada sal da água numa linha só (${JSON.stringify(sal390)})`);
+  await pagina.evaluate(() => document.querySelector(".bloco-agua").scrollIntoView());
+  await pagina.screenshot({ path: `${SAIDA}/p5g-celular-sais.png` });
+  await pagina.setViewportSize({ width: 320, height: 700 });
+  const sal320 = await linhaDoSal();
+  verificar(sal320.alinhado && sal320.ordem && sal320.cabe && sal320.select >= 100, `celular 320 px: sal numa linha só (${JSON.stringify(sal320)})`);
+  await pagina.screenshot({ path: `${SAIDA}/p5h-celular-sais-320.png` });
+  await pagina.setViewportSize({ width: 390, height: 844 });
   const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
     const filhos = [...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right);
