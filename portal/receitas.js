@@ -1,16 +1,17 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123o";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123o";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123o";
-import { abrirBusca } from "./busca.js?v=20261123o";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123o";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123o";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123o";
-import * as O from "./opcoes.js?v=20261123o";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123o";
-import { icone } from "./icones.js?v=20261123o";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123o";
-import { abrirRelatorio } from "./relatorio.js?v=20261123o";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123p";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123p";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123p";
+import { abrirBusca } from "./busca.js?v=20261123p";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123p";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123p";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123p";
+import * as O from "./opcoes.js?v=20261123p";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123p";
+import { icone } from "./icones.js?v=20261123p";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123p";
+import { abrirRelatorio } from "./relatorio.js?v=20261123p";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261123p";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -60,6 +61,7 @@ export async function telaReceitas(conteudo) {
           if (!(await confirmar(`Excluir a receita “${r.nome}”? Não dá para desfazer.`, { ok: "Excluir", perigo: true }))) return;
           const { error: erro } = await sb.from("receitas").delete().eq("id", r.id);
           if (erro) return avisar(mensagemErro(erro), "erro");
+          apagarFotosDaReceita(r.dono, r.id).catch(() => {});      // as fotos saem do Storage junto (sem travar a tela)
           receitas.splice(receitas.indexOf(r), 1);
           avisar("Receita excluída.");
           desenhar();
@@ -1084,7 +1086,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   });
 
   const notas = el("section", { class: "cartao", dataset: { secao: "notas" } }, tituloSecao("notas", "Notas"),
-    el("textarea", { rows: 4, maxlength: 8000, disabled: des, value: r.notas ?? "", "aria-label": "Notas", on: { input: (e) => { r.notas = e.target.value; mudou(); } } }));
+    el("textarea", { rows: 4, maxlength: 8000, disabled: des, value: r.notas ?? "", "aria-label": "Notas", on: { input: (e) => { r.notas = e.target.value; mudou(); } } }),
+    // Fotos da brassagem: gravadas na hora no Storage (fora do Salvar e do desfazer); não vão na cópia "a partir de".
+    blocoFotos({ receitaId: r.id, dono: r.dono, leitura }));
 
   // Lote: uma linha de resumo; os parâmetros abrem ao clicar. Receita nova sem equipamento já abre (falta o volume).
   const lote = el("details", { class: "cartao lote", open: !r.id && !r.equipamento_id && !leitura },

@@ -963,3 +963,32 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
   .perfil-agua .ion-longo { display: none; }
   .perfil-agua .ion-curto { display: inline; }
 }
+
+/* Fotos da brassagem (seção Notas): miniaturas quadradas (3 por linha no celular) e janela para ver a foto inteira. */
+.fotos { margin-top: 1rem; }
+.fotos-cab { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.fotos-cab h4 { margin: 0 0 .4rem; }
+.fotos-conta { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; }
+.fotos-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .4rem; }
+.fotos-grade:empty { display: none; }
+button.foto-mini { padding: 0; border: 1px solid var(--borda-campo); border-radius: var(--raio-p); background: var(--painel); overflow: hidden; aspect-ratio: 1; display: block; }
+.foto-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fotos-estado:empty { display: none; }
+.fotos-adicionar { position: relative; margin-top: .6rem; min-height: 2.75rem; gap: .45rem; background: var(--cartao); }
+.fotos-adicionar:focus-within { outline: 2px solid var(--destaque); outline-offset: 2px; }
+.fotos-adicionar.desligado { opacity: .6; cursor: default; pointer-events: none; }
+.fotos-dica { margin-bottom: 0; }
+dialog.foto-janela { padding: 0; width: 100%; max-width: min(900px, 96vw); height: min(92vh, 1100px); max-height: 92vh; overflow: hidden; }
+dialog.foto-janela[open] { display: flex; flex-direction: column; }
+.foto-janela button.foto-excluir { flex: none; min-height: 2.75rem; }
+.foto-area { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; background: #0c0a09; }
+.foto-grande { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.foto-pe { display: flex; justify-content: center; gap: 1.2rem; padding: .4rem .7rem; border-top: 1px solid var(--linha); background: var(--cartao); }
+.foto-pe button.icone { width: 3.5rem; height: 2.75rem; padding: 0; justify-content: center; font-size: 1.5rem; color: var(--tinta); }
+@media (max-width: 640px) {
+  .fotos-grade { grid-template-columns: repeat(3, 1fr); }
+  .fotos-adicionar { width: 100%; }
+  dialog.foto-janela { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
+  .foto-janela .rel-topo { padding-top: max(.5rem, env(safe-area-inset-top)); }
+  .foto-pe { padding-bottom: max(.4rem, env(safe-area-inset-bottom)); }
+}

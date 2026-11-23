@@ -1,10 +1,10 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261123o";
-import { sb, sessao } from "./estado.js?v=20261123o";
-import * as O from "./opcoes.js?v=20261123o";
-import { corHexDeSrm } from "./calculos.js?v=20261123o";
-import { buscarItens, ordemCodigo } from "./busca.js?v=20261123o";
-import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261123o";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261123p";
+import { sb, sessao } from "./estado.js?v=20261123p";
+import * as O from "./opcoes.js?v=20261123p";
+import { corHexDeSrm } from "./calculos.js?v=20261123p";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261123p";
+import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261123p";
 
 // Cadastros de ingrediente: mostram de onde vêm os dados (fabricante, genérico, análise, meu).
 const INGREDIENTES = new Set(["fermentaveis", "lupulos", "leveduras", "outros"]);
