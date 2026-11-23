@@ -8,7 +8,7 @@ import {
   temperaturaAguaMostura, co2Residual, primingGramas,
   sgDeBrix, refratometro, corrigirDensimetro,
   SAIS, perfilAgua, leituraSulfatoCloreto, etapaSal, separarSaisAntigos,
-  phMostura, classificarMalte, ACIDOS,
+  phMostura, classificarMalte, ACIDOS, encaixeEstilo,
 } from "../calculos.js";
 
 const perto = (real, esperado, tol, msg) =>
@@ -495,4 +495,18 @@ test("Receita vazia não quebra", () => {
   assert.equal(r.og, 1);
   assert.equal(r.ibu, 0);
   assert.deepEqual(r.avisos, ["SEM_VOLUME"]);
+});
+
+test("Encaixe no estilo: quantos parâmetros cabem e quanto passa da faixa", () => {
+  const pils = { og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 };
+  const dentro = encaixeEstilo(pils, { og: 1.048, fg: 1.010, abv_pct: 5.0, ibu: 30, cor_srm: 3 });
+  assert.deepEqual(dentro, { dentro: 5, total: 5, distancia: 0 });
+  // IBU 49: passa 9 de uma faixa de 18 → 0,5 largura; cor 5: passa 1 de 2 → 0,5.
+  const fora = encaixeEstilo(pils, { og: 1.048, fg: 1.010, abv_pct: 5.0, ibu: 49, cor_srm: 5 });
+  assert.equal(fora.dentro, 3);
+  perto(fora.distancia, 1, 1e-9, "distância");
+  // Estilo sem faixa de cor e receita sem IBU: só conta o que tem dos dois lados.
+  const parcial = encaixeEstilo({ ...pils, cor_srm_min: null }, { og: 1.048, fg: 1.010, abv_pct: 5.0, ibu: null, cor_srm: 3 });
+  assert.equal(parcial.total, 3);
+  assert.equal(encaixeEstilo(null, { og: 1.05 }).total, 0);
 });

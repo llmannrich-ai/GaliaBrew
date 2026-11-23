@@ -1,6 +1,6 @@
 // icones.js — ícones do GaliaBrew, desenho próprio (grade 24 × 24, traço 1,75, pontas arredondadas, cor = texto).
 // Em JS (e não num arquivo .svg): saem pelo svg() do ui.js, sem requisição extra e dentro da CSP.
-import { svg } from "./ui.js?v=20261123a";
+import { svg } from "./ui.js?v=20261123e";
 
 // Cada ícone = lista de elementos [tag, atributos]. "c" = círculo, "p" = caminho, "e" = elipse.
 export const DESENHOS = {
@@ -84,6 +84,18 @@ export const DESENHOS = {
   voltar: [["p", { d: "M15 18.5L8.5 12 15 5.5" }]],
   buscar: [["c", { cx: 10.5, cy: 10.5, r: 6 }], ["p", { d: "M15 15l5 5" }]],
   mais: [["p", { d: "M12 5v14M5 12h14" }]],
+  // menu lateral
+  receitas: [["p", { d: "M5 5a2 2 0 0 1 2-2h12v15H7a2 2 0 0 0-2 2z" }], ["p", { d: "M5 20a2 2 0 0 0 2 2h12v-4" }], ["p", { d: "M9 7.5h6M9 11h4" }]],
+  ferramentas: [
+    ["p", { d: "M9 3h6" }],
+    ["p", { d: "M10 3v6.2L4.6 18.4A1.7 1.7 0 0 0 6.1 21h11.8a1.7 1.7 0 0 0 1.5-2.6L14 9.2V3" }],
+    ["p", { d: "M7 15h10" }],
+  ],
+  perfil: [["c", { cx: 12, cy: 8, r: 4 }], ["p", { d: "M4.5 21a7.5 7.5 0 0 1 15 0" }]],
+  sair: [["p", { d: "M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" }], ["p", { d: "M9 16.5L4.5 12 9 7.5M4.5 12H15" }]],
+  recolher: [["p", { d: "M11 17l-5-5 5-5M18 17l-5-5 5-5" }]],
+  menu: [["p", { d: "M4 6.5h16M4 12h16M4 17.5h16" }]],
+  fechar: [["p", { d: "M6 6l12 12M18 6L6 18" }]],
 };
 
 /** Ícone por nome. Decorativo (aria-hidden): o texto ao lado ou o aria-label do botão dá o nome. */

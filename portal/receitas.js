@@ -1,14 +1,15 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123a";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123a";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123a";
-import { abrirBusca } from "./busca.js?v=20261123a";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123a";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123a";
-import * as O from "./opcoes.js?v=20261123a";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123a";
-import { icone } from "./icones.js?v=20261123a";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123a";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123e";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123e";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123e";
+import { abrirBusca } from "./busca.js?v=20261123e";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123e";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123e";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123e";
+import * as O from "./opcoes.js?v=20261123e";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123e";
+import { icone } from "./icones.js?v=20261123e";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123e";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -500,8 +501,25 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
     leitura ? null : botaoSalvarApp);
 
-  const estiloCampo = el("label", { class: "estilo-topo" }, el("span", { text: "Estilo" }), campoSelect(r, "estilo_id",
-    cat.estilos.map((e) => [e.id, `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}`]), { aoMudar: mudou, desabilitado: des, vazio: "— sem estilo —", rotulo: "Estilo" }));
+  // Estilo: botão que abre a busca (código, nome, termos em português, filtros, "Mais perto da receita").
+  const nomeEstilo = el("span", { class: "escolha-texto" });
+  const mostrarEstilo = () => {
+    const e = estiloAtual();
+    nomeEstilo.textContent = e ? `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}` : "— sem estilo —";
+  };
+  const trocarEstilo = (id) => {
+    if (r.estilo_id !== id) { r.estilo_id = id; mostrarEstilo(); mudou(); }
+    botaoEstilo.focus();
+  };
+  const botaoEstilo = el("button", {
+    type: "button", class: "escolha", disabled: des, "aria-label": "Estilo", "aria-haspopup": "dialog",
+    on: { click: () => abrirBusca({
+      tipo: "estilos", itens: cat.estilos, contexto: calcularReceita(r), atualId: r.estilo_id,
+      aoEscolher: (e) => trocarEstilo(e.id), aoLivre: () => trocarEstilo(null),
+    }) },
+  }, nomeEstilo, el("span", { class: "escolha-seta", "aria-hidden": "true", text: "▾" }));
+  mostrarEstilo();
+  const estiloCampo = el("div", { class: "estilo-topo" }, el("span", { class: "rotulo-campo", text: "Estilo" }), botaoEstilo);
 
   const geral = el("section", { class: "cartao" },
     tituloSecao("geral", "Dados gerais"),
@@ -738,7 +756,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           rotular("Rendimento (% base seca)", campoNumero(item, "rendimento_pct", { ...campo, casas: 1, rotulo: "Rendimento (%)" })),
           rotular("Umidade (%)", campoNumero(item, "umidade_pct", { ...campo, casas: 1, rotulo: "Umidade (%)" })),
           rotular(`Cor (${O.unidadeCor()})`, campoNumero(item, "cor_srm", { ...campo, ...cor, casas: 1, rotulo: `Cor (${O.unidadeCor()})` })),
-          rotular("Fermentável (%) — lactose = 0", campoNumero(item, "fermentavel_pct", { ...campo, casas: 0, rotulo: "Fermentável (%)" }))],
+          rotular("Fermentável (%) — lactose = 0", campoNumero(item, "fermentavel_pct", { ...campo, casas: 0, rotulo: "Fermentável (%)" })),
+          blocoFonte(fonteNaReceita(item, cat.fermentaveis, "fermentavel_id"), { classe: "largo" })],
         aoCalcular: (x) => {
           pct.textContent = `${numeroBR(x.pct_peso, 1)}%`;
           pts.textContent = `+${numeroBR(x.pontos_og, 0)}`;
@@ -790,7 +809,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         detalhes: [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
           rotular("Forma", campoSelect(item, "forma", O.FORMA_LUPULO, { ...campo, rotulo: "Forma" })),
-          rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" }))],
+          rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" })),
+          blocoFonte(fonteNaReceita(item, cat.lupulos, "lupulo_id"), { classe: "largo" })],
         aoCalcular: (x) => {
           const conta = DA_IBU.has(item.etapa);
           ibu.textContent = conta ? numeroBR(x.ibu, 1) : "—";

@@ -1,44 +1,13 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261123a";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261123a";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261123a";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261123a";
-import { telaFerramentas } from "./ferramentas.js?v=20261123a";
-import { copo } from "./vital.js?v=20261123a";
-
-/** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar). */
-function marcaCopo() {
-  const c = copo();
-  c.cerveja.setAttribute("fill", "#d08a2a");
-  return c;
-}
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261123e";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261123e";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261123e";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261123e";
+import { telaFerramentas } from "./ferramentas.js?v=20261123e";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261123e";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
-
-function cabecalho() {
-  const links = [
-    ["#/receitas", "Receitas"],
-    ["#/cadastros/fermentaveis", "Cadastros"],
-    ["#/ferramentas", "Ferramentas"],
-    ["#/perfil", "Perfil"],
-  ];
-  return el("header", { class: "topo" },
-    el("a", { href: "#/receitas", class: "marca" }, marcaCopo(), "GaliaBrew"),
-    el("nav", {}, links.map(([h, t]) => el("a", { href: h, text: t, dataset: { rota: h.split("/")[1] } }))),
-    el("div", { class: "quem" },
-      el("span", { text: sessao.perfil?.nome || sessao.usuario?.email || "" }),
-      sessao.admin ? el("span", { class: "selo", text: "admin" }) : null,
-      el("button", { type: "button", class: "secundario pequeno", text: "Sair", on: { click: sair } })));
-}
-
-function marcarMenu() {
-  const rota = location.hash.split("/")[1] || "receitas";
-  for (const a of document.querySelectorAll("header nav a")) {
-    const r = a.dataset.rota;
-    a.classList.toggle("ativo", r === rota || (r === "receitas" && rota === "receita"));
-  }
-}
 
 // ---------- login ----------
 function telaEntrar(mensagem) {
@@ -110,6 +79,7 @@ function telaDefinirSenha(tipo) {
 
 async function sair() {
   if (haAlteracoes() && !window.confirm("Há alterações não salvas. Sair mesmo assim?")) return;
+  fecharMenu();
   await sb.auth.signOut();
 }
 
@@ -175,6 +145,7 @@ async function rotear() {
   const conteudo = $("#conteudo");
   if (!conteudo) return;
   marcarMenu();
+  fecharMenu();
   rotaAtual = location.hash;
   conteudo.className = "conteudo";      // o editor acrescenta "com-vital"; as outras telas não
   document.body.classList.remove("no-editor");
@@ -214,13 +185,14 @@ async function carregarPerfil() {
 }
 
 function montarApp() {
-  const topo = cabecalho();
-  preencher(raiz(), topo, el("main", { id: "conteudo", class: "conteudo" }));
+  const { raiz: casca, barra } = montarCasca({ sair });
+  preencher(raiz(), casca);
   marcarMenu();
-  // Altura real do topo para o CSS: a barra vital do editor fica fixa logo abaixo dele.
-  if (window.ResizeObserver) {
-    new ResizeObserver(() => document.documentElement.style.setProperty("--topo-h", `${topo.offsetHeight}px`)).observe(topo);
-  }
+  // Altura real da barra do topo para o CSS: a barra vital do editor fica fixa logo abaixo dela. No computador a barra
+  // some (o menu é lateral) e a altura vira 0.
+  const medir = () => document.documentElement.style.setProperty("--topo-h", `${barra.offsetHeight}px`);
+  medir();
+  if (window.ResizeObserver) new ResizeObserver(medir).observe(barra);
 }
 
 // ---------- início ----------

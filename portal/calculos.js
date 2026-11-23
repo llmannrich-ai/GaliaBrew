@@ -710,3 +710,31 @@ export function corHexDeSrm(srm) {
   const hex = c0.map((c, k) => Math.round(c + (c1[k] - c) * t).toString(16).padStart(2, "0")).join("");
   return `#${hex}`;
 }
+
+/**
+ * Quanto a receita cabe no estilo. `res`: { og, fg, abv_pct, ibu, cor_srm } (de calcularReceita).
+ * Só conta o parâmetro que tem faixa no estilo e valor na receita.
+ * dentro = quantos estão na faixa; distancia = soma do quanto cada um passa da faixa, em larguras da faixa
+ * (0 = tudo dentro). Serve para ordenar estilos do mais parecido ao menos parecido.
+ */
+export function encaixeEstilo(estilo, res) {
+  const pares = [
+    [res?.og, estilo?.og_min, estilo?.og_max],
+    [res?.fg, estilo?.fg_min, estilo?.fg_max],
+    [res?.abv_pct, estilo?.abv_min_pct, estilo?.abv_max_pct],
+    [res?.ibu, estilo?.ibu_min, estilo?.ibu_max],
+    [res?.cor_srm, estilo?.cor_srm_min, estilo?.cor_srm_max],
+  ];
+  let dentro = 0, total = 0, distancia = 0;
+  for (const [v, mn, mx] of pares) {
+    if (v == null || mn == null || mx == null || !Number.isFinite(Number(v))) continue;
+    const a = Math.min(Number(mn), Number(mx));
+    const b = Math.max(Number(mn), Number(mx));
+    const x = Number(v);
+    const largura = b - a > 0 ? b - a : Math.abs(a) * 0.1 || 1;
+    total++;
+    if (x >= a && x <= b) dentro++;
+    else distancia += (x < a ? a - x : x - b) / largura;
+  }
+  return { dentro, total, distancia };
+}

@@ -102,10 +102,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   sem a umidade a OG sai ~4% alta. `receitas.relacao_agua_grao_l_kg` e `perda_tina_l` (água da mostura × lavagem).
 
 ## Portal (`portal/`, 22/11/2026, migração 0003)
-- HTML + módulos JS sem build: `index.html`, `app.js` (login, menu, rotas `#/receitas`, `#/receita/<id|nova>`,
-  `#/cadastros/<tabela>`, `#/perfil`), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
+- HTML + módulos JS sem build: `index.html`, `app.js` (login, rotas `#/receitas`, `#/receita/<id|nova>`,
+  `#/cadastros/<tabela>`, `#/perfil`), `menu.js` (menu lateral), `estado.js` (cliente Supabase, sessão, preferências), `ui.js` (DOM e números
   pt-BR), `opcoes.js` (listas = CHECK do banco; cor na tela em EBC ou SRM, escolha no perfil), `cadastros.js`,
-  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
+  `receitas.js`, `vital.js` (barra vital do editor), `busca.js` (busca de ingrediente e de estilo), `alvos.js` (chegar à OG / ao IBU), `icones.js` (ícones próprios), `graficos.js` (grist e linha do tempo), `calculos.js`, `style.css`, `_headers` (CSP e cabeçalhos de segurança do Cloudflare Pages).
 - supabase-js 2.119.2 dentro do repositório (`vendor/supabase-2.119.2.js`, MIT, com SRI no index.html): o site não
   depende de CDN e a CSP fica `script-src 'self'`. Trocar de versão = arquivo novo com a versão no nome + SRI novo.
 - Texto do usuário só por textContent (`el()`/`preencher()` do ui.js); nunca innerHTML com dado. O `append` nativo
@@ -119,7 +119,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  136 verificações: login, cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
+  170 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
   lista, lote (nº automático, data, OG/FG medidas, eficiência real), "Nova a partir desta" e "começar a partir de",
@@ -142,6 +143,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   descer, remover), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
   seguem em tabela. "+ Adicionar" abre a busca (`busca.js`): sem acento, vários termos, filtros por tipo, recentes
   (localStorage) e "meus" no topo, 60 resultados por vez, Enter adiciona e leva o foco à quantidade.
+- Busca de estilo (23/11/2026, sem migração): o Estilo do topo do editor é um botão que abre a mesma janela do `busca.js`
+  (`TIPOS_BUSCA.estilos`). Acha por código (21A, casa exato e vem primeiro), nome, categoria e termos em português
+  (`TERMOS_ESTILO`: trigo, azeda, defumada, belga, pilsen, oktoberfest...; o catálogo BJCP está em inglês). No estilo
+  cada termo casa com o COMEÇO de uma palavra ("ale" não acha "Pale Lager"). Filtros: Receita ("Combina com a receita"
+  = no máximo 1 parâmetro fora), Família, Cor, Amargor, Álcool. Sem busca: "Atual", "Mais perto da receita" (5, por
+  `encaixeEstilo` do calculos.js: parâmetros dentro da faixa e distância em larguras), recentes, catálogo em ordem de
+  código (`ordemCodigo`: 3A antes de 10A). "Sem estilo" limpa. Cadastros → Estilos usa a mesma busca (`buscarItens`).
 - Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
   fermentáveis destravados pelo mesmo fator (bisseção, `ajustarParaOG`); "Chegar ao IBU" muda só um lúpulo (o de mais
   tempo ou o escolhido; regra de três, `ajustarParaIBU`). Abrem pelo número da OG/IBU na barra ou pelo botão da seção,
@@ -152,7 +160,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Histórico e referência somem ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
 - CELULAR PRIMEIRO (decisão de 22/11/2026: o responsável e a maioria das pessoas usam pelo celular). Toda tela nova se
   desenha e testa primeiro em 390 px e 320 px com toque (contexto `isMobile + hasTouch` no navegador.cjs).
-  Etapa de celular (22/11/2026): no editor o menu geral some e entra a `barra-app` presa no topo (‹ voltar, nome,
+  Etapa de celular (22/11/2026): no editor o menu geral (hoje a `barra-movel`) some e entra a `barra-app` presa no topo (‹ voltar, nome,
   ↶ desfazer, Salvar com ponto quando há alteração pendente); a barra de números acompanha o teclado
   (`visualViewport` → `--teclado`) e o campo em foco rola para cima dela (rolagem instantânea: toque durante rolagem
   suave não vira clique); ± com toque no soltar (rolar a tela por cima não conta) e segurar repete; tabelas
@@ -174,7 +182,26 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123a.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123e.
+- Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre) nos dois temas;
+  ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
+  arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
+  960–1180 px: só ícones automaticamente (classe `compacto`; o editor precisa da largura). ≤ 959 px: `barra-movel` escura
+  no topo e o menu vira gaveta (fecha ao escolher, no véu ou com Esc; trava a rolagem enquanto aberta). `--topo-h` =
+  altura da `barra-movel` (0 no computador). No editor do celular (≤ 640 px) a `barra-movel` some, como antes o topo.
+  Editor em coluna única pela LARGURA AO LADO DO MENU, não pela tela: classe `estreito` na `.casca` quando a `.principal`
+  tem até 1180 px (ResizeObserver no menu.js; regras com `:where(.casca.estreito)`, sem somar especificidade). Ex.: 1366 px
+  com menu completo = uma coluna; recolhido = duas.
+- Layout de contraste (23/11/2026, pedido do responsável; só style.css): página branca (`--fundo` = `--cartao` = branco;
+  escuro #13100d), texto #1a130d (18:1), `--suave` #4d4237 (9,8:1 no branco, 8,3:1 na faixa), `--borda-campo` ≥ 3:1,
+  `--apagado` só para placeholder (itálico). Estados (lúpulo, âmbar, fora) ≥ 4,7:1 no branco e na faixa. Conferir a razão
+  ao mudar uma cor. Seção SEM contorno: `.cartao` sem borda/sombra/margem interna; o título (`.cartao > h3`,
+  `> .titulo-linha`, `details.lote > summary`) fica numa faixa `--painel` com traço cobre à esquerda. Barra vital, blocos
+  do painel lateral, login e cartões da lista = fundo `--painel`, sem borda. Página sem largura máxima, margem lateral
+  `--lado` (.75rem; .55rem no celular; a `barra-app` usa o mesmo valor na margem negativa). Ferramentas em `columns`.
+  Testes de largura das linhas de ingrediente: folga ≥ 0 até a borda da seção (não há mais margem interna de 17 px).
+- Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
+  ingrediente só ficam compactas até 640 px.
 
 ## Receita = lote (0005, aplicada em 22/11/2026)
 - `receitas` ganhou `lote_numero` (automático pelo gatilho `receitas_numerar`: maior do dono + 1; pode repetir, ex.
@@ -235,7 +262,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   destilada < 5,4). É ESTIMATIVA ±0,1-0,2. `receitas.acidos` (jsonb [{acido, ml}], só mostura). Teste
   `supabase/testes/0008_acidos.sql`. Card Água: lista de ácidos, pH estimado com faixa e botão "Adicionar o lático"
   (alvo 5,4).
-- Volumes das águas informados (0010, 23/11/2026, pedido do responsável): `receitas.agua_mostura_l` (> 0) e
+- Volumes das águas informados (0010, aplicada em 23/11/2026, pedido do responsável): `receitas.agua_mostura_l` (> 0) e
   `agua_lavagem_l` (≥ 0; 0 = sem lavagem/BIAB); nulo = sugestão (mostura = kg × relação água/grão; lavagem = necessária
   − mostura), por isso as receitas antigas/importadas não mudam. Sais (ppm), pH e temperatura da água da mostura usam os
   litros informados. `res.volumes`: `agua_total_l` = mostura + lavagem; `agua_necessaria_l` = pré-fervura + absorção +
@@ -271,6 +298,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Rede do ambiente "GaliaBrew" liberada (23/11/2026, aprovada pelo responsável) para os sites dos fabricantes:
   weyermann.de, castlemalting.com, agraria.com.br, bestmalz.de, vikingmalt.com, dingemansmout.be, umamalta.com.br,
   crispmalt.com, yakimachief.com, johnihaas.com, barthhaas.com, hopsteiner.com, infoteca.cnptia.embrapa.br.
+- Fonte dos dados na tela (23/11/2026, sem migração): `portal/fontes.js` classifica pelo `extras.fonte` → selo
+  "Fabricante" (ficha oficial; Swaen = fabricante transcrita pelo Brewtarget, link tirado das notas), "Análise"
+  (Embrapa), "Genérico" (beer-analytics / fontes públicas / GaliaBrew), "Meu" (dono preenchido). Aparece na busca de
+  ingrediente (selo + filtro "Fonte"), na coluna "Fonte" e no formulário dos Cadastros de ingrediente (com link "Ver a
+  ficha", só https) e nos detalhes (⋯) do malte/lúpulo na receita (`fonteNaReceita`: fonte do item ligado do catálogo;
+  sem ligação = "Da receita", caso das 102 importadas do Brewfather). Carga nova de catálogo: gravar `extras.fonte`
+  ("Ficha técnica oficial (Marca)…") e `extras.url` para o selo sair certo.
 - Teste `supabase/testes/0009_catalogo_marcas.sql`: 8 ok (contagem por marca, campos preenchidos, leitura por usuário
   comum, catálogo não editável por ele, receita copia malte e lúpulo novos). Advisors: sem aviso novo.
 
@@ -294,7 +328,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   responsável). 1ª publicação assim: PR #3 (editor novo, celular, arte), 22/11/2026.
 - Pendente na proteção da `main`: marcar o teste "Cálculos e versões" como obrigatório e "Require branches to be up
   to date" (Settings → Branches → Edit). Sem isso, o GitHub não barra PR desatualizado.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0009 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0010 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   desligar a extensão http no painel.

@@ -22,8 +22,14 @@ const jwt = () => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: USUARIO.id,
 
 const db = {
   perfis: [{ user_id: USUARIO.id, nome: "Leo", papel: "usuario" }],
-  estilos: [{ id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 }],
-  fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária" }],
+  estilos: [
+    { id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", categoria: "Pale Bitter European Beer", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 },
+    { id: "e2", dono: null, guia: "BJCP 2021", codigo: "10A", nome: "Weissbier", categoria: "German Wheat Beer", og_min: 1.044, og_max: 1.053, fg_min: 1.008, fg_max: 1.014, ibu_min: 8, ibu_max: 15, cor_srm_min: 2, cor_srm_max: 6, abv_min_pct: 4.3, abv_max_pct: 5.6 },
+    { id: "e3", dono: null, guia: "BJCP 2021", codigo: "21A", nome: "American IPA", categoria: "IPA", og_min: 1.056, og_max: 1.07, fg_min: 1.008, fg_max: 1.014, ibu_min: 40, ibu_max: 70, cor_srm_min: 6, cor_srm_max: 14, abv_min_pct: 5.5, abv_max_pct: 7.5 },
+    { id: "e4", dono: null, guia: "BJCP 2021", codigo: "3A", nome: "Czech Pale Lager", categoria: "Czech Lager", og_min: 1.028, og_max: 1.044, fg_min: 1.008, fg_max: 1.014, ibu_min: 20, ibu_max: 35, cor_srm_min: 3, cor_srm_max: 6, abv_min_pct: 3, abv_max_pct: 4.1 },
+  ],
+  fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária",
+    extras: { fonte: "Ficha técnica oficial (Agrária), consultada em 23/11/2026", url: "https://www.agraria.com.br/malte/teste" } }],
   lupulos: [], leveduras: [], outros: [], aguas: [{ id: "ag-tor", dono: null, nome: "Torneira teste", calcio_ppm: 20, magnesio_ppm: 4, sodio_ppm: 10, sulfato_ppm: 10, cloreto_ppm: 15, bicarbonato_ppm: 60 }, { id: "ag-alvo", dono: null, nome: "Alvo IPA", calcio_ppm: 110, magnesio_ppm: 10, sodio_ppm: 10, sulfato_ppm: 255, cloreto_ppm: 50, bicarbonato_ppm: 0 }], equipamentos: [], receitas: [],
   receita_fermentaveis: [], receita_lupulos: [], receita_leveduras: [], receita_outros: [], receita_mostura_passos: [], receita_fermentacao_passos: [],
 };
@@ -161,13 +167,42 @@ const erros = [];
   await pagina.fill('input[type="password"]', SENHA);
   await pagina.click('button[type="submit"]');
   await pagina.waitForSelector("text=Nenhuma receita ainda");
-  verificar(await pagina.isVisible("header >> text=Leo"), "login entra e mostra o nome do perfil");
+  verificar(await pagina.isVisible(".lateral >> text=Leo"), "login entra e mostra o nome do perfil");
+  verificar(await pagina.getAttribute('.lateral nav a[data-rota="receitas"]', "aria-current") === "page", "menu lateral marca a página atual");
   await pagina.screenshot({ path: `${SAIDA}/p1-receitas-vazia.png` });
 
   // Cadastro: equipamento e lúpulo
   await pagina.click("text=Cadastros");
   await pagina.waitForSelector("text=Pilsen (sistema)");
-  verificar(await pagina.isVisible("td >> text=Sistema"), "catálogo do sistema aparece com selo");
+  verificar(await pagina.isVisible("td >> .selo.fonte.fabricante >> text=Fabricante"), "malte do catálogo com ficha da fabricante aparece com o selo 'Fabricante'");
+  await pagina.click("td >> text=Pilsen (sistema)");
+  verificar((await pagina.textContent("dialog .fonte-dados")).includes("ficha técnica da própria fabricante")
+    && await pagina.getAttribute('dialog .fonte-dados a', "href") === "https://www.agraria.com.br/malte/teste",
+    "formulário do malte mostra a fonte dos dados e o link da ficha");
+  await pagina.click('dialog button:has-text("Fechar")');
+  const fontes = await pagina.evaluate(async () => {
+    const m = await import("./fontes.js?v=20261123e");
+    return [
+      { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
+      { extras: { fonte: "fontes públicas (via Brewtarget)" } },
+      { extras: { fonte: "The Swaen (via Brewtarget)" }, notas: "SKU 1. Source: https://theswaen.com/products/x." },
+      { extras: { fonte: "Embrapa, manual (2022), tabela 1", url: "https://www.infoteca.cnptia.embrapa.br/x.pdf" } },
+      { extras: { fonte: "Ficha oficial (Hopsteiner)", url: "javascript:alert(1)" } },
+      { dono: "u1", extras: {} },
+      {},
+    ].map((x) => { const f = m.fonteDados(x); return `${f.tipo}:${f.url ?? "-"}`; }).join(" ");
+  });
+  verificar(fontes === "GENERICA:- GENERICA:- FABRICANTE:https://theswaen.com/products/x ANALISE:https://www.infoteca.cnptia.embrapa.br/x.pdf FABRICANTE:- PROPRIA:- DESCONHECIDA:-",
+    `fontes: genérico, Swaen (fabricante via Brewtarget), Embrapa (análise), link só https, meu (${fontes})`);
+  // Cadastro de estilos: a mesma busca do editor (termo em português, código), em ordem de código (3A antes de 10A).
+  await pagina.click('.abas >> text=Estilos');
+  await pagina.waitForSelector("td >> text=German Pils");
+  const codigos = () => pagina.$$eval("tbody tr", (ls) => ls.map((l) => l.textContent));
+  verificar((await codigos()).findIndex((t) => t.includes("Czech Pale Lager")) < (await codigos()).findIndex((t) => t.includes("Weissbier")), "cadastro de estilos em ordem de código (3A antes de 10A)");
+  await pagina.fill('input[aria-label="Buscar"]', "trigo");
+  verificar((await codigos()).length === 1 && (await codigos())[0].includes("Weissbier"), "cadastro de estilos: \"trigo\" acha só a Weissbier");
+  await pagina.fill('input[aria-label="Buscar"]', "21a");
+  verificar((await codigos()).length === 1 && (await codigos())[0].includes("American IPA"), "cadastro de estilos: busca pelo código 21A");
   await pagina.click('.abas >> text=Equipamentos');
   await pagina.waitForSelector("text=Nenhum item ainda");
   await pagina.click("button:has-text('Novo')");
@@ -187,6 +222,7 @@ const erros = [];
   await pagina.click('dialog button[type="submit"]');
   await pagina.waitForSelector("td >> text=Saaz");
   verificar(db.lupulos[0]?.alfa_pct === 3.5, "alfa 3,5 (vírgula) gravado como 3.5");
+  verificar(await pagina.isVisible("tr:has-text('Saaz') .selo.fonte.meu"), "lúpulo cadastrado pela pessoa aparece com o selo 'Meu'");
 
   // Receita nova
   await pagina.click("text=Receitas");
@@ -194,7 +230,17 @@ const erros = [];
   await pagina.waitForSelector(".titulo-receita");
   verificar(await pagina.inputValue('input[aria-label="Volume no fermentador (L)"]') === "23,0", "equipamento único já preenche os parâmetros");
   await pagina.fill(".titulo-receita", "Pils da Galia");
-  await pagina.selectOption('select[aria-label="Estilo"]', "e1");
+  // Estilo: botão abre a busca; o código acha o estilo e Enter escolhe.
+  const botaoEstilo = 'button.escolha[aria-label="Estilo"]';
+  verificar((await pagina.textContent(botaoEstilo)).includes("sem estilo"), "receita nova começa sem estilo");
+  await pagina.click(botaoEstilo);
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await pagina.textContent("dialog.busca h3") === "Escolher estilo", "estilo abre a janela de busca");
+  verificar(!(await pagina.isVisible("dialog.busca .busca-grupo >> text=Mais perto da receita")), "sem ingredientes não sugere estilo pela receita");
+  await pagina.fill("dialog.busca .busca-campo", "5d");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar((await pagina.textContent(botaoEstilo)).includes("5D German Pils"), "código 5D + Enter escolhe a German Pils");
   const adicionar = (secao) => pagina.click(`[data-secao="${secao}"] button.adicionar`);
   const focado = () => pagina.evaluate(() => document.activeElement?.getAttribute("aria-label"));
 
@@ -204,6 +250,8 @@ const erros = [];
   verificar(await focado() === "Buscar", "busca abre com o foco no campo");
   await pagina.keyboard.type("agraria");
   verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Pilsen (sistema)", "busca sem acento: 'agraria' acha o malte da Agrária");
+  verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .selo.fonte') === "Fabricante"
+    && await pagina.isVisible('.busca-grupo-filtro[aria-label="Fonte"]'), "busca mostra o selo da fonte e tem o filtro 'Fonte'");
   await pagina.keyboard.press("Enter");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
   verificar(await focado() === "Qtd (kg)", "Enter adiciona o malte e o foco vai direto para a quantidade");
@@ -279,7 +327,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -299,6 +347,28 @@ const erros = [];
   verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
   verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
   verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
+  // Busca de estilo com a receita pronta: atual no topo, sugestão pelos números, termos em português, filtro "Combina".
+  await pagina.click(botaoEstilo);
+  await pagina.waitForSelector("dialog.busca");
+  const opcoesEstilo = () => pagina.$$eval("dialog.busca .busca-opcao-nome", (ls) => ls.map((l) => l.textContent));
+  const grupos = await pagina.$$eval("dialog.busca .busca-grupo", (ls) => ls.map((l) => l.textContent));
+  verificar(grupos[0] === "Atual" && (await opcoesEstilo())[0].startsWith("5D German Pils"), "busca de estilo: o atual vem primeiro, marcado");
+  verificar(grupos[1] === "Mais perto da receita" && (await opcoesEstilo())[1].startsWith("3A Czech Pale Lager"),
+    "OG 1,041, IBU 23, cor clara: sugere Czech Pale Lager pelos números da receita");
+  verificar(await pagina.$$eval("dialog.busca .busca-opcao-resumo", (ls) => ls.every((l) => /receita em \d de \d faixas/.test(l.textContent))),
+    "resumo de cada estilo diz em quantas faixas a receita cabe");
+  await pagina.fill("dialog.busca .busca-campo", "trigo");
+  verificar((await opcoesEstilo()).length === 1 && (await opcoesEstilo())[0].startsWith("10A Weissbier"), "\"trigo\" acha a Weissbier (catálogo em inglês)");
+  await pagina.fill("dialog.busca .busca-campo", "ale");
+  verificar(!(await opcoesEstilo()).some((t) => t.includes("Czech Pale Lager")), "\"ale\" casa com começo de palavra: não acha Pale Lager");
+  await pagina.fill("dialog.busca .busca-campo", "");
+  await pagina.click('dialog.busca .chip:has-text("Combina com a receita")');
+  const combinam = await opcoesEstilo();
+  verificar(combinam[0].startsWith("3A Czech Pale Lager") && !combinam.some((t) => t.includes("American IPA")), "filtro \"Combina com a receita\": mais parecido primeiro, IPA fora");
+  await pagina.screenshot({ path: `${SAIDA}/p3b-busca-estilo.png` });
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  verificar((await pagina.textContent(botaoEstilo)).includes("5D German Pils"), "Esc fecha a busca sem trocar o estilo");
   const linhaF = '[data-secao="fermentaveis"] li.ing';
   const linhaL = '[data-secao="lupulos"] li.ing';
   verificar(await pagina.textContent(`${linhaF} .d1 .ing-dado-val`) === "100,0%" && await pagina.textContent(`${linhaF} .d2 .ing-dado-val`) === `+${br((esperado.og - 1) * 1000, 0)}`,
@@ -307,7 +377,7 @@ const erros = [];
     "lúpulo mostra IBU da adição e g/L");
   verificar(await pagina.getAttribute(".grist", "aria-label") === "Proporção dos fermentáveis no peso: Pilsen (sistema) 100%" && await pagina.locator(".grist-seg").count() === 1,
     "barra do grist: um segmento por malte, com descrição para leitor de tela");
-  verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
+  verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
     "totais no cabeçalho das seções");
   verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
@@ -315,7 +385,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123e");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -334,7 +404,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -389,6 +459,7 @@ const erros = [];
     "seta ↓ na alça desce o item e o foco acompanha");
   await pagina.click(`${segunda} .ing-mais`);
   verificar(await pagina.getAttribute(`${segunda} .ing-mais`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "⋯ abre os detalhes (alfa, forma, nome)");
+  verificar((await pagina.textContent(`${segunda} .ing-detalhes .fonte-dados`)).includes("Cadastrado por você"), "detalhes do lúpulo na receita mostram a fonte dos dados");
   await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
   await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
   verificar(await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pelos detalhes");
@@ -415,7 +486,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123a");
+    const m = await import("./calculos.js?v=20261123e");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -451,8 +522,24 @@ const erros = [];
   await pagina.emulateMedia({ colorScheme: "dark" });
   await pagina.screenshot({ path: `${SAIDA}/p3c-editor-escuro.png` });
   await pagina.emulateMedia({ colorScheme: "light" });
+  // Linhas de ingrediente dentro do cartão (o menu lateral tira largura do editor).
+  const sobraLinhas = () => pagina.evaluate(() => Math.max(...[...document.querySelectorAll("li.ing")].map((li) => {
+    const sec = li.closest("section").getBoundingClientRect();
+    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - sec.right);
+  })));
+  for (const [w, recolher] of [[1366, false], [1366, true], [1280, false], [1440, false]]) {
+    if (recolher !== Boolean(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("recolhido")))) await pagina.click("button.recolher");
+    await pagina.setViewportSize({ width: w, height: 900 });
+    await pagina.waitForTimeout(400);
+    const sobra = await sobraLinhas();
+    // seção sem margem interna desde 23/11/2026 (layout sem contorno): a linha pode encostar na borda, não passar dela
+    verificar(sobra <= 0, `computador ${w} px, menu ${recolher ? "recolhido" : "completo"}: linhas de ingrediente cabem na seção (folga ${-sobra} px)`);
+  }
   await pagina.setViewportSize({ width: 1024, height: 768 });
+  await pagina.waitForTimeout(400); // o menu passa a só ícones com animação
   verificar(await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) <= 1, "tablet (1024 px): página não passa da largura");
+  verificar(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("compacto") && document.querySelector(".lateral").getBoundingClientRect().width < 100), "tablet (1024 px): menu lateral fica só com ícones");
+  verificar(await sobraLinhas() <= 0, "tablet (1024 px): linhas de ingrediente cabem na seção");
   await pagina.screenshot({ path: `${SAIDA}/p3d-editor-tablet.png` });
   await pagina.setViewportSize({ width: 1366, height: 900 });
 
@@ -481,7 +568,7 @@ const erros = [];
   verificar(await pagina.isVisible("td >> text=20/04/2026"), "lista mostra a data da brassagem sem erro de fuso");
 
   // Ferramentas: valores padrão (5 kg, 3 L/kg, grão 20 °C, parada 66 °C; 20 L, 2,4 vol, 20 °C, sacarose).
-  await pagina.click("header nav >> text=Ferramentas");
+  await pagina.click(".lateral nav >> text=Ferramentas");
   await pagina.waitForSelector("h3:text('Priming')");
   const ferr = await pagina.textContent(".ferramentas");
   verificar(ferr.includes("Água da mostura15,0 L") && ferr.includes("Temperatura da água72,3 °C"), "água da mostura: 15,0 L a 72,3 °C");
@@ -504,11 +591,50 @@ const erros = [];
   verificar(await pagina.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).fator_refratometro) === 1.049, "fator fica salvo no navegador");
   verificar((await pagina.textContent("section:has(h3:text('Densímetro'))")).includes("Densidade corrigida1,051"), "densímetro: 1,050 a 25 °C (calibrado a 20 °C) → 1,051");
   await pagina.screenshot({ path: `${SAIDA}/p6-ferramentas.png`, fullPage: true });
-  await pagina.click("header nav >> text=Receitas");
+  await pagina.click(".lateral nav >> text=Receitas");
+  await pagina.waitForSelector("td >> text=Pils da Galia");
   await pagina.screenshot({ path: `${SAIDA}/p4-lista.png` });
+
+  // Menu recolhível: só ícones, fica salvo no navegador e continua assim ao recarregar.
+  const larguraMenu = () => pagina.evaluate(() => document.querySelector(".lateral").getBoundingClientRect().width);
+  const menuAberto = await larguraMenu();
+  await pagina.click("button.recolher");
+  await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().width < 100);
+  verificar(menuAberto > 200 && !(await pagina.isVisible(".lateral nav >> text=Receitas")), `recolher deixa o menu só com ícones (${Math.round(menuAberto)} → ${Math.round(await larguraMenu())} px)`);
+  await pagina.screenshot({ path: `${SAIDA}/p4b-menu-recolhido.png` });
+  await pagina.reload();
+  await pagina.waitForSelector("td >> text=Pils da Galia");
+  verificar(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("recolhido")), "menu recolhido continua recolhido ao recarregar");
+  await pagina.click('.lateral nav a[data-rota="ferramentas"]');
+  await pagina.waitForSelector("h3:text('Priming')");
+  verificar(true, "menu recolhido navega pelos ícones");
+  await pagina.click("button.recolher");
+  await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().width > 200);
+  await pagina.click(".lateral nav >> text=Receitas");
+  await pagina.waitForSelector("td >> text=Pils da Galia");
 
   // Celular
   await pagina.setViewportSize({ width: 390, height: 844 });
+  await pagina.waitForTimeout(400); // fim da animação da gaveta
+  verificar(!(await pagina.isVisible(".lateral nav >> text=Receitas")) && await pagina.isVisible("button.abrir-menu"), "celular: menu escondido, botão de abrir na barra do topo");
+  await pagina.click("button.abrir-menu");
+  await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().left >= 0);
+  verificar(await pagina.isVisible(".lateral nav >> text=Cadastros") && await pagina.evaluate(() => document.body.classList.contains("travado")), "celular: botão abre a gaveta com os nomes e trava a rolagem da página");
+  await pagina.screenshot({ path: `${SAIDA}/p5f-celular-menu.png` });
+  await pagina.click(".lateral nav >> text=Cadastros");
+  await pagina.waitForSelector("text=Pilsen (sistema)");
+  await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
+  verificar(!(await pagina.evaluate(() => document.body.classList.contains("travado"))), "celular: escolher um item fecha a gaveta");
+  await pagina.click("button.abrir-menu");
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
+  verificar(true, "celular: Esc fecha a gaveta");
+  await pagina.click("button.abrir-menu");
+  await pagina.click(".veu", { position: { x: 370, y: 400 } });
+  await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
+  verificar(true, "celular: tocar fora fecha a gaveta");
+  await pagina.click("button.abrir-menu");
+  await pagina.click(".lateral nav >> text=Receitas");
   await pagina.click(".receita-cartao >> text=Pils da Galia");
   await pagina.waitForSelector(".titulo-receita");
   const larguraExtra = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -519,7 +645,7 @@ const erros = [];
   const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
     const filhos = [...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right);
-    return Math.round(Math.max(...filhos) - (sec.right - 17));
+    return Math.round(Math.max(...filhos) - sec.right);
   }));
   verificar(estouro.every((d) => d <= 1), `celular: linhas de ingrediente cabem no cartão (sobra ${estouro.join(", ")} px)`);
   await pagina.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -613,7 +739,7 @@ const erros = [];
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
   await tocar(".receita-cartao >> text=Pils da Galia");
   await cel.waitForSelector(".barra-app");
-  verificar(!(await cel.isVisible("header.topo")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
+  verificar(!(await cel.isVisible("header.barra-movel")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
     "toque: no editor o menu geral some e a barra do app mostra voltar, nome, desfazer e Salvar");
   const qtdCel = cel.locator('input[aria-label="Qtd (kg)"]').first();
   const maisF = '[data-secao="fermentaveis"] li.ing button.passo[aria-label="Mais 250 g"]';
@@ -693,7 +819,7 @@ const erros = [];
   verificar(await larguraSobra() <= 1, `320 px: editor não passa da largura (${await larguraSobra()} px)`);
   const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
-    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - (sec.right - 17));
+    return Math.round(Math.max(...[...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right)) - sec.right);
   }));
   verificar(estouro320.every((d) => d <= 1), `320 px: linhas de ingrediente cabem no cartão (sobra ${estouro320.join(", ")} px)`);
   await cel.evaluate(() => window.scrollTo(0, 0));
