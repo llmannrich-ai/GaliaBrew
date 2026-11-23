@@ -830,6 +830,13 @@ dialog form { display: grid; gap: .9rem; }
   .tabela.editavel td.acoes-linha { position: absolute; top: calc(.8rem + 1.1rem); right: 0; }
   .tabela.editavel tr:has(> td.nota) { padding: 0 0 .2rem; }
   .tabela.editavel td.nota { margin: 0; }
+  /* Sais e ácidos da água: tudo numa linha só (nome | quantidade + unidade | ×), sem rótulo em cima. */
+  .tabela.editavel.linha-unica tr { grid-template-columns: minmax(0, 1fr) 5.6rem 2.75rem; align-items: center; gap: .35rem; padding: .3rem 0; }
+  .tabela.editavel.linha-unica td:first-child:not(.nota) { grid-column: auto; padding-right: 0; }
+  .tabela.editavel.linha-unica td[data-rotulo]::before { content: none; }
+  .tabela.editavel.linha-unica td[data-unidade] { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3rem; }
+  .tabela.editavel.linha-unica td[data-unidade]::after { content: attr(data-unidade); font-size: .875rem; color: var(--suave); }
+  .tabela.editavel.linha-unica td.acoes-linha { position: static; grid-column: auto; }
   .vital-rot { font-size: .75rem; }
   .vital-delta { font-size: .72rem; }
   .vital-faixa { font-size: .8rem; }

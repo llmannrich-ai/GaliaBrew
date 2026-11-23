@@ -201,7 +201,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123m.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123n.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -317,6 +317,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   depois "Total do dia" (conferência com a água necessária) e o perfil Origem/Mostura/Lavagem/Panela/Alvo com SO₄/Cl da
   panela. `.bloco-agua` (style.css): fundo liso sobre o papel de parede, faixa à esquerda cobre (mostura) / azul
   (lavagem), título e litros em `--t-m`. Teste do navegador confere que cada sal e o ácido ficam no bloco certo.
+
+- Sais e ácidos numa linha só no celular (23/11/2026, pedido do responsável): tabela com classe `linha-unica`
+  (style.css, bloco de 640 px): seletor do sal | quantidade + unidade (`data-unidade`, g ou mL) | ×, sem rótulo em cima;
+  o nome longo corta no seletor fechado. Teste do navegador confere em 390 e 320 px (capturas `p5g`, `p5h`).
 
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,

@@ -181,7 +181,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123m");
+    const m = await import("./fontes.js?v=20261123n");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -336,7 +336,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123m");
+    const m = await import("./calculos.js?v=20261123n");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -396,7 +396,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123m");
+    const m = await import("./calculos.js?v=20261123n");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -415,7 +415,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123m");
+    const m = await import("./calculos.js?v=20261123n");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -500,7 +500,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123m");
+    const m = await import("./calculos.js?v=20261123n");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -662,6 +662,24 @@ const erros = [];
   await pagina.screenshot({ path: `${SAIDA}/p5-celular.png` });
   await pagina.evaluate(() => document.querySelector('[data-secao="lupulos"]').scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5e-celular-lupulos.png` });
+  // Sal da água: nome, gramas e × na mesma linha (390 e 320 px), sem passar da largura do bloco.
+  const linhaDoSal = () => pagina.evaluate(() => {
+    const tr = document.querySelector('tr:has(input[aria-label="Gramas na mostura"])');
+    const bloco = tr.closest(".bloco-agua").getBoundingClientRect();
+    const r = [tr.querySelector("select"), tr.querySelector("input"), tr.querySelector("button")].map((n) => n.getBoundingClientRect());
+    const meio = r.map((x) => x.top + x.height / 2);
+    return { alinhado: Math.max(...meio) - Math.min(...meio) <= 2, ordem: r[0].right <= r[1].left && r[1].right <= r[2].left,
+      cabe: r[2].right <= bloco.right + 1, altura: Math.round(tr.getBoundingClientRect().height), select: Math.round(r[0].width) };
+  });
+  const sal390 = await linhaDoSal();
+  verificar(sal390.alinhado && sal390.ordem && sal390.cabe && sal390.altura <= 60, `celular: cada sal da água numa linha só (${JSON.stringify(sal390)})`);
+  await pagina.evaluate(() => document.querySelector(".bloco-agua").scrollIntoView());
+  await pagina.screenshot({ path: `${SAIDA}/p5g-celular-sais.png` });
+  await pagina.setViewportSize({ width: 320, height: 700 });
+  const sal320 = await linhaDoSal();
+  verificar(sal320.alinhado && sal320.ordem && sal320.cabe && sal320.select >= 100, `celular 320 px: sal numa linha só (${JSON.stringify(sal320)})`);
+  await pagina.screenshot({ path: `${SAIDA}/p5h-celular-sais-320.png` });
+  await pagina.setViewportSize({ width: 390, height: 844 });
   const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
     const filhos = [...li.children].filter((f) => !f.hidden).map((f) => f.getBoundingClientRect().right);
