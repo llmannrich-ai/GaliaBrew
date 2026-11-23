@@ -1,9 +1,9 @@
 // ferramentas.js — calculadoras avulsas: água da mostura e priming (mesmas fórmulas do calculos.js).
-import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261123y";
-import { FAIXAS, FAIXAS_LUGAR as F } from "./faixas.js?v=20261123y";
-import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261123y";
-import { preferencias, salvarPreferencias } from "./estado.js?v=20261123y";
-import * as O from "./opcoes.js?v=20261123y";
+import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261123z";
+import { FAIXAS, FAIXAS_LUGAR as F } from "./faixas.js?v=20261123z";
+import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261123z";
+import { preferencias, salvarPreferencias } from "./estado.js?v=20261123z";
+import * as O from "./opcoes.js?v=20261123z";
 
 // Volume que o grão ocupa na tina (L por kg), para saber se a mostura cabe.
 const VOLUME_GRAO_L_KG = 0.67;
