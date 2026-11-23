@@ -172,6 +172,39 @@ test("Volumes de água", () => {
   perto(r.volumes.agua_total_l, 24 + 5 + 0.5, 1e-9);
   perto(r.volumes.agua_mostura_l, 15, 1e-9);
   perto(r.volumes.agua_lavagem_l, 14.5, 1e-9);
+  perto(r.volumes.agua_necessaria_l, 29.5, 1e-9);
+  perto(r.volumes.agua_diferenca_l, 0, 1e-9, "sem volumes informados, a soma é a necessária");
+  assert.equal(r.volumes.agua_mostura_informada, false);
+});
+
+test("Volumes de água informados pelo cervejeiro (0010)", () => {
+  const base = {
+    volume_lote_l: 20, perda_panela_l: 1, evaporacao_l_h: 3, fervura_min: 60, eficiencia_pct: 72,
+    absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0.5, temp_grao_c: 20,
+    fermentaveis: [{ nome: "Pilsner", tipo: "GRAO", rendimento_pct: 80, quantidade_kg: 5, etapa: "MOSTURA", cor_srm: 2 }],
+    mostura: [{ temperatura_c: 66 }],
+    agua_origem: { calcio_ppm: 20, bicarbonato_ppm: 100 },
+  };
+  // Só a mostura informada: lavagem sugerida = necessária − mostura.
+  const so = calcularReceita({ ...base, agua_mostura_l: 18 }).volumes;
+  perto(so.agua_mostura_l, 18, 1e-12); perto(so.agua_lavagem_l, 29.5 - 18, 1e-9); perto(so.agua_total_l, 29.5, 1e-9);
+  assert.equal(so.agua_mostura_informada, true); assert.equal(so.agua_lavagem_informada, false);
+  perto(so.agua_mostura_sugerida_l, 15, 1e-9); perto(so.relacao_agua_grao_l_kg, 3.6, 1e-9);
+  perto(so.temperatura_agua_mostura_c, temperaturaAguaMostura({ graoC: 20, alvoC: 66, litrosPorKg: 3.6 }), 1e-9, "temperatura da água pela mostura informada");
+  // As duas informadas: total = soma; diferença com a necessária (falta 1,5 L).
+  const r = calcularReceita({ ...base, agua_mostura_l: 16, agua_lavagem_l: 12, sais: [{ sal: "GESSO", gramas: 4, etapa: "MOSTURA" }, { sal: "CLORETO_CALCIO", gramas: 2, etapa: "LAVAGEM" }] });
+  perto(r.volumes.agua_total_l, 28, 1e-12); perto(r.volumes.agua_diferenca_l, -1.5, 1e-9);
+  perto(r.agua.mostura.litros, 16, 1e-12); perto(r.agua.lavagem.litros, 12, 1e-12); perto(r.agua.panela.litros, 28, 1e-12);
+  perto(r.agua.mostura.ions.sulfato_ppm, (557.9 * 4) / 16, 0.05, "ppm do gesso na água da mostura informada");
+  perto(r.agua.lavagem.ions.cloreto_ppm, (482.3 * 2) / 12, 0.05, "ppm do cloreto de cálcio na lavagem informada");
+  perto(r.ph_mostura.ph, phMostura({ maltes: base.fermentaveis, litros: 16, ions: r.agua.mostura.ions }).ph, 1e-9, "pH na água da mostura informada");
+  // Mais água na mostura dilui a alcalinidade por litro, mas soma mais bicarbonato: o pH sobe.
+  assert.ok(calcularReceita({ ...base, agua_mostura_l: 25 }).ph_mostura.ph > calcularReceita({ ...base, agua_mostura_l: 12 }).ph_mostura.ph);
+  // Sem lavagem (BIAB): lavagem 0 vale; mostura 0 ou vazia = sugestão.
+  const biab = calcularReceita({ ...base, agua_mostura_l: 29.5, agua_lavagem_l: 0 }).volumes;
+  perto(biab.agua_lavagem_l, 0, 1e-12); assert.equal(biab.agua_lavagem_informada, true); perto(biab.agua_diferenca_l, 0, 1e-9);
+  perto(calcularReceita({ ...base, agua_mostura_l: 0 }).volumes.agua_mostura_l, 15, 1e-9);
+  perto(calcularReceita({ ...base, agua_mostura_l: "" }).volumes.agua_mostura_l, 15, 1e-9);
 });
 
 test("Faixa do estilo", () => {
