@@ -779,7 +779,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     classe: "lup",
     vazio: "Nenhum lúpulo. Use “+ Adicionar”.",
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
-    ferramenta: el("button", { type: "button", class: "secundario pequeno", text: "Chegar ao IBU…", title: "Ajusta o lúpulo de amargor para um IBU alvo", on: { click: () => ajustarIBU() } }),
+    // Sem botão "Chegar ao IBU" na seção (retirado em 23/11/2026, pedido do responsável): abre pelo número do IBU na barra.
     adicionar: botaoAdicionar("lupulos",
       (h) => adicionarItem("lupulos", { lupulo_id: h.id, nome: h.nome, forma: h.forma, alfa_pct: num0(h.alfa_pct), quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }),
       () => adicionarItem("lupulos", { lupulo_id: null, nome: "", forma: "PELLET", alfa_pct: 5, quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }, true)),

@@ -161,8 +161,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   código (`ordemCodigo`: 3A antes de 10A). "Sem estilo" limpa. Cadastros → Estilos usa a mesma busca (`buscarItens`).
 - Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
   fermentáveis destravados pelo mesmo fator (bisseção, `ajustarParaOG`); "Chegar ao IBU" muda só um lúpulo (o de mais
-  tempo ou o escolhido; regra de três, `ajustarParaIBU`). Abrem pelo número da OG/IBU na barra; o IBU também pelo botão da seção (o botão
-  "Chegar à OG" da seção Fermentáveis foi retirado em 23/11/2026, pedido do responsável),
+  tempo ou o escolhido; regra de três, `ajustarParaIBU`). Abrem SÓ pelo número da OG/IBU na barra (os botões
+  das seções Fermentáveis e Lúpulos foram retirados em 23/11/2026, pedido do responsável),
   com prévia antes de aplicar; aceitam OG em pontos (46 = 1,046). Cadeado por item RETIRADO da tela em 22/11/2026 (pedido do
   responsável); `travado` continua aceito no calculos.js, mas a tela não marca mais. Histórico em memória (50 passos; digitação vira passo após 0,8 s ou ao trocar de campo; ação inteira
   = 1 passo); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y; desfazer remonta o editor e a barra mostra a diferença. "Fixar

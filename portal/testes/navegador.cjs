@@ -469,9 +469,9 @@ const erros = [];
   verificar((await vital("og", "vital-delta")).startsWith("−"), "depois de desfazer, a barra mostra a diferença");
 
   // ---- E3: chegar à OG (pelo número da OG na barra) ----
-  verificar(await pagina.locator('[data-secao="fermentaveis"] .titulo-acoes button:has-text("Chegar à OG")').count() === 0
-    && await pagina.locator('[data-secao="lupulos"] .titulo-acoes button:has-text("Chegar ao IBU")').count() === 1,
-    "seção Fermentáveis sem o botão Chegar à OG (abre pela barra); Lúpulos mantém Chegar ao IBU");
+  verificar(await pagina.locator('.titulo-acoes button:has-text("Chegar à OG"), .titulo-acoes button:has-text("Chegar ao IBU")').count() === 0
+    && await pagina.locator('.vital [data-metrica="og"] button.vital-val, .vital [data-metrica="ibu"] button.vital-val').count() === 2,
+    "sem os botões Chegar à OG/IBU nas seções (abrem pelo número na barra)");
   await pagina.click('.vital [data-metrica="og"] button.vital-val');
   await pagina.waitForSelector("dialog.alvo");
   await pagina.fill('dialog.alvo input[aria-label="OG desejada"]', "46");
