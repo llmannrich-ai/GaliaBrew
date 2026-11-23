@@ -14,7 +14,7 @@
   --apagado: #887a6a;        /* só placeholder */
   --linha: #ddd1bf;          /* separadores */
   --borda-campo: #968674;    /* borda de campo: ≥ 3:1 no branco */
-  --trilho: #ece3d3;         /* fundo da régua */
+  --trilho: #e0d4c1;         /* fundo da régua (mais escuro desde 23/11/2026: sumia no cartão branco) */
   --destaque: #a14f17;       /* cobre: ação principal e marca */
   --destaque-escuro: #7f3d10;
   --sobre-destaque: #ffffff; /* texto em cima do cobre */
@@ -695,6 +695,29 @@ dialog form { display: grid; gap: .9rem; }
   .vital.com-teclado .vital-mais, .vital.com-teclado .regua { display: none; }
   .vital.com-teclado .vital-item { padding: .2rem .45rem; }
   .vital.com-teclado .vital-val, .vital.com-teclado button.vital-val.ajustavel { font-size: 1.15rem; }
+
+  /* Leitura no celular (23/11/2026, regra nº 0 do CLAUDE.md): nenhum texto abaixo de ~12 px (rótulos em maiúsculas
+     tinham 10,9 px), dado do ingrediente sem corte e menos vão entre seções. */
+  .cartao { margin-bottom: 1.25rem; }
+  .cartao > h3, .cartao > .titulo-linha, details.lote > summary { margin-bottom: .6rem; padding-left: .85rem; }
+  details.lote:not([open]) > summary { margin-bottom: 0; }
+  .ing-sub { font-size: .875rem; white-space: normal; line-height: 1.3; }
+  .ing-dado-rot { font-size: .72rem; }
+  .grist-legenda { font-size: .875rem; white-space: normal; }
+  .tempo-reguas { font-size: .8rem; }
+  .tabela.editavel td[data-rotulo]::before { font-size: .75rem; }
+  /* × de remover no canto do cartão, ao lado do nome (não ocupa mais uma linha sozinho) */
+  .tabela.editavel tr { position: relative; }
+  .tabela.editavel td:first-child:not(.nota) { padding-right: 3.3rem; }
+  .tabela.editavel td.acoes-linha { position: absolute; top: calc(.8rem + 1.1rem); right: 0; }
+  .tabela.editavel tr:has(> td.nota) { padding: 0 0 .2rem; }
+  .tabela.editavel td.nota { margin: 0; }
+  .vital-rot { font-size: .75rem; }
+  .vital-delta { font-size: .72rem; }
+  .vital-faixa { font-size: .8rem; }
+  .vital-mais { font-size: .75rem; }
+  .regua { height: 7px; }
+  .rc-sub, .rc-numeros { font-size: .875rem; }
 }
 
 /* Celulares estreitos (320–360 px): barra de números mais justa para os 5 valores não se encostarem. */
@@ -702,7 +725,7 @@ dialog form { display: grid; gap: .9rem; }
   .vital { padding-left: .45rem; padding-right: .45rem; }
   .vital-grade { gap: .3rem; }
   .vital-item { padding-left: .4rem; padding-right: .4rem; }
-  .vital-rot { font-size: .62rem; letter-spacing: 0; }
+  .vital-rot { font-size: .7rem; letter-spacing: 0; }
   .vital-val, button.vital-val.ajustavel { font-size: 1.25rem; }
 }
 
