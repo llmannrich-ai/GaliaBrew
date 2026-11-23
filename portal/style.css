@@ -362,8 +362,8 @@ details.lote .grade-form + .grade-form { margin-top: .7rem; }
   background: var(--cartao);
 }
 .ing:first-child { border-top: none; }
-.linhas-ing.ferm .ing { grid-template-columns: 1.6rem 1.2rem minmax(9rem, 1fr) auto 4.4rem 3.6rem 2.2rem; }
-.linhas-ing.lup .ing { grid-template-columns: 1.6rem minmax(8rem, 1fr) auto auto 3.6rem 3.2rem 2.2rem; }
+.linhas-ing.ferm .ing { grid-template-columns: 1.6rem 1.2rem minmax(9rem, 1fr) auto 4.4rem 3.6rem; }
+.linhas-ing.lup .ing { grid-template-columns: 1.6rem minmax(8rem, 1fr) auto auto 3.6rem 3.2rem; }
 .titulo-acoes { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .ing-vazio { padding: .4rem 0; }
 .ing-alca {
@@ -374,14 +374,24 @@ button.ing-alca:hover { background: var(--painel); border: none; color: var(--ti
 .ing.arrastando { position: relative; z-index: 3; box-shadow: var(--sombra-forte); border-radius: var(--raio-p); opacity: .96; }
 .ing.arrastando .ing-alca { cursor: grabbing; }
 .ing-cor { width: 1.2rem; height: 1.2rem; margin: 0; border-radius: 50%; }
-.ing-nome { display: grid; min-width: 0; }
+/* Nome do item = botão que abre os detalhes (sem o antigo ⋯). Parece texto; a seta › gira quando aberto. */
+button.ing-nome {
+  display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; justify-items: start; align-content: center; gap: 0;
+  min-width: 0; width: 100%; min-height: 2.75rem; white-space: normal; -webkit-tap-highlight-color: transparent;
+  padding: .15rem 0; margin: 0; border: none; border-radius: var(--raio-p); background: transparent;
+  color: var(--tinta); font: inherit; font-weight: 400; text-align: left; cursor: pointer; touch-action: manipulation;
+}
+button.ing-nome:hover, button.ing-nome:active { background: transparent; border: none; color: var(--tinta); }
+@media (hover: hover) { button.ing-nome:hover .ing-nome-txt { text-decoration: underline; text-underline-offset: 3px; } }
+.ing-nome-linha { display: flex; align-items: baseline; gap: .35rem; min-width: 0; max-width: 100%; }
+.ing-seta { flex: none; color: var(--suave); font-weight: 700; line-height: 1; transition: transform .15s; }
+button.ing-nome[aria-expanded="true"] .ing-seta { transform: rotate(90deg); }
+.ing-cor, .ing-dado { cursor: pointer; }
 .ing-nome-txt { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ing-sub { font-size: .8rem; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ing-dado { display: grid; justify-items: end; line-height: 1.15; }
 .ing-dado-rot { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); }
 .ing-dado-val { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ing-mais { width: 2.2rem; height: 2.2rem; padding: 0; font-size: 1.1rem; }
-.ing-mais[aria-expanded="true"] { background: var(--painel); color: var(--tinta); }
 .ing-detalhes { grid-column: 1 / -1; background: var(--painel); border-radius: var(--raio-p); padding: .8rem .9rem; margin: .2rem 0 .1rem; }
 .ing-detalhes .grade-form { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .ing-detalhes input, .ing-detalhes select { background: var(--cartao); }
@@ -805,11 +815,11 @@ dialog form { display: grid; gap: .9rem; }
   .ing { gap: .4rem .5rem; }
   .linhas-ing.ferm .ing {
     grid-template-columns: 1.8rem 1.2rem minmax(0, 1fr) 3.4rem 2.8rem;
-    grid-template-areas: "alca cor nome nome mais" "qtd qtd qtd d1 d2" "det det det det det";
+    grid-template-areas: "alca cor nome nome nome" "qtd qtd qtd d1 d2" "det det det det det";
   }
   .linhas-ing.lup .ing {
     grid-template-columns: 1.8rem minmax(0, 1fr) 3.4rem 2.8rem;
-    grid-template-areas: "alca nome nome mais" "quando quando quando quando" "qtd qtd d1 d2" "det det det det";
+    grid-template-areas: "alca nome nome nome" "quando quando quando quando" "qtd qtd d1 d2" "det det det det";
   }
   .ing-alca { grid-area: alca; height: 2.75rem; }
   .ing-cor { grid-area: cor; }
@@ -817,7 +827,6 @@ dialog form { display: grid; gap: .9rem; }
   .ing-qtd { grid-area: qtd; }
   .ing-dado.d1 { grid-area: d1; }
   .ing-dado.d2 { grid-area: d2; }
-  .ing-mais { grid-area: mais; width: 2.75rem; height: 2.75rem; justify-self: end; }
   .ing-quando { grid-area: quando; }
   .ing-detalhes { grid-area: det; }
   .campo-qtd input.qtd { width: 5rem; }
