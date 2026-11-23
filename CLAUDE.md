@@ -128,7 +128,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  193 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  201 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -156,7 +156,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (`TIPOS_BUSCA.estilos`). Acha por código (21A, casa exato e vem primeiro), nome, categoria e termos em português
   (`TERMOS_ESTILO`: trigo, azeda, defumada, belga, pilsen, oktoberfest...; o catálogo BJCP está em inglês). No estilo
   cada termo casa com o COMEÇO de uma palavra ("ale" não acha "Pale Lager"). Filtros: Receita ("Combina com a receita"
-  = no máximo 1 parâmetro fora), Família, Cor, Amargor, Álcool. Sem busca: "Atual", "Mais perto da receita" (5, por
+  = no máximo 1 parâmetro fora), Família, Cor, Amargor, Álcool — RETIRADOS em 23/11/2026 (no celular ocupavam a tela
+  toda; pedido do responsável): a busca de estilo não tem filtros. Sem busca: "Atual", "Mais perto da receita" (5, por
   `encaixeEstilo` do calculos.js: parâmetros dentro da faixa e distância em larguras), recentes, catálogo em ordem de
   código (`ordemCodigo`: 3A antes de 10A). "Sem estilo" limpa. Cadastros → Estilos usa a mesma busca (`buscarItens`).
 - Editor (E3, 22/11/2026; o modo "receita em %" ficou de fora por decisão do responsável): "Chegar à OG" escala os
@@ -173,7 +174,15 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Etapa de celular (22/11/2026): no editor o menu geral (hoje a `barra-movel`) some e entra a `barra-app` presa no topo (‹ voltar, nome,
   ↶ desfazer, Salvar com ponto quando há alteração pendente); a barra de números acompanha o teclado
   (`visualViewport` → `--teclado`) e o campo em foco rola para cima dela (rolagem instantânea: toque durante rolagem
-  suave não vira clique); ± com toque no soltar (rolar a tela por cima não conta) e segurar repete; tabelas
+  suave não vira clique). TECLADO NO IPHONE (23/11/2026, print do responsável: a barra cobria a quantidade do malte
+  novo): o iOS encolhe a área visível E a rola para cima do teclado (`offsetTop`), e a conta antiga descontava o
+  offsetTop → "sem teclado", barra grande. Agora teclado aberto = `innerHeight − vv.height > 120` OU campo de digitar
+  em foco em tela de toque (classe `com-teclado` na barra e `teclado-aberto` no html). Com teclado a barra vira UMA
+  linha de 6 números (~47 px; em ≤ 360 px 5, sem o pH, porque "−0,037" não cabia com a fonte do GitHub; rótulos curtos EBC/pH, letra ≥ 12 px; a diferença aparece no lugar do rótulo), sem
+  puxador/régua/aviso/margem do entalhe, e "detalhes" fecha; a página ganha 55vh embaixo para os últimos campos
+  subirem; `manterAcimaDaBarra` só age no campo EM FOCO e só ao abrir o teclado/trocar de campo (rolar a tela com o
+  teclado aberto não puxa de volta). Quantidade (`campoQuantidade`): no toque o número vem selecionado (digitar troca
+  tudo), só se nada foi digitado desde o toque. Teste "iPhone:" no navegador.cjs simula o offsetTop; ± com toque no soltar (rolar a tela por cima não conta) e segurar repete; tabelas
   (leveduras, outros, mostura, fermentação) viram cartões com rótulo por campo (`td[data-rotulo]::before`); chip de
   diferença com `pointer-events: none`; `touch-action: manipulation` nos elementos de toque (sem espera de toque
   duplo). O arrastar com o dedo funciona. PENDÊNCIA: no simulador do Chrome, o 1º toque depois de arrastar a alça não
@@ -192,7 +201,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123k.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123n.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
