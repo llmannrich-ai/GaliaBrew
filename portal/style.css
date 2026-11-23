@@ -1066,3 +1066,53 @@ dialog.foto-janela[open] { display: flex; flex-direction: column; }
   .foto-janela .rel-topo { padding-top: max(.5rem, env(safe-area-inset-top)); }
   .foto-pe { padding-bottom: max(.4rem, env(safe-area-inset-bottom)); }
 }
+
+/* ---------- Roleta (23/11/2026, pedido do responsável): escolher número girando rodas, no lugar do teclado ----------
+   Só em tela de toque (roleta.js + faixas.js). Folha presa no rodapé, não modal: no editor a barra de números vira a
+   linha fina logo acima dela (como com o teclado) e mostra a OG/IBU mudando enquanto a roda gira. Item = 44 px de
+   toque; a roda mostra 5 (o do meio é o escolhido, na faixa cobre). */
+.roleta {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 22; max-width: 560px; margin: 0 auto;
+  background: var(--cartao); color: var(--tinta); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgb(0 0 0 / .22);
+  padding: .35rem .75rem calc(.5rem + env(safe-area-inset-bottom));
+  animation: roleta-sobe .18s ease-out;
+}
+@keyframes roleta-sobe { from { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) { .roleta { animation: none; } }
+.roleta-topo { display: grid; grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr) minmax(4.5rem, auto); align-items: center; gap: .4rem; }
+.roleta-cancelar { min-height: 44px; justify-self: start; padding: 0 .3rem; }
+.roleta-ok { min-height: 44px; justify-self: end; min-width: 4.5rem; font-weight: 700; }
+.roleta-titulo { display: grid; justify-items: center; text-align: center; min-width: 0; }
+.roleta-rotulo { max-width: 100%; font-size: var(--t-rotulo); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.roleta-valor { font-size: var(--t-g); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.roleta-rodas { position: relative; display: flex; justify-content: center; align-items: center; gap: .1rem; height: 220px; margin: .2rem 0 .35rem; }
+.roleta-faixa {
+  position: absolute; left: 0; right: 0; top: 88px; height: 44px; border-radius: 10px; pointer-events: none;
+  background: var(--painel); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--destaque) 60%, transparent);
+}
+.roleta-roda {
+  position: relative; height: 220px; min-width: 5.5rem; overflow-y: auto; overscroll-behavior: contain; scroll-snap-type: y mandatory;
+  scrollbar-width: none; touch-action: pan-y; border-radius: 10px; outline-offset: -2px;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+}
+.roleta-roda::-webkit-scrollbar { display: none; }
+.roleta-roda:focus-visible { outline: 2px solid var(--destaque); }
+.roleta-espaco { height: 88px; }
+.roleta-item {
+  height: 44px; display: flex; align-items: center; justify-content: center; padding: 0 .7rem; scroll-snap-align: center;
+  font-size: 1.375rem; font-variant-numeric: tabular-nums; color: var(--tinta); user-select: none; -webkit-user-select: none;
+}
+.roleta-item.no-meio { font-weight: 750; color: var(--destaque-escuro); }
+.roleta-roda.inteiro { min-width: 4.5rem; }
+.roleta-roda.inteiro .roleta-item { justify-content: flex-end; padding-right: .1rem; }
+.roleta-roda.fracao { min-width: 4.5rem; }
+.roleta-roda.fracao .roleta-item { justify-content: flex-start; padding-left: .1rem; }
+.roleta-unidade { position: relative; font-size: 1.125rem; font-weight: 650; color: var(--suave); padding-left: .25rem; }
+.roleta-pe { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; }
+.roleta-pe button { min-height: 44px; }
+/* Campo da roleta: parece campo, mas o toque abre a roleta (sem cursor de texto); o que está sendo escolhido fica marcado. */
+input[readonly][data-roleta] { cursor: pointer; caret-color: transparent; }
+input.em-roleta { outline: 2px solid var(--destaque); outline-offset: -1px; border-color: transparent; background: color-mix(in srgb, var(--destaque) 9%, var(--cartao)); }
+/* Espaço para os últimos campos da página subirem acima da roleta (fora do editor; no editor vale o do teclado). */
+html.roleta-aberta .conteudo { padding-bottom: calc(var(--roleta-h, 0px) + 4rem); }

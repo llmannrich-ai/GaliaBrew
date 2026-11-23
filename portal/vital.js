@@ -1,9 +1,9 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
-import { el, svg, numeroBR } from "./ui.js?v=20261123w";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261123w";
-import * as O from "./opcoes.js?v=20261123w";
+import { el, svg, numeroBR } from "./ui.js?v=20261123x";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261123x";
+import * as O from "./opcoes.js?v=20261123x";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -43,9 +43,10 @@ export function copo() {
   return n;
 }
 
-/** Campo que abre o teclado do celular (texto/número), fora de janelas (a busca é tela cheia). */
+/** Campo que abre o teclado do celular (texto/número), fora de janelas (a busca é tela cheia). Somente leitura (campo
+ * da roleta) não abre teclado. */
 function campoDeDigitar(n) {
-  return n instanceof HTMLElement && !n.closest("dialog")
+  return n instanceof HTMLElement && !n.closest("dialog") && !n.readOnly
     && (n.tagName === "TEXTAREA" || (n.tagName === "INPUT" && !/^(checkbox|radio|button|submit|range|color|file)$/.test(n.type)));
 }
 
@@ -68,14 +69,18 @@ function acompanharTeclado(barra) {
       vv?.removeEventListener("scroll", aoRolar);
       document.removeEventListener("focusin", aoRedimensionar);
       document.removeEventListener("focusout", aoSair);
+      document.removeEventListener("roleta", aoRolar);
       document.documentElement.classList.remove("teclado-aberto");
       return;
     }
     const altura = vv ? vv.height : window.innerHeight;
     const topo = vv ? vv.offsetTop : 0;
     const digitando = toque.matches && campoDeDigitar(document.activeElement);
-    const aberto = window.innerHeight - altura > 120 || digitando;
-    barra.style.setProperty("--teclado", `${Math.max(0, Math.round(window.innerHeight - altura - topo))}px`);
+    // Roleta aberta (roleta.js) = como o teclado: a barra vira a linha fina, logo acima da roleta.
+    const roleta = document.querySelector(".roleta");
+    const alturaRoleta = roleta ? Math.round(roleta.getBoundingClientRect().height) : 0;
+    const aberto = window.innerHeight - altura > 120 || digitando || alturaRoleta > 0;
+    barra.style.setProperty("--teclado", `${Math.max(0, Math.round(window.innerHeight - altura - topo), alturaRoleta)}px`);
     barra.classList.toggle("com-teclado", aberto);
     if (aberto && barra.classList.contains("aberta")) {         // "detalhes" aberto + teclado = sem espaço: fecha
       barra.classList.remove("aberta");
@@ -99,6 +104,7 @@ function acompanharTeclado(barra) {
   vv?.addEventListener("scroll", aoRolar);
   document.addEventListener("focusin", aoRedimensionar);
   document.addEventListener("focusout", aoSair);
+  document.addEventListener("roleta", aoRolar);
   requestAnimationFrame(() => { barra.dataset.montada = "1"; ajustar(); });
 }
 

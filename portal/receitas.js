@@ -1,17 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123w";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123w";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123w";
-import { abrirBusca } from "./busca.js?v=20261123w";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123w";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123w";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123w";
-import * as O from "./opcoes.js?v=20261123w";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123w";
-import { icone } from "./icones.js?v=20261123w";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123w";
-import { abrirRelatorio } from "./relatorio.js?v=20261123w";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261123w";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261123x";
+import { roletaAberta } from "./roleta.js?v=20261123x";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261123x";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123x";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123x";
+import { abrirBusca } from "./busca.js?v=20261123x";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123x";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123x";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123x";
+import * as O from "./opcoes.js?v=20261123x";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123x";
+import { icone } from "./icones.js?v=20261123x";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123x";
+import { abrirRelatorio } from "./relatorio.js?v=20261123x";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261123x";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -246,10 +248,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     }
     atualizarFerramentas();
   }
-  /** Digitação: vira um passo quando a pessoa para (0,8 s) ou muda de campo. */
+  /** Digitação: vira um passo quando a pessoa para (0,8 s) ou muda de campo. Roleta aberta = um passo só, ao fechar. */
+  const registrarQuandoLivre = () => { if (roletaAberta()) t.timer = setTimeout(registrarQuandoLivre, 300); else registrar(); };
   function agendarRegistro() {
     clearTimeout(t.timer);
-    t.timer = setTimeout(registrar, 800);
+    t.timer = setTimeout(registrarQuandoLivre, 800);
     bDesfazer.disabled = false;
     bDesfazerApp.disabled = false;
   }
@@ -547,14 +550,15 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const brassagem = el("section", { class: "cartao", dataset: { secao: "brassagem" } },
     tituloSecao("brassagem", "Brassagem (lote)"),
     el("div", { class: "grade-form" },
-      campoLote("lote_numero", "Nº do lote", { casas: 0, placeholder: "automático" }),
+      campoLote("lote_numero", "Nº do lote", { casas: 0, placeholder: "automático", roleta: false }),
       el("label", {}, el("span", { text: "Data da brassagem" }), el("input", {
         type: "date", value: r.data_brassagem ?? "", disabled: des, "aria-label": "Data da brassagem",
         on: { change: (e) => { r.data_brassagem = e.target.value || null; mudou(); } },
       })),
-      campoLote("og_medida", "OG medida", { casas: 3, placeholder: "1,050", ...sg }),
-      campoLote("fg_medida", "FG medida", { casas: 3, placeholder: "1,010", ...sg }),
-      campoLote("volume_final_l", "Volume real no fermentador (L)", { casas: 1 }),
+      // Roleta começa no planejado (OG/FG calculadas, volume do lote): o mais provável de ter sido medido.
+      campoLote("og_medida", "OG medida", { casas: 3, placeholder: "1,050", ...sg, roleta: { inicial: () => Number(calcularReceita(r).og?.toFixed(3)) } }),
+      campoLote("fg_medida", "FG medida", { casas: 3, placeholder: "1,010", ...sg, roleta: { inicial: () => Number(calcularReceita(r).fg?.toFixed(3)) } }),
+      campoLote("volume_final_l", "Volume real no fermentador (L)", { casas: 1, roleta: { inicial: () => Number(r.volume_lote_l) } }),
       campoLote("co2_alvo_vol", "CO₂ desejado (vol)", { casas: 1, placeholder: "2,4" }),
       el("label", {}, el("span", {}, "Açúcar do priming", info(O.AJUDA_VOLUME.priming_acucar)),
         campoSelect(r, "priming_acucar", O.ACUCAR_PRIMING, { aoMudar: mudou, desabilitado: des, vazio: "Açúcar comum (sacarose)", rotulo: "Açúcar do priming" }))));
@@ -722,7 +726,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     focos[chave] = (livre) => {
       const ultima = lista.querySelector(":scope > li.ing:last-of-type");
       if (livre) ultima?.querySelector(".ing-detalhes input")?.focus();
-      else ultima?.querySelector("input.qtd")?.focus();
+      else editarCampo(ultima?.querySelector("input.qtd"));      // celular: abre a roleta já na quantidade mais provável
     };
     desenhar();
     return sec;
@@ -763,7 +767,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         sub: () => [item.cor_srm != null && item.cor_srm !== "" ? `${numeroBR(O.corParaTela(Number(item.cor_srm)), 1).replace(/,0$/, "")} ${O.unidadeCor()}` : null],
         refrescar: () => { amostra.style.background = corHexDeSrm(item.cor_srm ?? 0); },
         colunas: [
-          el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_kg", { casas: 3, passo: passoG / 1000, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "kg", rotulo: "Qtd (kg)", desabilitado: des, aoMudar: (c) => mudou(c) })),
+          el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_kg", { casas: 3, passo: passoG / 1000, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "kg", rotulo: "Qtd (kg)", desabilitado: des, aoMudar: (c) => mudou(c), roleta: { inicial: () => presetFermentavel(item, r) } })),
           dado("grist", pct, "d1"), dado("OG", pts, "d2")],
         detalhes: [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
@@ -771,7 +775,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           rotular("Etapa", campoSelect(item, "etapa", O.ETAPA_FERMENTAVEL, { ...campo, rotulo: "Etapa" })),
           rotular("Rendimento (% base seca)", campoNumero(item, "rendimento_pct", { ...campo, casas: 1, rotulo: "Rendimento (%)" })),
           rotular("Umidade (%)", campoNumero(item, "umidade_pct", { ...campo, casas: 1, rotulo: "Umidade (%)" })),
-          rotular(`Cor (${O.unidadeCor()})`, campoNumero(item, "cor_srm", { ...campo, ...cor, casas: 1, rotulo: `Cor (${O.unidadeCor()})` })),
+          rotular(`Cor (${O.unidadeCor()})`, campoNumero(item, "cor_srm", { ...campo, ...cor, casas: 1, rotulo: `Cor (${O.unidadeCor()})`, roleta: faixaCor(O.unidadeCor()) })),
           rotular("Fermentável (%) — lactose = 0", campoNumero(item, "fermentavel_pct", { ...campo, casas: 0, rotulo: "Fermentável (%)" })),
           blocoFonte(fonteNaReceita(item, cat.fermentaveis, "fermentavel_id"), { classe: "largo" })],
         aoCalcular: (x) => {
@@ -801,10 +805,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const tempo = el("span", { class: "ing-tempo" });
       const desenharTempo = () => {
         if (["FERVURA", "WHIRLPOOL", "MOSTURA"].includes(item.etapa)) {
-          preencher(tempo, campoNumero(item, "tempo_min", { ...campo, casas: 0, rotulo: "Tempo (min)", classe: "num curto" }), el("span", { class: "sufixo", text: "min" }),
-            item.etapa === "WHIRLPOOL" ? [campoNumero(item, "temperatura_c", { ...campo, casas: 0, rotulo: "Temperatura do whirlpool (°C)", classe: "num curto", placeholder: String(TEMPERATURA_WHIRLPOOL_PADRAO_C) }), el("span", { class: "sufixo", text: "°C" })] : null);
+          preencher(tempo, campoNumero(item, "tempo_min", { ...campo, casas: 0, rotulo: "Tempo (min)", classe: "num curto", unidade: "min", roleta: { inicial: item.etapa === "WHIRLPOOL" ? 20 : 60 } }), el("span", { class: "sufixo", text: "min" }),
+            item.etapa === "WHIRLPOOL" ? [campoNumero(item, "temperatura_c", { ...campo, casas: 0, rotulo: "Temperatura do whirlpool (°C)", classe: "num curto", unidade: "°C", placeholder: String(TEMPERATURA_WHIRLPOOL_PADRAO_C), roleta: FAIXAS_LUGAR.temp_whirlpool }), el("span", { class: "sufixo", text: "°C" })] : null);
         } else if (item.etapa === "DRY_HOP") {
-          preencher(tempo, el("span", { class: "sufixo", text: "dia" }), campoNumero(item, "dia", { ...campo, casas: 0, rotulo: "Dia", classe: "num curto" }));
+          preencher(tempo, el("span", { class: "sufixo", text: "dia" }), campoNumero(item, "dia", { ...campo, casas: 0, rotulo: "Dia", classe: "num curto", unidade: "º dia" }));
         } else limpar(tempo);
       };
       desenharTempo();
@@ -820,7 +824,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         sub: () => [O.rotulo(O.FORMA_LUPULO, item.forma), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
         colunas: [
           el("div", { class: "ing-quando" }, etapa, tempo),
-          el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_g", { casas: 1, passo: passoG, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "g", rotulo: "Qtd (g)", desabilitado: des, aoMudar: (c) => mudou(c) })),
+          el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_g", { casas: 1, passo: passoG, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "g", rotulo: "Qtd (g)", desabilitado: des, aoMudar: (c) => mudou(c), roleta: { inicial: () => presetLupulo(item, r) } })),
           dado("IBU", ibu, "d1"), dado("g/L", gl, "d2")],
         detalhes: [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
@@ -840,7 +844,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   /** Leveduras e outros (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
   const adicionarLinhaTabela = (chave, item, focar) => {
     acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
-    document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`)?.focus();
+    editarCampo(document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`));
   };
 
   const leveduras = secaoLista("leveduras", "Leveduras", {
@@ -851,7 +855,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Tipo", campo: sel("tipo", O.TIPO_LEVEDURA) },
       { r: "Forma", campo: sel("forma", O.FORMA_LEVEDURA) },
       { r: "Atenuação %", num: true, campo: num("atenuacao_pct", 0) },
-      { r: "Qtd", num: true, campo: num("quantidade", 1) },
+      // Roleta começa no comum para a unidade: 1 pacote, 11 g de fermento seco, 100 mL de fermento líquido/cultivado.
+      { r: "Qtd", num: true, campo: (item) => num("quantidade", 1, { roleta: { min: 0, max: 1000, segmentos: [[10, 0.5], [200, 1], [1000, 10]],
+        inicial: () => ({ G: 11, ML: 100, BILHOES_CELULAS: 200 })[item.unidade] ?? 1 } })(item) },
       { r: "Unidade", campo: sel("unidade", O.UNIDADE_LEVEDURA, { vazio: "—" }) },
       { r: "Etapa", campo: sel("etapa", O.ETAPA_LEVEDURA) },
     ],
@@ -1055,10 +1061,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     colunas: [
       { r: "Nome", campo: txt("nome") },
       { r: "Tipo", campo: sel("tipo", O.TIPO_OUTRO) },
-      { r: "Qtd", num: true, campo: num("quantidade", 2) },
+      { r: "Qtd", num: true, campo: (item) => num("quantidade", 2, { roleta: { inicial: () => ({ G: 5, KG: 0.5, ML: 5, L: 1 })[item.unidade] ?? 1 } })(item) },
       { r: "Unidade", campo: sel("unidade", O.UNIDADE_OUTRO) },
       { r: "Etapa", campo: sel("etapa", O.ETAPA_OUTRO) },
-      { r: "Tempo (min)", num: true, campo: num("tempo_min", 0) },
+      { r: "Tempo (min)", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_outro }) },
     ],
     adicionar: botaoAdicionar("outros",
       (o) => adicionarLinhaTabela("outros", { outro_id: o.id, nome: o.nome, tipo: o.tipo, quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Qtd"),
@@ -1072,8 +1078,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     colunas: [
       { r: "Passo", campo: txt("nome") },
       { r: "Tipo", campo: sel("tipo", O.TIPO_MOSTURA) },
-      { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1) },
-      { r: "Tempo (min)", num: true, campo: num("tempo_min", 0) },
+      { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_mostura }) },
+      { r: "Tempo (min)", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_mostura }) },
     ],
     adicionar: botaoPasso("mostura", () => ({ nome: "", tipo: "TEMPERATURA", temperatura_c: 72, tempo_min: 10 })),
   });
@@ -1082,7 +1088,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     vazio: "Sem passos.",
     colunas: [
       { r: "Passo", campo: txt("nome") },
-      { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1) },
+      { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_fermentacao }) },
       { r: "Dias", num: true, campo: num("dias", 0) },
     ],
     adicionar: botaoPasso("fermentacao", () => ({ nome: "", temperatura_c: 2, dias: 3 })),
