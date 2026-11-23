@@ -1,16 +1,16 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123s";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123s";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123s";
-import { abrirBusca } from "./busca.js?v=20261123s";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123s";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123s";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123s";
-import * as O from "./opcoes.js?v=20261123s";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123s";
-import { icone } from "./icones.js?v=20261123s";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123s";
-import { abrirRelatorio } from "./relatorio.js?v=20261123s";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123t";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123t";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123t";
+import { abrirBusca } from "./busca.js?v=20261123t";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123t";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123t";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123t";
+import * as O from "./opcoes.js?v=20261123t";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123t";
+import { icone } from "./icones.js?v=20261123t";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123t";
+import { abrirRelatorio } from "./relatorio.js?v=20261123t";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -642,16 +642,19 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("button", { type: "button", class: "secundario pequeno", text: "↓ Descer", disabled: i === r[chave].length - 1, on: { click: () => mover(i + 1) } }),
           el("span", { class: "espaco" }),
           el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: remover } })));
-      const botaoMais = el("button", {
-        type: "button", class: "icone ing-mais", text: "⋯", title: "Detalhes", "aria-expanded": String(aberto), "aria-controls": idDet,
-        "aria-label": `Detalhes de ${String(item.nome ?? "").trim() || "item sem nome"}`,
-        on: { click: () => {
-          const abrir = det.hidden;
-          det.hidden = !abrir;
-          botaoMais.setAttribute("aria-expanded", String(abrir));
-          if (abrir) abertos.add(item); else abertos.delete(item);
-        } },
-      });
+      // Detalhes abrem tocando no item (nome, cor ou números); o botão ⋯ foi retirado em 23/11/2026 (pedido do responsável).
+      const alternar = () => {
+        const abrir = det.hidden;
+        det.hidden = !abrir;
+        botaoNome.setAttribute("aria-expanded", String(abrir));
+        li.classList.toggle("aberto", abrir);
+        if (abrir) abertos.add(item); else abertos.delete(item);
+      };
+      const botaoNome = el("button", {
+        type: "button", class: "ing-nome", title: "Toque para ver os detalhes", "aria-expanded": String(aberto), "aria-controls": idDet,
+        "aria-label": `Detalhes de ${nomeItem}`,
+        on: { click: alternar },
+      }, el("span", { class: "ing-nome-linha" }, nome, el("span", { class: "ing-seta", "aria-hidden": "true", text: "›" })), sub ?? null);
       const alca = leitura ? el("span", { class: "ing-alca", "aria-hidden": "true" }) : el("button", {
         type: "button", class: "ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
         "aria-label": `Mover ${String(item.nome ?? "").trim() || "item"}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
@@ -660,7 +663,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           pointerdown: (e) => arrastar(e, i, mover),
         },
       });
-      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub ?? null), partes.colunas, botaoMais, det);
+      const li = el("li", { class: aberto ? "ing aberto" : "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas, det);
+      // Tocar fora dos campos (amostra de cor, números calculados) também abre/fecha os detalhes.
+      li.addEventListener("click", (e) => {
+        if (e.target.closest("input, select, textarea, button, a, label, .ing-detalhes, .ing-qtd, .ing-quando")) return;
+        alternar();
+      });
       refrescar();
       calculados.set(item, partes.aoCalcular);
       return li;
