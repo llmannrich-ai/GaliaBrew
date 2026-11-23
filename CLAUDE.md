@@ -207,7 +207,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123x.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123y.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -244,7 +244,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   mudavam de cor; só style.css, só no celular ≤ 640 px): cada seção do editor começa com uma crista de espuma de cerveja
   que sobe por cima da anterior (bolhas grandes e pequenas na borda com traço na cor da seção, bolhas vazadas dentro e
   bolhinhas soltas). Duas máscaras SVG em data URI (`--espuma-forma`, `--espuma-aro`; ladrilho 240 × 32 px) no
-  `::after` (cor `--espuma`: branco + cor da seção no claro, "colarinho de stout" no escuro) e `::before` (aro na cor da
+  `::after` (na cor `--pp` da PRÓPRIA seção: com cor mais clara ficava uma faixa com linha reta sobre o fundo de baixo, print do iPhone em 23/11/2026; não usar `--espuma`, que é a cor do copinho) e `::before` (aro na cor da
   seção); a cor vem das variáveis, então vale em todos os temas. 32 px: 18 acima da seção, 14 dentro; padding da seção
   maior em cima e embaixo para não encostar no conteúdo; `pointer-events: none`; o desenho começa em ponto diferente a
   cada seção (`--espuma-x` por nth-child). Para mudar o desenho, regerar as duas máscaras juntas (o aro = a forma 1,6 px
