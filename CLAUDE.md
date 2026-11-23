@@ -6,6 +6,15 @@ Leia `docs/PRD.md` antes de qualquer tarefa. Este arquivo resume as regras que n
 Aplicativo web de receitas de cerveja (criação, cálculo de OG/FG/ABV/IBU/cor, brassagem). Começou para uso pessoal
 e já nasce multiusuário: cada pessoa vê e edita só o que é dela.
 
+## PLATAFORMA-ALVO: CELULAR (regra nº 0, ordem do responsável em 23/11/2026)
+- O GaliaBrew é usado no CELULAR (iPhone, aberto como app pela Tela de Início). NÃO é um programa de computador.
+  Melhorar o layout de desktop não tem valor para o responsável: não gastar tempo nisso.
+- Todo pedido de tela/layout/visual sem plataforma dita = CELULAR. Desenhar, ajustar e conferir PRIMEIRO em 390 px e
+  320 px com toque (`navegador.cjs`, contexto `isMobile + hasTouch`); as capturas mostradas ao responsável são as do
+  celular (`p5*`, `p6*`), nunca as de 1366 px.
+- Desktop só precisa não quebrar (os testes do navegador já cobrem). Nada de propor ou fazer melhoria só de desktop.
+- Erro a não repetir (23/11/2026): o pedido de contraste e layout foi feito e mostrado em capturas de computador.
+
 ## Stack decidida
 - Supabase: projeto `GaliaBrew`, ref `hzomsyfujxakcuaaedmh`, org "Versa" (plano Free), região sa-east-1.
   API: https://hzomsyfujxakcuaaedmh.supabase.co. Plano Free: pausa após 7 dias sem acesso (reativar no painel).
