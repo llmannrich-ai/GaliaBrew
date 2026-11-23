@@ -131,7 +131,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  218 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  238 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -205,7 +205,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123u.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123v.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -352,6 +352,32 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (style.css, bloco de 640 px): seletor do sal | quantidade + unidade (`data-unidade`, g ou mL) | ×, sem rótulo em cima;
   o nome longo corta no seletor fechado. Teste do navegador confere em 390 e 320 px (capturas `p5g`, `p5h`).
 
+## Fotos da brassagem (0011, aplicada em 23/11/2026, pedido do responsável)
+- Aplicada pelo MCP (md5 igual ao arquivo). Teste: 14 das 16 verificações ok em transação desfeita; as 2 que usam
+  `delete` (12: B não apaga foto de A; 14: A apaga foto de receita excluída) NÃO rodaram: o MCP pede uma confirmação
+  que não chega ao responsável. Para rodar o teste inteiro: colar `supabase/testes/0011_fotos_brassagem.sql` no SQL
+  Editor do painel. Advisors: aviso novo só o esperado (`fotos_cabem` é security definer executável por authenticated,
+  de propósito: a política de envio a usa e ela só conta as fotos de quem chama).
+- Storage: bucket PRIVADO `fotos-brassagem`, caminho `<dono>/<receita>/<arquivo>.jpg`, limite do bucket 400 kB e só
+  `image/jpeg` (quem enviar sem reduzir é barrado pelo próprio Storage). Sem tabela nova: a lista vem da pasta.
+- Políticas em `storage.objects` (só `to authenticated`): ler = minha pasta ou receita que eu enxergo (pública de outro);
+  enviar = minha pasta + receita minha + `public.fotos_cabem(receita)` (12 por receita, 500 por usuário; security
+  definer porque a política não pode consultar a própria tabela; `search_path = ''`, execute só para authenticated);
+  apagar = minha pasta (vale para foto de receita já excluída). Sem update. Delete por SQL em `storage.objects` é
+  bloqueado pelo Supabase (gatilho `protect_objects_delete`): apagar foto só pela API (o portal faz).
+- Portal (`portal/fotos.js`): bloco "Fotos da brassagem" dentro da seção Notas. `comprimirFoto`: `<img>` (respeita a
+  orientação EXIF do celular) → canvas → JPEG; lado maior 1600 px nas qualidades 0,78/0,66/0,54; se passar de 300 kB
+  diminui o lado em 20% (até ~700 px) e repete; foto pequena não é ampliada. Foto é gravada NA HORA (fora do Salvar e
+  do desfazer); receita nova pede para salvar antes. Miniaturas 3 por linha no celular (links assinados de 1 h), toque
+  abre a foto em tela inteira (anterior/próxima, Excluir com confirmação). Receita pública de outro: só ver. "Nova a
+  partir desta" NÃO copia fotos (são do lote). Excluir a receita apaga as fotos (`apagarFotosDaReceita`). O relatório
+  em PDF não leva fotos.
+- CSP: `img-src` ganhou `blob:` (prévia local) e `https://hzomsyfujxakcuaaedmh.supabase.co` (link assinado), no
+  `_headers` e na `<meta>` do index.html. Nome do arquivo sem `crypto.randomUUID` (não existe fora de https).
+- Conta de espaço: ~0,2-0,3 MB por foto → 1 GB do plano Free ≈ 3.500-5.000 fotos.
+- Teste `supabase/testes/0011_fotos_brassagem.sql` (16 verificações; usa `storage.allow_delete_query` só na transação).
+  Navegador: foto simulada de 9,9 MB (4000 × 3000) sobe com ~265 kB. Falta conferir no iPhone real (câmera/HEIC).
+
 ## Catálogo inicial (0004, aplicada em 22/11/2026)
 - 110 estilos BJCP 2021, 215 fermentáveis, 450 lúpulos, 897 leveduras, 44 outros (escritos em português), 23 águas,
   todos com `dono` nulo e a origem em `extras.fonte`. O próprio banco baixou os arquivos do Brewtarget travados no
@@ -409,7 +435,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   responsável). 1ª publicação assim: PR #3 (editor novo, celular, arte), 22/11/2026.
 - Pendente na proteção da `main`: marcar o teste "Cálculos e versões" como obrigatório e "Require branches to be up
   to date" (Settings → Branches → Edit). Sem isso, o GitHub não barra PR desatualizado.
-- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0010 aplicadas.
+- Login do responsável criado (llmannrich@gmail.com) e já `admin`. Migrações 0001-0011 aplicadas.
 - A conexão MCP do Supabase precisa estar na org "Versa" (o coletor de notas está em outra org).
 - Pendente do responsável: (opcional) SMTP próprio para recuperação de senha dos amigos; (opcional) repositório privado (aí o Pages exige plano pago),
   desligar a extensão http no painel.
@@ -420,6 +446,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fase 3 (química da água) começada em 22/11/2026: sais e perfil de íons (0007).
 - 22/11/2026: química da água com ácido e pH estimado (0008).
 - 23/11/2026: água da mostura e da lavagem informadas pelo cervejeiro (0010).
+- 23/11/2026: fotos da brassagem na seção Notas, reduzidas no aparelho (0011, Storage).
 - Próximo: (3) escalar receita. Sem módulo de brassagem e sem versões.
 
 ## Ordem de trabalho
