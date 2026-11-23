@@ -205,7 +205,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123t.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123u.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -234,6 +234,15 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   pedidos pelo responsável; arte própria, traço 1,3 em ladrilho de 150 px, 23/11/2026); Notas creme com pauta; demais alternam creme e branco liso. No
   celular os blocos vão de ponta a ponta e encostam um no outro (a cor separa); título sem faixa, ícone na cor da
   seção. Tokens `--pp-*` no style.css (claro e escuro); texto e estados ≥ 4,6:1 em todos os fundos.
+- Colarinho de espuma entre as seções (23/11/2026, pedido do responsável: arte própria para separar as seções, que só
+  mudavam de cor; só style.css, só no celular ≤ 640 px): cada seção do editor começa com uma crista de espuma de cerveja
+  que sobe por cima da anterior (bolhas grandes e pequenas na borda com traço na cor da seção, bolhas vazadas dentro e
+  bolhinhas soltas). Duas máscaras SVG em data URI (`--espuma-forma`, `--espuma-aro`; ladrilho 240 × 32 px) no
+  `::after` (cor `--espuma`: branco + cor da seção no claro, "colarinho de stout" no escuro) e `::before` (aro na cor da
+  seção); a cor vem das variáveis, então vale em todos os temas. 32 px: 18 acima da seção, 14 dentro; padding da seção
+  maior em cima e embaixo para não encostar no conteúdo; `pointer-events: none`; o desenho começa em ponto diferente a
+  cada seção (`--espuma-x` por nth-child). Para mudar o desenho, regerar as duas máscaras juntas (o aro = a forma 1,6 px
+  acima + as bolhas soltas).
 - Rolagem só na vertical (23/11/2026, pedido do responsável: a tela podia ser arrastada para o lado): `html`/`body` com
   `overflow-x: clip` (o que passar da largura é cortado, sem criar área de rolagem; não atrapalha o `sticky`). A causa
   era a lista dos Cadastros, tabela larga demais no celular: até 640 px virou cartões (`.tabela.lista-cad`, nome em cima
