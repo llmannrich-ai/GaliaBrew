@@ -1,12 +1,13 @@
 // busca.js — janela de busca de ingrediente (no lugar do <select> com centenas de itens).
-// Filtra enquanto digita (nome, produtor, origem, tipo; sem diferença de acento ou maiúscula), filtros rápidos por
-// tipo de ingrediente, "Recentes" e "Meus" no topo. Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
+// Filtra enquanto digita (nome, produtor, origem, tipo; sem diferença de acento ou maiúscula), "Recentes" e "Meus"
+// no topo. SEM filtros em botões (23/11/2026, pedido do responsável: no celular ocupavam a tela toda).
+// Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
 // Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
-// azeda, belga...), sem filtros (no celular tomavam a tela); "Mais perto da receita" pelos números do editor.
-import { el, preencher, numeroBR } from "./ui.js?v=20261123r";
-import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123r";
-import * as O from "./opcoes.js?v=20261123r";
-import { fonteDados, seloFonte } from "./fontes.js?v=20261123r";
+// azeda, belga...); "Mais perto da receita" pelos números do editor.
+import { el, preencher, numeroBR } from "./ui.js?v=20261123t";
+import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261123t";
+import * as O from "./opcoes.js?v=20261123t";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261123t";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
@@ -25,38 +26,12 @@ function guardarRecente(tipo, id) {
   localStorage.setItem(CHAVE_RECENTES, JSON.stringify(todos));
 }
 
-// ---------- o que cada tipo mostra e filtra ----------
+// ---------- o que cada tipo mostra ----------
 const r = (lista, v) => (v ? O.rotulo(lista, v) : null);
 const faixa = (a, b, casas, suf = "") => (a != null && b != null ? `${numeroBR(a, casas)}–${numeroBR(b, casas)}${suf}` : a != null ? `${numeroBR(a, casas)}${suf}` : b != null ? `${numeroBR(b, casas)}${suf}` : null);
-const mediaAtenuacao = (y) => {
-  const a = y.atenuacao_min_pct != null ? Number(y.atenuacao_min_pct) : null;
-  const b = y.atenuacao_max_pct != null ? Number(y.atenuacao_max_pct) : null;
-  return a != null && b != null ? (a + b) / 2 : a ?? b;
-};
-const entre = (v, a, b) => v != null && Number(v) >= a && Number(v) < b;
-
-function faixasDeCor() {
-  // Limites em SRM; o rótulo na unidade do perfil.
-  const lim = (srm) => numeroBR(O.corParaTela(srm), 0);
-  const u = O.unidadeCor();
-  return [
-    { rot: `Claro (até ${lim(5)} ${u})`, teste: (x) => entre(x.cor_srm, 0, 5) },
-    { rot: `Âmbar (${lim(5)}–${lim(20)})`, teste: (x) => entre(x.cor_srm, 5, 20) },
-    { rot: `Escuro (${lim(20)}–${lim(100)})`, teste: (x) => entre(x.cor_srm, 20, 100) },
-    { rot: `Torrado (${lim(100)}+)`, teste: (x) => entre(x.cor_srm, 100, Infinity) },
-  ];
-}
-
-/** Filtro "Fonte" (Fabricante / Análise / Genérico / Meus): só as opções que existem na lista. */
-function filtroFonte(itens) {
-  const tipo = (x) => fonteDados(x)?.tipo;
-  const ordem = [["FABRICANTE", "Fabricante"], ["ANALISE", "Análise"], ["GENERICA", "Genérico"], ["PROPRIA", "Meus"]];
-  return { nome: "Fonte", opcoes: ordem.filter(([t]) => itens.some((x) => tipo(x) === t)).map(([t, rot]) => ({ rot, teste: (x) => tipo(x) === t })) };
-}
-
 // ---------- estilos ----------
 // Termos em português para achar estilo pelo jeito que se fala aqui (o catálogo BJCP está em inglês).
-// [expressão, termos acrescentados à busca, só no nome?]. O 1º termo de cada linha serve de família no filtro.
+// [expressão, termos acrescentados à busca, só no nome?].
 // "Ale" e "lupulada" olham só o nome: as categorias "Pale/Amber Bitter European Beer" têm lagers (German Pils).
 // Na busca de estilo cada termo casa com o COMEÇO de uma palavra ("ale" não acha "Pale Lager").
 const TERMOS_ESTILO = [
@@ -119,26 +94,12 @@ export const TIPOS_BUSCA = {
       x.cor_srm != null ? `${numeroBR(O.corParaTela(Number(x.cor_srm)), 0)} ${O.unidadeCor()}` : null,
       x.rendimento_pct != null ? `rend. ${numeroBR(x.rendimento_pct, 0)}%` : null, x.produtor],
     cor: (x) => x.cor_srm,
-    filtros: (itens) => [
-      { nome: "Grupo", opcoes: O.GRUPO_FERMENTAVEL.map(([v, t]) => ({ rot: t, teste: (x) => x.grupo === v })) },
-      { nome: "Cor", opcoes: faixasDeCor() },
-      filtroFonte(itens),
-    ],
   },
   lupulos: {
     titulo: "Adicionar lúpulo",
     nome: (x) => x.nome,
     texto: (x) => [x.nome, x.produtor, x.origem, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso)],
     resumo: (x) => [x.alfa_pct != null ? `alfa ${numeroBR(x.alfa_pct, 1)}%` : null, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso), x.origem],
-    filtros: (itens) => [
-      { nome: "Uso", opcoes: O.USO_LUPULO.map(([v, t]) => ({ rot: t, teste: (x) => x.uso === v })) },
-      { nome: "Alfa", opcoes: [
-        { rot: "até 5%", teste: (x) => entre(x.alfa_pct, 0, 5) },
-        { rot: "5–10%", teste: (x) => entre(x.alfa_pct, 5, 10) },
-        { rot: "10%+", teste: (x) => entre(x.alfa_pct, 10, Infinity) },
-      ] },
-      filtroFonte(itens),
-    ],
   },
   leveduras: {
     titulo: "Adicionar levedura",
@@ -147,23 +108,12 @@ export const TIPOS_BUSCA = {
     resumo: (x) => [r(O.TIPO_LEVEDURA, x.tipo), r(O.FORMA_LEVEDURA, x.forma),
       faixa(x.atenuacao_min_pct, x.atenuacao_max_pct, 0, "%") ? `atenuação ${faixa(x.atenuacao_min_pct, x.atenuacao_max_pct, 0, "%")}` : null,
       faixa(x.temp_min_c, x.temp_max_c, 0, " °C"), x.codigo_produto],
-    filtros: (itens) => [
-      { nome: "Tipo", opcoes: O.TIPO_LEVEDURA.filter(([v]) => itens.some((x) => x.tipo === v)).map(([v, t]) => ({ rot: t, teste: (x) => x.tipo === v })) },
-      { nome: "Atenuação", opcoes: [
-        { rot: "até 72%", teste: (x) => entre(mediaAtenuacao(x), 0, 72) },
-        { rot: "72–78%", teste: (x) => entre(mediaAtenuacao(x), 72, 78) },
-        { rot: "78%+", teste: (x) => entre(mediaAtenuacao(x), 78, Infinity) },
-      ] },
-    ],
   },
   outros: {
     titulo: "Adicionar outro ingrediente",
     nome: (x) => x.nome,
     texto: (x) => [x.nome, x.uso_para, r(O.TIPO_OUTRO, x.tipo)],
     resumo: (x) => [r(O.TIPO_OUTRO, x.tipo), x.uso_para],
-    filtros: (itens) => [
-      { nome: "Tipo", opcoes: O.TIPO_OUTRO.filter(([v]) => itens.some((x) => x.tipo === v)).map(([v, t]) => ({ rot: t, teste: (x) => x.tipo === v })) },
-    ],
   },
   estilos: {
     titulo: "Escolher estilo",
@@ -184,21 +134,17 @@ export const TIPOS_BUSCA = {
         e?.total ? `receita em ${e.dentro} de ${e.total} faixas` : null];
     },
     cor: (x) => media(x.cor_srm_min, x.cor_srm_max),
-    // Sem filtros (23/11/2026, pedido do responsável): no celular ocupavam a tela toda. "Mais perto da receita" e
-    // os termos em português (trigo, azeda, defumada...) cobrem a escolha.
-    filtros: () => [],
   },
 };
 
 const indice = new WeakMap();        // item → texto normalizado (calculado uma vez)
 
 /** Ordena e filtra: todos os termos precisam aparecer; nome que começa com o 1º termo vem antes. */
-export function buscarItens(itens, tipo, consulta, testes = []) {
+export function buscarItens(itens, tipo, consulta) {
   const def = TIPOS_BUSCA[tipo];
   const termos = semAcento(consulta).split(/\s+/).filter(Boolean);
   const saida = [];
   for (const x of itens) {
-    if (!testes.every((t) => t(x))) continue;
     if (!termos.length) { saida.push([0, x]); continue; }
     let txt = indice.get(x);
     if (txt === undefined) {
@@ -225,8 +171,6 @@ export function buscarItens(itens, tipo, consulta, testes = []) {
 export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contexto = null, atualId = null }) {
   const def = TIPOS_BUSCA[tipo];
   const itens = def.ordenar ? def.ordenar(recebidos) : recebidos;
-  const filtros = def.filtros(itens, contexto);
-  const ativos = new Map();                // grupo → índice da opção ligada
   let consulta = "";
   let mostrados = [];
   let ativo = -1;
@@ -251,27 +195,12 @@ export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contex
   });
   const lista = el("ul", { class: "busca-lista", id: idLista, role: "listbox", "aria-label": "Resultados" });
   const info = el("p", { class: "busca-info", "aria-live": "polite" });
-  const comOpcoes = filtros.filter((g) => g.opcoes.length);
-  const chips = !comOpcoes.length ? null : el("div", { class: "busca-filtros" },
-    comOpcoes.map((g) => el("div", { class: "busca-grupo-filtro", role: "group", "aria-label": g.nome },
-      el("span", { class: "busca-filtro-rot", text: g.nome }),
-      g.opcoes.map((o, i) => el("button", {
-        type: "button", class: "chip", "aria-pressed": "false", text: o.rot,
-        on: { click: (e) => {
-          const ligar = ativos.get(g) !== i;
-          if (ligar) ativos.set(g, i); else ativos.delete(g);
-          for (const b of e.currentTarget.parentNode.querySelectorAll(".chip")) b.setAttribute("aria-pressed", "false");
-          e.currentTarget.setAttribute("aria-pressed", String(ligar));
-          desenhar();
-          campo.focus();
-        } },
-      })))));
 
   const janela = el("dialog", { class: "busca", "aria-label": def.titulo },
     el("div", { class: "busca-topo" },
       el("h3", { text: def.titulo }),
       el("button", { type: "button", class: "icone fechar", "aria-label": "Fechar", text: "×", on: { click: () => janela.close() } })),
-    campo, chips, info, lista,
+    campo, info, lista,
     el("div", { class: "busca-rodape" },
       el("span", { class: "nota", text: def.acao ? `↑ ↓ navega · Enter ${def.acao} · Esc fecha` : "↑ ↓ escolhe · Enter adiciona · Esc fecha" }),
       aoLivre ? el("button", { type: "button", class: "secundario pequeno", text: def.livre ?? "Item livre (digitar os dados)", on: { click: () => fecharE(aoLivre) } }) : null));
@@ -318,11 +247,8 @@ export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contex
   }
 
   function desenhar() {
-    const ligadas = [...ativos].map(([g, i]) => g.opcoes[i]);
-    const testes = ligadas.map((o) => o.teste);
-    const filtrado = consulta.trim() || testes.length;
     const grupos = [];
-    if (!filtrado) {
+    if (!consulta.trim()) {
       // Sem busca: recentes e meus primeiro, depois o catálogo.
       // Estilos: o atual e os mais parecidos com a receita antes.
       const porId = new Map(itens.map((x) => [x.id, x]));
@@ -339,9 +265,7 @@ export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contex
       if (meus.length) grupos.push(["Meus", meus]);
       grupos.push([grupos.length ? "Catálogo" : null, resto]);
     } else {
-      let achados = buscarItens(itens, tipo, consulta, testes);
-      for (const o of ligadas) if (o.ordenar) achados = o.ordenar(achados);
-      grupos.push([null, achados]);
+      grupos.push([null, buscarItens(itens, tipo, consulta)]);
     }
     const total = grupos.reduce((s, [, l]) => s + l.length, 0);
     mostrados = [];
