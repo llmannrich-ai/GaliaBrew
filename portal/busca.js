@@ -1,9 +1,10 @@
 // busca.js — janela de busca de ingrediente (no lugar do <select> com centenas de itens).
 // Filtra enquanto digita (nome, produtor, origem, tipo; sem diferença de acento ou maiúscula), filtros rápidos por
 // tipo de ingrediente, "Recentes" e "Meus" no topo. Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
-import { el, preencher, numeroBR } from "./ui.js?v=20261123b";
-import { corHexDeSrm } from "./calculos.js?v=20261123b";
-import * as O from "./opcoes.js?v=20261123b";
+import { el, preencher, numeroBR } from "./ui.js?v=20261123c";
+import { corHexDeSrm } from "./calculos.js?v=20261123c";
+import * as O from "./opcoes.js?v=20261123c";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261123c";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
@@ -44,6 +45,13 @@ function faixasDeCor() {
   ];
 }
 
+/** Filtro "Fonte" (Fabricante / Análise / Genérico / Meus): só as opções que existem na lista. */
+function filtroFonte(itens) {
+  const tipo = (x) => fonteDados(x)?.tipo;
+  const ordem = [["FABRICANTE", "Fabricante"], ["ANALISE", "Análise"], ["GENERICA", "Genérico"], ["PROPRIA", "Meus"]];
+  return { nome: "Fonte", opcoes: ordem.filter(([t]) => itens.some((x) => tipo(x) === t)).map(([t, rot]) => ({ rot, teste: (x) => tipo(x) === t })) };
+}
+
 export const TIPOS_BUSCA = {
   fermentaveis: {
     titulo: "Adicionar fermentável",
@@ -53,9 +61,10 @@ export const TIPOS_BUSCA = {
       x.cor_srm != null ? `${numeroBR(O.corParaTela(Number(x.cor_srm)), 0)} ${O.unidadeCor()}` : null,
       x.rendimento_pct != null ? `rend. ${numeroBR(x.rendimento_pct, 0)}%` : null, x.produtor],
     cor: (x) => x.cor_srm,
-    filtros: () => [
+    filtros: (itens) => [
       { nome: "Grupo", opcoes: O.GRUPO_FERMENTAVEL.map(([v, t]) => ({ rot: t, teste: (x) => x.grupo === v })) },
       { nome: "Cor", opcoes: faixasDeCor() },
+      filtroFonte(itens),
     ],
   },
   lupulos: {
@@ -63,13 +72,14 @@ export const TIPOS_BUSCA = {
     nome: (x) => x.nome,
     texto: (x) => [x.nome, x.produtor, x.origem, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso)],
     resumo: (x) => [x.alfa_pct != null ? `alfa ${numeroBR(x.alfa_pct, 1)}%` : null, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso), x.origem],
-    filtros: () => [
+    filtros: (itens) => [
       { nome: "Uso", opcoes: O.USO_LUPULO.map(([v, t]) => ({ rot: t, teste: (x) => x.uso === v })) },
       { nome: "Alfa", opcoes: [
         { rot: "até 5%", teste: (x) => entre(x.alfa_pct, 0, 5) },
         { rot: "5–10%", teste: (x) => entre(x.alfa_pct, 5, 10) },
         { rot: "10%+", teste: (x) => entre(x.alfa_pct, 10, Infinity) },
       ] },
+      filtroFonte(itens),
     ],
   },
   leveduras: {
@@ -211,8 +221,8 @@ export function abrirBusca({ tipo, itens, aoEscolher, aoLivre }) {
     },
     amostra,
     el("div", { class: "busca-opcao-texto" },
-      el("span", { class: "busca-opcao-nome" }, def.nome(x), x.dono ? el("span", { class: "selo meu", text: "meu" }) : null),
-      resumo ? el("span", { class: "busca-opcao-resumo", text: resumo }) : null));
+      el("span", { class: "busca-opcao-nome", text: def.nome(x) }),
+      el("span", { class: "busca-opcao-resumo" }, seloFonte(fonteDados(x)), resumo ? ` ${resumo}` : null)));
   }
 
   function desenhar() {

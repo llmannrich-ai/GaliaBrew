@@ -23,7 +23,8 @@ const jwt = () => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: USUARIO.id,
 const db = {
   perfis: [{ user_id: USUARIO.id, nome: "Leo", papel: "usuario" }],
   estilos: [{ id: "e1", dono: null, guia: "BJCP 2021", codigo: "5D", nome: "German Pils", og_min: 1.044, og_max: 1.050, fg_min: 1.008, fg_max: 1.013, ibu_min: 22, ibu_max: 40, cor_srm_min: 2, cor_srm_max: 4, abv_min_pct: 4.4, abv_max_pct: 5.2 }],
-  fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária" }],
+  fermentaveis: [{ id: "f-sis", dono: null, nome: "Pilsen (sistema)", tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, precisa_mostura: true, produtor: "Agrária",
+    extras: { fonte: "Ficha técnica oficial (Agrária), consultada em 23/11/2026", url: "https://www.agraria.com.br/malte/teste" } }],
   lupulos: [], leveduras: [], outros: [], aguas: [{ id: "ag-tor", dono: null, nome: "Torneira teste", calcio_ppm: 20, magnesio_ppm: 4, sodio_ppm: 10, sulfato_ppm: 10, cloreto_ppm: 15, bicarbonato_ppm: 60 }, { id: "ag-alvo", dono: null, nome: "Alvo IPA", calcio_ppm: 110, magnesio_ppm: 10, sodio_ppm: 10, sulfato_ppm: 255, cloreto_ppm: 50, bicarbonato_ppm: 0 }], equipamentos: [], receitas: [],
   receita_fermentaveis: [], receita_lupulos: [], receita_leveduras: [], receita_outros: [], receita_mostura_passos: [], receita_fermentacao_passos: [],
 };
@@ -168,7 +169,26 @@ const erros = [];
   // Cadastro: equipamento e lúpulo
   await pagina.click("text=Cadastros");
   await pagina.waitForSelector("text=Pilsen (sistema)");
-  verificar(await pagina.isVisible("td >> text=Sistema"), "catálogo do sistema aparece com selo");
+  verificar(await pagina.isVisible("td >> .selo.fonte.fabricante >> text=Fabricante"), "malte do catálogo com ficha da fabricante aparece com o selo 'Fabricante'");
+  await pagina.click("td >> text=Pilsen (sistema)");
+  verificar((await pagina.textContent("dialog .fonte-dados")).includes("ficha técnica da própria fabricante")
+    && await pagina.getAttribute('dialog .fonte-dados a', "href") === "https://www.agraria.com.br/malte/teste",
+    "formulário do malte mostra a fonte dos dados e o link da ficha");
+  await pagina.click('dialog button:has-text("Fechar")');
+  const fontes = await pagina.evaluate(async () => {
+    const m = await import("./fontes.js?v=20261123c");
+    return [
+      { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
+      { extras: { fonte: "fontes públicas (via Brewtarget)" } },
+      { extras: { fonte: "The Swaen (via Brewtarget)" }, notas: "SKU 1. Source: https://theswaen.com/products/x." },
+      { extras: { fonte: "Embrapa, manual (2022), tabela 1", url: "https://www.infoteca.cnptia.embrapa.br/x.pdf" } },
+      { extras: { fonte: "Ficha oficial (Hopsteiner)", url: "javascript:alert(1)" } },
+      { dono: "u1", extras: {} },
+      {},
+    ].map((x) => { const f = m.fonteDados(x); return `${f.tipo}:${f.url ?? "-"}`; }).join(" ");
+  });
+  verificar(fontes === "GENERICA:- GENERICA:- FABRICANTE:https://theswaen.com/products/x ANALISE:https://www.infoteca.cnptia.embrapa.br/x.pdf FABRICANTE:- PROPRIA:- DESCONHECIDA:-",
+    `fontes: genérico, Swaen (fabricante via Brewtarget), Embrapa (análise), link só https, meu (${fontes})`);
   await pagina.click('.abas >> text=Equipamentos');
   await pagina.waitForSelector("text=Nenhum item ainda");
   await pagina.click("button:has-text('Novo')");
@@ -188,6 +208,7 @@ const erros = [];
   await pagina.click('dialog button[type="submit"]');
   await pagina.waitForSelector("td >> text=Saaz");
   verificar(db.lupulos[0]?.alfa_pct === 3.5, "alfa 3,5 (vírgula) gravado como 3.5");
+  verificar(await pagina.isVisible("tr:has-text('Saaz') .selo.fonte.meu"), "lúpulo cadastrado pela pessoa aparece com o selo 'Meu'");
 
   // Receita nova
   await pagina.click("text=Receitas");
@@ -205,6 +226,8 @@ const erros = [];
   verificar(await focado() === "Buscar", "busca abre com o foco no campo");
   await pagina.keyboard.type("agraria");
   verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Pilsen (sistema)", "busca sem acento: 'agraria' acha o malte da Agrária");
+  verificar(await pagina.textContent('.busca-opcao[aria-selected="true"] .selo.fonte') === "Fabricante"
+    && await pagina.isVisible('.busca-grupo-filtro[aria-label="Fonte"]'), "busca mostra o selo da fonte e tem o filtro 'Fonte'");
   await pagina.keyboard.press("Enter");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
   verificar(await focado() === "Qtd (kg)", "Enter adiciona o malte e o foco vai direto para a quantidade");
@@ -270,7 +293,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123c");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -306,7 +329,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123c");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -325,7 +348,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123c");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -380,6 +403,7 @@ const erros = [];
     "seta ↓ na alça desce o item e o foco acompanha");
   await pagina.click(`${segunda} .ing-mais`);
   verificar(await pagina.getAttribute(`${segunda} .ing-mais`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "⋯ abre os detalhes (alfa, forma, nome)");
+  verificar((await pagina.textContent(`${segunda} .ing-detalhes .fonte-dados`)).includes("Cadastrado por você"), "detalhes do lúpulo na receita mostram a fonte dos dados");
   await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
   await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
   verificar(await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pelos detalhes");
@@ -406,7 +430,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123b");
+    const m = await import("./calculos.js?v=20261123c");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
