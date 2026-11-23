@@ -51,6 +51,9 @@ O que o Brewtarget tem e o que vale aproveitar:
 | `receita_fermentaveis`, `receita_lupulos`, `receita_leveduras`, `receita_outros` | adições com cópia dos dados do ingrediente |
 | `receita_mostura_passos`, `receita_fermentacao_passos` | passos de temperatura e tempo |
 
+Fotos da brassagem (0011): arquivos no Storage (bucket privado `fotos-brassagem`, `<dono>/<receita>/<arquivo>.jpg`),
+reduzidas no aparelho antes de subir (até 1600 px, ~0,3 MB; o bucket recusa acima de 400 kB). Até 12 por receita.
+
 Campo `extras jsonb` em cadastros e receitas: guarda o que vier de uma importação BeerJSON sem coluna própria
 (nada se perde).
 
