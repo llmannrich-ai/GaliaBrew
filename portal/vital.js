@@ -1,9 +1,9 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
-import { el, svg, numeroBR } from "./ui.js?v=20261123l";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261123l";
-import * as O from "./opcoes.js?v=20261123l";
+import { el, svg, numeroBR } from "./ui.js?v=20261123m";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261123m";
+import * as O from "./opcoes.js?v=20261123m";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -43,36 +43,86 @@ export function copo() {
   return n;
 }
 
+/** Campo que abre o teclado do celular (texto/número), fora de janelas (a busca é tela cheia). */
+function campoDeDigitar(n) {
+  return n instanceof HTMLElement && !n.closest("dialog")
+    && (n.tagName === "TEXTAREA" || (n.tagName === "INPUT" && !/^(checkbox|radio|button|submit|range|color|file)$/.test(n.type)));
+}
+
 /**
- * Celular: com o teclado aberto, a barra sobe junto e fica logo acima dele (é quando a pessoa digita a quantidade e
- * quer ver a OG mudar). O teclado encolhe a "visual viewport"; a distância até o fundo da tela vira --teclado.
+ * Celular: com o teclado aberto, a barra encolhe para UMA linha fina logo acima dele (a pessoa digita a quantidade e
+ * vê a OG mudar sem perder o campo de vista).
+ * Teclado aberto = a visual viewport encolheu (innerHeight − altura > 120) OU há um campo de digitar em foco num
+ * aparelho de toque. No iPhone o próprio iOS rola a visual viewport para cima do teclado (offsetTop cresce): por isso
+ * a detecção NÃO desconta o offsetTop (antes descontava, dava 0 e a barra ficava grande, cobrindo o campo).
+ * Posição: --teclado = distância do fundo da área visível ao fundo da layout viewport (onde o "bottom: 0" fica).
  */
 function acompanharTeclado(barra) {
   const vv = window.visualViewport;
-  if (!vv) return;
+  const toque = window.matchMedia("(pointer: coarse)");
+  let quadro = 0;
+  let manter = false;
   const ajustar = () => {
     if (!barra.isConnected && barra.dataset.montada) {            // saiu do editor
-      vv.removeEventListener("resize", ajustar);
-      vv.removeEventListener("scroll", ajustar);
+      vv?.removeEventListener("resize", aoRedimensionar);
+      vv?.removeEventListener("scroll", aoRolar);
+      document.removeEventListener("focusin", aoRedimensionar);
+      document.removeEventListener("focusout", aoSair);
+      document.documentElement.classList.remove("teclado-aberto");
       return;
     }
-    const teclado = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-    barra.style.setProperty("--teclado", `${teclado}px`);
-    barra.classList.toggle("com-teclado", teclado > 80);
+    const altura = vv ? vv.height : window.innerHeight;
+    const topo = vv ? vv.offsetTop : 0;
+    const digitando = toque.matches && campoDeDigitar(document.activeElement);
+    const aberto = window.innerHeight - altura > 120 || digitando;
+    barra.style.setProperty("--teclado", `${Math.max(0, Math.round(window.innerHeight - altura - topo))}px`);
+    barra.classList.toggle("com-teclado", aberto);
+    if (aberto && barra.classList.contains("aberta")) {         // "detalhes" aberto + teclado = sem espaço: fecha
+      barra.classList.remove("aberta");
+      barra.querySelector(".vital-mais")?.setAttribute("aria-expanded", "false");
+    }
+    document.documentElement.classList.toggle("teclado-aberto", aberto);
+    // Só ao abrir o teclado / trocar de campo: se a pessoa rolar a tela com o teclado aberto, não puxa de volta.
+    if (manter && aberto && campoDeDigitar(document.activeElement)) manterAcimaDaBarra(document.activeElement, barra);
+    manter = false;
   };
-  vv.addEventListener("resize", ajustar);
-  vv.addEventListener("scroll", ajustar);
+  const agendar = (comManter) => {
+    manter = manter || comManter;
+    cancelAnimationFrame(quadro);
+    quadro = requestAnimationFrame(ajustar);
+  };
+  function aoRedimensionar() { agendar(true); }
+  function aoRolar() { agendar(false); }
+  // Ao trocar de campo (↑/↓ do teclado do iPhone) o focusout vem antes do focusin: espera um pouco para a barra não piscar.
+  function aoSair() { setTimeout(() => agendar(false), 120); }
+  vv?.addEventListener("resize", aoRedimensionar);
+  vv?.addEventListener("scroll", aoRolar);
+  document.addEventListener("focusin", aoRedimensionar);
+  document.addEventListener("focusout", aoSair);
   requestAnimationFrame(() => { barra.dataset.montada = "1"; ajustar(); });
 }
 
-/** Rola a página para o campo não ficar escondido atrás da barra (celular, depois que o teclado abre). */
+/**
+ * Rola a página para o campo ficar entre o topo da área visível (abaixo da barra do app) e a barra de números
+ * (celular, com o teclado aberto). Só rola quando precisa; instantâneo (com rolagem suave, um toque durante a animação
+ * só para a rolagem e não vira clique).
+ */
 export function manterAcimaDaBarra(campo, barra) {
+  // Só o campo que ainda está em foco (um timer atrasado não pode rolar a tela depois que a pessoa já saiu dele).
+  if (!campo?.isConnected || !barra?.isConnected || campo !== document.activeElement || !campoDeDigitar(campo)) return;
   const vv = window.visualViewport;
-  if (!vv || !campo?.isConnected || !barra?.isConnected) return;
+  const topoVisivel = vv ? vv.offsetTop : 0;
+  const fundoVisivel = topoVisivel + (vv ? vv.height : window.innerHeight);
   const r = campo.getBoundingClientRect();
-  const limite = vv.offsetTop + vv.height - barra.offsetHeight - 12;
-  // Instantâneo: com rolagem suave, um toque durante a animação só para a rolagem e não vira clique.
-  if (r.bottom > limite) window.scrollBy({ top: r.bottom - limite, behavior: "instant" });
+  // A barra do app é "sticky" na layout viewport: com o iOS rolando a visual viewport ela pode estar fora de vista.
+  const app = document.querySelector(".barra-app")?.getBoundingClientRect();
+  const cabecalho = app && app.bottom > topoVisivel ? app.bottom - topoVisivel : 0;
+  const limiteBaixo = Math.min(fundoVisivel, barra.getBoundingClientRect().top) - 16;
+  const limiteAlto = topoVisivel + cabecalho + 12;
+  let delta = 0;
+  if (r.bottom > limiteBaixo) delta = r.bottom - limiteBaixo;
+  else if (r.top < limiteAlto) delta = r.top - limiteAlto;
+  if (Math.abs(delta) >= 1) window.scrollBy({ top: delta, behavior: "instant" });
 }
 
 /**
@@ -96,7 +146,10 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
 
   for (const d of defs) {
     const n = {
-      rot: el("span", { class: "vital-rot", text: d.rot }),
+      // Linha fina do teclado (1/6 da tela): "Cor EBC" vira "EBC" e "pH mostura" vira "pH".
+      rot: d.chave === "ph" ? el("span", { class: "vital-rot" }, "pH", el("span", { class: "rot-longo", text: " mostura" }))
+        : d.chave === "cor" ? el("span", { class: "vital-rot" }, el("span", { class: "rot-longo", text: "Cor " }), O.unidadeCor())
+        : el("span", { class: "vital-rot", text: d.rot }),
       estado: el("span", { class: "vital-estado" }),
       // OG e IBU: o número é um botão que abre "chegar a um valor alvo".
       val: aoAjustar[d.chave]
