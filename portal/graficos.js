@@ -10,8 +10,8 @@ const nomeDe = (x) => String(x.nome ?? "").trim() || "(sem nome)";
 /** Barra empilhada: um segmento por fermentável com quantidade, largura = % do peso. */
 export function barraGrist() {
   const barra = el("div", { class: "grist", role: "img" });
-  const legenda = el("p", { class: "grist-legenda" });
-  const elemento = el("div", { class: "grafico-grist" }, barra, legenda);
+  // Sem legenda de texto abaixo da barra (retirada em 23/11/2026, pedido do responsável): o nome e o % estão nas linhas.
+  const elemento = el("div", { class: "grafico-grist" }, barra);
   function atualizar(res, fermentaveis) {
     const itens = fermentaveis.map((f, i) => ({ f, pct: res.fermentaveis[i]?.pct_peso ?? 0 })).filter((x) => x.pct > 0);
     elemento.hidden = itens.length === 0;
@@ -23,9 +23,6 @@ export function barraGrist() {
       seg.style.background = corHexDeSrm(f.cor_srm ?? 0);
       return seg;
     }));
-    // Legenda curta: os 3 maiores (o resto está nas linhas logo abaixo).
-    legenda.textContent = [...itens].sort((a, b) => b.pct - a.pct).slice(0, 3).map(({ f, pct }) => `${nomeDe(f)} ${numeroBR(pct, 0)}%`).join(" · ")
-      + (itens.length > 3 ? ` · +${itens.length - 3}` : "");
   }
   return { elemento, atualizar };
 }

@@ -612,12 +612,13 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
     function linha(item, i) {
       const nome = el("strong", { class: "ing-nome-txt" });
-      const sub = el("span", { class: "ing-sub" });
       const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
       const partes = montarLinha(item, ctx);
+      // Linha de dados abaixo do nome só quando a seção a define (fermentáveis não têm desde 23/11/2026, pedido do responsável).
+      const sub = partes.sub ? el("span", { class: "ing-sub" }) : null;
       function refrescar() {
         nome.textContent = String(item.nome ?? "").trim() || "(sem nome)";
-        sub.textContent = partes.sub().filter(Boolean).join(" · ");
+        if (sub) sub.textContent = partes.sub().filter(Boolean).join(" · ");
         partes.refrescar?.();
       }
       /** focar = true no teclado (o foco acompanha o item); com dedo/mouse não mexe no foco. */
@@ -660,7 +661,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           pointerdown: (e) => arrastar(e, i, mover),
         },
       });
-      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub), partes.colunas, botaoMais, det);
+      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, el("div", { class: "ing-nome" }, nome, sub ?? null), partes.colunas, botaoMais, det);
       refrescar();
       calculados.set(item, partes.aoCalcular);
       return li;
@@ -749,10 +750,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const campo = { desabilitado: des, aoMudar: ctx.mudou };
       return {
         visual: amostra,
-        sub: () => [O.rotulo(O.TIPO_FERMENTAVEL, item.tipo), O.rotulo(O.ETAPA_FERMENTAVEL, item.etapa),
-          item.rendimento_pct != null ? `rend. ${numeroBR(item.rendimento_pct, 0)}%` : null,
-          item.umidade_pct ? `umid. ${numeroBR(item.umidade_pct, 1)}%` : null,
-          item.cor_srm != null ? `${numeroBR(O.corParaTela(Number(item.cor_srm)), 1)} ${O.unidadeCor()}` : null],
         refrescar: () => { amostra.style.background = corHexDeSrm(item.cor_srm ?? 0); },
         colunas: [
           el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_kg", { casas: 3, passo: passoG / 1000, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "kg", rotulo: "Qtd (kg)", desabilitado: des, aoMudar: (c) => mudou(c) })),
