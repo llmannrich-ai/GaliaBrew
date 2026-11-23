@@ -181,7 +181,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123l");
+    const m = await import("./fontes.js?v=20261123m");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -336,7 +336,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123m");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -356,7 +356,7 @@ const erros = [];
   verificar(await vital("ibu", "vital-estado") === "! perto do mínimo", "IBU 23 na faixa 22–40: ! perto do mínimo");
   verificar(await vital("cor", "vital-estado") === "✓ no estilo", "cor 6,3 EBC na faixa 3,9–7,9: ✓ no estilo");
   verificar(await vital("og", "vital-faixa") === "estilo 1,044–1,050", "faixa do estilo escrita sob a régua");
-  // Busca de estilo com a receita pronta: atual no topo, sugestão pelos números, termos em português, filtro "Combina".
+  // Busca de estilo com a receita pronta: atual no topo, sugestão pelos números, termos em português, sem filtros.
   await pagina.click(botaoEstilo);
   await pagina.waitForSelector("dialog.busca");
   const opcoesEstilo = () => pagina.$$eval("dialog.busca .busca-opcao-nome", (ls) => ls.map((l) => l.textContent));
@@ -371,9 +371,7 @@ const erros = [];
   await pagina.fill("dialog.busca .busca-campo", "ale");
   verificar(!(await opcoesEstilo()).some((t) => t.includes("Czech Pale Lager")), "\"ale\" casa com começo de palavra: não acha Pale Lager");
   await pagina.fill("dialog.busca .busca-campo", "");
-  await pagina.click('dialog.busca .chip:has-text("Combina com a receita")');
-  const combinam = await opcoesEstilo();
-  verificar(combinam[0].startsWith("3A Czech Pale Lager") && !combinam.some((t) => t.includes("American IPA")), "filtro \"Combina com a receita\": mais parecido primeiro, IPA fora");
+  verificar(await pagina.locator("dialog.busca .busca-filtros, dialog.busca .chip").count() === 0, "busca de estilo sem filtros (no celular tomavam a tela)");
   await pagina.screenshot({ path: `${SAIDA}/p3b-busca-estilo.png` });
   await pagina.keyboard.press("Escape");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
@@ -398,7 +396,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123m");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -417,7 +415,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123m");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -502,7 +500,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123l");
+    const m = await import("./calculos.js?v=20261123m");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -848,6 +846,15 @@ const erros = [];
     "toque: leveduras, outros, mostura e fermentação em cartões, sem rolagem para o lado");
   await cel.evaluate(() => document.querySelector('[data-secao="leveduras"]').scrollIntoView());
   await cel.screenshot({ path: `${SAIDA}/p6b-celular-cartoes.png` });
+
+  // Busca de estilo no celular: sem filtros, os estilos começam logo abaixo do campo.
+  await tocar(botaoEstilo);
+  await cel.waitForSelector("dialog.busca");
+  const topoEstilos = (await cel.locator("dialog.busca .busca-opcao").first().boundingBox()).y;
+  verificar(await cel.locator("dialog.busca .chip").count() === 0 && topoEstilos < 300, `toque: busca de estilo sem filtros, 1º estilo a ${Math.round(topoEstilos)} px do topo`);
+  await cel.screenshot({ path: `${SAIDA}/p6g-celular-busca-estilo.png` });
+  await cel.keyboard.press("Escape");
+  await cel.waitForSelector("dialog.busca", { state: "detached" });
 
   // Arrastar com o dedo: segundo lúpulo pela busca e arrastado para cima.
   await tocar('[data-secao="lupulos"] button.adicionar');
