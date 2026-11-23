@@ -1,16 +1,16 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123o";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123o";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123o";
-import { abrirBusca } from "./busca.js?v=20261123o";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123o";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123o";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123o";
-import * as O from "./opcoes.js?v=20261123o";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123o";
-import { icone } from "./icones.js?v=20261123o";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123o";
-import { abrirRelatorio } from "./relatorio.js?v=20261123o";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123p";
+import { sb, sessao, preferencias } from "./estado.js?v=20261123p";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123p";
+import { abrirBusca } from "./busca.js?v=20261123p";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123p";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123p";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123p";
+import * as O from "./opcoes.js?v=20261123p";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123p";
+import { icone } from "./icones.js?v=20261123p";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261123p";
+import { abrirRelatorio } from "./relatorio.js?v=20261123p";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;

@@ -181,7 +181,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123o");
+    const m = await import("./fontes.js?v=20261123p");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -336,7 +336,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123o");
+    const m = await import("./calculos.js?v=20261123p");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -396,7 +396,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123o");
+    const m = await import("./calculos.js?v=20261123p");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -415,7 +415,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123o");
+    const m = await import("./calculos.js?v=20261123p");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -500,7 +500,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123o");
+    const m = await import("./calculos.js?v=20261123p");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -764,6 +764,29 @@ const erros = [];
   };
   const tocar = async (sel) => { const [x, y] = await centro(sel); await cel.touchscreen.tap(x, y); };
   const larguraSobra = () => cel.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  // Rolagem só na vertical: nem arrastando o dedo para o lado, nem por script, a página sai do lugar; e nada visível
+  // passa da borda direita (o que passasse seria cortado, então é conferido à parte).
+  const semRolagemLateral = async () => {
+    const { width, height } = cel.viewportSize();
+    await cel.evaluate(() => window.scrollTo(300, window.scrollY));
+    const y = Math.round(height * 0.4);
+    await toque("touchStart", width - 30, y);
+    for (let x = width - 60; x >= 30; x -= 30) await toque("touchMove", x, y);
+    await toque("touchEnd", 30, y);
+    await cel.waitForTimeout(150);
+    return cel.evaluate(() => {
+      const passam = [...document.querySelectorAll("body *")].filter((n) => {
+        if (n.closest(".lateral, .so-leitor, svg") || !n.checkVisibility()) return false;
+        const r = n.getBoundingClientRect();
+        return r.width > 0 && (r.right > window.innerWidth + 1 || r.left < -1);
+      }).map((n) => `${n.tagName.toLowerCase()}.${n.className}`);
+      return { x: Math.round(window.scrollX + document.documentElement.scrollLeft + document.body.scrollLeft), passam: [...new Set(passam)].slice(0, 6) };
+    });
+  };
+  const conferirLateral = async (onde) => {
+    const r = await semRolagemLateral();
+    verificar(r.x === 0 && r.passam.length === 0, `${onde}: rolagem só na vertical (deslocou ${r.x} px; passam da tela: ${r.passam.join(", ") || "nada"})`);
+  };
 
   await cel.goto(`${ORIGEM}/`);
   await cel.fill('input[type="email"]', USUARIO.email);
@@ -772,6 +795,7 @@ const erros = [];
   await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
   verificar(await cel.locator(".receita-cartao").count() === db.receitas.filter((x) => x.dono === USUARIO.id).length && await larguraSobra() <= 1,
     "toque: lista de receitas em cartões, sem rolagem para o lado");
+  await conferirLateral("toque, lista");
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
@@ -933,6 +957,8 @@ const erros = [];
   verificar(jan320.x >= 0 && jan320.x + jan320.width <= 320 && await cel.evaluate(() => document.querySelector("dialog.alvo").scrollWidth <= document.querySelector("dialog.alvo").clientWidth),
     "320 px: janela de Chegar ao IBU cabe na tela");
   await cel.screenshot({ path: `${SAIDA}/p6e-celular-320-ibu.png` });
+  await cel.keyboard.press("Escape");
+  await conferirLateral("320 px, editor");
 
   // Relatório em PDF: botão ao lado do nome, visualizador próprio (janela) e exportação para compartilhar.
   await cel.keyboard.press("Escape");
@@ -1043,6 +1069,19 @@ const erros = [];
   }
   verificar(await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="fermentaveis"]')).backgroundImage) === "none",
     "Sol forte: seções sem desenho de fundo");
+  // Rolagem só na vertical nas outras telas (320 px).
+  await cel.keyboard.press("Escape");
+  await cel.setViewportSize({ width: 320, height: 568 });
+  const aceitar = (d) => d.accept();          // sair do editor com alteração pendente pede confirmação
+  cel.on("dialog", aceitar);
+  for (const [rota, espera] of [["#/ferramentas", ".cartao"], ["#/cadastros/fermentaveis", "table.lista-cad"], ["#/cadastros/estilos", "table.lista-cad"], ["#/cadastros/equipamentos", ".abas"], ["#/perfil", "form, .cartao"]]) {
+    await cel.evaluate((r) => { location.hash = r; }, rota);
+    await cel.waitForFunction((r) => location.hash === r, rota);
+    await cel.waitForSelector(espera);
+    await conferirLateral(`320 px, ${rota}`);
+    await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-${rota.split("/").pop()}.png` });
+  }
+  cel.off("dialog", aceitar);
   await ctxCel.close();
 
   // O 400 é o da senha errada, testada de propósito (uma vez só).

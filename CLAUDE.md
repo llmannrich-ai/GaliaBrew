@@ -128,7 +128,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  201 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  210 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -201,7 +201,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123o.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123p.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -230,6 +230,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   pedidos pelo responsável; arte própria, traço 1,3 em ladrilho de 150 px, 23/11/2026); Notas creme com pauta; demais alternam creme e branco liso. No
   celular os blocos vão de ponta a ponta e encostam um no outro (a cor separa); título sem faixa, ícone na cor da
   seção. Tokens `--pp-*` no style.css (claro e escuro); texto e estados ≥ 4,6:1 em todos os fundos.
+- Rolagem só na vertical (23/11/2026, pedido do responsável: a tela podia ser arrastada para o lado): `html`/`body` com
+  `overflow-x: clip` (o que passar da largura é cortado, sem criar área de rolagem; não atrapalha o `sticky`). A causa
+  era a lista dos Cadastros, tabela larga demais no celular: até 640 px virou cartões (`.tabela.lista-cad`, nome em cima
+  e dados com o nome da coluna na frente, pelo `data-rotulo`). Como o corte esconde o que sobra, tela nova TEM de caber:
+  o `conferirLateral` do navegador.cjs arrasta o dedo para o lado e lista o que passa da borda (lista, editor,
+  ferramentas, cadastros e perfil em 320 px).
 - Temas de cor (23/11/2026, pedido do responsável; sem migração): Meu perfil → Aparência, 9 opções em cartões com
   miniatura do app: Automático (padrão: Clássico de dia, Adega à noite, segue o celular sem recarregar), Clássico, Adega,
   Pilsen, IPA, Red Ale (claros), Stout, Black IPA (escuros) e Sol forte (alto contraste para a brassagem ao ar livre:
