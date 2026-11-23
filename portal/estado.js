@@ -1,5 +1,5 @@
 // estado.js — cliente do Supabase, sessão e preferências, compartilhados pelas telas.
-import { SUPABASE_URL, SUPABASE_CHAVE_PUBLICA } from "./config.js?v=20261123d";
+import { SUPABASE_URL, SUPABASE_CHAVE_PUBLICA } from "./config.js?v=20261123e";
 
 // O link de convite/recuperação chega com #access_token=...&type=invite|recovery; o cliente apaga o hash ao ler,
 // então o tipo é guardado ANTES de criar o cliente.
