@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124c");
+    const m = await import("./fontes.js?v=20261124d");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -380,7 +380,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124c");
+    const m = await import("./calculos.js?v=20261124d");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -428,6 +428,9 @@ const erros = [];
     "lúpulo mostra IBU da adição e g/L");
   verificar(await pagina.getAttribute(".grist", "aria-label") === "Proporção dos fermentáveis no peso: Pilsen (sistema) 100%" && await pagina.locator(".grist-seg").count() === 1,
     "barra do grist: um segmento por malte, com descrição para leitor de tela");
+  verificar(await pagina.getAttribute(".grist-copo .copo-cerveja", "fill") === await pagina.getAttribute(".vital-copo .copo-cerveja", "fill")
+      && /^Cor da cerveja: \d+ EBC$/.test(await pagina.getAttribute(".grist-copo .copo", "aria-label")),
+    "copo ao lado do grist na cor final da cerveja (igual ao da barra de números)");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .ing-sub') === "3,5 EBC", "fermentável mostra a cor (EBC) abaixo do nome");
   verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
@@ -441,7 +444,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124c");
+    const m = await import("./calculos.js?v=20261124d");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -460,7 +463,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124c");
+    const m = await import("./calculos.js?v=20261124d");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -552,7 +555,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124c");
+    const m = await import("./calculos.js?v=20261124d");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1032,7 +1035,8 @@ const erros = [];
   // Mínimo de 100 g de malte (24/11/2026): 0 | ,05 vira 0,100 e a roda dos decimais volta para 10.
   await girar(0, "0");
   await girar(1, "05");
-  await cel.waitForTimeout(500);
+  // A roda volta para 10 com rolagem suave: esperar ela parar (até 3 s) em vez de um tempo fixo, que falhava às vezes.
+  await cel.waitForFunction(() => document.querySelectorAll(".roleta-roda")[1]?.querySelector(".no-meio")?.textContent === "10", null, { timeout: 3000 }).catch(() => {});
   verificar(await qtd2.inputValue() === "0,100" && await cel.evaluate(() => document.querySelectorAll(".roleta-roda")[1].querySelector(".no-meio")?.textContent) === "10",
     `roleta: malte no mínimo 100 g (pedido 0,05 → ${await qtd2.inputValue()} kg)`);
   await cel.screenshot({ path: `${SAIDA}/p6t-roleta-minimo.png` });
