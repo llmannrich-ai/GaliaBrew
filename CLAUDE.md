@@ -59,7 +59,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (modo nuvem da skill /deploy), porque só pode enviar para a própria branch.
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 - `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
-- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; K0–K5 feitas; falta K6)
+- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; todas feitas)
 - `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
 - `.claude/skills/deploy/` — skill `/deploy` (22/11/2026, pedida pelo responsável): publicar SEMPRE por ela. Fila entre
   sessões paralelas em `refs/fila/*` no origin (`fila.sh`), atualiza com a main, `conferir.sh` (nº de migração, `?v=`),
@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  388 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  389 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124t.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124u.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -356,7 +356,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Sem painel lateral: Mais números, Volumes e Água (do painel) ficam na janela "Todos ›" dos Parâmetros, abaixo dos
   campos (`.parametros-numeros`); as notas de rodapé do painel ("Comparando com...", "IBU pelo Tinseth...") não
   aparecem no Clean. Em ≤ 360 px o cartão dos números usa rótulos curtos (pH, EBC): no CI "pH MOSTURA" passava da borda.
-- Falta (plano): K6 acabamento + iPhone real. Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
+- K6 (feito, 24/11/2026, pedido do responsável: "talento melhor na separação entre as seções, títulos, fontes"; só
+  style.css, bloco "Clean K6" no fim, só ≤ 640 px): cada seção (e o cartão dos números) = cartão arredondado (14 px,
+  borda 8% da tinta, sombra mínima) com vão de .65rem sobre a página cinza; cabeçalho da receita direto na página (meta
+  em versalete 12 px, nome 26 px peso 780). Título da seção: traço de 3 px na cor de destaque + nome em versalete 13 px
+  na cor do texto + totais à direita (tabulares) + linha fina embaixo; "+" num círculo de 36 px com fundo 12% do
+  destaque; "›" dos resumos na mesma medida. Linhas: nome 15,5 px peso 520, dado 13 px, número 15,5 px negrito;
+  separador em sombra interna de 1 px. Linha do tempo dos lúpulos 58 → 40 px (bolinhas a 78%). Teste "clean K6":
+  contraste nos 8 temas fixos (texto ≥ 7; secundário, estados e "+" ≥ 4,5; traço ≥ 3), medido nas cores calculadas.
+  Capturas `p7d` (escuro, topo) e `p7l` (escuro, rolado). Falta só conferir no iPhone real.
+- Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
   escuro, K2 topo/rolado); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro),
   `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (menu ⋯), `p7h` (passo com roleta), `p7i` (levedura em linha),
   `p7j` (resumos de Água/Lote/Notas), `p7k` (janela da Água).
