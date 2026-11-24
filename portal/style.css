@@ -1164,6 +1164,8 @@ dialog.foto-janela[open] { display: flex; flex-direction: column; }
   animation: roleta-sobe .18s ease-out;
 }
 @keyframes roleta-sobe { from { transform: translateY(100%); } }
+/* Roleta dentro de uma janela = popover (roleta.js): tira o que o navegador põe em todo popover (no meio da tela, borda). */
+.roleta[popover] { inset: auto 0 0 0; width: auto; height: auto; border: 0; overflow: visible; }
 @media (prefers-reduced-motion: reduce) { .roleta { animation: none; } }
 .roleta-topo { display: grid; grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr) minmax(4.5rem, auto); align-items: center; gap: .4rem; }
 .roleta-cancelar { min-height: 44px; justify-self: start; padding: 0 .3rem; }
