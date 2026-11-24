@@ -345,6 +345,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   t.atalhos = { desfazer, refazer, marcador: vital.elemento };
   const painel = el("aside", { class: "painel-lote" });
   const resumoLote = el("span", { class: "resumo-texto" });
+  const metaTopo = el("div", { class: "topo-meta" });
   const secoes = {};
   const des = leitura;
   let montado = false;            // antes de montar, os cálculos não contam como "mudança" (sem diferença na barra)
@@ -411,12 +412,21 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
     const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
     tituloApp.textContent = String(r.nome ?? "").trim() || "Receita nova";
-    resumoLote.textContent = [
+    // Clean: "Lote nº 104 · brassagem 29/11/2026" acima do nome (some quando não há nenhum dos dois).
+    metaTopo.textContent = [r.lote_numero != null && r.lote_numero !== "" ? `Lote nº ${r.lote_numero}` : null,
+      r.data_brassagem ? `brassagem ${dataDoDia(r.data_brassagem)}` : null].filter(Boolean).join(" · ");
+    // Clean: forma curta, para caber numa linha do celular ("23,0 L · 72% · fervura 60 min · Panela 50 L").
+    resumoLote.textContent = (ficha ? [
+      `${numeroBR(r.volume_lote_l, 1)} L`,
+      `${numeroBR(r.eficiencia_pct, 0)}%`,
+      `fervura ${numeroBR(r.fervura_min, 0)} min`,
+      eq ? eq.nome : null,
+    ] : [
       `${numeroBR(r.volume_lote_l, 1)} L no fermentador`,
       `${numeroBR(r.eficiencia_pct, 0)}% de eficiência`,
       `${numeroBR(r.fervura_min, 0)} min de fervura`,
       eq ? eq.nome : null,
-    ].filter(Boolean).join(" · ");
+    ]).filter(Boolean).join(" · ");
     return res;
   }
 
@@ -539,7 +549,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   const acoes = el("div", { class: "acoes-receita" },
     leitura ? el("span", { class: "selo", text: "Somente leitura (receita de outro usuário)" }) : botaoSalvar,
-    r.id ? el("button", { type: "button", class: "secundario", text: "Nova a partir desta", on: { click: async () => {
+    r.id ? el("button", { type: "button", class: "secundario nova-a-partir", text: "Nova a partir desta", on: { click: async () => {
       if (!leitura && editor.sujo && !(await confirmar("Há alterações não salvas. A receita nova é feita do que está salvo. Continuar?"))) return;
       editor.sujo = false;
       location.hash = `#/receita/nova/${r.id}`;
@@ -556,13 +566,64 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     } } }) : null,
     el("a", { href: "#/receitas", class: "botao secundario so-largo", text: "Voltar" }));
 
+  // Clean (K1): Relatório, Nova a partir desta, Informações e Excluir num menu ⋯ (barra do app no celular; ao lado do
+  // nome no computador). Os itens chamam os mesmos botões/funções de sempre.
+  const botaoMenu = (classe) => el("button", {
+    type: "button", class: `icone ${classe}`, title: "Mais ações", "aria-label": "Mais ações da receita", "aria-haspopup": "dialog",
+    on: { click: () => abrirMenuReceita() },
+  }, icone("reticencias"));
+  function abrirMenuReceita() {
+    if (document.querySelector("dialog.menu-receita")) return;
+    const fechar = () => { if (d.open) d.close(); };
+    const item = (texto, nomeIcone, acao, classe = "") => el("button", {
+      type: "button", class: `menu-item ${classe}`.trim(), on: { click: () => { fechar(); acao(); } },
+    }, icone(nomeIcone), el("span", { text: texto }));
+    const nova = acoes.querySelector("button.nova-a-partir");
+    const excluir = acoes.querySelector("button.excluir-receita");
+    const d = el("dialog", { class: "menu-receita", "aria-label": "Ações da receita" },
+      el("div", { class: "menu-receita-topo" },
+        el("strong", { text: String(r.nome ?? "").trim() || "Receita nova" }),
+        el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+      el("div", { class: "menu-receita-lista" },
+        item("Relatório (PDF)", "relatorio", () => botaoRelatorio.click()),
+        nova ? item("Nova a partir desta", "copiar", () => nova.click()) : null,
+        item("Informações (tipo, autor, pública)", "geral", abrirInformacoes),
+        excluir ? item("Excluir receita", "lixeira", () => excluir.click(), "perigo") : null));
+    d.addEventListener("click", (e) => {
+      if (e.target !== d) return;
+      const b = d.getBoundingClientRect();
+      if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+    });
+    window.addEventListener("hashchange", fechar);
+    d.addEventListener("close", () => { window.removeEventListener("hashchange", fechar); d.remove(); });
+    document.body.append(d);
+    d.showModal();
+    d.querySelector(".menu-item").focus({ preventScroll: true });
+  }
+  /** Informações (Dados gerais) numa janela: os MESMOS campos da seção, que no Clean não fica na página. */
+  function abrirInformacoes() {
+    const campos = geral.querySelector(".grade-form");
+    const fechar = () => { if (d.open) d.close(); };
+    const d = el("dialog", { class: "item-janela informacoes", "aria-label": "Informações da receita" },
+      el("div", { class: "item-topo" }, el("div", { class: "item-titulo" }, el("strong", { class: "item-nome", text: "Informações" })),
+        el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+      el("div", { class: "item-corpo" }, campos),
+      el("div", { class: "item-acoes" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+    window.addEventListener("hashchange", fechar);
+    d.addEventListener("close", () => { window.removeEventListener("hashchange", fechar); geral.append(campos); d.remove(); });
+    document.body.append(d);
+    d.showModal();
+    d.querySelector(".item-fechar").focus({ preventScroll: true });
+  }
+
   // Celular: barra do app no topo (voltar, nome, desfazer, salvar), sempre à vista; o menu geral some no editor.
   const tituloApp = el("span", { class: "app-titulo" });
   const barraApp = el("div", { class: "barra-app" },
     el("a", { href: "#/receitas", class: "app-voltar", "aria-label": "Voltar às receitas" }, icone("voltar")),
     tituloApp,
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
-    leitura ? null : botaoSalvarApp);
+    leitura ? null : botaoSalvarApp,
+    ficha ? botaoMenu("app-menu") : null);
 
   // Estilo: botão que abre a busca (código, nome, termos em português, filtros, "Mais perto da receita").
   const nomeEstilo = el("span", { class: "escolha-texto" });
@@ -1248,10 +1309,15 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     parametros);
 
   conteudo.classList.add("com-vital");
-  const topo = el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
+  // Clean (K1): meta do lote em cima, nome como título (o campo sem moldura), estilo como link, Parâmetros numa linha
+  // logo abaixo; Relatório/Nova a partir desta/Informações/Excluir no menu ⋯; Dados gerais saem da página.
+  const topo = ficha
+    ? el("div", { class: "editor-topo topo-clean" }, metaTopo,
+      el("div", { class: "nome-linha" }, nomeInput, botaoMenu("so-largo topo-menu")), estiloCampo, lote, acoes)
+    : el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
-      inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas),
+      inicio, ficha ? null : lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, ficha ? null : geral, notas),
     painel);
   // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
   for (const n of [topo, corpo]) {
@@ -1265,6 +1331,15 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
   document.body.classList.add("no-editor");
   preencher(conteudo, barraApp, topo, msg, vital.lugar, corpo);
+  // Clean: o nome não se repete na barra do app enquanto o título da página está à vista (aparece ao rolar).
+  if (ficha && window.IntersectionObserver) {
+    barraApp.classList.add("sem-titulo");
+    requestAnimationFrame(() => {
+      const cima = Math.round(barraApp.getBoundingClientRect().height);
+      new IntersectionObserver(([e]) => barraApp.classList.toggle("sem-titulo", e.isIntersecting),
+        { rootMargin: `-${cima}px 0px 0px 0px` }).observe(nomeInput);
+    });
+  }
   marcarPendente();
   vital.definirReferencia(t.ref?.res ?? null);
   if (resAnterior) vital.atualizar(resAnterior, estiloAtual());     // desfazer/refazer: a barra mostra a diferença

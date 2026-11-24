@@ -59,7 +59,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (modo nuvem da skill /deploy), porque só pode enviar para a própria branch.
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 - `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
-- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; K0, K3 e K2 feitas)
+- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; K0, K3, K2 e K1 feitas)
 - `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
 - `.claude/skills/deploy/` — skill `/deploy` (22/11/2026, pedida pelo responsável): publicar SEMPRE por ela. Fila entre
   sessões paralelas em `refs/fila/*` no origin (`fila.sh`), atualiza com a main, `conferir.sh` (nº de migração, `?v=`),
@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  322 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  328 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -322,10 +322,17 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   no rodapé (42 px); voltou → cartão. A vaga guarda a altura do cartão (`min-height`) para a página não pular quando a
   barra fica fixa (rolagem, teclado ou roleta). No Clean o copinho do grist some (o copo está no cartão).
   K0 + K3 PUBLICADAS em 24/11/2026 (PR #50).
-- Falta (plano): K1 cabeçalho e menu ⋯, K4 passos/levedura/outros em linha, K5 Água/Lote/Notas em
+- K1 (feito): topo `.topo-clean` = meta "Lote nº N · brassagem dd/mm/aaaa" (`metaTopo`, some sem dados), nome como
+  título (o mesmo campo, sem moldura), estilo como link, Parâmetros (`details.lote`, saiu do corpo) numa linha curta
+  "23,0 L · 72% · fervura 60 min · Panela 50 L ›". Menu ⋯ (`abrirMenuReceita`: `app-menu` na barra do app; `topo-menu`
+  ao lado do nome no computador): Relatório (PDF), Nova a partir desta, Informações (tipo, autor, pública: os campos da
+  seção Dados gerais numa janela, `abrirInformacoes`; a seção sai da página) e Excluir receita (chamam os botões de
+  sempre). No celular `.acoes-receita` some; o nome só aparece na barra do app depois de rolar (`sem-titulo`). Números a
+  217 px do topo em 390 px (eram 250, com os Parâmetros abaixo deles). Ícones novos: reticencias, copiar, lixeira.
+- Falta (plano): K4 passos/levedura/outros em linha, K5 Água/Lote/Notas em
   resumo, K6 acabamento + iPhone real. Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
   escuro, K2 topo/rolado); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro),
-  `p7e` (números no topo), `p7f` (linha fina ao rolar).
+  `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (menu ⋯).
 
 ## Janela do item (24/11/2026, pedido do responsável; sem migração)
 - Os detalhes de malte e lúpulo NÃO abrem mais embutidos na linha: tocar no item abre `dialog.item-janela`

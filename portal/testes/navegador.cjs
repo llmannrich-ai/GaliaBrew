@@ -1749,6 +1749,44 @@ const erros = [];
   await cel.evaluate(() => window.scrollTo(0, 0));
   await cel.waitForTimeout(300);
   verificar((await estadoVital()).pos === "static", "clean K2: de volta ao topo, a linha fina volta a ser o cartão");
+  // K1: cabeçalho enxuto (sem botões na página; números logo abaixo) e menu ⋯.
+  const cab = await cel.evaluate(() => ({
+    acoes: document.querySelector(".acoes-receita").checkVisibility(),
+    relatorio: document.querySelectorAll(".editor-topo .botao-relatorio").length,
+    geral: document.querySelectorAll('.editor-corpo [data-secao="geral"]').length,
+    semTitulo: document.querySelector(".barra-app").classList.contains("sem-titulo"),
+    parametros: document.querySelector(".topo-clean details.lote .resumo-texto").textContent,
+  }));
+  verificar(!cab.acoes && cab.relatorio === 0 && cab.geral === 0 && cab.semTitulo && noTopo.topo <= 250 && /^\d+,\d L · \d+% · fervura \d+ min/.test(cab.parametros),
+    `clean K1: topo sem botões, Dados gerais fora da página, nome só no título, Parâmetros numa linha e números a ${noTopo.topo} px do topo`);
+  await tocar(".topo-clean details.lote summary");
+  verificar(await cel.isVisible('.topo-clean [aria-label="Volume no fermentador (L)"]'), "clean K1: tocar na linha dos Parâmetros abre os campos");
+  await tocar(".topo-clean details.lote summary");
+  await cel.evaluate(() => window.scrollTo(0, 600));
+  await cel.waitForTimeout(250);
+  verificar(!(await cel.evaluate(() => document.querySelector(".barra-app").classList.contains("sem-titulo"))), "clean K1: ao rolar, o nome aparece na barra do app");
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(250);
+  await tocar(".barra-app .app-menu");
+  await cel.waitForSelector("dialog.menu-receita[open]");
+  const itensMenu = await cel.$$eval("dialog.menu-receita .menu-item", (bs) => bs.map((b) => b.textContent));
+  verificar(itensMenu.join("|") === "Relatório (PDF)|Nova a partir desta|Informações (tipo, autor, pública)|Excluir receita",
+    `clean K1: menu ⋯ com ${itensMenu.join(", ")}`);
+  await cel.waitForTimeout(150);
+  await cel.screenshot({ path: `${SAIDA}/p7g-clean-menu.png` });
+  await tocar("dialog.menu-receita .menu-item:has-text('Informações')");
+  await cel.waitForSelector("dialog.informacoes[open]");
+  verificar(await cel.isVisible('dialog.informacoes select[aria-label="Tipo"]') && await cel.isVisible('dialog.informacoes input[aria-label="Autor"]'),
+    "clean K1: Informações abre tipo, autor e pública numa janela");
+  await tocar("dialog.informacoes .item-pronto");
+  await cel.waitForSelector("dialog.informacoes", { state: "detached" });
+  await tocar(".barra-app .app-menu");
+  await cel.waitForSelector("dialog.menu-receita[open]");
+  await tocar("dialog.menu-receita .menu-item:has-text('Relatório')");
+  await cel.waitForSelector("dialog.relatorio[open]");
+  verificar(await cel.locator("dialog.menu-receita").count() === 0, "clean K1: Relatório (PDF) pelo menu abre o relatório");
+  await cel.keyboard.press("Escape");
+  await cel.waitForSelector("dialog.relatorio", { state: "detached" });
   await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
   // Tocar na quantidade = roleta direto (sem abrir a janela); a OG acompanha e Cancelar volta.
   const qtdFicha = '[data-secao="fermentaveis"] li.ing.ficha input.qtd';

@@ -131,6 +131,12 @@ export const DESENHOS = {
   // seta de abrir (lista de ferramentas)
   abrir: [["p", { d: "M9 5.5l6.5 6.5L9 18.5" }]],
   baixar: [["p", { d: "M12 3.5v11" }], ["p", { d: "M8 10.5l4 4 4-4" }], ["p", { d: "M5 19.5h14" }]],
+  // menu de ações da receita (layout Clean): três pontos
+  reticencias: [["c", { cx: 5.5, cy: 12, r: 1.1 }], ["c", { cx: 12, cy: 12, r: 1.1 }], ["c", { cx: 18.5, cy: 12, r: 1.1 }]],
+  // nova a partir desta: duas folhas
+  copiar: [["p", { d: "M8.5 8.5h10v12h-10z" }], ["p", { d: "M15.5 8.5V3.5h-10v12h3" }]],
+  // excluir: lixeira
+  lixeira: [["p", { d: "M4.5 6.5h15" }], ["p", { d: "M9.5 6.5V4h5v2.5" }], ["p", { d: "M6.5 6.5l1 14h9l1-14" }], ["p", { d: "M10.2 10.5v6.5M13.8 10.5v6.5" }]],
 };
 
 /** Ícone por nome. Decorativo (aria-hidden): o texto ao lado ou o aria-label do botão dá o nome. */
