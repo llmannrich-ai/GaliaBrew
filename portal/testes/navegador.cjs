@@ -950,7 +950,81 @@ const erros = [];
   const qtd2 = cel.locator('[data-secao="fermentaveis"] input[aria-label="Qtd (kg)"]').last();
   await qtd2.evaluate((n) => n.scrollIntoView({ block: "center" }));
   const [qx, qy] = await centro('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
+
+  // ROLETA (23/11/2026, pedido do responsável): tocar num número abre rodas para girar com o dedo, não o teclado.
+  const qtdAntes = await qtd2.inputValue();
+  const ogDaBarra = () => cel.textContent('.vital [data-metrica="og"] .vital-val');
+  const ogAntes = await ogDaBarra();
   await cel.touchscreen.tap(qx, qy);
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);
+  const r1 = await cel.evaluate(() => {
+    const ro = document.querySelector(".roleta").getBoundingClientRect();
+    const v = document.querySelector(".vital").getBoundingClientRect();
+    const c = document.querySelector("input.em-roleta").getBoundingClientRect();
+    return { foco: document.activeElement?.tagName, teclado: document.activeElement?.matches?.("input"), rodas: document.querySelectorAll(".roleta-roda").length,
+      valor: document.querySelector(".roleta-valor").textContent, linhaFina: document.querySelector(".vital").classList.contains("com-teclado"),
+      vitalFundo: v.bottom, vitalAltura: v.height, roletaTopo: ro.top, roletaAltura: ro.height, campoFundo: c.bottom, larg: ro.width,
+      meio: [...document.querySelectorAll(".roleta-item.no-meio")].map((n) => n.textContent) };
+  });
+  verificar(!r1.teclado && r1.rodas === 2 && r1.valor === `${qtdAntes} kg` && r1.meio.join("") === qtdAntes.replace(/0$/, ""),
+    `roleta: tocar na quantidade abre a roleta (sem teclado), com o valor atual no meio das rodas (${r1.meio.join(" ")} kg)`);
+  verificar(r1.linhaFina && Math.abs(r1.vitalFundo - r1.roletaTopo) <= 1 && r1.vitalAltura <= 52 && r1.campoFundo <= r1.vitalFundo - r1.vitalAltura,
+    `roleta: a barra de números vira a linha fina logo acima da roleta e o campo fica à vista (roleta com ${Math.round(r1.roletaAltura)} px)`);
+  await cel.screenshot({ path: `${SAIDA}/p6r-roleta.png` });
+  // Girar a roda das frações com o dedo (rolagem nativa da roda) até ,50.
+  // Girar a roda com o dedo (toque de verdade via CDP): arrasta devagar e segura antes de soltar (sem inércia);
+  // se a roda assentar fora do alvo, arrasta de novo o que falta (como a pessoa faria).
+  const girar = async (k, texto) => {
+    for (let tentativa = 0; tentativa < 4; tentativa++) {
+      const { rx, ry, alvoI, atualI } = await cel.evaluate(({ k, texto }) => {
+        const roda = document.querySelectorAll(".roleta-roda")[k];
+        const b = roda.getBoundingClientRect();
+        return { rx: b.left + b.width / 2, ry: b.top + b.height / 2, atualI: Math.round(roda.scrollTop / 44),
+          alvoI: Number([...roda.querySelectorAll(".roleta-item")].find((n) => n.textContent === texto).dataset.i) };
+      }, { k, texto });
+      if (alvoI === atualI) break;
+      let falta = (alvoI - atualI) * 44;
+      let y = falta > 0 ? ry + 80 : ry - 80;          // começa longe do meio para caber o arrasto
+      await toque("touchStart", rx, y);
+      while (Math.abs(falta) > 0) {
+        const d = Math.sign(falta) * Math.min(Math.abs(falta), 22);
+        y -= d; falta -= d;
+        await toque("touchMove", rx, y);
+        await cel.waitForTimeout(12);
+      }
+      await cel.waitForTimeout(200);
+      await toque("touchEnd");
+      await cel.waitForTimeout(450);
+    }
+  };
+  await girar(1, ",50");
+  const depoisGiro = await qtd2.inputValue();
+  verificar(depoisGiro === `${qtdAntes.split(",")[0]},500` && await cel.textContent(".roleta-valor") === `${depoisGiro} kg`,
+    `roleta: girar a roda dos decimais muda a quantidade na hora (${qtdAntes} → ${depoisGiro} kg)`);
+  verificar(await ogDaBarra() !== ogAntes, `roleta: a OG da barra acompanha a roleta (${ogAntes} → ${await ogDaBarra()})`);
+  await tocar(".roleta-cancelar");
+  verificar(await cel.locator(".roleta").count() === 0 && await qtd2.inputValue() === qtdAntes && await ogDaBarra() === ogAntes,
+    "roleta: Cancelar fecha e volta ao valor de antes");
+  await cel.touchscreen.tap(qx, qy);
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(150);
+  await girar(0, String(Number(qtdAntes.split(",")[0]) + 2));
+  await girar(1, ",25");
+  await tocar(".roleta-ok");
+  const esperadoRoleta = `${Number(qtdAntes.split(",")[0]) + 2},250`;
+  verificar(await cel.locator(".roleta").count() === 0 && await qtd2.inputValue() === esperadoRoleta, `roleta: girar as duas rodas e OK grava ${esperadoRoleta} kg`);
+  await tocar(".barra-app .app-desfazer");
+  verificar(await qtd2.inputValue() === qtdAntes, "roleta: ↶ desfaz a roleta inteira num passo só");
+  // Fora do editor do celular a roleta também cabe (320 px é conferido mais abaixo). Agora: trocar para o teclado.
+  await centro('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
+  const [qx2, qy2] = await centro('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
+  await cel.touchscreen.tap(qx2, qy2);
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);           // a roleta sobe em 0,18 s
+  await tocar(".roleta-digitar");
+  verificar(await cel.locator(".roleta").count() === 0 && await qtd2.evaluate((n) => n === document.activeElement && !n.readOnly),
+    "roleta: “Digitar o número” fecha a roleta e põe o teclado no campo");
   // Pior caso: o campo termina bem embaixo da área visível (onde a barra fica), como no print.
   await qtd2.evaluate((n) => window.scrollBy(0, n.getBoundingClientRect().bottom - (window.innerHeight - 20)));
   await tecladoIOS(480);
@@ -973,6 +1047,7 @@ const erros = [];
   await tecladoIOS(null);
   await cel.evaluate(() => document.activeElement.blur());
   await cel.waitForTimeout(300);
+  verificar(await qtd2.evaluate((n) => n.readOnly), "roleta: ao sair do campo, o próximo toque volta a abrir a roleta");
 
   // Detalhes do ingrediente: tocar no nome abre e fecha (sem o botão ⋯).
   const nomeMalte = '[data-secao="fermentaveis"] li.ing:first-of-type button.ing-nome';
@@ -1049,7 +1124,13 @@ const erros = [];
   await cel.waitForSelector("dialog.busca");
   await cel.keyboard.type("saaz");
   await cel.keyboard.press("Enter");
-  await cel.keyboard.type("20");
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);
+  // Mais provável no amargor de 60 min: 20 g em 20 L, proporcional ao volume do lote.
+  const gLup = Math.round(20 * Number(db.receitas.find((x) => x.nome === "Pils da Galia").volume_lote_l) / 20);
+  verificar(await cel.textContent(".roleta-valor") === `${gLup},0 g` && await cel.inputValue('[data-secao="lupulos"] li.ing:last-child input[aria-label="Qtd (g)"]') === `${gLup},0`,
+    `roleta: lúpulo novo abre a roleta já na quantidade mais provável (${gLup} g para o lote)`);
+  await tocar(".roleta-ok");
   const linhaLCel = '[data-secao="lupulos"] li.ing';
   const [ax, ay] = await centro(`${linhaLCel}:nth-child(2) .ing-alca`);
   const l1 = await cel.locator(`${linhaLCel}:nth-child(1)`).boundingBox();
@@ -1057,7 +1138,7 @@ const erros = [];
   for (let k = 1; k <= 8; k++) { await toque("touchMove", ax, ay + ((l1.y + 6 - ay) * k) / 8); await cel.waitForTimeout(16); }   // ritmo de dedo (60 Hz)
   await toque("touchEnd");
   await cel.waitForTimeout(100);
-  verificar(await cel.inputValue(`${linhaLCel}:nth-child(1) input[aria-label="Qtd (g)"]`) === "20,0", "toque: arrastar a alça com o dedo leva o lúpulo para cima");
+  verificar(await cel.inputValue(`${linhaLCel}:nth-child(1) input[aria-label="Qtd (g)"]`) === `${gLup},0`, "toque: arrastar a alça com o dedo leva o lúpulo para cima");
 
   // PENDÊNCIA (conferir no iPhone real): no simulador do Chrome (toque via CDP), depois de arrastar a alça o PRIMEIRO
   // toque não vira "click" (o clique fica preso até o toque seguinte). Não acontece com arrasto em elemento sem código.
@@ -1079,16 +1160,24 @@ const erros = [];
   await cel.evaluate(() => window.scrollTo(0, 0));
   await cel.waitForTimeout(150);
   await cel.screenshot({ path: `${SAIDA}/p6y-320-excluir.png` });
-  await cel.locator('input[aria-label="Qtd (kg)"]').first().focus();
+  await tocar('input[aria-label="Qtd (kg)"]');
+  await cel.waitForSelector(".roleta");
   await cel.waitForTimeout(300);
+  const roleta320 = await cel.evaluate(() => {
+    const ro = document.querySelector(".roleta");
+    const fora = [...ro.querySelectorAll("*")].filter((n) => { const b = n.getBoundingClientRect(); return b.width > 0 && (b.right > 321 || b.left < -1); });
+    return { fora: fora.length, rolagem: ro.scrollWidth - ro.clientWidth, botoes: [...ro.querySelectorAll("button")].map((b) => Math.round(b.getBoundingClientRect().height)) };
+  });
+  verificar(roleta320.fora === 0 && roleta320.rolagem <= 0 && roleta320.botoes.every((h) => h >= 44), `320 px: a roleta cabe na tela, botões com 44 px de toque (${roleta320.botoes.join(", ")})`);
+  await cel.screenshot({ path: `${SAIDA}/p6s-roleta-320.png` });
   const estouroVital = await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item:not(.secundario)")].filter((n) => n.offsetParent).map((n) => {
     // folga = borda direita da casinha − o que vai mais à direita (número ou diferença); medida para fontes mais largas
     const dir = Math.max(...[...n.querySelectorAll(".vital-val, .vital-delta:not(:empty), .vital-rot")].map((c) => c.getBoundingClientRect().right));
     return Math.round(dir - n.getBoundingClientRect().right);
   }));
   verificar(await cel.evaluate(() => document.querySelector(".vital").classList.contains("com-teclado")) && estouroVital.length === 5 && estouroVital.every((d) => d <= -2),
-    `320 px: com o teclado os 5 números (sem pH) cabem na linha fina com folga (posição da borda direita do conteúdo: ${estouroVital.join(", ")} px)`);
-  await cel.evaluate(() => document.activeElement.blur());
+    `320 px: com a roleta os 5 números (sem pH) cabem na linha fina com folga (posição da borda direita do conteúdo: ${estouroVital.join(", ")} px)`);
+  await tocar(".roleta-cancelar");
   await cel.waitForTimeout(300);
   const estouro320 = await cel.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();
@@ -1331,6 +1420,16 @@ const erros = [];
     await cel.waitForSelector(espera);
     await conferirLateral(`320 px, ${rota}`);
     await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-${rota.split("/").pop()}.png` });
+    if (rota === "#/ferramentas") {
+      // Roleta fora do editor: leitura do densímetro vazia começa em 1,050 (o placeholder); OK grava.
+      await tocar('input[aria-label="Leitura"]');
+      await cel.waitForSelector(".roleta");
+      await cel.waitForTimeout(250);
+      const campoVisivel = await cel.evaluate(() => document.querySelector("input.em-roleta").getBoundingClientRect().bottom <= document.querySelector(".roleta").getBoundingClientRect().top);
+      verificar(await cel.textContent(".roleta-valor") === "1,050" && campoVisivel, "roleta (Ferramentas): densidade vazia começa em 1,050 e o campo fica acima da roleta");
+      await tocar(".roleta-ok");
+      verificar(await cel.inputValue('input[aria-label="Leitura"]') === "1,050" && (await cel.textContent(".ferramentas")).includes("1,05"), "roleta (Ferramentas): OK grava a leitura e a conta sai");
+    }
   }
   cel.off("dialog", aceitar);
   await cel.setViewportSize({ width: 390, height: 844 });

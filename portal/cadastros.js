@@ -2,6 +2,7 @@
 import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261124a";
 import { sb, sessao } from "./estado.js?v=20261124a";
 import * as O from "./opcoes.js?v=20261124a";
+import { faixaCor } from "./faixas.js?v=20261124a";
 import { corHexDeSrm } from "./calculos.js?v=20261124a";
 import { buscarItens, ordemCodigo } from "./busca.js?v=20261124a";
 import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261124a";
@@ -210,7 +211,7 @@ function campo(obj, c, desabilitado) {
   const comum = { desabilitado, rotulo: c.r };
   if (c.t === "texto") return campoTexto(obj, c.k, comum);
   if (c.t === "numero") return campoNumero(obj, c.k, { ...comum, casas: c.casas ?? 2 });
-  if (c.t === "cor") return campoNumero(obj, c.k, { ...comum, casas: c.casas ?? 1, de: O.corParaTela, para: O.corDaTela });
+  if (c.t === "cor") return campoNumero(obj, c.k, { ...comum, casas: c.casas ?? 1, de: O.corParaTela, para: O.corDaTela, roleta: faixaCor(O.unidadeCor()) });
   if (c.t === "select") return campoSelect(obj, c.k, c.opcoes, { ...comum, vazio: c.obrig ? undefined : "—" });
   if (c.t === "bool") return el("input", { type: "checkbox", checked: obj[c.k], disabled: desabilitado, "aria-label": c.r, on: { change: (e) => { obj[c.k] = e.target.checked; } } });
   if (c.t === "area") return el("textarea", { rows: 3, disabled: desabilitado, maxlength: 4000, "aria-label": c.r, value: obj[c.k] ?? "", on: { input: (e) => { obj[c.k] = e.target.value; } } });
