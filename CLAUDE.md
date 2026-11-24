@@ -136,7 +136,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  272 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  274 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -215,7 +215,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124e.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124f.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -297,14 +297,20 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Subir/Descer/Remover e Pronto. Fecha por ×, Pronto, Esc, toque no fundo ou troca de rota; ao fechar a seção é
   redesenhada e o foco volta ao item. Campos = os mesmos do `montarLinha` (chamado de novo, ligado ao mesmo item;
   `detalhes` virou função). Item livre (sem cadastro) abre a janela com o foco no nome.
-- Celular: largura toda, presa no TOPO (a roleta sobe do rodapé e a quantidade fica à vista); quantidade com ± de 44 px
+- Celular (24/11/2026, 2ª rodada pedida pelo responsável: "mais baixa, folga em cima semelhante à de baixo"): cartão
+  no MEIO da tela (mesma folga em cima e embaixo; largura − 1rem; malte ~555 px, lúpulo ~435 px em 390 px); números do
+  item (grist/OG ou IBU/g/L) na linha do rótulo "Quantidade"; SEM o texto "Na receita..." (retirado a pedido); fonte dos
+  dados recolhida num `<details>` com o selo; pé numa linha (↑ ↓ só seta, Remover, Pronto). Quantidade com ± de 44 px
   e campo na largura. Computador: janela de 560 px no centro.
+- ADICIONAR abre a janela (24/11/2026, pedido do responsável): item do cadastro → janela com a quantidade em edição
+  (celular: roleta no valor mais provável; computador: foco no campo, Enter = Pronto); item livre → janela com foco no nome.
 - Roleta dentro de janela modal: entra na própria janela (`campo.closest("dialog[open]")`), senão ficaria atrás dela
-  sem receber toque (valia também para os Cadastros); rola a janela, não a página. Esc com a roleta aberta fecha só a
-  roleta; toque no fundo com a roleta aberta só fecha a roleta.
+  sem receber toque (valia também para os Cadastros). A janela fica onde está (margem de cima fixada no lugar atual,
+  sem pular) e termina acima da roleta (max-height), rolando por dentro; tudo volta ao fechar (roleta.js). Esc com a
+  roleta aberta fecha só a roleta; toque no fundo com a roleta aberta só fecha a roleta.
 - Teste do navegador: janela no computador (abrir pelos números e pelo nome, × e foco, quantidade ao vivo, Esc, Ctrl+Z,
   remover) e no celular (390 px no topo, roleta dentro da janela, OK, Pronto, ↶, 320 px sem passar da largura,
-  janela do lúpulo). Capturas `p6i` (malte), `p6u` (roleta na janela), `p6v` (320 px), `p6w` (lúpulo).
+  janela do lúpulo). Capturas `p6i` (malte), `p6u` (roleta na janela), `p6v` (320 px), `p6w` (lúpulo), `p6x` (lúpulo novo).
 
 ## Roleta para números no celular (23/11/2026, pedido do responsável: digitar quantidade era ruim; sem migração)
 - Tela de toque (`pointer: coarse`): todo `campoNumero` com faixa vira "botão" da roleta (somente leitura, o teclado não
@@ -333,6 +339,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   MÍNIMO de 100 g na roleta (`quantidade_kg.min` 0,1): 0 | ,05 vira 0,10 e as rodas voltam (`indicesDoValor`); valor
   antigo abaixo do mínimo (ex.: 30 g de acidificado) não muda ao abrir (`rodas.piso`). Os botões ± não têm esse mínimo.
   Captura `p6t`.
+- Roda fora do valor (24/11/2026): a rolagem suave que leva a roda ao valor certo (ex.: mínimo de 100 g) podia ser
+  interrompida e a roda ficar em ",05" com o campo em 0,100 (o teste falhava ~1 em 3). `irPara` confere em 0,6 s e, se
+  a roda não chegou e o dedo não mexeu nela de novo (`gesto`), vai direto sem animação. O teste espera a roda parar (até 3 s).
 
 ## Relatório da receita em PDF (23/11/2026, pedido do responsável; sem migração)
 - Botão com ícone de relatório AO LADO do nome da receita (`.nome-linha` no topo do editor; vale também na só leitura).
