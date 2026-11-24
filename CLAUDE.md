@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124r.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124s.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -484,6 +484,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   "Nova a partir desta" (rota `#/receita/nova/<id>`) e, na receita nova, "Começar a partir de uma receita anterior".
   A cópia leva tudo menos dados do lote, notas e "pública"; liga só cadastros que a pessoa enxerga. Data sem hora
   é formatada por `dataDoDia` (new Date desloca um dia no fuso do Brasil).
+
+- Seção Brassagem (lote) em grupos (24/11/2026, pedido do responsável: "reduza as dimensões horizontais dos campos e
+  agrupe eles"; só receitas.js + style.css): 3 `fieldset.lote-grupo` com legenda em versalete: Lote (Nº | Data), Medido
+  (OG | FG | Volume (L)) e Priming (CO₂ (vol) | Açúcar), campos estreitos lado a lado (`.lote-campos`, colunas com
+  largura máxima); no celular um grupo por linha, no computador lado a lado. Rótulos curtos na tela, `aria-label`
+  completos de sempre. Rótulo que quebra empurra só o rótulo (campos alinhados embaixo). Data sem o cinza do iOS
+  (`appearance: none`, mesma altura dos outros campos). Teste "lote 390/320 px"; capturas `p6k`, `p6k-celular-lote-320`.
 
 ## Água da mostura e priming (0006, 22/11/2026)
 - `calculos.js`: `temperaturaAguaMostura` (balanço de calor de Palmer: Tw = alvo + 0,41 ÷ (L/kg) × (alvo − grão); não
