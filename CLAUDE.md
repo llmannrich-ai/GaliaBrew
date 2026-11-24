@@ -145,7 +145,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   priming e temperatura da água no painel, tela Ferramentas (água da mostura, priming, refratômetro, correção do densímetro), água da
   receita (perfil de íons e sulfato/cloreto, pH estimado e ácido, volumes das águas informados),
   receita de outro, sair; e um bloco de celular com toque: barra do app, toque/segurar no ±, teclado aberto,
-  cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
+  cartões, arrastar com o dedo, janelas em 390 e 320 px, levedura em linha fixa + janela). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
   (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, ~157 px desde
   22/11/2026: puxador "detalhes" + 2 linhas de 3 números com régua; com teclado aberto fica baixa, sem régua;
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124q.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124r.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -334,9 +334,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   seção Dados gerais numa janela, `abrirInformacoes`; a seção sai da página) e Excluir receita (chamam os botões de
   sempre). No celular `.acoes-receita` some; o nome só aparece na barra do app depois de rolar (`sem-titulo`). Números a
   171 px do topo em 390 px (eram 250). Ícones novos: reticencias, copiar, lixeira.
-- K4 (feito): leveduras, outros, mostura e fermentação em FICHA (`secaoListaFicha` no receitas.js, quando `secaoLista`
-  recebe `resumo(item, i)` → { nome, sub, valor, valor2 }): uma linha por item (ex.: "Rampa 1 | 66 °C · 60 min",
-  "W-34/70 · Seca · atenuação 80% | 1 pacote"). Tocar abre `dialog.item-janela.passo-janela` com os MESMOS campos das
+- K4 (feito): outros, mostura e fermentação em FICHA (`secaoListaFicha` no receitas.js, quando `secaoLista`
+  recebe `resumo(item, i)` → { nome, sub, valor, valor2 }): uma linha por item (ex.: "Rampa 1 | 66 °C · 60 min").
+  Leveduras NÃO: usam o `secaoLinhas` (ver "Leveduras com valores fixos"). Tocar abre `dialog.item-janela.passo-janela` com os MESMOS campos das
   colunas (roleta por cima, em popover), ↑ ↓ Remover e Pronto; "+" cria e já abre a janela do item novo
   (`abrirPassoDe`). Sem tabela, sem alça e sem × na linha. Auxiliares de texto `n0` e `juntar`.
 - K5 (feito): Água, Lote e Notas em RESUMO (`secaoResumida(chave, titulo, conteudo, linhas)` no receitas.js; as linhas
@@ -398,6 +398,31 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: janela no computador (abrir pelos números e pelo nome, × e foco, quantidade ao vivo, Esc, Ctrl+Z,
   remover) e no celular (390 px no topo, roleta dentro da janela, OK, Pronto, ↶, 320 px sem passar da largura,
   janela do lúpulo). Capturas `p6i` (malte), `p6u` (roleta na janela), `p6v` (320 px), `p6w` (lúpulo), `p6x` (lúpulo novo).
+
+## Leveduras com valores fixos e janela (24/11/2026, pedido do responsável; sem migração)
+- A seção Leveduras saiu da tabela editável (`secaoLista`) e usa o `secaoLinhas` (classe `lev`), como malte e lúpulo,
+  mas a linha NÃO tem campo: só texto (`fixo` no `montarLinha`: nome ›, "Ale · Seca · 80% aten." e, à direita,
+  "1 pacote" / "2 pacotes" em destaque com a etapa embaixo). Tocar em qualquer parte da linha abre a janela do item
+  (`dialog.item-janela.lev`): Quantidade (± de 1, roleta no comum para a unidade) + Unidade na mesma linha; Nome, Tipo,
+  Forma, Atenuação, Etapa, fonte dos dados; ↑ ↓ Remover e Pronto. Ordem: alça ⠿ na linha (Completo) ou ↑ ↓ na janela.
+- Adicionar: do catálogo abre a janela SEM roleta (`editarAoAdicionar: false`: já vem 1 pacote, Pronto basta);
+  item livre abre com o foco no nome. Clean: ficha (ponto · nome + forma e atenuação · "1 pacote"/etapa), sem alça.
+- TIPO vem do CADASTRO (24/11/2026, pedido do responsável): levedura ligada a um cadastro que a pessoa enxerga
+  (`ligadaAoCadastro`) mostra o tipo FIXO (`.campo-fixo`, sem seletor), copiado ao escolher (`copiaLevedura`: nome, tipo,
+  forma, atenuação média; regra 5: mudar o cadastro depois não altera a receita). Sem ligação (106 de 107 leveduras das
+  receitas, importadas do Brewfather sem `levedura_id`; item livre) o tipo segue no seletor e a janela tem o botão
+  "Ligar ao cadastro": abre a busca já com o código entre parênteses ou o nome sem "Yeast" (`buscaDaLevedura`: "US-05",
+  "Nottingham"); escolher copia tipo/forma/atenuação/nome, mantém quantidade/unidade/etapa e reabre a janela (1 passo do
+  desfazer). Ligada: "Trocar por outra do cadastro". `abrirBusca` aceita `texto` (busca inicial) e `titulo`.
+  Dado corrigido em 24/11/2026 (pedido do responsável), pelo MCP, script `ferramentas/brewfather/corrigir-leveduras.sql`
+  (com o desfazer): 81 leveduras importadas LIGADAS ao cadastro por código/nome (Nottingham, US-05, S-04, W-34/70,
+  Diamond, Abbaye, Verdant, T-58, M54, BE-256, BE-134, Philly Sour...; copiados tipo e forma; nome e atenuação NÃO
+  mudaram, então a FG das receitas é a mesma) e 6 só com o tipo corrigido (5 Brettanomyces → BRETT, blend de Flanders →
+  MISTA). Ficaram 25 sem ligação (TeckBrew, Fermo* sem a cepa no catálogo, Farmhouse, Vermont Ale bio4, Lager-BF16
+  como Ale, nome vazio): ligar pela janela. Datas das receitas intactas (o gatilho de data é só em `receitas`).
+- Outros ingredientes, mostura e fermentação: tabela/cartões no Completo; no Clean, ficha + janela (K4, `secaoListaFicha`).
+- Teste do navegador: levedura livre na janela, linha sem campo, tocar no valor abre, Esc; celular 390/320 px (linha de
+  64 px, janela cabe, sem teclado nem roleta) e clean. Capturas `p6q-levedura-linha`, `p6q-levedura-janela-390/320`, `p7e`.
 
 ## Roleta para números no celular (23/11/2026, pedido do responsável: digitar quantidade era ruim; sem migração)
 - Tela de toque (`pointer: coarse`): todo `campoNumero` com faixa vira "botão" da roleta (somente leitura, o teclado não

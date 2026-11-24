@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124q");
+    const m = await import("./fontes.js?v=20261124r");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -337,12 +337,52 @@ const erros = [];
   await pagina.screenshot({ path: `${SAIDA}/p3e-busca.png` });
   await pagina.keyboard.press("Escape");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
-  verificar(await pagina.locator('[data-secao="leveduras"] tbody tr input[aria-label="Nome"]').count() === 0, "Esc fecha a busca sem adicionar");
+  verificar(await pagina.locator('[data-secao="leveduras"] li.ing').count() === 0, "Esc fecha a busca sem adicionar");
   await adicionar("leveduras");
   await pagina.click("dialog.busca >> text=Item livre");
-  verificar(await focado() === "Nome", "item livre: foco no nome da linha nova");
+  verificar(await focado() === "Nome" && await pagina.evaluate(() => document.activeElement.closest("dialog.item-janela.lev")?.open === true),
+    "levedura livre: abre a janela do item com o foco no nome");
   await pagina.keyboard.type("W-34/70");
-  await pagina.locator('input[aria-label="Atenuação %"]').first().fill("80");
+  await pagina.fill('dialog.item-janela input[aria-label="Atenuação %"]', "80");
+  await pagina.selectOption('dialog.item-janela select[aria-label="Etapa"]', "SECUNDARIA");
+  await pagina.fill('dialog.item-janela input[aria-label="Quantidade"]', "2");
+  await pagina.click("dialog.item-janela button.item-pronto");
+  await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
+  const linhaLev = '[data-secao="leveduras"] li.ing';
+  verificar(await pagina.locator(`${linhaLev} :is(input, select, textarea)`).count() === 0
+    && /W-34\/70/.test(await pagina.textContent(`${linhaLev} .ing-nome`)) && /80% aten\./.test(await pagina.textContent(`${linhaLev} .ing-sub`))
+    && await pagina.textContent(`${linhaLev} .ing-fixo-qtd`) === "2 pacotes" && await pagina.textContent(`${linhaLev} .ing-fixo-sub`) === "Secundária",
+    "levedura na receita: só valores fixos (nome, atenuação, 2 pacotes, Secundária), sem campo");
+  // Tocar na quantidade fixa também abre a janela; Esc fecha. A etapa volta a Primária.
+  await pagina.click(`${linhaLev} .ing-fixo`);
+  await pagina.waitForSelector("dialog.item-janela.lev");
+  verificar(await pagina.inputValue('dialog.item-janela input[aria-label="Quantidade"]') === "2,0", "tocar no valor da levedura abre a janela com os campos");
+  await pagina.selectOption('dialog.item-janela select[aria-label="Etapa"]', "PRIMARIA");
+  await pagina.fill('dialog.item-janela input[aria-label="Quantidade"]', "1");
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
+  verificar(await pagina.textContent(`${linhaLev} .ing-fixo-qtd`) === "1 pacote", "janela fechada: a linha da levedura mostra o valor novo (1 pacote)");
+  // Tipo vem do cadastro: levedura sem ligação (livre/importada) tem o seletor e o botão "Ligar ao cadastro"; ligada,
+  // o tipo é fixo (copiado do cadastro, com forma e atenuação).
+  await pagina.click(`${linhaLev} .ing-nome`);
+  await pagina.waitForSelector("dialog.item-janela.lev");
+  verificar(await pagina.locator('dialog.item-janela select[aria-label="Tipo"]').count() === 1, "levedura sem cadastro: tipo no seletor");
+  await pagina.click("dialog.item-janela button.ligar-cadastro");
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await pagina.inputValue("dialog.busca .busca-campo") === "W-34/70"
+    && await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Fermentis SafLager W-34/70 Fermentação baixa",
+    "ligar ao cadastro: a busca já vem com o nome da levedura e acha a do catálogo");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  await pagina.waitForSelector("dialog.item-janela.lev .campo-fixo");
+  verificar(await pagina.locator('dialog.item-janela select[aria-label="Tipo"]').count() === 0
+    && await pagina.textContent("dialog.item-janela .campo-fixo") === "Lager" && await pagina.inputValue('dialog.item-janela input[aria-label="Atenuação %"]') === "82"
+    && await pagina.inputValue('dialog.item-janela input[aria-label="Quantidade"]') === "1,0" && (await pagina.textContent("dialog.item-janela .item-sub")).startsWith("Lager"),
+    "ligada ao cadastro: tipo fixo Lager vindo do cadastro (sem seletor), atenuação copiada e quantidade mantida");
+  await pagina.fill('dialog.item-janela input[aria-label="Atenuação %"]', "80");
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
+  verificar((await pagina.textContent(`${linhaLev} .ing-sub`)).startsWith("Lager"), "a linha da levedura mostra o tipo do cadastro");
   // Lote: data, OG medida digitada como 1048 (vira 1,048).
   await pagina.fill('input[aria-label="Data da brassagem"]', "2026-04-20");
   await pagina.fill('input[aria-label="OG medida"]', "1048");
@@ -448,7 +488,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124q");
+    const m = await import("./calculos.js?v=20261124r");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -513,7 +553,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124q");
+    const m = await import("./calculos.js?v=20261124r");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -535,7 +575,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124q");
+    const m = await import("./calculos.js?v=20261124r");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -645,7 +685,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124q");
+    const m = await import("./calculos.js?v=20261124r");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1070,7 +1110,7 @@ const erros = [];
     window.visualViewport.dispatchEvent(new Event("resize"));
   }, altura);
   await teclado(500);
-  const atenuacao = cel.locator('input[aria-label="Atenuação %"]').first();
+  const atenuacao = cel.locator('input[aria-label="Autor"]').first();      // campo de digitar fora de janela
   await atenuacao.focus();
   await cel.waitForTimeout(1000);
   const vitalTeclado = await cel.locator(".vital").boundingBox();
@@ -1349,10 +1389,43 @@ const erros = [];
 
   // Tabelas viram cartões, sem rolagem para o lado.
   const rolagemTabelas = await cel.evaluate(() => [...document.querySelectorAll(".tabela-rolagem")].map((t) => t.scrollWidth - t.clientWidth));
-  verificar(rolagemTabelas.every((d) => d <= 0) && await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="leveduras"] tbody tr')).display) === "grid",
-    "toque: leveduras, outros, mostura e fermentação em cartões, sem rolagem para o lado");
+  verificar(rolagemTabelas.every((d) => d <= 0) && await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="mostura"] tbody tr')).display) === "grid",
+    "toque: outros, mostura e fermentação em cartões, sem rolagem para o lado");
   await cel.evaluate(() => document.querySelector('[data-secao="leveduras"]').scrollIntoView());
   await cel.screenshot({ path: `${SAIDA}/p6b-celular-cartoes.png` });
+
+  // Leveduras (24/11/2026): linha com valores fixos (sem campo); tocar abre a janela do item com os campos.
+  for (const largura of [390, 320]) {
+    await cel.setViewportSize({ width: largura, height: largura === 390 ? 844 : 640 });
+    await cel.waitForTimeout(150);
+    const lev = '[data-secao="leveduras"] li.ing';
+    await cel.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), lev);
+    const lin = await cel.evaluate((s) => {
+      const li = document.querySelector(s), b = li.getBoundingClientRect();
+      return { campos: li.querySelectorAll("input, select, textarea").length, h: b.height, passa: b.right > innerWidth + 0.5,
+        qtd: li.querySelector(".ing-fixo-qtd")?.textContent };
+    }, lev);
+    verificar(lin.campos === 0 && lin.h <= 72 && !lin.passa && lin.qtd === "1 pacote",
+      `toque ${largura} px: levedura numa linha só com valores fixos (${Math.round(lin.h)} px, "${lin.qtd}")`);
+    if (largura === 390) await cel.screenshot({ path: `${SAIDA}/p6q-levedura-linha.png` });
+    await tocar(`${lev} .ing-fixo`);
+    await cel.waitForSelector("dialog.item-janela.lev");
+    await cel.waitForTimeout(150);
+    const jan = await cel.evaluate(() => {
+      const d = document.querySelector("dialog.item-janela.lev");
+      const passa = [...d.querySelectorAll("*")].filter((n) => n.getBoundingClientRect().right > innerWidth + 0.5 && n.getClientRects().length).map((n) => n.className || n.tagName);
+      const r = (q) => !!d.querySelector(q);
+      return { passa, campos: ["Nome", "Tipo", "Forma", "Atenuação %", "Etapa", "Quantidade", "Unidade"].every((l) => r(`[aria-label="${l}"]`)),
+        foco: document.activeElement?.classList.contains("item-fechar"), roleta: !!document.querySelector(".roleta") };
+    });
+    verificar(!jan.passa.length && jan.campos && jan.foco && !jan.roleta,
+      `toque ${largura} px: janela da levedura com todos os campos, cabe na largura, sem abrir teclado nem roleta${jan.passa.length ? " (passam: " + jan.passa.slice(0, 5).join(", ") + ")" : ""}`);
+    await cel.screenshot({ path: `${SAIDA}/p6q-levedura-janela-${largura}.png` });
+    await tocar("dialog.item-janela.lev .item-pronto");
+    await cel.waitForSelector("dialog.item-janela", { state: "detached" });
+  }
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(150);
 
   // Busca de ingrediente no celular: sem filtros, a lista começa logo abaixo do campo.
   await tocar('[data-secao="fermentaveis"] button.adicionar');
@@ -1900,9 +1973,9 @@ const erros = [];
   await cel.waitForSelector("dialog.relatorio", { state: "detached" });
   // K4: leveduras, outros, mostura e fermentação em ficha; tocar abre a janela com os campos; + abre o passo novo.
   const passosFicha = await cel.evaluate(() => Object.fromEntries(["leveduras", "outros", "mostura", "fermentacao"].map((k) => [k, {
-    linhas: document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha.passo`).length,
+    linhas: document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha`).length,
     tabela: document.querySelectorAll(`[data-secao="${k}"] table`).length,
-    alturas: [...document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha.passo`)].map((l) => Math.round(l.getBoundingClientRect().height)),
+    alturas: [...document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha`)].map((l) => Math.round(l.getBoundingClientRect().height)),
   }])));
   const nPassos = (t) => db[t].filter((x) => x.receita_id === idPils).length;
   verificar(Object.values(passosFicha).every((x) => x.tabela === 0 && x.alturas.every((h) => h <= 64))
@@ -1972,6 +2045,13 @@ const erros = [];
   verificar((await cel.textContent('.editor-corpo > [data-secao="notas"]')).includes("Moagem 1,1 mm. Dry hop no 3º dia."),
     "clean K5: nota escrita na janela aparece no resumo");
   await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
+  const levClean = await cel.evaluate(() => {
+    const li = document.querySelector('[data-secao="leveduras"] li.ing.ficha');
+    li?.scrollIntoView({ block: "center" });
+    return li ? { campos: li.querySelectorAll("input, select").length, alca: !!li.querySelector(".ing-alca"), qtd: li.querySelector(".ing-fixo-qtd")?.textContent } : null;
+  });
+  verificar(levClean && levClean.campos === 0 && !levClean.alca && levClean.qtd === "1 pacote", `clean: levedura em ficha só com valores fixos (${JSON.stringify(levClean)})`);
+  await cel.screenshot({ path: `${SAIDA}/p7e-clean-levedura.png` });
   // Tocar na quantidade = roleta direto (sem abrir a janela); a OG acompanha e Cancelar volta.
   const qtdFicha = '[data-secao="fermentaveis"] li.ing.ficha input.qtd';
   const qtdFichaAntes = await cel.inputValue(qtdFicha);
