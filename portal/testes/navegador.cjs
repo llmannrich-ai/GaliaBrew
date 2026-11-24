@@ -1391,12 +1391,13 @@ const erros = [];
       toque: alca.height >= 44 && rem.width >= 44 && rem.height >= 44,
       unidades: getComputedStyle(tr.querySelector('input[aria-label="Temp. (°C)"]').closest("td"), "::after").content,
       altura: Math.round(tr.getBoundingClientRect().height), passo: Math.round(passo.width),
-      corta: [...tr.querySelectorAll("input.num")].some((n) => n.scrollWidth > n.clientWidth + 1) || (() => {
+      // Campo com texto cortado (nome do campo), ou false.
+      corta: [...tr.querySelectorAll("input.num")].find((n) => n.scrollWidth > n.clientWidth + 1)?.getAttribute("aria-label") || (() => {
         const s = tr.querySelector("select");
         if (!s) return false;
         const cs = getComputedStyle(s), ctx = document.createElement("canvas").getContext("2d");
         ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-        return ctx.measureText(s.selectedOptions[0].text).width > s.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + 0.5;
+        return ctx.measureText(s.selectedOptions[0].text).width > s.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + 0.5 && "Passo da mostura";
       })(),
     };
   }), secao);

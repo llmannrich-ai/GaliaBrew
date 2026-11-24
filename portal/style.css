@@ -1013,7 +1013,7 @@ dialog form { display: grid; gap: .9rem; }
   .tabela.editavel.linha-unica td.acoes-linha { position: static; grid-column: auto; }
   /* Passos da mostura e da fermentação numa linha só (24/11/2026, pedido do responsável): ⠿ à esquerda (padrão dos
      maltes e lúpulos) | passo | temperatura °C | tempo min (ou dias) | ×, sem rótulo em cima (a unidade vai depois do número). */
-  .tabela.editavel.passos-linha tr { grid-template-columns: 1.4rem minmax(0, 1fr) 4.1rem 4rem 2.75rem; align-items: center; gap: .2rem; padding: .3rem 0; }
+  .tabela.editavel.passos-linha tr { grid-template-columns: 1.4rem minmax(0, 1fr) 4.1rem 4rem 2.75rem; align-items: center; gap: .15rem; padding: .3rem 0; }
   [data-secao="fermentacao"] .tabela.editavel.passos-linha tr { grid-template-columns: 1.4rem minmax(0, 1fr) 4.1rem 4.5rem 2.75rem; }
   .tabela.editavel.passos-linha td:first-child:not(.nota) { grid-column: auto; padding-right: 0; }
   .tabela.editavel.passos-linha td[data-rotulo]::before { content: none; }
@@ -1024,7 +1024,7 @@ dialog form { display: grid; gap: .9rem; }
   .tabela.editavel.passos-linha td.acoes-linha { position: static; grid-column: auto; }
   .tabela.editavel.passos-linha input.num { padding-left: .25rem; padding-right: .25rem; text-align: right; }
   /* Seta própria e estreita (a nativa do Chrome come ~26 px e cortava "Rampa 1" em 320 px); cor do tema. */
-  .tabela.editavel.passos-linha select { appearance: none; -webkit-appearance: none; padding-left: .4rem; padding-right: 1rem; text-overflow: ellipsis; }
+  .tabela.editavel.passos-linha select { appearance: none; -webkit-appearance: none; padding-left: .3rem; padding-right: 1rem; text-overflow: ellipsis; }
   .tabela.editavel.passos-linha td:has(> select) { position: relative; }
   .tabela.editavel.passos-linha td:has(> select)::after {
     content: ""; position: absolute; right: .45rem; top: 50%; width: .4rem; height: .4rem; margin-top: -.3rem;
