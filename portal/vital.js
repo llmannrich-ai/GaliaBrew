@@ -1,9 +1,9 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
-import { el, svg, numeroBR } from "./ui.js?v=20261124p";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261124p";
-import * as O from "./opcoes.js?v=20261124p";
+import { el, svg, numeroBR } from "./ui.js?v=20261124q";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261124q";
+import * as O from "./opcoes.js?v=20261124q";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {

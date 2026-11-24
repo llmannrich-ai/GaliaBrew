@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124p";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124p";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124p";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124p";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124p";
-import { abrirBusca } from "./busca.js?v=20261124p";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124p";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124p";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124p";
-import * as O from "./opcoes.js?v=20261124p";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124p";
-import { icone } from "./icones.js?v=20261124p";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124p";
-import { abrirRelatorio } from "./relatorio.js?v=20261124p";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124p";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124q";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124q";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124q";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124q";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124q";
+import { abrirBusca } from "./busca.js?v=20261124q";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124q";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124q";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124q";
+import * as O from "./opcoes.js?v=20261124q";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124q";
+import { icone } from "./icones.js?v=20261124q";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124q";
+import { abrirRelatorio } from "./relatorio.js?v=20261124q";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124q";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -447,7 +447,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
 
   // ---------- seção genérica de lista ----------
-  // `linhaUnica` (24/11/2026, pedido do responsável, mostura): o passo inteiro numa linha, com a alça ⠿ à ESQUERDA
+  // `linhaUnica` (24/11/2026, pedido do responsável, mostura e fermentação): o passo inteiro numa linha, com a alça ⠿ à ESQUERDA
   // (como nos maltes e lúpulos) e o × no fim; no celular a unidade (`u`) vai depois do número, sem rótulo em cima.
   function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao, linhaUnica = false }) {
     const corpo = el("tbody");
@@ -1295,10 +1295,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     iconeSecao: "fermentacao",
     vazio: "Sem passos.",
     colunas: [
-      { r: "Passo", campo: txt("nome") },
-      { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_fermentacao }) },
-      { r: "Dias", num: true, campo: num("dias", 0) },
+      { r: "Passo", campo: txt("nome", { placeholder: "Passo" }) },
+      { r: "Temp. (°C)", u: "°C", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_fermentacao }) },
+      { r: "Dias", u: "dias", num: true, campo: num("dias", 0) },
     ],
+    linhaUnica: true,
     adicionar: botaoPasso("fermentacao", () => ({ nome: "", temperatura_c: 2, dias: 3 })),
   });
 

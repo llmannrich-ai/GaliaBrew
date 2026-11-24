@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124p");
+    const m = await import("./fontes.js?v=20261124q");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -448,7 +448,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -513,7 +513,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -535,7 +535,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -645,7 +645,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1373,10 +1373,11 @@ const erros = [];
   await cel.waitForSelector("dialog.busca", { state: "detached" });
   // Passos da mostura numa linha só (24/11/2026, pedido do responsável): ⠿ à esquerda | passo | °C | min | ×, todos na
   // mesma altura, sem um cobrir o outro, dentro da seção e com toque de 44 px na alça e no ×.
-  const passosMostura = () => cel.evaluate(() => [...document.querySelectorAll('[data-secao="mostura"] tbody tr')].map((tr) => {
+  // Fermentação no mesmo padrão (24/11/2026): ⠿ | nome do passo | °C | dias | ×.
+  const passosLinha = (secao) => cel.evaluate((secao) => [...document.querySelectorAll(`[data-secao="${secao}"] tbody tr`)].map((tr) => {
     const q = (s) => tr.querySelector(s)?.getBoundingClientRect();
-    const alca = q(".ing-alca"), passo = q('select[aria-label="Passo da mostura"]'), temp = q('input[aria-label="Temp. (°C)"]'),
-      tempo = q('input[aria-label="Tempo (min)"]'), rem = q('button[aria-label="Remover"]');
+    const alca = q(".ing-alca"), passo = q('select[aria-label="Passo da mostura"], input[aria-label="Passo"]'), temp = q('input[aria-label="Temp. (°C)"]'),
+      tempo = q('input[aria-label="Tempo (min)"], input[aria-label="Dias"]'), rem = q('button[aria-label="Remover"]');
     const todos = [alca, passo, temp, tempo, rem];
     if (todos.some((b) => !b)) return { falta: true };
     const sec = tr.closest("section").getBoundingClientRect();
@@ -1391,20 +1392,27 @@ const erros = [];
       unidades: getComputedStyle(tr.querySelector('input[aria-label="Temp. (°C)"]').closest("td"), "::after").content,
       altura: Math.round(tr.getBoundingClientRect().height), passo: Math.round(passo.width),
       corta: [...tr.querySelectorAll("input.num")].some((n) => n.scrollWidth > n.clientWidth + 1) || (() => {
-        const s = tr.querySelector("select"), cs = getComputedStyle(s), ctx = document.createElement("canvas").getContext("2d");
+        const s = tr.querySelector("select");
+        if (!s) return false;
+        const cs = getComputedStyle(s), ctx = document.createElement("canvas").getContext("2d");
         ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
         return ctx.measureText(s.selectedOptions[0].text).width > s.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + 0.5;
       })(),
     };
-  }));
+  }), secao);
   await cel.locator('[data-secao="mostura"] .titulo-linha button.adicionar').click();
   for (const w of [320, 390]) {
     await cel.setViewportSize({ width: w, height: w === 320 ? 700 : 844 });
-    const passos = await passosMostura();
+    const passos = await passosLinha("mostura");
     verificar(passos.length === 2 && passos.every((p) => !p.falta && p.ordem && p.linha && !p.sobrepoe && p.cabe && p.toque && p.altura <= 56 && p.passo >= 72 && !p.corta && p.unidades === '"°C"'),
       `toque ${w} px: cada passo da mostura numa linha (⠿ à esquerda, passo, °C, min, ×) sem cobrir campo (${JSON.stringify(passos)})`);
     await cel.evaluate(() => { document.querySelector('[data-secao="mostura"]').scrollIntoView(); window.scrollBy(0, -20); });
     await cel.screenshot({ path: `${SAIDA}/p6m-celular-mostura-${w}.png` });
+    await cel.evaluate(() => { const n = document.querySelector('[data-secao="fermentacao"] input[aria-label="Dias"]'); n.value = "120"; });   // 3 dígitos
+    const ferm = await passosLinha("fermentacao");
+    await cel.evaluate(() => { const n = document.querySelector('[data-secao="fermentacao"] input[aria-label="Dias"]'); n.value = "14"; });
+    verificar(ferm.length >= 1 && ferm.every((p) => !p.falta && p.ordem && p.linha && !p.sobrepoe && p.cabe && p.toque && p.altura <= 56 && p.passo >= 72 && !p.corta && p.unidades === '"°C"'),
+      `toque ${w} px: cada passo da fermentação numa linha (⠿ à esquerda, nome, °C, dias, ×) sem cobrir campo (${JSON.stringify(ferm)})`);
   }
   // Alça ⠿ no lugar do ↑ (24/11/2026, pedido do responsável): arrastar com o dedo e mover pelas setas.
   const linhaM = '[data-secao="mostura"] tbody tr';

@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124p.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124q.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -276,8 +276,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Passo numa LINHA SÓ (24/11/2026, pedido do responsável): ⠿ à ESQUERDA (padrão dos maltes e lúpulos) | passo | temp. °C |
   tempo min | ×, sem rótulo em cima (unidade depois do número). `secaoLista(..., { linhaUnica: true })` + coluna `u`
   (unidade) no receitas.js; tabela `.passos-linha` no style.css (seletor com seta própria e estreita: a nativa cortava
-  "Rampa 1" em 320 px). Fermentação, leveduras e outros seguem em cartão (alça à direita). Teste "toque 320/390 px: cada
-  passo da mostura numa linha" (ordem, mesma altura, sem sobrepor, sem cortar texto); capturas `p6m-celular-mostura-320/390`.
+  "Rampa 1" em 320 px). FERMENTAÇÃO no mesmo padrão (24/11/2026, pedido do responsável): ⠿ | nome | °C | dias | ×
+  (coluna dos dias um pouco mais larga: cabe "120 dias"). Leveduras e outros seguem em cartão (alça à direita). Testes
+  "toque 320/390 px: cada passo da mostura/fermentação numa linha" (ordem, mesma altura, sem sobrepor, sem cortar texto);
+  capturas `p6m-celular-mostura-320/390` (mostram as duas seções).
 - Rolagem só na vertical (23/11/2026, pedido do responsável: a tela podia ser arrastada para o lado): `html`/`body` com
   `overflow-x: clip` (o que passar da largura é cortado, sem criar área de rolagem; não atrapalha o `sticky`). A causa
   era a lista dos Cadastros, tabela larga demais no celular: até 640 px virou cartões (`.tabela.lista-cad`, nome em cima
