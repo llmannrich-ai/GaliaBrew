@@ -727,3 +727,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fase 2: receita = lote ("criar a partir de", dados do lote na receita), ferramentas (água de mostura, priming,
   refratômetro, correção do densímetro), escalar receita.
 - Fase 3: importar/exportar BeerJSON e BeerXML, estoque, química da água.
+
+## Coluna "Total" no perfil da água (24/11/2026, pedido do responsável; só texto)
+- A coluna "Panela" da tabela do perfil (tela e PDF) passou a se chamar "Total" (as duas águas juntas com todos os
+  sais, o que chega à fervura). Pé da tabela: "mostura X · total Y"; PDF: "Sulfato/cloreto no total". No código o
+  perfil continua `res.agua.panela`.

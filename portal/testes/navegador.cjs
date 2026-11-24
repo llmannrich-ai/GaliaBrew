@@ -585,7 +585,7 @@ const erros = [];
   const indices = await pagina.$$eval(".perfil-agua tbody.perfil-indices tr", (trs) => trs.map((tr) => [...tr.children].map((td) => td.textContent)));
   verificar(indices.length === 2 && indices[0][0].startsWith("Alcalinidade residual") && indices[1][0].startsWith("Sulfato/cloreto") && indices.every((l) => l.length === 6 && l.slice(1).every((x) => /^-?\d|—/.test(x))),
     `tabela do perfil: alcalinidade residual e sulfato/cloreto em base/mostura/lavagem/panela/alvo (${JSON.stringify(indices)})`);
-  verificar(/Sulfato\/cloreto: mostura [a-z ]+ · panela (seca e amarga|levemente amarga)/.test(textoAgua), "pé da tabela: leitura do sulfato/cloreto na mostura e na panela");
+  verificar(/Sulfato\/cloreto: mostura [a-z ]+ · total (seca e amarga|levemente amarga)/.test(textoAgua), "pé da tabela: leitura do sulfato/cloreto na mostura e no total");
   verificar(/Priming.*Açúcar comum \(sacarose\)\d+ g/.test(textoPainel), "CO₂ desejado mostra os gramas de priming");
   verificar(/Temperatura da água da mostura[\s\S]{0,300}?absorve\.\d+,\d °C/.test(textoPainel), "painel mostra a temperatura da água da mostura");
 

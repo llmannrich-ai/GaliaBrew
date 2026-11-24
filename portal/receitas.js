@@ -1545,7 +1545,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const leituraSo4 = (p) => (p.sulfato_cloreto == null ? "—" : O.LEITURA_SO4_CL[leituraSulfatoCloreto(p.sulfato_cloreto)]);
       const colunas = alvo ? 6 : 5;
       preencher(perfil, el("table", { class: "tabela perfil-agua" },
-        el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Base", "Base"], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Panela", "Pan."], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
+        el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Base", "Base"], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Total", "Total"], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
           .map(([longo, curto], i) => el("th", { class: i ? "num" : "" }, el("span", { class: "ion-longo", text: longo }), el("abbr", { class: "ion-curto", title: longo, text: curto }))))),
         el("tbody", {}, IONS.map((k) => el("tr", {},
           nome(O.NOME_ION[k], O.SIMBOLO_ION[k]),
@@ -1558,7 +1558,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           linhaIndice("Alcalinidade residual (ppm)", "Alc. res.", O.AJUDA_VOLUME.alcalinidade_residual, (p) => numeroBR(p.alcalinidade_residual, 0)),
           linhaIndice("Sulfato/cloreto", "SO₄/Cl", O.AJUDA_VOLUME.sulfato_cloreto, so4cl)),
         el("tfoot", {}, el("tr", {}, el("td", { colspan: colunas, class: "leitura-so4" },
-          "Sulfato/cloreto: mostura ", el("b", { text: leituraSo4(a.mostura) }), " · panela ", el("b", { text: leituraSo4(a.panela) }))))));
+          "Sulfato/cloreto: mostura ", el("b", { text: leituraSo4(a.mostura) }), " · total ", el("b", { text: leituraSo4(a.panela) }))))));
     });
 
     const sec = el("section", { class: "cartao", dataset: { secao: "agua" } },
@@ -1584,7 +1584,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("button", { type: "button", class: "secundario pequeno", text: "Igual à mostura", title: "Troca os sais da lavagem pelos da mostura, na proporção dos volumes", on: { click: lavagemIgualMostura } }))),
       el("h4", { text: "Total do dia" }),
       notaVolumes,
-      el("h4", { text: "Perfil: mostura, lavagem e panela" }),
+      el("h4", { text: "Perfil: mostura, lavagem e total" }),
       perfil);
     desenharSais();
     desenharAcidos();
