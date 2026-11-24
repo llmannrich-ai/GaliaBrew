@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124n";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124n";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124n";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124n";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124n";
-import { abrirBusca } from "./busca.js?v=20261124n";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124n";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124n";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124n";
-import * as O from "./opcoes.js?v=20261124n";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124n";
-import { icone } from "./icones.js?v=20261124n";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124n";
-import { abrirRelatorio } from "./relatorio.js?v=20261124n";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124n";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124o";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124o";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124o";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124o";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124o";
+import { abrirBusca } from "./busca.js?v=20261124o";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124o";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124o";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124o";
+import * as O from "./opcoes.js?v=20261124o";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124o";
+import { icone } from "./icones.js?v=20261124o";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124o";
+import { abrirRelatorio } from "./relatorio.js?v=20261124o";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124o";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -1287,8 +1287,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover ácido", text: "×", on: { click: () => { r.acidos.splice(i, 1); desenharAcidos(); mudou(); } } })))));
       atualizarResultados();
     };
-    // pH estimado da mostura em cartão próprio (24/11/2026, pedido do responsável: layout mais moderno): número grande,
-    // selo do estado, escala de 5,0 a 5,8 com a faixa boa (5,2–5,6) e a ideal (5,3–5,5) e o marcador no valor.
+    // pH estimado da mostura (24/11/2026, 2ª rodada pedida pelo responsável: "muito grande"): uma linha com rótulo,
+    // número e selo do estado; escala fina de 5,0 a 5,8 embaixo (faixa boa 5,2–5,6, ideal 5,3–5,5). Sem fundo próprio
+    // (fica no papel do bloco) e sem texto: a sugestão de ácido é só o botão com a quantidade.
     const caixaPh = el("div", { class: "ph-cartao", "aria-live": "polite", hidden: true });
     const posicaoPh = (ph) => `${(Math.min(1, Math.max(0, (ph - 5.0) / 0.8)) * 100).toFixed(1)}%`;
     aoRecalcular.push((res) => {
@@ -1299,27 +1300,22 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       caixaPh.className = `ph-cartao estado-${estado}`;
       const marca = el("span", { class: "ph-marca" });
       marca.style.left = posicaoPh(m.ph);
-      const sugestao = m.latico_88_ml >= 0.1;
+      const ml = Number(m.latico_88_ml.toFixed(1));
       preencher(caixaPh,
         el("div", { class: "ph-topo" },
-          el("span", { class: "ph-rot" }, "pH estimado da ", el("span", { class: "junto" }, "mostura", info(O.AJUDA_VOLUME.ph_mostura))),
-          el("span", { class: "ph-estado", text: rotulo })),
-        el("div", { class: "ph-numeros" },
+          el("span", { class: "ph-rot" }, "pH da mostura", info(O.AJUDA_VOLUME.ph_mostura)),
           el("span", { class: "ph-valor", text: numeroBR(m.ph, 2) }),
-          r.acidos.length ? el("span", { class: "ph-antes" }, el("span", { text: "Sem o ácido" }), el("b", { text: numeroBR(m.ph_sem_acido, 2) })) : null),
-        el("div", { class: "ph-escala", role: "img", "aria-label": `pH ${numeroBR(m.ph, 2)}: ${rotulo}. Faixa boa 5,2 a 5,6; ideal 5,3 a 5,5.` },
+          el("span", { class: "ph-estado", text: rotulo })),
+        el("div", { class: "ph-escala", role: "img", "aria-label": `pH estimado ${numeroBR(m.ph, 2)}: ${rotulo}. Faixa boa 5,2 a 5,6; ideal 5,3 a 5,5.` },
           el("span", { class: "ph-trilho" }), marca),
-        el("div", { class: "ph-marcas", "aria-hidden": "true" }, ["5,2", "5,3", "5,5", "5,6"].map((t, i) => el("span", { class: `m${i + 1}`, text: t }))),
-        sugestao
-          ? el("div", { class: "ph-sugestao" },
-              el("p", {}, `Para chegar a ${numeroBR(m.alvo, 1)}: mais ${numeroBR(m.latico_88_ml, 1)} mL de ácido lático 88% (ou ${numeroBR(m.fosforico_10_ml, 0)} mL de fosfórico 10%).`),
-              leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "Adicionar o lático", on: { click: () => {
+        ml >= 0.1 && estado !== "ideal" && !leitura   // já ideal (5,3–5,5): sem botão (24/11/2026, pedido do responsável)
+          ? el("button", { type: "button", class: "secundario pequeno ph-acido", text: `+ ${numeroBR(ml, 1)} mL de lático 88%`,
+              title: `Leva o pH a ${numeroBR(m.alvo, 1)}`, on: { click: () => {
                 const ja = r.acidos.find((x) => x.acido === "LATICO_88");
-                const ml = Number(m.latico_88_ml.toFixed(1));
                 if (ja) ja.ml = Number(((Number(ja.ml) || 0) + ml).toFixed(1)); else r.acidos.push({ acido: "LATICO_88", ml });
                 desenharAcidos(); mudou();
-              } } }))
-          : m.ph < 5.2 ? el("p", { class: "nota alerta", text: "pH baixo: use água com mais alcalinidade (bicarbonato) ou menos malte torrado/ácido." }) : null);
+              } } })
+          : null);
     });
 
     // Volumes das duas águas: o cervejeiro informa; vazio = sugestão (aparece como texto de fundo do campo).

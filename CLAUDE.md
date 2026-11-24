@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  342 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  344 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124n.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124o.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -514,10 +514,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   abaixo); vazio mostra a sugestão como número de fundo (sem "(sugestão)", que não cabe; `title` = "Sugestão: N L").
   (2) Alcalinidade residual e sulfato/cloreto SAÍRAM dos blocos e do pé da seção: ficam só na tabela do perfil, em
   `tbody.perfil-indices` (Base, Mostura, Lavagem, Panela e Alvo; alvo por `perfilAgua` sem sais) e a leitura no `tfoot`
-  ("Sulfato/cloreto: mostura X · panela Y"); no celular "Alc. res."/"SO₄/Cl" com ⓘ. (3) pH estimado em cartão próprio
-  (`.ph-cartao`): número grande, selo do estado (ideal 5,3–5,5 verde, aceitável âmbar, baixo/alto vermelho), "Sem o
-  ácido" ao lado, escala 5,0–5,8 em zonas com marcador redondo (posição = (pH − 5) ÷ 0,8) e a sugestão de lático com o
-  botão no pé do cartão. Capturas `p5l` (pH) e `p5m` (tabela), 390 e 320 px.
+  ("Sulfato/cloreto: mostura X · panela Y"); no celular "Alc. res."/"SO₄/Cl" com ⓘ. (3) pH estimado COMPACTO
+  (`.ph-cartao`; 2ª rodada no mesmo dia, pedido do responsável: "muito grande", sem texto, sem fundo próprio): uma linha
+  "pH da mostura ⓘ | 5,41 (18 px) | selo" (ideal 5,3–5,5 verde, aceitável âmbar, baixo/alto vermelho) e escala fina
+  5,0–5,8 em zonas com marcador (posição = (pH − 5) ÷ 0,8), no papel do bloco (só um traço em cima). Sem "Sem o ácido",
+  sem frase de sugestão e sem aviso de pH baixo: só o botão "+ N mL de lático 88%" (leva a 5,4; some com o pH já ideal). Capturas `p5l` (pH) e
+  `p5m` (tabela), 390 e 320 px.
 - Água/grão = água da mostura (24/11/2026, pedido do responsável: "o volume da mostura deve dar a razão água/malte"):
   com a água da mostura informada, `relacao_agua_grao_l_kg` (Parâmetros) = litros ÷ kg de grão da mostura, sincronizada
   a cada cálculo (`sincronizarRelacao` no receitas.js) e gravada assim; mudar a relação nos Parâmetros recalcula os
