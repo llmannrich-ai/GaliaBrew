@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124g";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124g";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124g";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124g";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124g";
-import { abrirBusca } from "./busca.js?v=20261124g";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124g";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124g";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124g";
-import * as O from "./opcoes.js?v=20261124g";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124g";
-import { icone } from "./icones.js?v=20261124g";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124g";
-import { abrirRelatorio } from "./relatorio.js?v=20261124g";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124g";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124h";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124h";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124h";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124h";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124h";
+import { abrirBusca } from "./busca.js?v=20261124h";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124h";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124h";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124h";
+import * as O from "./opcoes.js?v=20261124h";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124h";
+import { icone } from "./icones.js?v=20261124h";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124h";
+import { abrirRelatorio } from "./relatorio.js?v=20261124h";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124h";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -367,6 +367,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const aoRecalcular = [];   // partes do editor que mostram resultado fora do painel (ex.: perfil da água)
   function atualizarResultados(campo) {
     const res = calcularReceita(r);
+    sincronizarRelacao(res.volumes);
     for (const f of aoRecalcular) f(res);
     res.fermentaveis.forEach((x, i) => calculados.get(r.fermentaveis[i])?.(x));
     res.lupulos.forEach((x, i) => calculados.get(r.lupulos[i])?.(x));
@@ -584,8 +585,29 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
 
   const parametros = el("div", { class: "grade-form" });
+  // Água/grão e água da mostura são a mesma informação: com a água da mostura informada, a relação = litros ÷ kg de
+  // grão (sincronizada a cada cálculo e gravada); mudar a relação recalcula os litros da mostura.
+  let campoRelacao = null;
+  let campoAguaMostura = null;
+  const graosMostura = () => calcularReceita(r).volumes.graos_kg;
+  const relacaoMudou = () => {
+    const kg = graosMostura();
+    if (r.agua_mostura_l != null && kg > 0 && Number(r.relacao_agua_grao_l_kg) > 0) {
+      r.agua_mostura_l = Number((Number(r.relacao_agua_grao_l_kg) * kg).toFixed(1));
+      if (campoAguaMostura && document.activeElement !== campoAguaMostura) campoAguaMostura.value = numeroBR(r.agua_mostura_l, 1);
+    }
+    mudou();
+  };
+  const sincronizarRelacao = (v) => {
+    if (!v.agua_mostura_informada || !(v.graos_kg > 0)) return;
+    if (campoRelacao && document.activeElement === campoRelacao) return;
+    r.relacao_agua_grao_l_kg = Number((v.agua_mostura_l / v.graos_kg).toFixed(2));
+    if (campoRelacao) campoRelacao.value = numeroBR(r.relacao_agua_grao_l_kg, 2);
+  };
   function desenharParametros() {
-    const p = (k, rot, casas) => el("label", {}, el("span", {}, rot, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { casas, aoMudar: mudou, desabilitado: des, rotulo: rot }));
+    const p = (k, rot, casas, aoMudar = mudou) => el("label", {}, el("span", {}, rot, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { casas, aoMudar, desabilitado: des, rotulo: rot }));
+    const relacao = p("relacao_agua_grao_l_kg", "Água/grão na mostura (L/kg)", 2, relacaoMudou);
+    campoRelacao = relacao.querySelector("input");
     preencher(parametros, 
       p("volume_lote_l", "Volume no fermentador (L)", 1),
       p("eficiencia_pct", "Eficiência (%)", 0),
@@ -594,7 +616,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       p("perda_panela_l", "Perda na panela (L)", 1),
       p("perda_tina_l", "Perda na tina (L)", 1),
       p("absorcao_grao_l_kg", "Absorção do grão (L/kg)", 2),
-      p("relacao_agua_grao_l_kg", "Água/grão na mostura (L/kg)", 1),
+      relacao,
       p("temp_grao_c", "Temperatura do grão (°C)", 1));
   }
   desenharParametros();
@@ -945,7 +967,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     }, () => adicionarLinhaTabela("leveduras", { levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Nome")),
   });
 
-  // ---------- água: origem, diluição, alvo, sais e perfil final ----------
+  // ---------- água: base, alvo, sais e perfil final (diluição fora da tela desde 24/11/2026) ----------
   function secaoAgua() {
     const copiaPerfil = (a) => (a ? { nome: a.nome, ...Object.fromEntries(IONS.map((k) => [k, a[k] == null ? 0 : Number(a[k])])) } : null);
     const escolha = (chave, rot, ajuda, vazio) => {
@@ -960,7 +982,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         } },
       },
       el("option", { value: "", text: vazio, selected: !atual }),
-      atual ? el("option", { value: "__atual", text: `${atual.nome ?? "Perfil"} (guardado nesta receita)`, selected: true }) : null,
+      atual ? el("option", { value: "__atual", text: atual.nome ?? "Perfil", selected: true }) : null,
       cat.aguas.length ? el("optgroup", { label: "Cadastro" }, cat.aguas.map((x) => el("option", { value: x.id, text: `${x.nome}${x.dono ? " (minha)" : ""}` }))) : null);
       return el("label", {}, el("span", {}, rot, info(ajuda)), s);
     };
@@ -1015,7 +1037,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     const caixaPh = el("div", { class: "resumo-agua", "aria-live": "polite" });
     aoRecalcular.push((res) => {
       const m = res.ph_mostura;
-      if (!m) { preencher(caixaPh, el("p", { class: "nota", text: "Adicione grãos na mostura para estimar o pH." })); return; }
+      if (!m) { preencher(caixaPh); return; }
       const faixa = m.ph < 5.2 ? "baixo" : m.ph > 5.6 ? "alto" : m.ph >= 5.3 && m.ph <= 5.5 ? "ideal" : "ok";
       const sugestao = m.latico_88_ml >= 0.1;
       preencher(caixaPh,
@@ -1036,6 +1058,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
     // Volumes das duas águas: o cervejeiro informa; vazio = sugestão (aparece como texto de fundo do campo).
     const campoMostura = campoNumero(r, "agua_mostura_l", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: "Água da mostura (L)" });
+    campoAguaMostura = campoMostura;
     const campoLavagem = campoNumero(r, "agua_lavagem_l", { casas: 1, aoMudar: mudou, desabilitado: des, rotulo: "Água de lavagem (L)" });
     const notaVolumes = el("p", { class: "nota largo", "aria-live": "polite" });
     aoRecalcular.push((res) => {
@@ -1047,12 +1070,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const informou = v.agua_mostura_informada || v.agua_lavagem_informada;
       const dif = v.agua_diferenca_l;
       const longe = informou && Math.abs(dif) >= 0.5;
+      if (longe) partes.push(`necessária ${numeroBR(v.agua_necessaria_l, 1)} L: ${dif > 0 ? "sobram" : "faltam"} ${numeroBR(Math.abs(dif), 1)} L`);
       notaVolumes.classList.toggle("alerta", longe);
-      notaVolumes.textContent = `${partes.join(" · ")}. ` + (!informou
-        ? "Campos vazios usam a sugestão (kg de grão × relação água/grão; a lavagem completa a água necessária)."
-        : longe
-          ? `A receita precisa de ${numeroBR(v.agua_necessaria_l, 1)} L para chegar a ${numeroBR(v.pre_fervura_l, 1)} L na pré-fervura: ${dif > 0 ? "sobram" : "faltam"} ${numeroBR(Math.abs(dif), 1)} L.`
-          : `Bate com a água necessária (${numeroBR(v.agua_necessaria_l, 1)} L).`);
+      notaVolumes.textContent = partes.join(" · ");
     });
 
     const perfil = el("div", { class: "tabela-rolagem" });
@@ -1065,19 +1085,18 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       grupos.LAVAGEM.litros.textContent = `${numeroBR(res.volumes.agua_lavagem_l, 1)} L`;
       const a = res.agua;
       if (!a) {
-        preencher(perfil, el("p", { class: "nota", text: "Escolha a água de origem ou adicione sais para ver o perfil." }));
+        preencher(perfil);
         preencher(resumo); preencher(resumoMostura); preencher(resumoLavagem);
         return;
       }
       const alvo = r.agua_alvo;
-      const fator = 1 - (Number(r.agua_diluicao_pct) || 0) / 100;
       const longe = (v, k) => alvo && Math.abs(v - Number(alvo[k] ?? 0)) > Math.max(15, 0.25 * Number(alvo[k] ?? 0));
       preencher(perfil, el("table", { class: "tabela perfil-agua" },
-        el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Origem", "Orig."], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Panela", "Pan."], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
+        el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Base", "Base"], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Panela", "Pan."], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
           .map(([longo, curto], i) => el("th", { class: i ? "num" : "" }, el("span", { class: "ion-longo", text: longo }), el("abbr", { class: "ion-curto", title: longo, text: curto }))))),
         el("tbody", {}, IONS.map((k) => el("tr", {},
           el("td", {}, el("span", { class: "ion-longo", text: O.NOME_ION[k] }), el("abbr", { class: "ion-curto", title: O.NOME_ION[k], text: O.SIMBOLO_ION[k] })),
-          el("td", { class: "num", text: numeroBR(Number(r.agua_origem?.[k] ?? 0) * fator, 0) }),
+          el("td", { class: "num", text: numeroBR(a.base.ions[k], 0) }),
           el("td", { class: `num${longe(a.mostura.ions[k], k) ? " longe" : ""}`, text: numeroBR(a.mostura.ions[k], 0) }),
           el("td", { class: "num", text: numeroBR(a.lavagem.ions[k], 0) }),
           el("td", { class: `num${longe(a.panela.ions[k], k) ? " longe" : ""}`, text: numeroBR(a.panela.ions[k], 0) }),
@@ -1091,21 +1110,17 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         el("div", { class: "metrica" }, el("span", { class: "rot", text: "Alcalinidade residual da lavagem" }), el("span", { class: "val", text: `${numeroBR(a.lavagem.alcalinidade_residual, 0)} ppm` })));
       preencher(resumo,
         el("div", { class: "metrica" }, el("span", { class: "rot" }, "Sulfato/cloreto na panela", info(O.AJUDA_VOLUME.sulfato_cloreto)),
-          el("span", { class: "val", text: so4cl(a.panela) })),
-        el("p", { class: "nota", text: `Mostura: ${numeroBR(a.mostura.sais_g, 1)} g de sais em ${numeroBR(a.mostura.litros, 1)} L. Lavagem: ${numeroBR(a.lavagem.sais_g, 1)} g em ${numeroBR(a.lavagem.litros, 1)} L. Panela = as duas águas juntas, o que chega à fervura.` }));
+          el("span", { class: "val", text: so4cl(a.panela) })));
     });
 
     const sec = el("section", { class: "cartao", dataset: { secao: "agua" } },
       el("div", { class: "titulo-linha" }, tituloSecao("agua", "Água")),
-      el("div", { class: "grade-form" },
-        escolha("agua_origem", "Água de origem", O.AJUDA_VOLUME.agua_origem, "— nenhuma (só destilada) —"),
-        el("label", {}, el("span", {}, "Diluição com destilada (%)", info(O.AJUDA_VOLUME.agua_diluicao_pct)),
-          campoNumero(r, "agua_diluicao_pct", { casas: 0, aoMudar: mudou, desabilitado: des, rotulo: "Diluição com destilada (%)", placeholder: "0" })),
+      el("div", { class: "agua-perfis" },
+        escolha("agua_origem", "Água de base", O.AJUDA_VOLUME.agua_origem, "— nenhuma —"),
         escolha("agua_alvo", "Perfil alvo", O.AJUDA_VOLUME.agua_alvo, "— sem alvo —")),
       // Cada água num bloco próprio, com tudo o que vai nela (litros, sais, ácido) e o que resulta dela.
       el("div", { class: "bloco-agua mostura" },
         el("div", { class: "bloco-agua-topo" }, el("h4", { class: "bloco-agua-titulo", text: "Água da mostura" }), grupos.MOSTURA.litros),
-        el("p", { class: "nota", text: "A água em que o grão fica de molho. Sais e ácido desta água mudam o pH da mostura." }),
         el("label", { class: "bloco-agua-litros-campo" }, el("span", {}, "Litros de água da mostura", info(O.AJUDA_VOLUME.agua_mostura_l)), campoMostura),
         tabelaSais("MOSTURA"),
         el("div", { class: "titulo-linha" }, el("h5", {}, "Ácido na mostura", info(O.AJUDA_VOLUME.acidos)),
@@ -1117,12 +1132,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         resumoMostura),
       el("div", { class: "bloco-agua lavagem" },
         el("div", { class: "bloco-agua-topo" }, el("h4", { class: "bloco-agua-titulo", text: "Água de lavagem" }), grupos.LAVAGEM.litros),
-        el("p", { class: "nota", text: "A água para lavar o grão depois da mostura. Não muda o pH da mostura. Zero = sem lavagem." }),
         el("label", { class: "bloco-agua-litros-campo" }, el("span", {}, "Litros de água de lavagem", info(O.AJUDA_VOLUME.agua_lavagem_l)), campoLavagem),
         tabelaSais("LAVAGEM",
           el("button", { type: "button", class: "secundario pequeno", text: "Igual à mostura", title: "Troca os sais da lavagem pelos da mostura, na proporção dos volumes", on: { click: lavagemIgualMostura } })),
         resumoLavagem),
-      el("h4", {}, "Total do dia", info(O.AJUDA_VOLUME.volumes_agua)),
+      el("h4", { text: "Total do dia" }),
       notaVolumes,
       el("h4", { text: "Perfil: mostura, lavagem e panela" }),
       perfil, resumo);
