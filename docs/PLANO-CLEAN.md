@@ -6,7 +6,7 @@ parede, com arte, na linha do Brewfather.
 
 Status: **aprovado em 24/11/2026** (o responsável aceitou as recomendações da seção 10: cores do tema sem decoração,
 números no topo + linha fina ao rolar, roleta direto na quantidade, Completo sai se o Clean for aprovado).
-**K0 e K3 feitas em 24/11/2026.** Próximas: K2 → K1 → K4 → K5 → K6.
+**K0 e K3 feitas e publicadas em 24/11/2026 (PR #50); K2, K1, K4 e K5 feitas em 24/11/2026.** Próxima: K6 (acabamento + iPhone real).
 
 Plataforma: CELULAR (regra nº 0). Tudo abaixo é desenhado e conferido primeiro em 390 px e 320 px com toque;
 o computador só precisa não quebrar.
