@@ -1822,6 +1822,46 @@ const erros = [];
   await cel.evaluate(() => window.scrollBy(0, -60));
   await cel.waitForTimeout(200);
   await cel.screenshot({ path: `${SAIDA}/p7i-clean-passos.png` });
+  // K5: Água, Lote e Notas em resumo; tocar abre a seção inteira numa janela; o painel lateral vai para os Parâmetros.
+  const resumosK5 = await cel.evaluate(() => Object.fromEntries(["agua", "brassagem", "notas"].map((k) => {
+    const sec = document.querySelector(`.editor-corpo > [data-secao="${k}"]`);
+    const linhas = [...(sec?.querySelectorAll("li.ing") ?? [])].map((l) => Math.round(l.getBoundingClientRect().height));
+    return [k, { resumida: sec?.classList.contains("resumida"), linhas, texto: sec?.textContent ?? "", campos: sec?.querySelectorAll("input, select, textarea").length }];
+  })));
+  verificar(Object.values(resumosK5).every((x) => x.resumida && x.campos === 0 && x.linhas.length >= 1 && x.linhas.length <= 3 && x.linhas.every((h) => h <= 80)),
+    `clean K5: Água, Lote e Notas em resumo, sem campos (${Object.entries(resumosK5).map(([k, x]) => `${k}: ${x.linhas.join("+")} px`).join("; ")})`);
+  verificar(/Mostura \d+,\d L · Lavagem/.test(resumosK5.agua.texto) && /pH 5,\d\d/.test(resumosK5.agua.texto) && /Gesso 6 g/.test(resumosK5.agua.texto),
+    "clean K5: resumo da água com litros, sais e pH");
+  verificar(/OG \/ FG medidas/.test(resumosK5.brassagem.texto) && /1,048/.test(resumosK5.brassagem.texto) && /Priming/.test(resumosK5.brassagem.texto),
+    "clean K5: resumo do lote com OG/FG medidas e priming");
+  verificar(await cel.locator(".painel-lote").count() === 0 && /Pré-fervura/.test(await cel.textContent(".topo-clean details.lote")),
+    "clean K5: sem painel lateral; volumes dentro dos Parâmetros");
+  await cel.locator('.editor-corpo > [data-secao="agua"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.evaluate(() => window.scrollBy(0, -60));
+  await cel.waitForTimeout(200);
+  await cel.screenshot({ path: `${SAIDA}/p7j-clean-resumos.png` });
+  await tocar('.editor-corpo > [data-secao="agua"] button.ing-nome');
+  await cel.waitForSelector('dialog.resumo-janela[data-secao="agua"][open]');
+  verificar(await cel.locator("dialog.resumo-janela .bloco-agua").count() === 2 && await cel.isVisible("dialog.resumo-janela .ph-cartao"),
+    "clean K5: tocar na Água abre a seção inteira (blocos da mostura e da lavagem, pH) numa janela");
+  await cel.waitForTimeout(150);
+  await cel.screenshot({ path: `${SAIDA}/p7k-clean-agua-janela.png` });
+  await conferirLateral("clean, janela da água");
+  await tocar("dialog.resumo-janela .item-pronto");
+  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
+  await tocar('.editor-corpo > [data-secao="brassagem"] button.ing-nome');
+  await cel.waitForSelector('dialog.resumo-janela[data-secao="brassagem"][open]');
+  verificar(await cel.isVisible('dialog.resumo-janela input[aria-label="OG medida"]') && /Eficiência real/.test(await cel.textContent("dialog.resumo-janela")),
+    "clean K5: tocar no Lote abre os campos da brassagem e o que foi medido");
+  await tocar("dialog.resumo-janela .item-fechar");
+  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
+  await tocar('.editor-corpo > [data-secao="notas"] button.ing-nome');
+  await cel.waitForSelector('dialog.resumo-janela[data-secao="notas"][open]');
+  await cel.fill('dialog.resumo-janela textarea[aria-label="Notas"]', "Moagem 1,1 mm. Dry hop no 3º dia.");
+  await tocar("dialog.resumo-janela .item-pronto");
+  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
+  verificar((await cel.textContent('.editor-corpo > [data-secao="notas"]')).includes("Moagem 1,1 mm. Dry hop no 3º dia."),
+    "clean K5: nota escrita na janela aparece no resumo");
   await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
   // Tocar na quantidade = roleta direto (sem abrir a janela); a OG acompanha e Cancelar volta.
   const qtdFicha = '[data-secao="fermentaveis"] li.ing.ficha input.qtd';

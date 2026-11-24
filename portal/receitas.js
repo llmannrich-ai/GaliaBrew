@@ -600,6 +600,59 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return sec;
   }
 
+  /**
+   * Clean (K5): Água, Lote e Notas viram um cartão de resumo (linhas(res) → [{ nome, sub, valor, valor2, estado }]);
+   * tocar abre a seção inteira de sempre (conteudo, os mesmos nós e campos) numa janela. Ao fechar, o resumo é refeito.
+   */
+  function secaoResumida(chave, titulo, conteudo, linhas) {
+    const lista = el("ol", { class: "linhas-ing passos resumo" });
+    const sec = el("section", { class: "cartao resumida", dataset: { secao: chave } },
+      el("div", { class: "titulo-linha" }, tituloSecao("geral", titulo), el("span", { class: "resumo-seta", "aria-hidden": "true", text: "›" })),
+      lista);
+    const desenhar = (res) => preencher(lista, linhas(res).map((x) => el("li", { class: "ing ficha passo" },
+      el("button", { type: "button", class: "ing-nome", "aria-haspopup": "dialog", "aria-label": `${titulo}: ${x.nome}. Abrir`, on: { click: abrir } },
+        el("span", { class: "ing-nome-linha" }, el("strong", { class: "ing-nome-txt", text: x.nome })),
+        x.sub ? el("span", { class: "ing-sub", text: x.sub }) : null),
+      el("div", { class: "ficha-num" },
+        x.valor ? el("b", { class: `ficha-valor ${x.estado ? "estado-" + x.estado : ""}`.trim(), text: x.valor }) : null,
+        x.valor2 ? el("span", { class: "ficha-valor2", text: x.valor2 }) : null))));
+    sec.addEventListener("click", (e) => { if (!e.target.closest("button, a")) abrir(); });
+    function abrir() {
+      if (document.querySelector("dialog.item-janela")) return;
+      const fechar = () => { if (d.open) d.close(); };
+      const d = el("dialog", { class: "item-janela resumo-janela", dataset: { secao: chave }, "aria-label": titulo },
+        el("div", { class: "item-topo" }, el("div", { class: "item-titulo" }, el("strong", { class: "item-nome", text: titulo })),
+          el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+        el("div", { class: "item-corpo" }, conteudo),
+        el("div", { class: "item-acoes" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+      let roletaNoToque = false;
+      d.addEventListener("pointerdown", () => { roletaNoToque = roletaAberta(); }, true);
+      d.addEventListener("click", (e) => {
+        if (e.target !== d || roletaNoToque) return;
+        const b = d.getBoundingClientRect();
+        if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+      });
+      d.addEventListener("cancel", (e) => { if (roletaAberta()) { e.preventDefault(); fecharRoleta(false); } });
+      window.addEventListener("hashchange", fechar);
+      d.addEventListener("close", () => {
+        window.removeEventListener("hashchange", fechar);
+        if (roletaAberta()) fecharRoleta(true);
+        d.remove();                                    // os nós da seção saem junto; seguem ligados à receita
+        desenhar(calcularReceita(r));
+        sec.querySelector("button.ing-nome")?.focus({ preventScroll: true });
+      });
+      document.body.append(d);
+      d.showModal();
+      d.querySelector(".item-fechar").focus({ preventScroll: true });
+    }
+    aoRecalcular.push(desenhar);
+    return sec;
+  }
+  const SAL_CURTO = { GESSO: "Gesso", CLORETO_CALCIO: "CaCl₂", SULFATO_MAGNESIO: "Sal amargo", CLORETO_MAGNESIO: "MgCl₂", CLORETO_SODIO: "Sal", BICARBONATO_SODIO: "Bicarbonato" };
+  const ACIDO_CURTO = { LATICO_88: "Lático", FOSFORICO_10: "Fosfórico 10%", FOSFORICO_85: "Fosfórico 85%" };
+  /** pH da mostura: ideal 5,3–5,5; aceitável 5,2–5,6 (mesma faixa da barra de números). */
+  const estadoPh = (ph) => (ph == null ? null : ph >= 5.3 && ph <= 5.5 ? ["dentro", "ideal"] : ph >= 5.2 && ph <= 5.6 ? ["perto", "aceitável"] : ["fora", ph < 5.2 ? "baixo" : "alto"]);
+
   /** Botão "+" (só o sinal, sem borda) que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
   const botaoAdicionar = (tipo, aoEscolher, aoLivre) => () => el("button", {
     type: "button", class: "adicionar", text: "+", title: "Adicionar", "aria-label": "Adicionar",
@@ -1432,6 +1485,47 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     equipamentoCampo,
     parametros);
 
+  // Clean (K5): Água, Lote e Notas em resumo; o painel lateral (Mais números, Volumes, Água) vai para os Parâmetros.
+  let resumos = null;
+  if (ficha) {
+    for (const b of [pNumeros, pVolumes, pAgua]) b.open = true;
+    lote.append(el("div", { class: "parametros-numeros" }, pNumeros, pVolumes, pAgua));
+    const gramas = (v) => numeroBR(Number(v), 1).replace(/,0$/, "");
+    resumos = {
+      agua: secaoResumida("agua", "Água", agua, (res) => {
+        const v = res.volumes;
+        const ph = res.ph_mostura?.ph ?? null;
+        const [estado, leituraPh] = estadoPh(ph) ?? [null, null];
+        const itens = [
+          ...(r.sais ?? []).filter((x) => Number(x.gramas) > 0).map((x) => `${SAL_CURTO[x.sal] ?? x.sal} ${gramas(x.gramas)} g`),
+          ...(r.acidos ?? []).filter((x) => Number(x.ml) > 0).map((x) => `${ACIDO_CURTO[x.acido] ?? x.acido} ${gramas(x.ml)} mL`)];
+        const linhasAgua = [{
+          nome: `Mostura ${numeroBR(v.agua_mostura_l, 1)} L · Lavagem ${numeroBR(v.agua_lavagem_l, 1)} L`,
+          sub: itens.length ? itens.join(" · ") : "Sem sais nem ácido",
+          valor: ph != null ? `pH ${numeroBR(ph, 2)}` : null, valor2: leituraPh, estado,
+        }];
+        if (Math.abs(v.agua_diferenca_l) >= 0.5) linhasAgua.push({
+          nome: "Água necessária", sub: v.agua_diferenca_l < 0 ? `faltam ${numeroBR(-v.agua_diferenca_l, 1)} L` : `sobram ${numeroBR(v.agua_diferenca_l, 1)} L`,
+          valor: `${numeroBR(v.agua_necessaria_l, 1)} L`, estado: "perto" });
+        return linhasAgua;
+      }),
+      brassagem: secaoResumida("brassagem", "Lote", el("div", {}, brassagem, pMedido, pPriming), (res) => {
+        const m = res.medido;
+        const fora = [];
+        if (m.og != null || m.fg != null) fora.push({ nome: "OG / FG medidas",
+          sub: `planejado ${numeroBR(res.og, 3)} / ${numeroBR(res.fg, 3)}`,
+          valor: `${m.og != null ? numeroBR(m.og, 3) : "—"} / ${m.fg != null ? numeroBR(m.fg, 3) : "—"}` });
+        if (m.eficiencia_pct != null) fora.push({ nome: "Eficiência real", sub: m.abv_pct != null ? `ABV real ${numeroBR(m.abv_pct, 1)}%` : null, valor: `${numeroBR(m.eficiencia_pct, 0)}%` });
+        if (res.priming?.gramas != null) fora.push({ nome: `Priming (${numeroBR(r.co2_alvo_vol, 1)} vol)`, sub: O.rotulo(O.ACUCAR_PRIMING, res.priming.acucar), valor: `${numeroBR(res.priming.gramas, 0)} g` });
+        return fora.length ? fora : [{ nome: "Medidas do dia", sub: "Nº, data, OG/FG medidas, volume e priming" }];
+      }),
+      notas: secaoResumida("notas", "Notas e fotos", notas, () => {
+        const t = String(r.notas ?? "").trim().replace(/\s+/g, " ");
+        return [{ nome: t ? (t.length > 90 ? `${t.slice(0, 90)}…` : t) : "Sem notas", sub: "Notas e fotos da brassagem" }];
+      }),
+    };
+  }
+
   conteudo.classList.add("com-vital");
   // Clean (K1): meta do lote em cima, nome como título (o campo sem moldura), estilo como link, Parâmetros numa linha
   // logo abaixo; Relatório/Nova a partir desta/Informações/Excluir no menu ⋯; Dados gerais saem da página.
@@ -1441,8 +1535,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     : el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
-      inicio, ficha ? null : lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, ficha ? null : geral, notas),
-    painel);
+      ...(resumos
+        ? [inicio, fermentaveis, lupulos, leveduras, mostura, fermentacao, resumos.agua, outros, resumos.brassagem, resumos.notas]
+        : [inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas])),
+    ficha ? null : painel);
   // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
   for (const n of [topo, corpo]) {
     n.addEventListener("focusin", (e) => {

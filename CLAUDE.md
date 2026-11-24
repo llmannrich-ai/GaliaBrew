@@ -59,7 +59,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (modo nuvem da skill /deploy), porque só pode enviar para a própria branch.
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 - `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
-- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; K0, K3, K2, K1 e K4 feitas)
+- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; K0–K5 feitas; falta K6)
 - `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
 - `.claude/skills/deploy/` — skill `/deploy` (22/11/2026, pedida pelo responsável): publicar SEMPRE por ela. Fila entre
   sessões paralelas em `refs/fila/*` no origin (`fila.sh`), atualiza com a main, `conferir.sh` (nº de migração, `?v=`),
@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  334 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  342 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -334,10 +334,18 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   "W-34/70 · Seca · atenuação 80% | 1 pacote"). Tocar abre `dialog.item-janela.passo-janela` com os MESMOS campos das
   colunas (roleta por cima, em popover), ↑ ↓ Remover e Pronto; "+" cria e já abre a janela do item novo
   (`abrirPassoDe`). Sem tabela, sem alça e sem × na linha. Auxiliares de texto `n0` e `juntar`.
-- Falta (plano): K5 Água/Lote/Notas em
-  resumo, K6 acabamento + iPhone real. Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
+- K5 (feito): Água, Lote e Notas em RESUMO (`secaoResumida(chave, titulo, conteudo, linhas)` no receitas.js; as linhas
+  são refeitas a cada cálculo pelo `aoRecalcular`). Água: "Mostura X L · Lavagem Y L" + sais/ácidos curtos (`SAL_CURTO`,
+  `ACIDO_CURTO`) | pH com estado (`estadoPh`: ideal 5,3–5,5 / aceitável 5,2–5,6), e "Água necessária" quando falta/sobra
+  ≥ 0,5 L. Lote: OG/FG medidas (com o planejado), eficiência real (+ ABV real), priming. Notas: começo da nota. Tocar
+  abre `dialog.item-janela.resumo-janela` com a seção de sempre (os mesmos nós; Lote leva também Medido e Priming) e
+  Pronto. Ordem no Clean: fermentáveis, lúpulos, leveduras, mostura, fermentação, água, outros, lote, notas. Sem painel
+  lateral: Mais números, Volumes e Água (do painel) ficam dentro dos Parâmetros (`.parametros-numeros`); as notas de
+  rodapé do painel ("Comparando com...", "IBU pelo Tinseth...") não aparecem no Clean.
+- Falta (plano): K6 acabamento + iPhone real. Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
   escuro, K2 topo/rolado); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro),
-  `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (menu ⋯), `p7h` (passo com roleta), `p7i` (levedura em linha).
+  `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (menu ⋯), `p7h` (passo com roleta), `p7i` (levedura em linha),
+  `p7j` (resumos de Água/Lote/Notas), `p7k` (janela da Água).
 
 ## Janela do item (24/11/2026, pedido do responsável; sem migração)
 - Os detalhes de malte e lúpulo NÃO abrem mais embutidos na linha: tocar no item abre `dialog.item-janela`

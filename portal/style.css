@@ -1531,3 +1531,22 @@ button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, t
 .ficha-valor { font-size: var(--t-corpo); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ficha-valor2 { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .linhas-ing.passos .ing-vazio { padding: .5rem 0; }
+
+/* Clean K5: Água, Lote e Notas em resumo (cartão inteiro tocável, › no título); a seção completa abre numa janela. */
+.cartao.resumida { cursor: pointer; }
+.cartao.resumida > .titulo-linha { min-height: 2.75rem; }
+.resumo-seta { font-size: 1.4rem; line-height: 1; color: var(--suave); padding-right: .35rem; }
+.linhas-ing.resumo .ing-sub { white-space: normal; }
+.ficha-valor.estado-dentro { color: var(--lupulo); }
+.ficha-valor.estado-perto { color: var(--ambar); }
+.ficha-valor.estado-fora { color: var(--fora); }
+/* Na janela, o título da própria seção sai (o topo da janela já diz qual é). */
+.resumo-janela .item-corpo > .cartao > :is(h3, .titulo-linha),
+.resumo-janela .item-corpo > div > .cartao > :is(h3, .titulo-linha) { display: none; }
+.resumo-janela .item-corpo .cartao { margin-bottom: .6rem; }
+/* Parâmetros (Clean): Mais números, Volumes e Água do antigo painel lateral, abaixo dos campos. */
+.parametros-numeros { display: grid; gap: .4rem; margin-top: .8rem; }
+.parametros-numeros .bloco-painel { margin: 0; padding: .5rem .7rem; background: var(--k-pagina, var(--painel)); border-radius: var(--raio-p); }
+@media (max-width: 640px) {
+  :root[data-layout="clean"] .resumo-janela { max-height: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+}
