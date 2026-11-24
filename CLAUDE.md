@@ -151,8 +151,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Editor (E2, 22/11/2026): fermentáveis e lúpulos em linhas (`secaoLinhas` no receitas.js) com a quantidade em
   destaque (`campoQuantidade` do ui.js: botões ± que não roubam o foco, ↑/↓ = 1 passo, Shift = 10; passo no perfil,
   padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
-  (`pct_peso`, `pontos_og`, `g_l` no calculos.js), cor do malte em texto pequeno abaixo do nome (`.ing-sub`, unidade do perfil, 23/11/2026), totais no cabeçalho (fermentáveis: kg em destaque + água/malte efetiva = água da mostura ÷ grão da mostura, 23/11/2026), tocar no item (nome com seta ›, cor ou números; não nos campos) = detalhes (dados do cadastro, subir,
-  descer, remover; o botão ⋯ foi retirado em 23/11/2026, pedido do responsável), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
+  (`pct_peso`, `pontos_og`, `g_l` no calculos.js), cor do malte em texto pequeno abaixo do nome (`.ing-sub`, unidade do perfil, 23/11/2026), totais no cabeçalho (fermentáveis: kg em destaque + água/malte efetiva = água da mostura ÷ grão da mostura, 23/11/2026), tocar no item (nome com seta ›, cor ou números; não nos campos) = JANELA do item (ver "Janela do item" abaixo; o
+  botão ⋯ foi retirado em 23/11/2026), alça ⠿ para arrastar (mouse e toque) ou mover com ↑/↓. Leveduras, outros, mostura e fermentação
   seguem em tabela. O "+" do título da seção (23/11/2026, pedido do responsável: só o sinal, sem borda, 2,25rem negrito na fonte do
   app, cor `--destaque-escuro`, 44 px de toque, `aria-label` "Adicionar"; vale também para os passos de mostura/fermentação)
   abre a busca (`busca.js`): sem acento, vários termos, SEM filtros em botões
@@ -208,7 +208,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124b.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124c.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -281,6 +281,23 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   style.css + linha no `TEMAS` do tema.js + reconferir o contraste.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
   ingrediente só ficam compactas até 640 px.
+
+## Janela do item (24/11/2026, pedido do responsável; sem migração)
+- Os detalhes de malte e lúpulo NÃO abrem mais embutidos na linha: tocar no item abre `dialog.item-janela`
+  (`abrirItem` no `secaoLinhas` do receitas.js). Topo fixo (cor do malte, nome, dados, ×); QUANTIDADE em destaque logo
+  abaixo (lúpulo: "Quando" = etapa e tempo/dia em cima); números do item e "Na receita: OG · IBU · ABV · cor" ao vivo
+  (a barra de números fica atrás da janela; `janelaItem` no `atualizarResultados`); dados do cadastro e fonte; pé com
+  Subir/Descer/Remover e Pronto. Fecha por ×, Pronto, Esc, toque no fundo ou troca de rota; ao fechar a seção é
+  redesenhada e o foco volta ao item. Campos = os mesmos do `montarLinha` (chamado de novo, ligado ao mesmo item;
+  `detalhes` virou função). Item livre (sem cadastro) abre a janela com o foco no nome.
+- Celular: largura toda, presa no TOPO (a roleta sobe do rodapé e a quantidade fica à vista); quantidade com ± de 44 px
+  e campo na largura. Computador: janela de 560 px no centro.
+- Roleta dentro de janela modal: entra na própria janela (`campo.closest("dialog[open]")`), senão ficaria atrás dela
+  sem receber toque (valia também para os Cadastros); rola a janela, não a página. Esc com a roleta aberta fecha só a
+  roleta; toque no fundo com a roleta aberta só fecha a roleta.
+- Teste do navegador: janela no computador (abrir pelos números e pelo nome, × e foco, quantidade ao vivo, Esc, Ctrl+Z,
+  remover) e no celular (390 px no topo, roleta dentro da janela, OK, Pronto, ↶, 320 px sem passar da largura,
+  janela do lúpulo). Capturas `p6i` (malte), `p6u` (roleta na janela), `p6v` (320 px), `p6w` (lúpulo).
 
 ## Roleta para números no celular (23/11/2026, pedido do responsável: digitar quantidade era ruim; sem migração)
 - Tela de toque (`pointer: coarse`): todo `campoNumero` com faixa vira "botão" da roleta (somente leitura, o teclado não
@@ -465,7 +482,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   "Fabricante" (ficha oficial; Swaen = fabricante transcrita pelo Brewtarget, link tirado das notas), "Análise"
   (Embrapa), "Genérico" (beer-analytics / fontes públicas / GaliaBrew), "Meu" (dono preenchido). Aparece na busca de
   ingrediente (selo; o filtro "Fonte" saiu com os demais filtros), na coluna "Fonte" e no formulário dos Cadastros de ingrediente (com link "Ver a
-  ficha", só https) e nos detalhes (⋯) do malte/lúpulo na receita (`fonteNaReceita`: fonte do item ligado do catálogo;
+  ficha", só https) e na janela do malte/lúpulo na receita (`fonteNaReceita`: fonte do item ligado do catálogo;
   sem ligação = "Da receita", caso das 102 importadas do Brewfather). Carga nova de catálogo: gravar `extras.fonte`
   ("Ficha técnica oficial (Marca)…") e `extras.url` para o selo sair certo.
 - Teste `supabase/testes/0009_catalogo_marcas.sql`: 8 ok (contagem por marca, campos preenchidos, leitura por usuário
