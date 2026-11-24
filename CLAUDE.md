@@ -213,7 +213,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124e.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -295,14 +295,20 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Subir/Descer/Remover e Pronto. Fecha por ×, Pronto, Esc, toque no fundo ou troca de rota; ao fechar a seção é
   redesenhada e o foco volta ao item. Campos = os mesmos do `montarLinha` (chamado de novo, ligado ao mesmo item;
   `detalhes` virou função). Item livre (sem cadastro) abre a janela com o foco no nome.
-- Celular: largura toda, presa no TOPO (a roleta sobe do rodapé e a quantidade fica à vista); quantidade com ± de 44 px
+- Celular (24/11/2026, 2ª rodada pedida pelo responsável: "mais baixa, folga em cima semelhante à de baixo"): cartão
+  no MEIO da tela (mesma folga em cima e embaixo; largura − 1rem; malte ~555 px, lúpulo ~435 px em 390 px); números do
+  item (grist/OG ou IBU/g/L) na linha do rótulo "Quantidade"; SEM o texto "Na receita..." (retirado a pedido); fonte dos
+  dados recolhida num `<details>` com o selo; pé numa linha (↑ ↓ só seta, Remover, Pronto). Quantidade com ± de 44 px
   e campo na largura. Computador: janela de 560 px no centro.
+- ADICIONAR abre a janela (24/11/2026, pedido do responsável): item do cadastro → janela com a quantidade em edição
+  (celular: roleta no valor mais provável; computador: foco no campo, Enter = Pronto); item livre → janela com foco no nome.
 - Roleta dentro de janela modal: entra na própria janela (`campo.closest("dialog[open]")`), senão ficaria atrás dela
-  sem receber toque (valia também para os Cadastros); rola a janela, não a página. Esc com a roleta aberta fecha só a
-  roleta; toque no fundo com a roleta aberta só fecha a roleta.
+  sem receber toque (valia também para os Cadastros). A janela fica onde está (margem de cima fixada no lugar atual,
+  sem pular) e termina acima da roleta (max-height), rolando por dentro; tudo volta ao fechar (roleta.js). Esc com a
+  roleta aberta fecha só a roleta; toque no fundo com a roleta aberta só fecha a roleta.
 - Teste do navegador: janela no computador (abrir pelos números e pelo nome, × e foco, quantidade ao vivo, Esc, Ctrl+Z,
   remover) e no celular (390 px no topo, roleta dentro da janela, OK, Pronto, ↶, 320 px sem passar da largura,
-  janela do lúpulo). Capturas `p6i` (malte), `p6u` (roleta na janela), `p6v` (320 px), `p6w` (lúpulo).
+  janela do lúpulo). Capturas `p6i` (malte), `p6u` (roleta na janela), `p6v` (320 px), `p6w` (lúpulo), `p6x` (lúpulo novo).
 
 ## Roleta para números no celular (23/11/2026, pedido do responsável: digitar quantidade era ruim; sem migração)
 - Tela de toque (`pointer: coarse`): todo `campoNumero` com faixa vira "botão" da roleta (somente leitura, o teclado não
