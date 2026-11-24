@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124j";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124j";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124j";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124j";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124j";
-import { abrirBusca } from "./busca.js?v=20261124j";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124j";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124j";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124j";
-import * as O from "./opcoes.js?v=20261124j";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124j";
-import { icone } from "./icones.js?v=20261124j";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124j";
-import { abrirRelatorio } from "./relatorio.js?v=20261124j";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124j";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124k";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124k";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124k";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124k";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124k";
+import { abrirBusca } from "./busca.js?v=20261124k";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124k";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124k";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124k";
+import * as O from "./opcoes.js?v=20261124k";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124k";
+import { icone } from "./icones.js?v=20261124k";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124k";
+import { abrirRelatorio } from "./relatorio.js?v=20261124k";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124k";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -416,6 +416,40 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return res;
   }
 
+  /** Arrastar pela alça ⠿ (mouse e toque): a linha (li ou tr) segue o ponteiro; ao soltar, vai para a posição. */
+  function arrastarPelaAlca(e, i, mover, linhas) {
+    if (e.button !== 0) return;
+    const alca = e.currentTarget;
+    const li = alca.closest("li, tr");
+    const centros = linhas.map((l) => { const b = l.getBoundingClientRect(); return b.top + b.height / 2; });
+    const y0 = e.clientY;
+    let destino = i;
+    let moveu = false;
+    alca.setPointerCapture?.(e.pointerId);
+    const aoMover = (ev) => {
+      const dy = ev.clientY - y0;
+      if (!moveu && Math.abs(dy) < 4) return;
+      moveu = true;
+      li.classList.add("arrastando");
+      li.style.transform = `translateY(${dy}px)`;
+      destino = centros.filter((c, k) => k !== i && c < centros[i] + dy).length;
+    };
+    const fim = (ev) => {
+      alca.removeEventListener("pointermove", aoMover);
+      alca.removeEventListener("pointerup", fim);
+      alca.removeEventListener("pointercancel", fim);
+      li.classList.remove("arrastando");
+      li.style.transform = "";
+      // Solta a captura e só redesenha no próximo quadro: remover a alça ainda capturada deixa o Chrome sem
+      // gerar o "click" do toque seguinte.
+      if (alca.hasPointerCapture?.(ev.pointerId)) alca.releasePointerCapture(ev.pointerId);
+      if (moveu && destino !== i) requestAnimationFrame(() => mover(destino, false));
+    };
+    alca.addEventListener("pointermove", aoMover);
+    alca.addEventListener("pointerup", fim);
+    alca.addEventListener("pointercancel", fim);
+  }
+
   // ---------- seção genérica de lista ----------
   function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao }) {
     const corpo = el("tbody");
@@ -432,11 +466,26 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         corpo.append(el("tr", {},
           colunas.map((c) => el("td", { class: c.num ? "num" : "", dataset: { rotulo: c.r } }, comRotulo(c.campo(item, i), c.r))),
           leitura ? null : el("td", { class: "acoes-linha" },
-            i > 0 ? el("button", { type: "button", class: "icone", title: "Subir", "aria-label": "Subir", text: "↑", on: { click: () => acao(() => { [r[chave][i - 1], r[chave][i]] = [r[chave][i], r[chave][i - 1]]; desenhar(); mudou(); }) } }) : null,
+            // Alça ⠿ (24/11/2026, pedido do responsável: no lugar do ↑), a mesma dos maltes e lúpulos: arrastar ou ↑/↓.
+            el("button", {
+              type: "button", class: "icone ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
+              "aria-label": `Mover ${rotuloItem(item, i)}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
+              on: {
+                keydown: (e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); mover(i, i + (e.key === "ArrowUp" ? -1 : 1), true); } },
+                pointerdown: (e) => arrastarPelaAlca(e, i, (para, focar) => mover(i, para, focar), [...corpo.querySelectorAll(":scope > tr")]),
+              },
+            }),
             el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover", text: "×", on: { click: () => acao(() => { r[chave].splice(i, 1); desenhar(); mudou(); }) } }))));
       });
       atualizarResultados();
     };
+    const rotuloItem = (item, i) => (chave === "mostura" ? O.rotuloPasso(r.mostura, i) : String(item.nome ?? "").trim() || "item");
+    /** Muda o passo de posição (um passo do desfazer); no teclado o foco acompanha a alça. */
+    function mover(de, para, focar) {
+      if (para < 0 || para >= r[chave].length || para === de) return;
+      acao(() => { const [x] = r[chave].splice(de, 1); r[chave].splice(para, 0, x); desenhar(); mudou(); });
+      if (focar) corpo.querySelectorAll(".ing-alca")[para]?.focus();
+    }
     secoes[chave] = desenhar;
     desenhar();
     return sec;
@@ -667,7 +716,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         "aria-label": `Mover ${String(item.nome ?? "").trim() || "item"}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
         on: {
           keydown: (e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); mover(i + (e.key === "ArrowUp" ? -1 : 1)); } },
-          pointerdown: (e) => arrastar(e, i, mover),
+          pointerdown: (e) => arrastarPelaAlca(e, i, mover, [...lista.querySelectorAll(":scope > li.ing")]),
         },
       });
       const li = el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas);
@@ -782,41 +831,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       if (focarNome && !leitura) d.querySelector('.grade-form input[aria-label="Nome"]')?.focus();
       else if (editarQtd && !leitura) editarCampo(d.querySelector("input.qtd"));
       else d.querySelector(".item-fechar").focus({ preventScroll: true });
-    }
-
-    /** Arrastar pela alça (mouse e toque): a linha segue o ponteiro; ao soltar, vai para a posição. */
-    function arrastar(e, i, mover) {
-      if (e.button !== 0) return;
-      const alca = e.currentTarget;
-      const li = alca.closest("li");
-      const linhas = [...lista.querySelectorAll(":scope > li.ing")];
-      const centros = linhas.map((l) => { const b = l.getBoundingClientRect(); return b.top + b.height / 2; });
-      const y0 = e.clientY;
-      let destino = i;
-      let moveu = false;
-      alca.setPointerCapture?.(e.pointerId);
-      const aoMover = (ev) => {
-        const dy = ev.clientY - y0;
-        if (!moveu && Math.abs(dy) < 4) return;
-        moveu = true;
-        li.classList.add("arrastando");
-        li.style.transform = `translateY(${dy}px)`;
-        destino = centros.filter((c, k) => k !== i && c < centros[i] + dy).length;
-      };
-      const fim = (ev) => {
-        alca.removeEventListener("pointermove", aoMover);
-        alca.removeEventListener("pointerup", fim);
-        alca.removeEventListener("pointercancel", fim);
-        li.classList.remove("arrastando");
-        li.style.transform = "";
-        // Solta a captura e só redesenha no próximo quadro: remover a alça ainda capturada deixa o Chrome sem
-        // gerar o "click" do toque seguinte.
-        if (alca.hasPointerCapture?.(ev.pointerId)) alca.releasePointerCapture(ev.pointerId);
-        if (moveu && destino !== i) requestAnimationFrame(() => mover(destino, false));
-      };
-      alca.addEventListener("pointermove", aoMover);
-      alca.addEventListener("pointerup", fim);
-      alca.addEventListener("pointercancel", fim);
     }
 
     function desenhar() {
