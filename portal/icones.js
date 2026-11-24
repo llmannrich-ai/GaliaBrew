@@ -1,6 +1,6 @@
 // icones.js — ícones do GaliaBrew, desenho próprio (grade 24 × 24, traço 1,75, pontas arredondadas, cor = texto).
 // Em JS (e não num arquivo .svg): saem pelo svg() do ui.js, sem requisição extra e dentro da CSP.
-import { svg } from "./ui.js?v=20261124e";
+import { svg } from "./ui.js?v=20261124f";
 
 // Cada ícone = lista de elementos [tag, atributos]. "c" = círculo, "p" = caminho, "e" = elipse.
 export const DESENHOS = {
@@ -107,6 +107,29 @@ export const DESENHOS = {
   compartilhar: [["p", { d: "M12 14.5V3.5" }], ["p", { d: "M8 7.5l4-4 4 4" }], ["p", { d: "M8.5 10.5H6v10h12v-10h-2.5" }]],
   // câmera (fotos da brassagem)
   foto: [["p", { d: "M4.5 8h3l1.5-2.5h6L16.5 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" }], ["c", { cx: 12, cy: 13.2, r: 3.3 }]],
+  // garrafa de cerveja com rótulo (priming)
+  garrafa: [
+    ["p", { d: "M10 2.5h4" }],
+    ["p", { d: "M10.4 2.5v4.3c0 .9-.5 1.5-1.2 2.1-1 .8-1.7 1.9-1.7 3.4V20a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5v-7.7c0-1.5-.7-2.6-1.7-3.4-.7-.6-1.2-1.2-1.2-2.1V2.5" }],
+    ["p", { d: "M7.5 13.5h9M7.5 18.5h9" }],
+  ],
+  // refratômetro: tubo inclinado, ocular em cima, tampa do prisma embaixo e uma gota de amostra
+  refratometro: [
+    ["p", { d: "M8.6 11.6l6.9-6.9 3.8 3.8-6.9 6.9" }],
+    ["p", { d: "M17.6 3.6l1.3-1.3 2.8 2.8-1.3 1.3" }],
+    ["p", { d: "M8.6 11.6l-4.1 4.1 3.8 3.8 4.1-4.1z" }],
+    ["p", { d: "M17 15.5c1.3 1.6 2.3 2.9 2.3 4.1a2.3 2.3 0 0 1-4.6 0c0-1.2 1-2.5 2.3-4.1z" }],
+  ],
+  // densímetro boiando na proveta (nível do líquido e escala na haste)
+  densimetro: [
+    ["p", { d: "M6.5 3h11" }],
+    ["p", { d: "M8 3v15.5a4 4 0 0 0 8 0V3" }],
+    ["p", { d: "M8 9.5h8" }],
+    ["p", { d: "M12 3.8v7.4" }],
+    ["p", { d: "M12 11.2c1.2 0 1.9 1.1 1.9 2.6v3.4a1.9 1.9 0 0 1-3.8 0v-3.4c0-1.5.7-2.6 1.9-2.6z" }],
+  ],
+  // seta de abrir (lista de ferramentas)
+  abrir: [["p", { d: "M9 5.5l6.5 6.5L9 18.5" }]],
   baixar: [["p", { d: "M12 3.5v11" }], ["p", { d: "M8 10.5l4 4 4-4" }], ["p", { d: "M5 19.5h14" }]],
 };
 
