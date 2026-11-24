@@ -202,7 +202,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   sem arquivo .svg para não precisar de requisição nem mexer na CSP): títulos de seção com ícone num círculo, botões
   (adicionar, desfazer, refazer, voltar) e copinho na marca. Barra do grist (cada malte na própria cor, % do peso,
   descrição para leitor de tela) e linha do tempo da fervura (`graficos.js`: bolinha por lúpulo, tamanho ~ gramas,
-  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Lista de receitas em cartões no celular
+  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Copo ao lado da barra do grist (24/11/2026, pedido do
+  responsável) na cor FINAL da cerveja (`corHexDeSrm`, igual ao copo da barra vital; `aria-label` "Cor da cerveja: N EBC");
+  a barra mostra a cor de cada grão (`corHexDeMalte`). Captura `p6u` (390 e 320 px). Lista de receitas em cartões no celular
   (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app mantido.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
@@ -213,7 +215,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124e.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124g.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
