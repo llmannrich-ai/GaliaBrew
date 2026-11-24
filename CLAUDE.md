@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124o.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124p.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -238,6 +238,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   um pouco"; só style.css): no celular ± 36×36 px (eram 44), quantidade 69×32 (80×40), campos de texto/número e
   seletores ~32 px de altura (40), com a letra de 16 px mantida nos campos (abaixo disso o iPhone dá zoom ao tocar). "+" de adicionar, × de remover e botões
   da barra do app continuam com 44 px.
+- Lúpulo em 2 linhas no celular (24/11/2026, pedido do responsável: "ocupar menos linhas"; só style.css): etapa e tempo
+  à DIREITA do nome (seletor 6,4rem, tempo 2,9rem, só na linha; o nome longo quebra); quantidade e IBU/g/L embaixo.
+  Whirlpool: a temperatura desce para baixo do tempo. Teste "toque 390/320 px: etapa e tempo do lúpulo à direita do
+  nome"; capturas `p6l-celular-lupulos` (390) e `-320`.
 - Leitura no celular (23/11/2026, regra nº 0; fim do bloco `max-width: 640px` do style.css): nenhum texto abaixo de
   ~12 px (rótulos em maiúsculas da barra vital, dos cartões de tabela e GRIST/OG/IBU iam a 10,9 px), dado do
   ingrediente (`.ing-sub`) e legenda do grist quebram linha em vez de cortar, × de remover no canto do cartão ao lado do
