@@ -494,6 +494,7 @@ export function calcularReceita(r) {
         mostura: perfilDe(sais.filter((x) => x.etapa === "MOSTURA"), aguaMostura),
         lavagem: perfilDe(sais.filter((x) => x.etapa === "LAVAGEM"), aguaLavagem),
         panela: perfilDe(sais, aguaTotal),
+        base: perfilDe([], aguaTotal),               // água de base sem sais (coluna "Base" do perfil)
       }
     : null;
   // pH estimado da mostura: grãos da mostura, água da mostura (só com os sais da mostura), ácidos na mostura.

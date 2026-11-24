@@ -260,8 +260,7 @@ export function montarRelatorio(r, res, { estilo = null, equipamento = null, ago
   if (a || acidos.length) {
     const so4cl = (p) => (p?.sulfato_cloreto == null ? "—" : `${n(p.sulfato_cloreto, 2)} (${O.LEITURA_SO4_CL[leituraSulfatoCloreto(p.sulfato_cloreto)]})`);
     d.pares([
-      ["Água de origem", r.agua_origem?.nome ?? "—"],
-      ["Diluição (destilada/osmose)", Number(r.agua_diluicao_pct) > 0 ? `${n(r.agua_diluicao_pct, 0)}%` : "—"],
+      ["Água de base", r.agua_origem?.nome ?? "—"],
       ["Perfil alvo", r.agua_alvo?.nome ?? "—"],
       acidos.length && res.ph_mostura ? ["pH da mostura sem o ácido", n(res.ph_mostura.ph_sem_acido, 2)] : null,
     ]);
@@ -277,13 +276,12 @@ export function montarRelatorio(r, res, { estilo = null, equipamento = null, ago
     }
     if (a) {
       const alvo = r.agua_alvo;
-      const fator = 1 - Math.min(100, Math.max(0, Number(r.agua_diluicao_pct) || 0)) / 100;
       const lIon = alvo ? 75 : 90;
       d.tabela([
-        { rot: "ÍON (ppm)", l: LARGURA - lIon * (alvo ? 5 : 4) }, { rot: "ORIGEM", l: lIon, alinh: "fim" }, { rot: "MOSTURA", l: lIon, alinh: "fim" },
+        { rot: "ÍON (ppm)", l: LARGURA - lIon * (alvo ? 5 : 4) }, { rot: "BASE", l: lIon, alinh: "fim" }, { rot: "MOSTURA", l: lIon, alinh: "fim" },
         { rot: "LAVAGEM", l: lIon, alinh: "fim" }, { rot: "PANELA", l: lIon, alinh: "fim" }, alvo ? { rot: "ALVO", l: lIon, alinh: "fim" } : null,
       ].filter(Boolean), IONS.map((k) => [
-        O.NOME_ION[k], n(Number(r.agua_origem?.[k] ?? 0) * fator, 0), n(a.mostura.ions[k], 0), n(a.lavagem.ions[k], 0), n(a.panela.ions[k], 0),
+        O.NOME_ION[k], n(a.base.ions[k], 0), n(a.mostura.ions[k], 0), n(a.lavagem.ions[k], 0), n(a.panela.ions[k], 0),
         ...(alvo ? [n(Number(alvo[k] ?? 0), 0)] : []),
       ]));
       d.pares([

@@ -344,7 +344,7 @@ const erros = [];
   verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "1,048", "OG medida digitada 1048 aparece como 1,048 ao sair do campo");
   await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "2,5");
   // Água: origem e alvo do cadastro (copiados), 6 g de gesso.
-  await pagina.selectOption('select[aria-label="Água de origem"]', "ag-tor");
+  await pagina.selectOption('select[aria-label="Água de base"]', "ag-tor");
   await pagina.selectOption('select[aria-label="Perfil alvo"]', "ag-alvo");
   await pagina.click("button:has-text('+ Sal na mostura')");
   await pagina.fill('input[aria-label="Gramas na mostura"]', "6");
@@ -367,6 +367,19 @@ const erros = [];
   verificar(textoVol.includes("Total 32,0 L · 3,8 L/kg na mostura") && textoVol.includes("faltam 0,8 L") && textoVol.includes("Água da mostura18,0 L") && textoVol.includes("Água de lavagem14,0 L"),
     "volumes informados: total, L/kg, aviso de falta 0,8 L e litros nas tabelas de sais");
   verificar((await pagina.textContent(".painel-lote")).includes("Água necessária"), "painel mostra a água necessária quando o informado não fecha");
+  // Água/grão dos Parâmetros = água da mostura informada ÷ grão; mudar a relação recalcula os litros da mostura.
+  const relacao = 'input[aria-label="Água/grão na mostura (L/kg)"]';
+  verificar(await pagina.inputValue(relacao) === "3,75", "água/grão dos Parâmetros segue a água da mostura informada (18 L ÷ 4,8 kg = 3,75)");
+  const definirRelacao = (v) => pagina.$eval(relacao, (n, v) => { n.value = v; n.dispatchEvent(new Event("input", { bubbles: true })); }, v);
+  await definirRelacao("4");
+  verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "19,2", "mudar a água/grão (4 L/kg) recalcula a água da mostura (19,2 L)");
+  await definirRelacao("3,75");
+  verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "voltar a 3,75 L/kg devolve 18 L");
+  // Seção Água enxuta: sem diluição, sem texto explicativo nos blocos, base e alvo na mesma linha.
+  verificar(await pagina.locator('[data-secao="agua"] input[aria-label*="iluição"]').count() === 0
+    && await pagina.locator('[data-secao="agua"] .bloco-agua > p.nota').count() === 0, "água: sem campo de diluição e sem texto explicativo nos blocos");
+  const topos = await pagina.$$eval('.agua-perfis > label', (ls) => ls.map((l) => Math.round(l.getBoundingClientRect().top)));
+  verificar(topos.length === 2 && topos[0] === topos[1], "água de base e perfil alvo na mesma linha");
   // Cada água no seu bloco: litros, sais e (na mostura) ácido e pH ficam dentro do bloco da própria água.
   const blocoM = '.bloco-agua.mostura', blocoL = '.bloco-agua.lavagem';
   verificar(await pagina.locator(`${blocoM} input[aria-label="Água da mostura (L)"]`).count() === 1 && await pagina.locator(`${blocoM} input[aria-label="Gramas na mostura"]`).count() === 1
@@ -646,7 +659,7 @@ const erros = [];
     `passo da mostura grava o próprio rótulo como nome (${salvo.corpo.p.mostura.map((m) => m.nome).join(", ")})`);
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "água da mostura reabre com 18,0 L");
   verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
-  verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
+  verificar((await pagina.inputValue('select[aria-label="Água de base"]')) === "__atual", "água reabre como 'guardada nesta receita'");
   verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");
   verificar(await pagina.inputValue(".titulo-receita") === "Pils da Galia", "receita reabre do banco com o nome");
   verificar(await pagina.inputValue('input[aria-label="Qtd (kg)"]') === "4,800", "fermentável reabre com 4,800 kg");
@@ -753,6 +766,16 @@ const erros = [];
   });
   const sal390 = await linhaDoSal();
   verificar(sal390.alinhado && sal390.ordem && sal390.cabe && sal390.altura <= 60, `celular: cada sal da água numa linha só (${JSON.stringify(sal390)})`);
+  // Água de base e perfil alvo lado a lado, sem passar da largura da seção (390 e 320 px).
+  const perfisAgua = () => pagina.evaluate(() => {
+    const sec = document.querySelector('[data-secao="agua"]').getBoundingClientRect();
+    const r = [...document.querySelectorAll(".agua-perfis select")].map((n) => n.getBoundingClientRect());
+    return { linha: r.length === 2 && Math.abs(r[0].top - r[1].top) < 1, cabe: r.every((x) => x.right <= sec.right + 1), largura: r.map((x) => Math.round(x.width)) };
+  });
+  const perfis390 = await perfisAgua();
+  verificar(perfis390.linha && perfis390.cabe, `celular 390 px: água de base e perfil alvo na mesma linha (${JSON.stringify(perfis390)})`);
+  await pagina.evaluate(() => { document.querySelector('[data-secao="agua"]').scrollIntoView(); window.scrollBy(0, -20); });
+  await pagina.screenshot({ path: `${SAIDA}/p5j-celular-agua-topo.png` });
   await pagina.evaluate(() => document.querySelector(".bloco-agua").scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5g-celular-sais.png` });
   // Papel de parede próprio em cada água (23/11/2026): mostura e lavagem em tons diferentes entre si e da seção, com desenho.
@@ -769,6 +792,10 @@ const erros = [];
   const sal320 = await linhaDoSal();
   verificar(sal320.alinhado && sal320.ordem && sal320.cabe && sal320.select >= 100, `celular 320 px: sal numa linha só (${JSON.stringify(sal320)})`);
   await pagina.screenshot({ path: `${SAIDA}/p5h-celular-sais-320.png` });
+  const perfis320 = await perfisAgua();
+  verificar(perfis320.linha && perfis320.cabe, `celular 320 px: água de base e perfil alvo na mesma linha (${JSON.stringify(perfis320)})`);
+  await pagina.evaluate(() => { document.querySelector('[data-secao="agua"]').scrollIntoView(); window.scrollBy(0, -20); });
+  await pagina.screenshot({ path: `${SAIDA}/p5k-celular-agua-topo-320.png` });
   await pagina.setViewportSize({ width: 390, height: 844 });
   const estouro = await pagina.evaluate(() => [...document.querySelectorAll("li.ing")].map((li) => {
     const sec = li.closest("section").getBoundingClientRect();

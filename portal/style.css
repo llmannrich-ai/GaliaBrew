@@ -1055,6 +1055,11 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .perfil-agua .ion-curto { display: none; text-decoration: none; }
 .perfil-agua td.longe { color: var(--destaque-escuro); font-weight: 700; }
 .resumo-agua { margin-top: .6rem; }
+/* Água de base e perfil alvo lado a lado, também no celular (24/11/2026, pedido do responsável: mais compacto).
+   min-width: 0 deixa o seletor encolher e cortar o nome longo em vez de alargar a coluna. */
+.agua-perfis { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; max-width: 40rem; }
+.agua-perfis > label { min-width: 0; }
+.agua-perfis select { width: 100%; min-width: 0; text-overflow: ellipsis; }
 /* Água da mostura e água de lavagem: um bloco para cada, com tudo o que vai nela (23/11/2026, pedido do responsável:
    no celular não ficava claro a que água pertencia cada sal). Faixa de cor à esquerda, título grande e os litros em
    destaque. Papel de parede próprio, em tom diferente do azul da seção (23/11/2026, pedido do responsável): mostura
