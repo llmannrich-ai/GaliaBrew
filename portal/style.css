@@ -1525,3 +1525,9 @@ button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, t
   /* menu ⋯ = folha no rodapé */
   dialog.menu-receita { width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto auto calc(.5rem + env(safe-area-inset-bottom)); }
 }
+
+/* Clean K4: leveduras, outros, mostura e fermentação em ficha (nome e um dado | número principal e o segundo). */
+.linhas-ing.passos .ing.ficha.passo { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "nome num"; gap: 0 .7rem; }
+.ficha-valor { font-size: var(--t-corpo); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ficha-valor2 { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.linhas-ing.passos .ing-vazio { padding: .5rem 0; }

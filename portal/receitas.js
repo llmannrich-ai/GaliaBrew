@@ -465,7 +465,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
 
   // ---------- seção genérica de lista ----------
-  function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao }) {
+  function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao, resumo }) {
+    if (ficha && resumo) return secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo });
     const corpo = el("tbody");
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
       el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo), leitura ? null : adicionar()),
@@ -505,6 +506,100 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return sec;
   }
 
+  /**
+   * Clean (K4): leveduras, outros, mostura e fermentação em FICHA, uma linha por item: nome e um dado à esquerda, o
+   * número principal à direita (resumo(item, i) → { nome, sub, valor, valor2 }). Tocar abre a janela do passo com os
+   * MESMOS campos das colunas da tabela; ordem e remover ficam no pé da janela.
+   */
+  const abrirPassoDe = {};
+  function secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo }) {
+    const lista = el("ol", { class: "linhas-ing passos" });
+    const sec = el("section", { class: "cartao", dataset: { secao: chave } },
+      el("div", { class: "titulo-linha" }, tituloSecao("geral", titulo), leitura ? null : adicionar()),
+      lista);
+    const desenhar = () => {
+      limpar(lista);
+      if (!r[chave].length) lista.append(el("li", { class: "nota ing-vazio", text: vazio }));
+      r[chave].forEach((item, i) => {
+        const x = resumo(item, i);
+        const li = el("li", { class: "ing ficha passo" },
+          el("button", {
+            type: "button", class: "ing-nome", "aria-haspopup": "dialog", "aria-label": `Detalhes de ${x.nome}`,
+            on: { click: () => abrir(item) },
+          }, el("span", { class: "ing-nome-linha" }, el("strong", { class: "ing-nome-txt", text: x.nome })),
+          x.sub ? el("span", { class: "ing-sub", text: x.sub }) : null),
+          el("div", { class: "ficha-num" }, el("b", { class: "ficha-valor", text: x.valor ?? "" }),
+            x.valor2 ? el("span", { class: "ficha-valor2", text: x.valor2 }) : null));
+        li.addEventListener("click", (e) => { if (!e.target.closest("button")) abrir(item); });
+        lista.append(li);
+      });
+      atualizarResultados();
+    };
+    function abrir(item, focar = null) {
+      if (!r[chave].includes(item) || document.querySelector("dialog.item-janela")) return;
+      const posicao = () => r[chave].indexOf(item);
+      const titulo = () => resumo(item, posicao()).nome;
+      const nome = el("strong", { class: "item-nome", text: titulo() });
+      const campos = el("div", { class: "grade-form" });
+      const montar = () => preencher(campos, colunas.map((c) => el("label", {}, el("span", { text: c.r }), comRotulo(c.campo(item, posicao()), c.r))));
+      const fechar = () => { if (d.open) d.close(); };
+      const bSubir = el("button", { type: "button", class: "secundario pequeno item-mover", text: "↑", title: "Subir na lista", "aria-label": "Subir", on: { click: () => deslocar(-1) } });
+      const bDescer = el("button", { type: "button", class: "secundario pequeno item-mover", text: "↓", title: "Descer na lista", "aria-label": "Descer", on: { click: () => deslocar(1) } });
+      const botoesPosicao = () => { bSubir.disabled = posicao() <= 0; bDescer.disabled = posicao() >= r[chave].length - 1; };
+      const deslocar = (n) => {
+        const de = posicao(); const para = de + n;
+        if (para < 0 || para >= r[chave].length) return;
+        acao(() => { const [y] = r[chave].splice(de, 1); r[chave].splice(para, 0, y); desenhar(); mudou(); });
+        nome.textContent = titulo();
+        montar();          // o rótulo do passo (Rampa N) depende da posição
+        botoesPosicao();
+      };
+      const d = el("dialog", { class: "item-janela passo-janela", "aria-label": `Detalhes de ${titulo()}` },
+        el("div", { class: "item-topo" }, el("div", { class: "item-titulo" }, nome),
+          el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+        el("div", { class: "item-corpo" }, campos),
+        el("div", { class: "item-acoes" },
+          leitura ? null : [bSubir, bDescer, el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: () => {
+            acao(() => { r[chave].splice(posicao(), 1); desenhar(); mudou(); });
+            fechar();
+          } } })],
+          el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+      let roletaNoToque = false;
+      d.addEventListener("pointerdown", () => { roletaNoToque = roletaAberta(); }, true);
+      d.addEventListener("click", (e) => {
+        if (e.target !== d || roletaNoToque) return;
+        const b = d.getBoundingClientRect();
+        if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+      });
+      d.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.defaultPrevented && e.target.matches?.("input") && !roletaAberta()) { e.preventDefault(); fechar(); }
+      });
+      d.addEventListener("cancel", (e) => { if (roletaAberta()) { e.preventDefault(); fecharRoleta(false); } });
+      // Campo que muda o título (nome, tipo do passo): o topo acompanha.
+      d.addEventListener("input", () => { nome.textContent = titulo(); });
+      d.addEventListener("change", () => { nome.textContent = titulo(); });
+      window.addEventListener("hashchange", fechar);
+      d.addEventListener("close", () => {
+        window.removeEventListener("hashchange", fechar);
+        if (roletaAberta()) fecharRoleta(true);
+        d.remove();
+        desenhar();
+        const k = posicao();
+        if (k >= 0 && lista.isConnected) lista.querySelectorAll(":scope > li.ing button.ing-nome")[k]?.focus({ preventScroll: true });
+      });
+      montar();
+      botoesPosicao();
+      document.body.append(d);
+      d.showModal();
+      if (focar && !leitura) editarCampo(d.querySelector(`[aria-label="${focar}"]`));
+      else d.querySelector(".item-fechar").focus({ preventScroll: true });
+    }
+    abrirPassoDe[chave] = abrir;
+    secoes[chave] = desenhar;
+    desenhar();
+    return sec;
+  }
+
   /** Botão "+" (só o sinal, sem borda) que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
   const botaoAdicionar = (tipo, aoEscolher, aoLivre) => () => el("button", {
     type: "button", class: "adicionar", text: "+", title: "Adicionar", "aria-label": "Adicionar",
@@ -514,6 +609,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const num = (k, casas, extra = {}) => (item) => campoNumero(item, k, { casas, aoMudar: mudou, desabilitado: des, ...extra });
   const txt = (k, extra = {}) => (item) => campoTexto(item, k, { aoMudar: mudou, desabilitado: des, classe: "nome", ...extra });
   const sel = (k, opcoes, extra = {}) => (item) => campoSelect(item, k, opcoes, { aoMudar: mudou, desabilitado: des, ...extra });
+  // Textos da ficha (Clean): número com vírgula e sem casas vazias.
+  const n0 = (v, casas = 1) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : numeroBR(Number(v), casas).replace(/,0+$/, ""));
+  const juntar = (...partes) => partes.filter(Boolean).join(" · ");
 
   // ---------- cabeçalho ----------
   const nomeInput = campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
@@ -1039,7 +1137,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   /** Leveduras e outros (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
   const adicionarLinhaTabela = (chave, item, focar) => {
     acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
-    editarCampo(document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`));
+    if (abrirPassoDe[chave]) abrirPassoDe[chave](item, focar);          // Clean: abre a janela do item novo
+    else editarCampo(document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`));
   };
 
   const leveduras = secaoLista("leveduras", "Leveduras", {
@@ -1056,6 +1155,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Unidade", campo: sel("unidade", O.UNIDADE_LEVEDURA, { vazio: "—" }) },
       { r: "Etapa", campo: sel("etapa", O.ETAPA_LEVEDURA) },
     ],
+    resumo: (y) => ({
+      nome: String(y.nome ?? "").trim() || "(sem nome)",
+      sub: juntar(O.rotulo(O.FORMA_LEVEDURA, y.forma), y.atenuacao_pct != null ? `atenuação ${n0(y.atenuacao_pct, 0)}%` : null,
+        y.etapa && y.etapa !== "PRIMARIA" ? O.rotulo(O.ETAPA_LEVEDURA, y.etapa) : null),
+      valor: y.quantidade != null ? `${n0(y.quantidade)} ${y.unidade ? O.rotulo(O.UNIDADE_LEVEDURA, y.unidade) : ""}`.trim() : "—",
+    }),
     adicionar: botaoAdicionar("leveduras", (y) => {
       const media = y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null);
       adicionarLinhaTabela("leveduras", { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Atenuação %");
@@ -1262,12 +1367,21 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Etapa", campo: sel("etapa", O.ETAPA_OUTRO) },
       { r: "Tempo (min)", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_outro }) },
     ],
+    resumo: (o) => ({
+      nome: String(o.nome ?? "").trim() || "(sem nome)",
+      sub: juntar(o.etapa ? `${O.rotulo(O.ETAPA_OUTRO, o.etapa)}${n0(o.tempo_min, 0) ? ` ${n0(o.tempo_min, 0)} min` : ""}` : null),
+      valor: o.quantidade != null ? `${n0(o.quantidade, 2)} ${O.rotulo(O.UNIDADE_OUTRO, o.unidade)}`.trim() : "—",
+    }),
     adicionar: botaoAdicionar("outros",
       (o) => adicionarLinhaTabela("outros", { outro_id: o.id, nome: o.nome, tipo: o.tipo, quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Qtd"),
       () => adicionarLinhaTabela("outros", { outro_id: null, nome: "", tipo: "OUTRO", quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Nome")),
   });
 
-  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "adicionar", text: "+", title: "Adicionar passo", "aria-label": "Adicionar passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
+  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "adicionar", text: "+", title: "Adicionar passo", "aria-label": "Adicionar passo", on: { click: () => {
+    const item = novo();
+    acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
+    abrirPassoDe[chave]?.(item);                                          // Clean: abre a janela do passo novo
+  } } });
   const mostura = secaoLista("mostura", "Mostura", {
     iconeSecao: "mostura",
     vazio: "Sem passos.",
@@ -1284,6 +1398,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_mostura }) },
       { r: "Tempo (min)", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_mostura }) },
     ],
+    resumo: (p, i) => ({
+      nome: O.rotuloPasso(r.mostura, i),
+      valor: n0(p.temperatura_c) != null ? `${n0(p.temperatura_c)} °C` : "—",
+      valor2: n0(p.tempo_min, 0) != null ? `${n0(p.tempo_min, 0)} min` : null,
+    }),
     adicionar: botaoPasso("mostura", () => ({ nome: "", tipo: "TEMPERATURA", temperatura_c: 72, tempo_min: 10 })),
   });
   const fermentacao = secaoLista("fermentacao", "Fermentação", {
@@ -1294,6 +1413,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_fermentacao }) },
       { r: "Dias", num: true, campo: num("dias", 0) },
     ],
+    resumo: (p, i) => ({
+      nome: String(p.nome ?? "").trim() || `Passo ${i + 1}`,
+      valor: n0(p.temperatura_c) != null ? `${n0(p.temperatura_c)} °C` : "—",
+      valor2: n0(p.dias, 0) != null ? `${n0(p.dias, 0)} ${Number(p.dias) === 1 ? "dia" : "dias"}` : null,
+    }),
     adicionar: botaoPasso("fermentacao", () => ({ nome: "", temperatura_c: 2, dias: 3 })),
   });
 

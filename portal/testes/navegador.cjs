@@ -1787,6 +1787,41 @@ const erros = [];
   verificar(await cel.locator("dialog.menu-receita").count() === 0, "clean K1: Relatório (PDF) pelo menu abre o relatório");
   await cel.keyboard.press("Escape");
   await cel.waitForSelector("dialog.relatorio", { state: "detached" });
+  // K4: leveduras, outros, mostura e fermentação em ficha; tocar abre a janela com os campos; + abre o passo novo.
+  const passosFicha = await cel.evaluate(() => Object.fromEntries(["leveduras", "outros", "mostura", "fermentacao"].map((k) => [k, {
+    linhas: document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha.passo`).length,
+    tabela: document.querySelectorAll(`[data-secao="${k}"] table`).length,
+    alturas: [...document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha.passo`)].map((l) => Math.round(l.getBoundingClientRect().height)),
+  }])));
+  const nPassos = (t) => db[t].filter((x) => x.receita_id === idPils).length;
+  verificar(Object.values(passosFicha).every((x) => x.tabela === 0 && x.alturas.every((h) => h <= 64))
+    && passosFicha.mostura.linhas === nPassos("receita_mostura_passos") && passosFicha.leveduras.linhas === nPassos("receita_leveduras"),
+    `clean K4: passos, levedura e outros em linhas de até 64 px, sem tabela (${Object.entries(passosFicha).map(([k, x]) => `${k} ${x.linhas}`).join(", ")})`);
+  const linhaMostura = await cel.textContent('[data-secao="mostura"] li.ing.ficha.passo');
+  verificar(/Rampa 1.*°C.*min/.test(linhaMostura), `clean K4: passo da mostura numa linha (“${linhaMostura}”)`);
+  await tocar('[data-secao="mostura"] li.ing.ficha.passo button.ing-nome');
+  await cel.waitForSelector("dialog.passo-janela[open]");
+  verificar(await cel.isVisible('dialog.passo-janela select[aria-label="Passo da mostura"]') && await cel.isVisible('dialog.passo-janela input[aria-label="Temp. (°C)"]'),
+    "clean K4: tocar no passo abre a janela com tipo, temperatura e tempo");
+  await tocar('dialog.passo-janela input[aria-label="Temp. (°C)"]');
+  await cel.waitForSelector("dialog.passo-janela .roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.evaluate(() => document.querySelector(".roleta").matches(":popover-open")), "clean K4: a temperatura do passo usa a roleta, por cima da janela");
+  await cel.screenshot({ path: `${SAIDA}/p7h-clean-passo-roleta.png` });
+  await tocar(".roleta-cancelar");
+  await tocar("dialog.passo-janela .item-pronto");
+  await cel.waitForSelector("dialog.passo-janela", { state: "detached" });
+  const nMosturaAntes = await cel.locator('[data-secao="mostura"] li.ing.ficha.passo').count();
+  await tocar('[data-secao="mostura"] button.adicionar');
+  await cel.waitForSelector("dialog.passo-janela[open]");
+  verificar(await cel.locator('[data-secao="mostura"] li.ing.ficha.passo').count() === nMosturaAntes + 1, "clean K4: + na mostura cria o passo e abre a janela dele");
+  await tocar("dialog.passo-janela button.perigo");
+  await cel.waitForSelector("dialog.passo-janela", { state: "detached" });
+  verificar(await cel.locator('[data-secao="mostura"] li.ing.ficha.passo').count() === nMosturaAntes, "clean K4: Remover na janela tira o passo");
+  await cel.locator('[data-secao="leveduras"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.evaluate(() => window.scrollBy(0, -60));
+  await cel.waitForTimeout(200);
+  await cel.screenshot({ path: `${SAIDA}/p7i-clean-passos.png` });
   await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
   // Tocar na quantidade = roleta direto (sem abrir a janela); a OG acompanha e Cancelar volta.
   const qtdFicha = '[data-secao="fermentaveis"] li.ing.ficha input.qtd';
