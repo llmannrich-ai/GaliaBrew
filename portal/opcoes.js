@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261124a";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261124a";
+import { preferencias } from "./estado.js?v=20261124c";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261124c";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -35,7 +35,18 @@ export const UNIDADE_OUTRO = [["G", "g"], ["KG", "kg"], ["ML", "mL"], ["L", "L"]
 export const ETAPA_OUTRO = ETAPA_FERMENTAVEL;
 export const TIPO_RECEITA = [["ALL_GRAIN", "All grain"], ["EXTRATO", "Extrato"], ["PARCIAL", "Parcial"]];
 export const TIPO_ESTILO = [["CERVEJA", "Cerveja"], ["HIDROMEL", "Hidromel"], ["SIDRA", "Sidra"], ["KOMBUCHA", "Kombucha"], ["OUTRO", "Outro"]];
-export const TIPO_MOSTURA = [["INFUSAO", "Infusão"], ["TEMPERATURA", "Temperatura"], ["DECOCCAO", "Decocção"], ["MASH_OUT", "Mash out"], ["LAVAGEM", "Lavagem"]];
+// Passo da mostura (24/11/2026, pedido do responsável): na tela só Rampa (numerada pela ordem: Rampa 1, 2, 3...),
+// Mash out e Lavagem. Rampa grava "TEMPERATURA" (o tipo genérico do BeerJSON); INFUSAO e DECOCCAO antigos (receitas
+// importadas) continuam no banco e aparecem como rampa. O tipo não entra em nenhum cálculo.
+export const TIPO_MOSTURA = [["TEMPERATURA", "Rampa"], ["MASH_OUT", "Mash out"], ["LAVAGEM", "Lavagem"]];
+export const tipoPasso = (t) => (t === "MASH_OUT" || t === "LAVAGEM" ? t : "TEMPERATURA");
+/** Número de rampa de cada passo (só conta as rampas; mash out e lavagem = null). */
+export const numerosRampa = (passos) => { let n = 0; return passos.map((m) => (tipoPasso(m.tipo) === "TEMPERATURA" ? ++n : null)); };
+/** Rótulo do tipo do passo i: "Rampa 2", "Mash out", "Lavagem". */
+export const rotuloPasso = (passos, i) => {
+  const n = numerosRampa(passos)[i];
+  return n ? `Rampa ${n}` : rotulo(TIPO_MOSTURA, tipoPasso(passos[i].tipo));
+};
 
 // Explicação de cada volume (ícone ⓘ ao lado do campo). Mesmas regras de calculos.js.
 export const AJUDA_VOLUME = {

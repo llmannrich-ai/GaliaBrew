@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124a");
+    const m = await import("./fontes.js?v=20261124c");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -380,7 +380,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124c");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -441,7 +441,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124c");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -460,7 +460,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124c");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -569,7 +569,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124c");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -642,6 +642,8 @@ const erros = [];
   verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
     && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6,"etapa":"MOSTURA"},{"sal":"CLORETO_CALCIO","gramas":2,"etapa":"LAVAGEM"}]', "água vai como cópia (sem id) e sais em gramas, cada um com a sua água");
   verificar(salvo.corpo.p.agua_mostura_l === 18 && salvo.corpo.p.agua_lavagem_l === 14, "água da mostura e da lavagem vão em litros");
+  verificar(salvo.corpo.p.mostura.length > 0 && salvo.corpo.p.mostura.every((m, i) => m.nome === `Rampa ${i + 1}` && m.tipo === "TEMPERATURA"),
+    `passo da mostura grava o próprio rótulo como nome (${salvo.corpo.p.mostura.map((m) => m.nome).join(", ")})`);
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "água da mostura reabre com 18,0 L");
   verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
@@ -1172,6 +1174,42 @@ const erros = [];
   await cel.screenshot({ path: `${SAIDA}/p6g-celular-busca-estilo.png` });
   await cel.keyboard.press("Escape");
   await cel.waitForSelector("dialog.busca", { state: "detached" });
+  // Passos da mostura em cartões (23/11/2026, print do responsável: no 2º passo o ↑ cobria o nome e o × ficava
+  // desalinhado do campo): ↑ e × não encostam em nenhum campo e ficam no meio da altura do campo do nome.
+  const passosMostura = () => cel.evaluate(() => [...document.querySelectorAll('[data-secao="mostura"] tbody tr')].map((tr) => {
+    const campos = [...tr.querySelectorAll("input, select")].map((n) => n.getBoundingClientRect());
+    const botoes = [...tr.querySelectorAll("td.acoes-linha button")].map((n) => n.getBoundingClientRect());
+    const nome = campos[0], sec = tr.closest("section").getBoundingClientRect();
+    const cruza = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+    return { botoes: botoes.length, sobrepoe: botoes.some((b) => campos.some((c) => cruza(b, c))) || (botoes.length > 1 && cruza(botoes[0], botoes[1])),
+      alinhado: botoes.every((b) => Math.abs((b.top + b.height / 2) - (nome.top + nome.height / 2)) <= 1.5),
+      cabe: botoes.every((b) => b.right <= sec.right + 0.5), toque: botoes.every((b) => b.width >= 44 && b.height >= 44), nome: Math.round(nome.width) };
+  }));
+  await cel.locator('[data-secao="mostura"] .titulo-linha button.adicionar').click();
+  for (const w of [320, 390]) {
+    await cel.setViewportSize({ width: w, height: w === 320 ? 700 : 844 });
+    const passos = await passosMostura();
+    verificar(passos.length === 2 && passos[1].botoes === 2 && passos.every((p) => !p.sobrepoe && p.alinhado && p.cabe && p.toque && p.nome >= 120),
+      `toque ${w} px: ↑ e × dos passos da mostura sem cobrir campo e alinhados ao nome (${JSON.stringify(passos)})`);
+  }
+  // Tipo do passo (24/11/2026, pedido do responsável): só Rampa (numerada pela ordem), Mash out e Lavagem.
+  const tiposPasso = () => cel.evaluate(() => [...document.querySelectorAll('[data-secao="mostura"] select[aria-label="Passo da mostura"]')]
+    .map((s) => ({ opcoes: [...s.options].map((o) => o.text).join("|"), escolhido: s.selectedOptions[0].text })));
+  verificar(await cel.locator('[data-secao="mostura"] tbody input.nome').count() === 0
+    && await cel.locator('[data-secao="mostura"] tbody td[data-rotulo="Tipo"]').count() === 0, "mostura: sem campo de nome nem Tipo separado (passo = tipo)");
+  const t1 = await tiposPasso();
+  verificar(t1.length === 2 && t1[0].opcoes === "Rampa 1|Mash out|Lavagem" && t1[1].opcoes === "Rampa 2|Mash out|Lavagem" && t1.every((t) => t.escolhido.startsWith("Rampa")),
+    `mostura: passo = tipo, só Rampa (numerada), Mash out e Lavagem (${JSON.stringify(t1)})`);
+  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Passo da mostura"]', "MASH_OUT");
+  const t2 = await tiposPasso();
+  verificar(t2[0].escolhido === "Mash out" && t2[1].escolhido === "Rampa 1", `mostura: trocar o tipo renumera as rampas (${JSON.stringify(t2)})`);
+  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Passo da mostura"]', "TEMPERATURA");
+  verificar((await tiposPasso())[1].escolhido === "Rampa 2", "mostura: voltar a rampa renumera de novo");
+  await cel.evaluate(() => { document.querySelector('[data-secao="mostura"]').scrollIntoView(); window.scrollBy(0, -20); });
+  await cel.screenshot({ path: `${SAIDA}/p6m-celular-mostura.png` });
+  await cel.locator('[data-secao="mostura"] tbody tr:nth-child(2) button[aria-label="Remover"]').click();
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.evaluate(() => window.scrollTo(0, 0));
 
   // Arrastar com o dedo: segundo lúpulo pela busca e arrastado para cima.
   await tocar('[data-secao="lupulos"] button.adicionar');

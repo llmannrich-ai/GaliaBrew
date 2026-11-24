@@ -955,7 +955,11 @@ dialog form { display: grid; gap: .9rem; }
   /* × de remover no canto do cartão, ao lado do nome (não ocupa mais uma linha sozinho) */
   .tabela.editavel tr { position: relative; }
   .tabela.editavel td:first-child:not(.nota) { padding-right: 3.3rem; }
-  .tabela.editavel td.acoes-linha { position: absolute; top: calc(.8rem + 1.1rem); right: 0; }
+  /* Com ↑ e × (do 2º item em diante) o nome abre espaço para os dois (print do responsável, 23/11/2026: o ↑ cobria o
+     nome do passo da mostura). Botões no meio da altura do campo do nome: .8rem (margem da linha) + 1,09rem (rótulo)
+     + .2rem (vão) + metade do campo (~1,04rem) − metade do botão (1,375rem) ≈ 1,75rem. O teste do navegador confere. */
+  .tabela.editavel tr:has(> td.acoes-linha > button + button) > td:first-child:not(.nota) { padding-right: 6.6rem; }
+  .tabela.editavel td.acoes-linha { position: absolute; top: 1.75rem; right: 0; }
   .tabela.editavel tr:has(> td.nota) { padding: 0 0 .2rem; }
   .tabela.editavel td.nota { margin: 0; }
   /* Sais e ácidos da água: tudo numa linha só (nome | quantidade + unidade | ×), sem rótulo em cima. */

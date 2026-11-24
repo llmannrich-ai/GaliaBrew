@@ -1,11 +1,11 @@
 // relatorio.js — relatório da receita em PDF: monta as páginas (A4), mostra no visualizador próprio (janela) e
 // exporta o arquivo para a folha de compartilhamento do celular. O visualizador desenha em SVG os mesmos itens que o
 // pdf.js escreve no arquivo: o que aparece na tela é o que vai no PDF.
-import { el, svg, numeroBR, avisar } from "./ui.js?v=20261124a";
-import { A4, gerarPdf, limparTexto, larguraTexto, quebrarTexto, encurtarTexto } from "./pdf.js?v=20261124a";
-import { IONS, corHexDeSrm, platoDeSg, etapaSal, leituraSulfatoCloreto, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261124a";
-import * as O from "./opcoes.js?v=20261124a";
-import { icone } from "./icones.js?v=20261124a";
+import { el, svg, numeroBR, avisar } from "./ui.js?v=20261124c";
+import { A4, gerarPdf, limparTexto, larguraTexto, quebrarTexto, encurtarTexto } from "./pdf.js?v=20261124c";
+import { IONS, corHexDeSrm, platoDeSg, etapaSal, leituraSulfatoCloreto, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261124c";
+import * as O from "./opcoes.js?v=20261124c";
+import { icone } from "./icones.js?v=20261124c";
 
 // Documento sempre claro (é para imprimir e mandar), nas cores do tema Clássico.
 const COR = { tinta: "#1a130d", suave: "#4d4237", cobre: "#a14f17", linha: "#ddd1bf", painel: "#f3ece0", branco: "#ffffff" };
@@ -229,8 +229,8 @@ export function montarRelatorio(r, res, { estilo = null, equipamento = null, ago
   // ---------- processo ----------
   if (r.mostura.length) {
     d.secao("Mostura");
-    d.tabela([{ rot: "PASSO", l: 235 }, { rot: "TIPO", l: 120 }, { rot: "TEMPERATURA", l: 80, alinh: "fim" }, { rot: "TEMPO", l: 80, alinh: "fim" }],
-      r.mostura.map((m) => [String(m.nome ?? "").trim() || "(sem nome)", O.rotulo(O.TIPO_MOSTURA, m.tipo), comUnidade(m.temperatura_c, 1, "°C"), comUnidade(m.tempo_min, 0, "min")]));
+    d.tabela([{ rot: "PASSO", l: 355 }, { rot: "TEMPERATURA", l: 80, alinh: "fim" }, { rot: "TEMPO", l: 80, alinh: "fim" }],
+      r.mostura.map((m, i) => [O.rotuloPasso(r.mostura, i), comUnidade(m.temperatura_c, 1, "°C"), comUnidade(m.tempo_min, 0, "min")]));
   }
   if (r.fermentacao.length) {
     d.secao("Fermentação");
