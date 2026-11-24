@@ -958,7 +958,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
 
-  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico }) {
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico, editarAoAdicionar = true }) {
     const lista = el("ol", { class: `linhas-ing ${classe}` });
     const totalEl = el("span", { class: destaque ? "total-secao destaque" : "total-secao" });
     // extra: dado complementar ao lado do total (ex.: água/malte nos fermentáveis); some quando não há valor.
@@ -1004,6 +1004,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         },
       });
       const pega = (classe) => partes.colunas.find((n) => n.classList.contains(classe)) ?? null;
+      // fixo: a linha só MOSTRA os valores (texto, sem campo); editar é só na janela do item (leveduras, 24/11/2026).
+      const fixo = partes.fixo?.() ?? null;
       // Clean: ficha de uma linha (amostra · nome e um dado · quantidade e um resultado). A quantidade é o mesmo campo
       // (toque = roleta direto; computador = digitar/setas); o ± e o "quando" ficam na janela do item; sem alça (a
       // ordem muda pelo Subir/Descer da janela).
@@ -1011,8 +1013,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         ? el("li", { class: "ing ficha" },
           partes.visual ?? el("span", { class: "ing-cor ficha-ponto", "aria-hidden": "true" }),
           botaoNome,
-          el("div", { class: "ficha-num" }, pega("ing-qtd"), pega("d1"), pega("d2")))
-        : el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas);
+          el("div", { class: "ficha-num" }, fixo ?? [pega("ing-qtd"), pega("d1"), pega("d2")]))
+        : el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, fixo ?? partes.colunas);
       // Tocar fora dos campos (amostra de cor, números calculados) também abre os detalhes.
       li.addEventListener("click", (e) => {
         if (e.target.closest("input, select, textarea, button, a, label, .ing-qtd, .ing-quando")) return;
@@ -1043,7 +1045,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     function abrirItem(item, { focarNome = false, editarQtd = false } = {}) {
       if (!r[chave].includes(item) || document.querySelector("dialog.item-janela")) return;
       const nome = el("strong", { class: "item-nome" });
-      const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
+      // reabrir: fecha e abre de novo a janela (a levedura trocada pelo cadastro muda campos fixos, como o tipo).
+      let reabrirDepois = false;
+      const ctx = { mudou: (campo) => { refrescar(); mudou(campo); }, reabrir: () => { reabrirDepois = true; fechar(); } };
       const partes = montarLinha(item, ctx);
       const sub = el("span", { class: "item-sub" });
       function refrescar() {
@@ -1109,6 +1113,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         desenhar();                  // a linha mostra o que mudou na janela (quantidade, nome, cor...)
         // O foco volta ao item (a linha foi refeita); item removido ou outra tela: fica onde estiver.
         const k = posicao();
+        if (reabrirDepois && k >= 0) { abrirItem(item); return; }
         if (k >= 0 && lista.isConnected) lista.querySelectorAll(":scope > li.ing button.ing-nome")[k]?.focus({ preventScroll: true });
       });
 
@@ -1135,7 +1140,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     secoes[chave] = desenhar;
     /** Depois de adicionar, abre a janela do item (24/11/2026, pedido do responsável): do cadastro → na quantidade;
      *  item livre → no nome. */
-    focos[chave] = (livre) => abrirItem(r[chave].at(-1), livre ? { focarNome: true } : { editarQtd: true });
+    // editarAoAdicionar = false (leveduras: a quantidade já vem 1 pacote): abre a janela sem a roleta.
+    focos[chave] = (livre) => abrirItem(r[chave].at(-1), livre ? { focarNome: true } : { editarQtd: editarAoAdicionar });
     desenhar();
     return sec;
   }
@@ -1254,37 +1260,86 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     },
   });
 
-  /** Leveduras e outros (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
+  /** Outros ingredientes (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
   const adicionarLinhaTabela = (chave, item, focar) => {
     acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
     if (abrirPassoDe[chave]) abrirPassoDe[chave](item, focar);          // Clean: abre a janela do item novo
     else editarCampo(document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`));
   };
 
-  const leveduras = secaoLista("leveduras", "Leveduras", {
+  // Leveduras (24/11/2026, pedido do responsável): a linha da receita só MOSTRA os valores (nome · tipo · forma ·
+  // atenuação | quantidade e etapa); tudo se edita na janela do item, a mesma dos maltes e lúpulos.
+  const qtdLevedura = (item) => {
+    const q = Number(item.quantidade);
+    if (item.quantidade == null || item.quantidade === "" || !Number.isFinite(q)) return "—";
+    const n = numeroBR(q, 1).replace(/,0$/, "");
+    const u = item.unidade === "PACOTE" && q !== 1 ? "pacotes" : O.rotulo(O.UNIDADE_LEVEDURA, item.unidade);
+    return u ? `${n} ${u}` : n;
+  };
+  /** Dados que a receita copia do cadastro da levedura (regra 5): nome, tipo, forma e atenuação média. */
+  const copiaLevedura = (y) => ({
+    levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma,
+    atenuacao_pct: y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null),
+  });
+  /** Texto inicial da busca ao ligar uma levedura antiga ao cadastro: o código entre parênteses ("US-05") ou o nome
+   *  sem "yeast"/"levedura" ("Nottingham Yeast" → "Nottingham"). */
+  const buscaDaLevedura = (nome) => {
+    const n = String(nome ?? "");
+    const cod = n.match(/\(([A-Za-z]{1,4}[- ]?\d[\w/-]*)\)/);
+    return cod ? cod[1] : n.replace(/\(.*?\)/g, " ").replace(/\b(yeast|levedura|fermento)\b/gi, " ").replace(/\s+/g, " ").trim();
+  };
+  /** Ligada a um cadastro que a pessoa enxerga (o catálogo ou um seu). */
+  const ligadaAoCadastro = (item) => item.levedura_id != null && cat.leveduras.some((y) => y.id === item.levedura_id);
+  const atenLevedura = (item) => (item.atenuacao_pct != null && item.atenuacao_pct !== "" ? `${numeroBR(Number(item.atenuacao_pct), 0)}% aten.` : null);
+  const leveduras = secaoLinhas("leveduras", "Leveduras", {
     iconeSecao: "levedura",
-    vazio: "Nenhuma levedura (a FG fica igual à OG).",
-    colunas: [
-      { r: "Nome", campo: txt("nome") },
-      { r: "Tipo", campo: sel("tipo", O.TIPO_LEVEDURA) },
-      { r: "Forma", campo: sel("forma", O.FORMA_LEVEDURA) },
-      { r: "Atenuação %", num: true, campo: num("atenuacao_pct", 0) },
-      // Roleta começa no comum para a unidade: 1 pacote, 11 g de fermento seco, 100 mL de fermento líquido/cultivado.
-      { r: "Qtd", num: true, campo: (item) => num("quantidade", 1, { roleta: { min: 0, max: 1000, segmentos: [[10, 0.5], [200, 1], [1000, 10]],
-        inicial: () => ({ G: 11, ML: 100, BILHOES_CELULAS: 200 })[item.unidade] ?? 1 } })(item) },
-      { r: "Unidade", campo: sel("unidade", O.UNIDADE_LEVEDURA, { vazio: "—" }) },
-      { r: "Etapa", campo: sel("etapa", O.ETAPA_LEVEDURA) },
-    ],
-    resumo: (y) => ({
-      nome: String(y.nome ?? "").trim() || "(sem nome)",
-      sub: juntar(O.rotulo(O.FORMA_LEVEDURA, y.forma), y.atenuacao_pct != null ? `atenuação ${n0(y.atenuacao_pct, 0)}%` : null,
-        y.etapa && y.etapa !== "PRIMARIA" ? O.rotulo(O.ETAPA_LEVEDURA, y.etapa) : null),
-      valor: y.quantidade != null ? `${n0(y.quantidade)} ${y.unidade ? O.rotulo(O.UNIDADE_LEVEDURA, y.unidade) : ""}`.trim() : "—",
-    }),
+    classe: "lev",
+    editarAoAdicionar: false,
+    vazio: "Nenhuma levedura (a FG fica igual à OG). Toque em “+” para adicionar.",
+    total: () => "",
     adicionar: botaoAdicionar("leveduras", (y) => {
-      const media = y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null);
-      adicionarLinhaTabela("leveduras", { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Atenuação %");
-    }, () => adicionarLinhaTabela("leveduras", { levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Nome")),
+      adicionarItem("leveduras", { ...copiaLevedura(y), quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" });
+    }, () => adicionarItem("leveduras", { levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, true)),
+    montarLinha: (item, ctx) => {
+      const campo = { desabilitado: des, aoMudar: ctx.mudou };
+      return {
+        sub: () => [item.tipo ? O.rotulo(O.TIPO_LEVEDURA, item.tipo) : null, item.forma ? O.rotulo(O.FORMA_LEVEDURA, item.forma) : null, atenLevedura(item)],
+        subFicha: () => [item.forma ? O.rotulo(O.FORMA_LEVEDURA, item.forma) : null, atenLevedura(item)],
+        // Na receita: só texto. Quantidade em destaque e a etapa embaixo.
+        fixo: () => el("div", { class: "ing-fixo" },
+          el("strong", { class: "ing-fixo-qtd", text: qtdLevedura(item) }),
+          el("span", { class: "ing-fixo-sub", text: item.etapa ? O.rotulo(O.ETAPA_LEVEDURA, item.etapa) : "" })),
+        // Na janela: quantidade (± de 1, roleta no comum para a unidade: 1 pacote, 11 g de seco, 100 mL de líquido) e unidade.
+        colunas: [
+          el("div", { class: "ing-qtd lev-qtd" },
+            campoQuantidade(item, "quantidade", { casas: 1, passo: 1, passoTxt: "1", rotulo: "Quantidade", desabilitado: des, aoMudar: (c) => ctx.mudou(c),
+              roleta: { min: 0, max: 1000, segmentos: [[10, 0.5], [200, 1], [1000, 10]], inicial: () => ({ G: 11, ML: 100, BILHOES_CELULAS: 200 })[item.unidade] ?? 1 } }),
+            campoSelect(item, "unidade", O.UNIDADE_LEVEDURA, { ...campo, vazio: "—", rotulo: "Unidade" }))],
+        detalhes: () => [
+          rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
+          // Tipo (24/11/2026, pedido do responsável): vem do CADASTRO, não se escolhe à mão. Levedura ligada ao cadastro =
+          // tipo fixo (copiado ao escolher). Sem ligação (importadas do Brewfather, item livre) o tipo fica no seletor
+          // até a levedura ser ligada ao cadastro pelo botão abaixo.
+          ligadaAoCadastro(item)
+            ? el("div", { class: "campo-fixo-bloco" }, el("span", { text: "Tipo" }),
+              el("span", { class: "campo-fixo", "aria-label": "Tipo", title: "Vem do cadastro da levedura", text: O.rotulo(O.TIPO_LEVEDURA, item.tipo) || "—" }))
+            : rotular("Tipo", campoSelect(item, "tipo", O.TIPO_LEVEDURA, { ...campo, rotulo: "Tipo" })),
+          rotular("Forma", campoSelect(item, "forma", O.FORMA_LEVEDURA, { ...campo, rotulo: "Forma" })),
+          rotular("Atenuação (%)", campoNumero(item, "atenuacao_pct", { ...campo, casas: 0, rotulo: "Atenuação %" })),
+          rotular("Etapa", campoSelect(item, "etapa", O.ETAPA_LEVEDURA, { ...campo, rotulo: "Etapa" })),
+          leitura || !ctx.reabrir ? null : el("button", {
+            type: "button", class: "secundario pequeno largo ligar-cadastro", "aria-haspopup": "dialog",
+            text: ligadaAoCadastro(item) ? "Trocar por outra do cadastro" : "Ligar ao cadastro (tipo, forma e atenuação)",
+            on: { click: () => abrirBusca({
+              tipo: "leveduras", itens: cat.leveduras, atualId: item.levedura_id, texto: ligadaAoCadastro(item) ? "" : buscaDaLevedura(item.nome),
+              titulo: "Levedura do cadastro",
+              aoEscolher: (y) => { acao(() => { Object.assign(item, copiaLevedura(y)); mudou(); }); ctx.reabrir(); },
+            }) },
+          }),
+          blocoFonte(fonteNaReceita(item, cat.leveduras, "levedura_id"), { classe: "largo" })],
+        aoCalcular: () => {},
+      };
+    },
   });
 
   // ---------- água: base, alvo, sais e perfil final (diluição fora da tela desde 24/11/2026) ----------

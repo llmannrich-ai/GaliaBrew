@@ -169,16 +169,16 @@ export function buscarItens(itens, tipo, consulta) {
  * Chamados DEPOIS de fechar a janela (o foco pode ir para o campo novo).
  * contexto: resultado de calcularReceita (estilos: "Mais perto da receita"); atualId: item já escolhido (vai no topo).
  */
-export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contexto = null, atualId = null }) {
+export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contexto = null, atualId = null, texto = "", titulo = null }) {
   const def = TIPOS_BUSCA[tipo];
   const itens = def.ordenar ? def.ordenar(recebidos) : recebidos;
-  let consulta = "";
+  let consulta = texto;
   let mostrados = [];
   let ativo = -1;
   const idLista = `busca-lista-${Date.now()}`;
 
   const campo = el("input", {
-    type: "search", class: "busca-campo", placeholder: def.placeholder ?? "Nome, produtor, origem…", "aria-label": "Buscar",
+    type: "search", class: "busca-campo", value: texto, placeholder: def.placeholder ?? "Nome, produtor, origem…", "aria-label": "Buscar",
     role: "combobox", "aria-expanded": "true", "aria-controls": idLista, "aria-autocomplete": "list", autocomplete: "off",
     on: {
       input: (e) => { consulta = e.target.value; desenhar(); },
@@ -197,9 +197,9 @@ export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contex
   const lista = el("ul", { class: "busca-lista", id: idLista, role: "listbox", "aria-label": "Resultados" });
   const info = el("p", { class: "busca-info", "aria-live": "polite" });
 
-  const janela = el("dialog", { class: "busca", "aria-label": def.titulo },
+  const janela = el("dialog", { class: "busca", "aria-label": titulo ?? def.titulo },
     el("div", { class: "busca-topo" },
-      el("h3", { text: def.titulo }),
+      el("h3", { text: titulo ?? def.titulo }),
       el("button", { type: "button", class: "icone fechar", "aria-label": "Fechar", text: "×", on: { click: () => janela.close() } })),
     campo, info, lista,
     el("div", { class: "busca-rodape" },
