@@ -1536,3 +1536,9 @@ button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, t
 @media (max-width: 640px) {
   :root[data-layout="clean"] .resumo-janela { max-height: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
 }
+/* Clean K2 em 320–360 px: no cartão dos números, rótulos curtos ("pH", "EBC"), como na linha fina; com a fonte do
+   GitHub "pH MOSTURA" passava da borda em 320 px (CI do PR #52). */
+@media (max-width: 360px) {
+  :root[data-layout="clean"] .vital.no-topo .rot-longo { display: none; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .6rem; }
+}

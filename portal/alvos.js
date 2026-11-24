@@ -1,8 +1,8 @@
 // alvos.js — janelas "Chegar à OG" e "Chegar ao IBU": a pessoa digita o alvo, vê a prévia (o que muda e como
 // ficam os números) e só então aplica. As contas estão em calculos.js (ajustarParaOG, ajustarParaIBU).
-import { el, preencher, numeroBR, lerNumero } from "./ui.js?v=20261124o";
-import { calcularReceita, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis } from "./calculos.js?v=20261124o";
-import * as O from "./opcoes.js?v=20261124o";
+import { el, preencher, numeroBR, lerNumero } from "./ui.js?v=20261124p";
+import { calcularReceita, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis } from "./calculos.js?v=20261124p";
+import * as O from "./opcoes.js?v=20261124p";
 
 const nomeDe = (x) => String(x.nome ?? "").trim() || "(sem nome)";
 
