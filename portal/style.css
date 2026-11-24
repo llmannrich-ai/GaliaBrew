@@ -383,6 +383,9 @@ details.lote .grade-form + .grade-form { margin-top: .7rem; }
 button.ing-alca:hover { background: var(--painel); border: none; color: var(--tinta); }
 .ing.arrastando { position: relative; z-index: 3; box-shadow: var(--sombra-forte); border-radius: var(--raio-p); opacity: .96; }
 .ing.arrastando .ing-alca { cursor: grabbing; }
+/* Passos e itens em tabela (mostura, fermentação, leveduras, outros): a mesma alça ⠿ no lugar do antigo ↑. */
+.tabela.editavel tr.arrastando { position: relative; z-index: 3; box-shadow: var(--sombra-forte); background: var(--cartao); opacity: .96; }
+.tabela.editavel tr.arrastando .ing-alca { cursor: grabbing; }
 .ing-cor { width: 1.2rem; height: 1.2rem; margin: 0; border-radius: 50%; }
 /* Nome do item = botão que abre os detalhes (sem o antigo ⋯). Parece texto; a seta › gira quando aberto. */
 button.ing-nome {

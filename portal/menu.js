@@ -1,9 +1,9 @@
 // menu.js — menu lateral do portal: recolhível no computador, gaveta no celular.
 // Ícones do icones.js; marca = copo do vital.js; arte do pé (lúpulo e cevada) desenhada aqui, em traço fino.
-import { el, svg } from "./ui.js?v=20261124j";
-import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261124j";
-import { icone } from "./icones.js?v=20261124j";
-import { copo } from "./vital.js?v=20261124j";
+import { el, svg } from "./ui.js?v=20261124k";
+import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261124k";
+import { icone } from "./icones.js?v=20261124k";
+import { copo } from "./vital.js?v=20261124k";
 
 const LARGURA_CELULAR = "(max-width: 959px)";
 const LARGURA_EDITOR_ESTREITO = 1180;

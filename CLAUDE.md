@@ -215,7 +215,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124j.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124k.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -261,6 +261,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   lado à direita do nome, que abre 6,6rem para os dois (antes abria só 3,3rem e o ↑ cobria o nome); os botões ficam no
   meio da altura do campo do nome (`top: 1.75rem`). Vale para leveduras, outros, mostura e fermentação (`secaoLista`).
   Teste "toque 320/390 px: ↑ e × dos passos da mostura" (captura `p6m`). A lista de opções do Tipo é a nativa do iOS.
+- Alça ⠿ no lugar do ↑ (24/11/2026, pedido do responsável): leveduras, outros, mostura e fermentação (`secaoLista`) usam a
+  mesma alça dos maltes/lúpulos (`ing-alca`), em TODOS os itens, ao lado do ×: arrastar (mouse e dedo) ou ↑/↓ no teclado
+  (1 passo do desfazer). Arrastar é o `arrastarPelaAlca` do receitas.js (serve a `li` e `tr`). Teste "mostura: alça ⠿".
 - Tipo do passo da mostura (24/11/2026, pedido do responsável, sem migração): na tela só "Rampa N" (numerada pela ordem
   entre as rampas; trocar o tipo ou mover renumera), "Mash out" e "Lavagem" (`TIPO_MOSTURA`, `tipoPasso`, `rotuloPasso`
   no opcoes.js; o relatório em PDF usa o mesmo rótulo). Rampa grava `TEMPERATURA` (tipo genérico do BeerJSON); INFUSAO e
