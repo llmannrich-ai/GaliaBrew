@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124q";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124q";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124q";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124q";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124q";
-import { abrirBusca } from "./busca.js?v=20261124q";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124q";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124q";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124q";
-import * as O from "./opcoes.js?v=20261124q";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124q";
-import { icone } from "./icones.js?v=20261124q";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124q";
-import { abrirRelatorio } from "./relatorio.js?v=20261124q";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124q";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124r";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124r";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124r";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124r";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124r";
+import { abrirBusca } from "./busca.js?v=20261124r";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124r";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124r";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124r";
+import * as O from "./opcoes.js?v=20261124r";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124r";
+import { icone } from "./icones.js?v=20261124r";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124r";
+import { abrirRelatorio } from "./relatorio.js?v=20261124r";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124r";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -329,7 +329,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     r, estilo: estiloAtual(),
     aoAplicar: (a) => acao(() => { r.lupulos[a.indice].quantidade_g = a.gramas; secoes.lupulos(); mudou("ajuste-ibu"); avisar("Lúpulo ajustado. Ctrl+Z desfaz."); }),
   });
-  const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU }, ferramentas });
+  // Clean no celular: números num cartão no topo; ao rolar, linha fina no rodapé (vital.js, "noTopo").
+  const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU }, ferramentas,
+    noTopo: ficha && window.matchMedia("(max-width: 640px)").matches });
   const grist = barraGrist();
   const tempo = linhaFervura({
     aoTocar: (i) => {          // leva à linha do lúpulo e a destaca (sem abrir o teclado)
@@ -343,6 +345,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   });
   t.atalhos = { desfazer, refazer, marcador: vital.elemento };
   const painel = el("aside", { class: "painel-lote" });
+  const metaTopo = el("div", { class: "topo-meta" });
   const secoes = {};
   const des = leitura;
   let montado = false;            // antes de montar, os cálculos não contam como "mudança" (sem diferença na barra)
@@ -409,6 +412,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
     janelaParam?.aoCalcular(res);
     tituloApp.textContent = String(r.nome ?? "").trim() || "Receita nova";
+    // Clean: "Lote nº 104 · brassagem 29/11/2026" acima do nome (some quando não há nenhum dos dois).
+    metaTopo.textContent = [r.lote_numero != null && r.lote_numero !== "" ? `Lote nº ${r.lote_numero}` : null,
+      r.data_brassagem ? `brassagem ${dataDoDia(r.data_brassagem)}` : null].filter(Boolean).join(" · ");
     return res;
   }
 
@@ -449,7 +455,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   // ---------- seção genérica de lista ----------
   // `linhaUnica` (24/11/2026, pedido do responsável, mostura e fermentação): o passo inteiro numa linha, com a alça ⠿ à ESQUERDA
   // (como nos maltes e lúpulos) e o × no fim; no celular a unidade (`u`) vai depois do número, sem rótulo em cima.
-  function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao, linhaUnica = false }) {
+  // No layout Clean vale a ficha (`resumo`).
+  function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao, resumo, linhaUnica = false }) {
+    if (ficha && resumo) return secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo });
     const corpo = el("tbody");
     const alcaNaFrente = linhaUnica && !leitura;
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
@@ -492,6 +500,153 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return sec;
   }
 
+  /**
+   * Clean (K4): leveduras, outros, mostura e fermentação em FICHA, uma linha por item: nome e um dado à esquerda, o
+   * número principal à direita (resumo(item, i) → { nome, sub, valor, valor2 }). Tocar abre a janela do passo com os
+   * MESMOS campos das colunas da tabela; ordem e remover ficam no pé da janela.
+   */
+  const abrirPassoDe = {};
+  function secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo }) {
+    const lista = el("ol", { class: "linhas-ing passos" });
+    const sec = el("section", { class: "cartao", dataset: { secao: chave } },
+      el("div", { class: "titulo-linha" }, tituloSecao("geral", titulo), leitura ? null : adicionar()),
+      lista);
+    const desenhar = () => {
+      limpar(lista);
+      if (!r[chave].length) lista.append(el("li", { class: "nota ing-vazio", text: vazio }));
+      r[chave].forEach((item, i) => {
+        const x = resumo(item, i);
+        const li = el("li", { class: "ing ficha passo" },
+          el("button", {
+            type: "button", class: "ing-nome", "aria-haspopup": "dialog", "aria-label": `Detalhes de ${x.nome}`,
+            on: { click: () => abrir(item) },
+          }, el("span", { class: "ing-nome-linha" }, el("strong", { class: "ing-nome-txt", text: x.nome })),
+          x.sub ? el("span", { class: "ing-sub", text: x.sub }) : null),
+          el("div", { class: "ficha-num" }, el("b", { class: "ficha-valor", text: x.valor ?? "" }),
+            x.valor2 ? el("span", { class: "ficha-valor2", text: x.valor2 }) : null));
+        li.addEventListener("click", (e) => { if (!e.target.closest("button")) abrir(item); });
+        lista.append(li);
+      });
+      atualizarResultados();
+    };
+    function abrir(item, focar = null) {
+      if (!r[chave].includes(item) || document.querySelector("dialog.item-janela")) return;
+      const posicao = () => r[chave].indexOf(item);
+      const titulo = () => resumo(item, posicao()).nome;
+      const nome = el("strong", { class: "item-nome", text: titulo() });
+      const campos = el("div", { class: "grade-form" });
+      const montar = () => preencher(campos, colunas.map((c) => el("label", {}, el("span", { text: c.r }), comRotulo(c.campo(item, posicao()), c.r))));
+      const fechar = () => { if (d.open) d.close(); };
+      const bSubir = el("button", { type: "button", class: "secundario pequeno item-mover", text: "↑", title: "Subir na lista", "aria-label": "Subir", on: { click: () => deslocar(-1) } });
+      const bDescer = el("button", { type: "button", class: "secundario pequeno item-mover", text: "↓", title: "Descer na lista", "aria-label": "Descer", on: { click: () => deslocar(1) } });
+      const botoesPosicao = () => { bSubir.disabled = posicao() <= 0; bDescer.disabled = posicao() >= r[chave].length - 1; };
+      const deslocar = (n) => {
+        const de = posicao(); const para = de + n;
+        if (para < 0 || para >= r[chave].length) return;
+        acao(() => { const [y] = r[chave].splice(de, 1); r[chave].splice(para, 0, y); desenhar(); mudou(); });
+        nome.textContent = titulo();
+        montar();          // o rótulo do passo (Rampa N) depende da posição
+        botoesPosicao();
+      };
+      const d = el("dialog", { class: "item-janela passo-janela", "aria-label": `Detalhes de ${titulo()}` },
+        el("div", { class: "item-topo" }, el("div", { class: "item-titulo" }, nome),
+          el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+        el("div", { class: "item-corpo" }, campos),
+        el("div", { class: "item-acoes" },
+          leitura ? null : [bSubir, bDescer, el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: () => {
+            acao(() => { r[chave].splice(posicao(), 1); desenhar(); mudou(); });
+            fechar();
+          } } })],
+          el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+      let roletaNoToque = false;
+      d.addEventListener("pointerdown", () => { roletaNoToque = roletaAberta(); }, true);
+      d.addEventListener("click", (e) => {
+        if (e.target !== d || roletaNoToque) return;
+        const b = d.getBoundingClientRect();
+        if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+      });
+      d.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.defaultPrevented && e.target.matches?.("input") && !roletaAberta()) { e.preventDefault(); fechar(); }
+      });
+      d.addEventListener("cancel", (e) => { if (roletaAberta()) { e.preventDefault(); fecharRoleta(false); } });
+      // Campo que muda o título (nome, tipo do passo): o topo acompanha.
+      d.addEventListener("input", () => { nome.textContent = titulo(); });
+      d.addEventListener("change", () => { nome.textContent = titulo(); });
+      window.addEventListener("hashchange", fechar);
+      d.addEventListener("close", () => {
+        window.removeEventListener("hashchange", fechar);
+        if (roletaAberta()) fecharRoleta(true);
+        d.remove();
+        desenhar();
+        const k = posicao();
+        if (k >= 0 && lista.isConnected) lista.querySelectorAll(":scope > li.ing button.ing-nome")[k]?.focus({ preventScroll: true });
+      });
+      montar();
+      botoesPosicao();
+      document.body.append(d);
+      d.showModal();
+      if (focar && !leitura) editarCampo(d.querySelector(`[aria-label="${focar}"]`));
+      else d.querySelector(".item-fechar").focus({ preventScroll: true });
+    }
+    abrirPassoDe[chave] = abrir;
+    secoes[chave] = desenhar;
+    desenhar();
+    return sec;
+  }
+
+  /**
+   * Clean (K5): Água, Lote e Notas viram um cartão de resumo (linhas(res) → [{ nome, sub, valor, valor2, estado }]);
+   * tocar abre a seção inteira de sempre (conteudo, os mesmos nós e campos) numa janela. Ao fechar, o resumo é refeito.
+   */
+  function secaoResumida(chave, titulo, conteudo, linhas) {
+    const lista = el("ol", { class: "linhas-ing passos resumo" });
+    const sec = el("section", { class: "cartao resumida", dataset: { secao: chave } },
+      el("div", { class: "titulo-linha" }, tituloSecao("geral", titulo), el("span", { class: "resumo-seta", "aria-hidden": "true", text: "›" })),
+      lista);
+    const desenhar = (res) => preencher(lista, linhas(res).map((x) => el("li", { class: "ing ficha passo" },
+      el("button", { type: "button", class: "ing-nome", "aria-haspopup": "dialog", "aria-label": `${titulo}: ${x.nome}. Abrir`, on: { click: abrir } },
+        el("span", { class: "ing-nome-linha" }, el("strong", { class: "ing-nome-txt", text: x.nome })),
+        x.sub ? el("span", { class: "ing-sub", text: x.sub }) : null),
+      el("div", { class: "ficha-num" },
+        x.valor ? el("b", { class: `ficha-valor ${x.estado ? "estado-" + x.estado : ""}`.trim(), text: x.valor }) : null,
+        x.valor2 ? el("span", { class: "ficha-valor2", text: x.valor2 }) : null))));
+    sec.addEventListener("click", (e) => { if (!e.target.closest("button, a")) abrir(); });
+    function abrir() {
+      if (document.querySelector("dialog.item-janela")) return;
+      const fechar = () => { if (d.open) d.close(); };
+      const d = el("dialog", { class: "item-janela resumo-janela", dataset: { secao: chave }, "aria-label": titulo },
+        el("div", { class: "item-topo" }, el("div", { class: "item-titulo" }, el("strong", { class: "item-nome", text: titulo })),
+          el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+        el("div", { class: "item-corpo" }, conteudo),
+        el("div", { class: "item-acoes" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+      let roletaNoToque = false;
+      d.addEventListener("pointerdown", () => { roletaNoToque = roletaAberta(); }, true);
+      d.addEventListener("click", (e) => {
+        if (e.target !== d || roletaNoToque) return;
+        const b = d.getBoundingClientRect();
+        if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+      });
+      d.addEventListener("cancel", (e) => { if (roletaAberta()) { e.preventDefault(); fecharRoleta(false); } });
+      window.addEventListener("hashchange", fechar);
+      d.addEventListener("close", () => {
+        window.removeEventListener("hashchange", fechar);
+        if (roletaAberta()) fecharRoleta(true);
+        d.remove();                                    // os nós da seção saem junto; seguem ligados à receita
+        desenhar(calcularReceita(r));
+        sec.querySelector("button.ing-nome")?.focus({ preventScroll: true });
+      });
+      document.body.append(d);
+      d.showModal();
+      d.querySelector(".item-fechar").focus({ preventScroll: true });
+    }
+    aoRecalcular.push(desenhar);
+    return sec;
+  }
+  const SAL_CURTO = { GESSO: "Gesso", CLORETO_CALCIO: "CaCl₂", SULFATO_MAGNESIO: "Sal amargo", CLORETO_MAGNESIO: "MgCl₂", CLORETO_SODIO: "Sal", BICARBONATO_SODIO: "Bicarbonato" };
+  const ACIDO_CURTO = { LATICO_88: "Lático", FOSFORICO_10: "Fosfórico 10%", FOSFORICO_85: "Fosfórico 85%" };
+  /** pH da mostura: ideal 5,3–5,5; aceitável 5,2–5,6 (mesma faixa da barra de números). */
+  const estadoPh = (ph) => (ph == null ? null : ph >= 5.3 && ph <= 5.5 ? ["dentro", "ideal"] : ph >= 5.2 && ph <= 5.6 ? ["perto", "aceitável"] : ["fora", ph < 5.2 ? "baixo" : "alto"]);
+
   /** Botão "+" (só o sinal, sem borda) que abre a busca do cadastro (sistema + meus) com a opção de item livre. */
   const botaoAdicionar = (tipo, aoEscolher, aoLivre) => () => el("button", {
     type: "button", class: "adicionar", text: "+", title: "Adicionar", "aria-label": "Adicionar",
@@ -501,6 +656,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const num = (k, casas, extra = {}) => (item) => campoNumero(item, k, { casas, aoMudar: mudou, desabilitado: des, ...extra });
   const txt = (k, extra = {}) => (item) => campoTexto(item, k, { aoMudar: mudou, desabilitado: des, classe: "nome", ...extra });
   const sel = (k, opcoes, extra = {}) => (item) => campoSelect(item, k, opcoes, { aoMudar: mudou, desabilitado: des, ...extra });
+  // Textos da ficha (Clean): número com vírgula e sem casas vazias.
+  const n0 = (v, casas = 1) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : numeroBR(Number(v), casas).replace(/,0+$/, ""));
+  const juntar = (...partes) => partes.filter(Boolean).join(" · ");
 
   // ---------- cabeçalho ----------
   const nomeInput = campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
@@ -536,7 +694,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   const acoes = el("div", { class: "acoes-receita" },
     leitura ? el("span", { class: "selo", text: "Somente leitura (receita de outro usuário)" }) : botaoSalvar,
-    r.id ? el("button", { type: "button", class: "secundario", text: "Nova a partir desta", on: { click: async () => {
+    r.id ? el("button", { type: "button", class: "secundario nova-a-partir", text: "Nova a partir desta", on: { click: async () => {
       if (!leitura && editor.sujo && !(await confirmar("Há alterações não salvas. A receita nova é feita do que está salvo. Continuar?"))) return;
       editor.sujo = false;
       location.hash = `#/receita/nova/${r.id}`;
@@ -553,13 +711,64 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     } } }) : null,
     el("a", { href: "#/receitas", class: "botao secundario so-largo", text: "Voltar" }));
 
+  // Clean (K1): Relatório, Nova a partir desta, Informações e Excluir num menu ⋯ (barra do app no celular; ao lado do
+  // nome no computador). Os itens chamam os mesmos botões/funções de sempre.
+  const botaoMenu = (classe) => el("button", {
+    type: "button", class: `icone ${classe}`, title: "Mais ações", "aria-label": "Mais ações da receita", "aria-haspopup": "dialog",
+    on: { click: () => abrirMenuReceita() },
+  }, icone("reticencias"));
+  function abrirMenuReceita() {
+    if (document.querySelector("dialog.menu-receita")) return;
+    const fechar = () => { if (d.open) d.close(); };
+    const item = (texto, nomeIcone, acao, classe = "") => el("button", {
+      type: "button", class: `menu-item ${classe}`.trim(), on: { click: () => { fechar(); acao(); } },
+    }, icone(nomeIcone), el("span", { text: texto }));
+    const nova = acoes.querySelector("button.nova-a-partir");
+    const excluir = acoes.querySelector("button.excluir-receita");
+    const d = el("dialog", { class: "menu-receita", "aria-label": "Ações da receita" },
+      el("div", { class: "menu-receita-topo" },
+        el("strong", { text: String(r.nome ?? "").trim() || "Receita nova" }),
+        el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+      el("div", { class: "menu-receita-lista" },
+        item("Relatório (PDF)", "relatorio", () => botaoRelatorio.click()),
+        nova ? item("Nova a partir desta", "copiar", () => nova.click()) : null,
+        item("Informações (tipo, autor, pública)", "geral", abrirInformacoes),
+        excluir ? item("Excluir receita", "lixeira", () => excluir.click(), "perigo") : null));
+    d.addEventListener("click", (e) => {
+      if (e.target !== d) return;
+      const b = d.getBoundingClientRect();
+      if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+    });
+    window.addEventListener("hashchange", fechar);
+    d.addEventListener("close", () => { window.removeEventListener("hashchange", fechar); d.remove(); });
+    document.body.append(d);
+    d.showModal();
+    d.querySelector(".menu-item").focus({ preventScroll: true });
+  }
+  /** Informações (Dados gerais) numa janela: os MESMOS campos da seção, que no Clean não fica na página. */
+  function abrirInformacoes() {
+    const campos = geral.querySelector(".grade-form");
+    const fechar = () => { if (d.open) d.close(); };
+    const d = el("dialog", { class: "item-janela informacoes", "aria-label": "Informações da receita" },
+      el("div", { class: "item-topo" }, el("div", { class: "item-titulo" }, el("strong", { class: "item-nome", text: "Informações" })),
+        el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+      el("div", { class: "item-corpo" }, campos),
+      el("div", { class: "item-acoes" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+    window.addEventListener("hashchange", fechar);
+    d.addEventListener("close", () => { window.removeEventListener("hashchange", fechar); geral.append(campos); d.remove(); });
+    document.body.append(d);
+    d.showModal();
+    d.querySelector(".item-fechar").focus({ preventScroll: true });
+  }
+
   // Celular: barra do app no topo (voltar, nome, desfazer, salvar), sempre à vista; o menu geral some no editor.
   const tituloApp = el("span", { class: "app-titulo" });
   const barraApp = el("div", { class: "barra-app" },
     el("a", { href: "#/receitas", class: "app-voltar", "aria-label": "Voltar às receitas" }, icone("voltar")),
     tituloApp,
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
-    leitura ? null : botaoSalvarApp);
+    leitura ? null : botaoSalvarApp,
+    ficha ? botaoMenu("app-menu") : null);
 
   // Estilo: botão que abre a busca (código, nome, termos em português, filtros, "Mais perto da receita").
   const nomeEstilo = el("span", { class: "escolha-texto" });
@@ -707,7 +916,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("div", { class: "fj-titulo" }, el("h2", { id: "pj-titulo", text: "Parâmetros" })),
           el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
         el("div", { class: "fj-resultado" }, metricas)),
-      el("div", { class: "fj-corpo" }, equip, grade),
+      // Clean: o antigo painel lateral (Mais números, Volumes, Água) fica aqui, abaixo dos campos.
+      el("div", { class: "fj-corpo" }, equip, grade, ficha ? el("div", { class: "parametros-numeros" }, pNumeros, pVolumes, pAgua) : null),
       el("div", { class: "fj-pe" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
     // Tocar no fundo escuro fecha; com a roleta aberta, o toque só fecha a roleta (como na janela do item).
     let roletaNoToque = false;
@@ -1047,7 +1257,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   /** Leveduras e outros (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
   const adicionarLinhaTabela = (chave, item, focar) => {
     acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
-    editarCampo(document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`));
+    if (abrirPassoDe[chave]) abrirPassoDe[chave](item, focar);          // Clean: abre a janela do item novo
+    else editarCampo(document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`));
   };
 
   const leveduras = secaoLista("leveduras", "Leveduras", {
@@ -1064,6 +1275,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Unidade", campo: sel("unidade", O.UNIDADE_LEVEDURA, { vazio: "—" }) },
       { r: "Etapa", campo: sel("etapa", O.ETAPA_LEVEDURA) },
     ],
+    resumo: (y) => ({
+      nome: String(y.nome ?? "").trim() || "(sem nome)",
+      sub: juntar(O.rotulo(O.FORMA_LEVEDURA, y.forma), y.atenuacao_pct != null ? `atenuação ${n0(y.atenuacao_pct, 0)}%` : null,
+        y.etapa && y.etapa !== "PRIMARIA" ? O.rotulo(O.ETAPA_LEVEDURA, y.etapa) : null),
+      valor: y.quantidade != null ? `${n0(y.quantidade)} ${y.unidade ? O.rotulo(O.UNIDADE_LEVEDURA, y.unidade) : ""}`.trim() : "—",
+    }),
     adicionar: botaoAdicionar("leveduras", (y) => {
       const media = y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null);
       adicionarLinhaTabela("leveduras", { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Atenuação %");
@@ -1266,12 +1483,21 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Etapa", campo: sel("etapa", O.ETAPA_OUTRO) },
       { r: "Tempo (min)", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_outro }) },
     ],
+    resumo: (o) => ({
+      nome: String(o.nome ?? "").trim() || "(sem nome)",
+      sub: juntar(o.etapa ? `${O.rotulo(O.ETAPA_OUTRO, o.etapa)}${n0(o.tempo_min, 0) ? ` ${n0(o.tempo_min, 0)} min` : ""}` : null),
+      valor: o.quantidade != null ? `${n0(o.quantidade, 2)} ${O.rotulo(O.UNIDADE_OUTRO, o.unidade)}`.trim() : "—",
+    }),
     adicionar: botaoAdicionar("outros",
       (o) => adicionarLinhaTabela("outros", { outro_id: o.id, nome: o.nome, tipo: o.tipo, quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Qtd"),
       () => adicionarLinhaTabela("outros", { outro_id: null, nome: "", tipo: "OUTRO", quantidade: null, unidade: "G", etapa: "FERVURA", tempo_min: null }, "Nome")),
   });
 
-  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "adicionar", text: "+", title: "Adicionar passo", "aria-label": "Adicionar passo", on: { click: () => acao(() => { r[chave].push(novo()); secoes[chave](); mudou(); }) } });
+  const botaoPasso = (chave, novo) => () => el("button", { type: "button", class: "adicionar", text: "+", title: "Adicionar passo", "aria-label": "Adicionar passo", on: { click: () => {
+    const item = novo();
+    acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
+    abrirPassoDe[chave]?.(item);                                          // Clean: abre a janela do passo novo
+  } } });
   const mostura = secaoLista("mostura", "Mostura", {
     iconeSecao: "mostura",
     vazio: "Sem passos.",
@@ -1289,6 +1515,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Tempo (min)", u: "min", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_mostura }) },
     ],
     linhaUnica: true,
+    resumo: (p, i) => ({
+      nome: O.rotuloPasso(r.mostura, i),
+      valor: n0(p.temperatura_c) != null ? `${n0(p.temperatura_c)} °C` : "—",
+      valor2: n0(p.tempo_min, 0) != null ? `${n0(p.tempo_min, 0)} min` : null,
+    }),
     adicionar: botaoPasso("mostura", () => ({ nome: "", tipo: "TEMPERATURA", temperatura_c: 72, tempo_min: 10 })),
   });
   const fermentacao = secaoLista("fermentacao", "Fermentação", {
@@ -1300,6 +1531,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       { r: "Dias", u: "dias", num: true, campo: num("dias", 0) },
     ],
     linhaUnica: true,
+    resumo: (p, i) => ({
+      nome: String(p.nome ?? "").trim() || `Passo ${i + 1}`,
+      valor: n0(p.temperatura_c) != null ? `${n0(p.temperatura_c)} °C` : "—",
+      valor2: n0(p.dias, 0) != null ? `${n0(p.dias, 0)} ${Number(p.dias) === 1 ? "dia" : "dias"}` : null,
+    }),
     adicionar: botaoPasso("fermentacao", () => ({ nome: "", temperatura_c: 2, dias: 3 })),
   });
 
@@ -1313,12 +1549,60 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     el("div", { class: "titulo-linha" }, tituloSecao("parametros", "Parâmetros", " ", equipResumo), bParametros),
     paramResumo);
 
+  // Clean (K5): Água, Lote e Notas em resumo; o painel lateral (Mais números, Volumes, Água) vai para os Parâmetros.
+  let resumos = null;
+  if (ficha) {
+    for (const b of [pNumeros, pVolumes, pAgua]) b.open = true;
+    const gramas = (v) => numeroBR(Number(v), 1).replace(/,0$/, "");
+    resumos = {
+      agua: secaoResumida("agua", "Água", agua, (res) => {
+        const v = res.volumes;
+        const ph = res.ph_mostura?.ph ?? null;
+        const [estado, leituraPh] = estadoPh(ph) ?? [null, null];
+        const itens = [
+          ...(r.sais ?? []).filter((x) => Number(x.gramas) > 0).map((x) => `${SAL_CURTO[x.sal] ?? x.sal} ${gramas(x.gramas)} g`),
+          ...(r.acidos ?? []).filter((x) => Number(x.ml) > 0).map((x) => `${ACIDO_CURTO[x.acido] ?? x.acido} ${gramas(x.ml)} mL`)];
+        const linhasAgua = [{
+          nome: `Mostura ${numeroBR(v.agua_mostura_l, 1)} L · Lavagem ${numeroBR(v.agua_lavagem_l, 1)} L`,
+          sub: itens.length ? itens.join(" · ") : "Sem sais nem ácido",
+          valor: ph != null ? `pH ${numeroBR(ph, 2)}` : null, valor2: leituraPh, estado,
+        }];
+        if (Math.abs(v.agua_diferenca_l) >= 0.5) linhasAgua.push({
+          nome: "Água necessária", sub: v.agua_diferenca_l < 0 ? `faltam ${numeroBR(-v.agua_diferenca_l, 1)} L` : `sobram ${numeroBR(v.agua_diferenca_l, 1)} L`,
+          valor: `${numeroBR(v.agua_necessaria_l, 1)} L`, estado: "perto" });
+        return linhasAgua;
+      }),
+      brassagem: secaoResumida("brassagem", "Lote", el("div", {}, brassagem, pMedido, pPriming), (res) => {
+        const m = res.medido;
+        const fora = [];
+        if (m.og != null || m.fg != null) fora.push({ nome: "OG / FG medidas",
+          sub: `planejado ${numeroBR(res.og, 3)} / ${numeroBR(res.fg, 3)}`,
+          valor: `${m.og != null ? numeroBR(m.og, 3) : "—"} / ${m.fg != null ? numeroBR(m.fg, 3) : "—"}` });
+        if (m.eficiencia_pct != null) fora.push({ nome: "Eficiência real", sub: m.abv_pct != null ? `ABV real ${numeroBR(m.abv_pct, 1)}%` : null, valor: `${numeroBR(m.eficiencia_pct, 0)}%` });
+        if (res.priming?.gramas != null) fora.push({ nome: `Priming (${numeroBR(r.co2_alvo_vol, 1)} vol)`, sub: O.rotulo(O.ACUCAR_PRIMING, res.priming.acucar), valor: `${numeroBR(res.priming.gramas, 0)} g` });
+        return fora.length ? fora : [{ nome: "Medidas do dia", sub: "Nº, data, OG/FG medidas, volume e priming" }];
+      }),
+      notas: secaoResumida("notas", "Notas e fotos", notas, () => {
+        const t = String(r.notas ?? "").trim().replace(/\s+/g, " ");
+        return [{ nome: t ? (t.length > 90 ? `${t.slice(0, 90)}…` : t) : "Sem notas", sub: "Notas e fotos da brassagem" }];
+      }),
+    };
+  }
+
   conteudo.classList.add("com-vital");
-  const topo = el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
+  // Clean (K1): meta do lote em cima, nome como título (o campo sem moldura), estilo como link; Relatório/Nova a partir
+  // desta/Informações/Excluir no menu ⋯; Dados gerais saem da página. Parâmetros = o cartão de sempre (3 números e
+  // "Todos ›"), 1º do corpo, logo abaixo dos números.
+  const topo = ficha
+    ? el("div", { class: "editor-topo topo-clean" }, metaTopo,
+      el("div", { class: "nome-linha" }, nomeInput, botaoMenu("so-largo topo-menu")), estiloCampo, acoes)
+    : el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
-      inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas),
-    painel);
+      ...(resumos
+        ? [inicio, lote, fermentaveis, lupulos, leveduras, mostura, fermentacao, resumos.agua, outros, resumos.brassagem, resumos.notas]
+        : [inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas])),
+    ficha ? null : painel);
   // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
   for (const n of [topo, corpo]) {
     n.addEventListener("focusin", (e) => {
@@ -1330,7 +1614,16 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     });
   }
   document.body.classList.add("no-editor");
-  preencher(conteudo, barraApp, topo, msg, vital.elemento, corpo);
+  preencher(conteudo, barraApp, topo, msg, vital.lugar, corpo);
+  // Clean: o nome não se repete na barra do app enquanto o título da página está à vista (aparece ao rolar).
+  if (ficha && window.IntersectionObserver) {
+    barraApp.classList.add("sem-titulo");
+    requestAnimationFrame(() => {
+      const cima = Math.round(barraApp.getBoundingClientRect().height);
+      new IntersectionObserver(([e]) => barraApp.classList.toggle("sem-titulo", e.isIntersecting),
+        { rootMargin: `-${cima}px 0px 0px 0px` }).observe(nomeInput);
+    });
+  }
   marcarPendente();
   vital.definirReferencia(t.ref?.res ?? null);
   if (resAnterior) vital.atualizar(resAnterior, estiloAtual());     // desfazer/refazer: a barra mostra a diferença

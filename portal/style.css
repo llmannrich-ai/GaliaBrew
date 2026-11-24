@@ -1459,6 +1459,29 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
   .linhas-ing.ferm .ing.ficha, .linhas-ing.lup .ing.ficha { grid-template-columns: 1rem minmax(0, 1fr) auto; grid-template-areas: "cor nome num"; gap: 0 .65rem; }
   .ing.ficha .ing-sub { white-space: nowrap; }
   .ficha-num .campo-qtd input.qtd { width: 4.4rem; height: 2rem; }
+
+  /* K2: números num cartão no topo da receita (no fluxo da página, com o copo na cor da cerveja). Quando o cartão sai
+     da tela, o vital.js põe "flutuante" + "com-teclado" e ele vira a linha fina presa no rodapé (a mesma do teclado). */
+  :root[data-layout="clean"] .vital { background: var(--k-cartao); }
+  :root[data-layout="clean"] .grist-copo { display: none; }      /* o copo já está no cartão dos números */
+  :root[data-layout="clean"] .vital .vital-item .regua-marca { border-color: var(--k-cartao); }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) {
+    position: static; max-height: none; overflow: visible; box-shadow: none; border-radius: 0;
+    margin: 0 calc(-1 * var(--lado)) .6rem; padding: .75rem var(--lado) .2rem;
+    grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: .8rem; align-items: center;
+  }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-copo { display: block; align-self: start; padding-top: .2rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-copo .copo { width: 2.75rem; height: 3.85rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .9rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.35rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-mais, .vital-aviso, .vital-ferramentas) { grid-column: 1 / -1; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais { order: 0; margin-top: .3rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais span::before { content: "detalhes ▾"; }
+  :root[data-layout="clean"] .vital.no-topo.aberta:not(.com-teclado) .vital-mais span::before { content: "fechar ▴"; }
+  :root[data-layout="clean"] .vital.no-topo.aberta:not(.com-teclado) .vital-copo { align-self: start; }
+  /* Linha fina por rolagem (sem teclado): fica no rodapé, acima da área do gesto do iPhone. */
+  :root[data-layout="clean"] .vital.flutuante { padding-bottom: calc(.3rem + env(safe-area-inset-bottom)); }
+  :root[data-layout="clean"].teclado-aberto .vital.flutuante { padding-bottom: .3rem; }
 }
 /* Perfil → Aparência: escolha do layout da receita, com miniatura (3 linhas de ingrediente). */
 .temas.layouts { margin-top: 1rem; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
@@ -1472,3 +1495,107 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
 .layout-mini.completo .lm-linha u { width: 26px; height: 9px; background: none; border: 1.5px solid #968674; }
 .layout-mini.clean { background: color-mix(in srgb, var(--tinta) 5%, var(--cartao)); }
 .layout-mini.clean .lm-linha { background: var(--cartao); padding: 2px 4px; }
+
+/* Clean K1: cabeçalho enxuto (meta do lote, nome como título, estilo como link, Parâmetros numa linha) e menu ⋯. */
+.topo-meta { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; }
+.topo-meta:empty { display: none; }
+:root[data-layout="clean"] .topo-clean { display: grid; grid-template-columns: minmax(0, 1fr); gap: .1rem; align-items: start; margin-bottom: .6rem; }
+:root[data-layout="clean"] .topo-clean .nome-linha { flex: none; align-items: center; }
+:root[data-layout="clean"] .topo-clean .titulo-receita {
+  font-size: 1.45rem !important; font-weight: 750; letter-spacing: -.01em; padding: .1rem .3rem !important; margin-left: -.3rem;
+  border-color: transparent; background: transparent; box-shadow: none;
+}
+:root[data-layout="clean"] .topo-clean .titulo-receita:focus { border-color: var(--borda-campo); background: var(--cartao); }
+:root[data-layout="clean"] .topo-clean .estilo-topo { flex: none; min-width: 0; }
+:root[data-layout="clean"] .topo-clean .estilo-topo > .rotulo-campo { display: none; }
+:root[data-layout="clean"] .topo-clean button.escolha {
+  width: auto; max-width: 100%; justify-self: start; min-height: 2.25rem; padding: .1rem 0; border: none; background: transparent;
+  color: var(--destaque-escuro); font-size: var(--t-corpo); font-weight: 600;
+}
+:root[data-layout="clean"] .topo-clean button.escolha .escolha-seta { color: var(--destaque-escuro); }
+:root[data-layout="clean"] .topo-clean details.lote { margin: 0; padding: 0; background: none; }
+:root[data-layout="clean"] .topo-clean details.lote > summary {
+  background: none; box-shadow: none; border-radius: 0; padding: .2rem 0; margin: 0; min-height: 2.75rem;
+  flex-wrap: nowrap; align-items: center; gap: .5rem;
+}
+:root[data-layout="clean"] .topo-clean details.lote .resumo-titulo { display: none; }
+:root[data-layout="clean"] .topo-clean details.lote .resumo-texto { order: 0; flex: 1 1 auto; font-size: var(--t-p); color: var(--suave); }
+:root[data-layout="clean"] .topo-clean details.lote .resumo-acao { margin-left: 0; }
+:root[data-layout="clean"] .topo-clean details.lote .resumo-acao::after {
+  content: "›"; display: inline-block; font-size: 1.3rem; line-height: 1; font-weight: 400; color: var(--suave); transition: transform .15s;
+}
+:root[data-layout="clean"] .topo-clean details.lote[open] .resumo-acao::after { transform: rotate(90deg); }
+:root[data-layout="clean"] .topo-clean details.lote[open] > summary { margin-bottom: .5rem; }
+:root[data-layout="clean"] .topo-clean .acoes-receita { margin-top: .4rem; }
+button.topo-menu { flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: none; color: var(--tinta); }
+button.topo-menu .ico, .barra-app button.app-menu .ico { width: 1.5rem; height: 1.5rem; }
+.barra-app button.app-menu { flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: transparent; color: var(--tinta); }
+.barra-app.sem-titulo .app-titulo { visibility: hidden; }
+
+dialog.menu-receita { padding: 0; width: min(380px, 94vw); border: none; border-radius: 14px; }
+.menu-receita-topo {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .3rem .3rem .3rem 1rem;
+  border-bottom: 1px solid var(--linha);
+}
+.menu-receita-topo strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-receita-lista { display: grid; padding: .3rem 0 .5rem; }
+button.menu-item {
+  display: flex; align-items: center; justify-content: flex-start; gap: .85rem; width: 100%; min-height: 3rem;
+  padding: .5rem 1rem; border: none; border-radius: 0; background: transparent; color: var(--tinta);
+  font-size: var(--t-corpo); font-weight: 500; text-align: left;
+}
+button.menu-item:hover { background: color-mix(in srgb, var(--tinta) 6%, transparent); border: none; color: var(--tinta); }
+button.menu-item .ico { width: 1.35rem; height: 1.35rem; margin: 0; color: var(--suave); }
+button.menu-item.perigo, button.menu-item.perigo .ico { color: var(--erro); background: transparent; }
+button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, transparent); color: var(--erro); }
+
+@media (max-width: 640px) {
+  /* Cabeçalho e cartão dos números formam um bloco liso logo abaixo da barra do app. */
+  :root[data-layout="clean"] .barra-app { margin-bottom: 0; box-shadow: none; }
+  :root[data-layout="clean"] .topo-clean {
+    margin: 0 calc(-1 * var(--lado)); padding: .7rem var(--lado) .15rem; background: var(--k-cartao);
+  }
+  :root[data-layout="clean"] .topo-clean .acoes-receita { display: none; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) { border-top: 1px solid var(--linha); }
+  /* menu ⋯ = folha no rodapé */
+  dialog.menu-receita { width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto auto calc(.5rem + env(safe-area-inset-bottom)); }
+}
+
+/* Clean K4: leveduras, outros, mostura e fermentação em ficha (nome e um dado | número principal e o segundo). */
+.linhas-ing.passos .ing.ficha.passo { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "nome num"; gap: 0 .7rem; }
+.ficha-valor { font-size: var(--t-corpo); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ficha-valor2 { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.linhas-ing.passos .ing-vazio { padding: .5rem 0; }
+
+/* Clean K5: Água, Lote e Notas em resumo (cartão inteiro tocável, › no título); a seção completa abre numa janela. */
+.cartao.resumida { cursor: pointer; }
+.cartao.resumida > .titulo-linha { min-height: 2.75rem; }
+.resumo-seta { font-size: 1.4rem; line-height: 1; color: var(--suave); padding-right: .35rem; }
+.linhas-ing.resumo .ing-sub { white-space: normal; }
+.ficha-valor.estado-dentro { color: var(--lupulo); }
+.ficha-valor.estado-perto { color: var(--ambar); }
+.ficha-valor.estado-fora { color: var(--fora); }
+/* Na janela, o título da própria seção sai (o topo da janela já diz qual é). */
+.resumo-janela .item-corpo > .cartao > :is(h3, .titulo-linha),
+.resumo-janela .item-corpo > div > .cartao > :is(h3, .titulo-linha) { display: none; }
+.resumo-janela .item-corpo .cartao { margin-bottom: .6rem; }
+/* Parâmetros (Clean): Mais números, Volumes e Água do antigo painel lateral, abaixo dos campos. */
+.parametros-numeros { display: grid; gap: .4rem; margin-top: .8rem; }
+.parametros-numeros .bloco-painel { margin: 0; padding: .5rem .7rem; background: var(--k-pagina, var(--painel)); border-radius: var(--raio-p); }
+@media (max-width: 640px) {
+  :root[data-layout="clean"] .resumo-janela { max-height: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+}
+/* Clean K2 em 320–360 px: no cartão dos números, rótulos curtos ("pH", "EBC"), como na linha fina; com a fonte do
+   GitHub "pH MOSTURA" passava da borda em 320 px (CI do PR #52). */
+@media (max-width: 360px) {
+  :root[data-layout="clean"] .vital.no-topo .rot-longo { display: none; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .6rem; }
+}
+/* Clean: Parâmetros (cartão da main, 24/11/2026) no tom da ficha: números sem moldura, "Todos ›" como link. */
+:root[data-layout="clean"] .param-resumo input.param-num {
+  border-color: transparent; background: color-mix(in srgb, var(--tinta) 6%, transparent); font-weight: 700;
+}
+:root[data-layout="clean"] .param-resumo input.param-num:focus { border-color: var(--destaque); background: var(--cartao); }
+:root[data-layout="clean"] [data-secao="parametros"] button.param-todos {
+  border: none; background: transparent; color: var(--destaque-escuro); min-height: 2.75rem; padding: 0 .2rem;
+}
