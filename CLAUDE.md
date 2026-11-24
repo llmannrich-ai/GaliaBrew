@@ -136,7 +136,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  274 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  287 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -147,7 +147,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
   (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, ~157 px desde
-  22/11/2026: puxador "detalhes" + 2 linhas de 3 cartões com número e régua; com teclado aberto fica baixa, sem régua;
+  22/11/2026: puxador "detalhes" + 2 linhas de 3 números com régua; com teclado aberto fica baixa, sem régua;
   "detalhes" abre estado e faixas) com OG, FG, ABV, IBU, cor, pH da mostura (faixa fixa 5,2–5,6, ideal 5,3–5,5,
   não depende do estilo; "—" sem grão na mostura), régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
   folga de 25%, "perto" = últimos 10% da faixa, valor arredondado como na tela), estado com cor + ícone + texto, e a
@@ -202,7 +202,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   sem arquivo .svg para não precisar de requisição nem mexer na CSP): títulos de seção com ícone num círculo, botões
   (adicionar, desfazer, refazer, voltar) e copinho na marca. Barra do grist (cada malte na própria cor, % do peso,
   descrição para leitor de tela) e linha do tempo da fervura (`graficos.js`: bolinha por lúpulo, tamanho ~ gramas,
-  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Lista de receitas em cartões no celular
+  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Copo ao lado da barra do grist (24/11/2026, pedido do
+  responsável) na cor FINAL da cerveja (`corHexDeSrm`, igual ao copo da barra vital; `aria-label` "Cor da cerveja: N EBC");
+  a barra mostra a cor de cada grão (`corHexDeMalte`). Captura `p6u` (390 e 320 px). Lista de receitas em cartões no celular
   (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app mantido.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
@@ -213,7 +215,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124e.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124h.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -286,6 +288,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   style.css + linha no `TEMAS` do tema.js + reconferir o contraste.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
   ingrediente só ficam compactas até 640 px.
+
+## Barra de números limpa no celular (24/11/2026, pedido do responsável: "carregada, com bordas"; só style.css + vital.js)
+- Sem cartões, sem bordas e sem cantos arredondados: os 6 números ficam direto no papel da barra (`--painel`), que se
+  separa da página só por uma sombra suave para cima. Estado = ponto colorido antes do rótulo (verde no estilo, âmbar
+  perto, vermelho fora; fora o número também fica vermelho). Régua de 4 px com o marcador recortado no papel; na cor, a
+  faixa do estilo são dois traços [ ] sobre a escala de cor. Ponto com a cor da cerveja antes do número da cor
+  (`.vital-amostra`, só no celular; some na linha fina do teclado). Diferença da última mudança = texto solto no canto,
+  sem pílula. Computador não mudou. Capturas `p5`, `p5c`, `p6d`, `p6g`.
 
 ## Janela do item (24/11/2026, pedido do responsável; sem migração)
 - Os detalhes de malte e lúpulo NÃO abrem mais embutidos na linha: tocar no item abre `dialog.item-janela`
@@ -382,6 +392,20 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Portal: página `#/ferramentas` (`ferramentas.js`: calculadoras avulsas, valores ficam enquanto o portal está aberto;
   tabela de CO₂ típico por estilo, porque o catálogo BJCP não tem CO₂); card Lote com CO₂ desejado e açúcar; painel
   com a temperatura da água da mostura e o priming.
+
+## Menu de Ferramentas (24/11/2026, pedido do responsável; sem migração)
+- `#/ferramentas` é um MENU de botões (`ul.ferramentas-menu` > `button.ferramenta-botao`), um por ferramenta: ícone num
+  quadrado, grupo (Brassagem / Envase / Medição), nome e o resultado da última conta (ex.: "15,0 L a 72,3 °C"). No
+  celular, um abaixo do outro na largura toda (≥ 5 rem de altura); no computador, grade de colunas.
+- Tocar abre a ferramenta numa janela (`dialog.ferramenta-janela`, `abrirFerramenta`): cabeça PRESA no topo com ícone,
+  nome, × e o RESULTADO em blocos (número grande, rótulo embaixo), para ficar à vista enquanto a roleta/teclado mudam os
+  campos; campos e notas; "Pronto" no pé. Fecha por ×, Pronto, Esc, toque no fundo ou troca de rota (com a roleta aberta,
+  Esc/toque no fundo fecham só a roleta); ao fechar o botão atualiza o resumo e recebe o foco. Celular: cartão no meio
+  da tela (como a janela do item); a roleta entra na janela.
+- Ferramenta nova = uma linha no `FERRAMENTAS` do ferramentas.js: `contas()` (sem DOM: { metricas: [[rótulo, valor]],
+  avisos }), `campos(calcular)`, `resumo(c)` (linha do botão), ícone do `icones.js` (novos: garrafa, refratometro,
+  densimetro, abrir) e `cor` = par de papel de parede (`mostura`, `ferm`, `lavagem`, `agua` → `--pp-*`; contraste já
+  conferido em todos os temas). Capturas `p6y` (menu 390 px), `p6y2` (priming 390 px), `p6z` (roleta na janela, 320 px).
 
 ## Refratômetro e densímetro (22/11/2026, sem migração)
 - `calculos.js`: `sgDeBrix` (°Brix ÷ fator → °P → SG; fator padrão 1,04), `refratometro` (FG com álcool pela cúbica
