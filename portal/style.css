@@ -211,11 +211,10 @@ a { color: var(--destaque-escuro); }
 /* ---------- blocos ---------- */
 /* Seção sem contorno: separada pelo título numa faixa e pelo espaço em branco. */
 .cartao { background: transparent; border: none; border-radius: 0; padding: 0; box-shadow: none; margin-bottom: 1.75rem; }
-.cartao > h3, .cartao > .titulo-linha, details.lote > summary {
+.cartao > h3, .cartao > .titulo-linha {
   background: var(--painel); box-shadow: inset 4px 0 0 var(--destaque); border-radius: var(--raio-p);
   padding: .4rem .7rem .4rem 1rem; margin: 0 0 .8rem; min-height: 2.8rem;
 }
-details.lote:not([open]) > summary { margin-bottom: 0; }
 .cartao > h3 { display: flex; align-items: center; }
 .cartao > .titulo-linha { flex-wrap: wrap; row-gap: .4rem; }
 .cartao > label, .cartao > button { margin-bottom: .7rem; }
@@ -336,16 +335,8 @@ button.excluir-receita:hover { color: var(--sobre-destaque); background: var(--e
 .editor-corpo, .painel-lote, .cartao { min-width: 0; }
 .painel-lote { position: sticky; top: calc(var(--topo-h, 3.4rem) + var(--vital-h, 8rem) + 1.6rem); }
 
-/* Lote: uma linha de resumo; abre para editar */
 details > summary { cursor: pointer; list-style: none; }
 details > summary::-webkit-details-marker { display: none; }
-details.lote > summary { display: flex; align-items: baseline; gap: .4rem 1rem; flex-wrap: wrap; }
-.resumo-titulo { font-weight: 700; font-size: 1.1rem; }
-.resumo-texto { flex: 1; color: var(--suave); font-variant-numeric: tabular-nums; }
-.resumo-acao::after { content: "Editar ▾"; color: var(--destaque-escuro); font-size: var(--t-p); font-weight: 600; }
-details[open] .resumo-acao::after { content: "Fechar ▴"; }
-details.lote[open] > summary { margin-bottom: .9rem; }
-details.lote .grade-form + .grade-form { margin-top: .7rem; }
 
 /* Painel lateral: blocos recolhíveis */
 .bloco-painel { padding: .7rem 1rem; background: var(--painel); border-radius: var(--raio); margin-bottom: 1rem; }
@@ -596,7 +587,7 @@ input.alvo-valor { font-size: var(--t-m); font-weight: 700; }
 .ico { width: 1.15em; height: 1.15em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.2em; }
 button .ico { margin-right: .1rem; }
 button.icone .ico, .app-voltar .ico { margin: 0; width: 1.35rem; height: 1.35rem; }
-.titulo-secao, .resumo-titulo { display: inline-flex; align-items: center; gap: .55rem; }
+.titulo-secao { display: inline-flex; align-items: center; gap: .55rem; }
 .titulo-icone {
   display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; flex: none;
   border-radius: 50%; background: var(--painel); color: var(--destaque-escuro); border: 1px solid var(--linha);
@@ -724,12 +715,11 @@ dialog form { display: grid; gap: .9rem; }
 .editor-corpo > :is([data-secao="inicio"], [data-secao="outros"], [data-secao="fermentacao"], [data-secao="geral"]) { --pp: var(--pp-liso); }
 .editor-corpo > [data-secao="notas"] { --pp-motivo: var(--pp-notas-motivo); }
 /* o título deixa de ser faixa: o fundo da seção já separa; o ícone leva a cor da seção */
-.editor-corpo > .cartao > h3, .editor-corpo > .cartao > .titulo-linha, .editor-corpo > details.lote > summary {
+.editor-corpo > .cartao > h3, .editor-corpo > .cartao > .titulo-linha {
   background: transparent; box-shadow: none; padding: 0; min-height: 0; margin: 0 0 .75rem;
 }
-.editor-corpo > details.lote:not([open]) > summary { margin-bottom: 0; }
 .editor-corpo > .cartao .titulo-icone { background: var(--cartao); color: var(--pp-cor); border: 1px solid color-mix(in srgb, var(--pp-cor) 35%, transparent); }
-.editor-corpo > .cartao .titulo-secao, .editor-corpo > details.lote .resumo-titulo { font-size: 1.15rem; }
+.editor-corpo > .cartao .titulo-secao { font-size: 1.15rem; }
 /* linhas de ingrediente e cartões de tabela sem fundo próprio (a cor da seção aparece); separador mais visível */
 .editor-corpo .ing { background: transparent; border-top-color: color-mix(in srgb, var(--pp-cor) 22%, transparent); }
 .editor-corpo .ing.arrastando { background: var(--cartao); }
@@ -842,8 +832,6 @@ dialog form { display: grid; gap: .9rem; }
   .conteudo.com-vital { padding-bottom: calc(var(--vital-h, 5rem) + 1rem); }
   input[type="text"], input[type="email"], input[type="password"], input[type="search"], select, textarea { font-size: 16px; }
   .estilo-topo { flex: 1 1 100%; }
-  details.lote > summary .resumo-texto { order: 3; flex: 1 1 100%; }
-  details.lote > summary .resumo-acao { margin-left: auto; }
 
   /* Editor no celular: sem o menu geral; barra do app presa no topo (voltar, nome, desfazer, salvar). */
   body.no-editor .barra-movel { display: none; }
@@ -1010,8 +998,7 @@ dialog form { display: grid; gap: .9rem; }
   /* Leitura no celular (23/11/2026, regra nº 0 do CLAUDE.md): nenhum texto abaixo de ~12 px (rótulos em maiúsculas
      tinham 10,9 px), dado do ingrediente sem corte e menos vão entre seções. */
   .cartao { margin-bottom: 1.25rem; }
-  .cartao > h3, .cartao > .titulo-linha, details.lote > summary { margin-bottom: .6rem; padding-left: .85rem; }
-  details.lote:not([open]) > summary { margin-bottom: 0; }
+  .cartao > h3, .cartao > .titulo-linha { margin-bottom: .6rem; padding-left: .85rem; }
   .ing-sub { font-size: .875rem; white-space: normal; line-height: 1.3; }
   .ing-dado-rot { font-size: .72rem; }
   .tempo-reguas { font-size: .8rem; }
@@ -1142,8 +1129,8 @@ button.ferramenta-botao:active { transform: scale(.985); }
 /* Janela da ferramenta: cabeça presa no topo (ícone, nome, × e o RESULTADO, que fica à vista enquanto a roleta ou o
    teclado mudam os números); campos; "Pronto" no pé. No celular é um cartão no meio da tela (como a janela do item);
    com a roleta aberta o roleta.js prende a janela onde está e ela rola por dentro. */
-dialog.ferramenta-janela { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
-dialog.ferramenta-janela[open] { display: flex; flex-direction: column; }
+dialog:is(.ferramenta-janela, .parametros-janela) { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
+dialog:is(.ferramenta-janela, .parametros-janela)[open] { display: flex; flex-direction: column; }
 .fj-cabeca { position: sticky; top: 0; z-index: 1; background: var(--fc, var(--painel)); }
 .fj-topo { display: flex; align-items: center; gap: .7rem; padding: .5rem .4rem .35rem .9rem; }
 .fj-topo .fb-icone { width: 2.5rem; height: 2.5rem; border-radius: 12px; }
@@ -1174,10 +1161,10 @@ dialog.ferramenta-janela[open] { display: flex; flex-direction: column; }
   position: sticky; bottom: 0; display: flex; justify-content: flex-end; padding: .55rem .9rem;
   background: var(--cartao); border-top: 1px solid var(--linha);
 }
-dialog.ferramenta-janela:has(> .roleta) .fj-pe { position: static; }
+dialog:is(.ferramenta-janela, .parametros-janela):has(> .roleta) .fj-pe { position: static; }
 @media (max-width: 640px) {
   .ferramentas-menu { gap: .55rem; }
-  dialog.ferramenta-janela {
+  dialog:is(.ferramenta-janela, .parametros-janela) {
     width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto; border: none; border-radius: 16px;
     max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
@@ -1187,6 +1174,48 @@ dialog.ferramenta-janela:has(> .roleta) .fj-pe { position: static; }
 @media (max-width: 360px) {
   .fj-metricas { grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr)); }
   .fj-metricas .metrica .val { font-size: 1.125rem; }
+}
+
+/* ---------- parâmetros (24/11/2026, pedido do responsável) ----------
+   Na receita: os 3 números principais (lote, eficiência, fervura) à vista e tocáveis (celular: roleta, como a
+   quantidade do malte). "Todos" abre a janela (mesmo molde das Ferramentas) com o equipamento e os 9 campos em grade
+   de 3 colunas: rótulo curto em cima, número + unidade embaixo (nenhum número passa de 5 dígitos, então o campo não
+   precisa da largura toda). O rótulo pode quebrar em 2 linhas no 320 px: subgrid mantém os campos alinhados. */
+.param-grade { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .15rem .6rem; }
+.param { display: grid; grid-row: span 2; grid-template-rows: subgrid; gap: .2rem; min-width: 0; margin: 0 0 .45rem; }
+.param-rot { align-self: end; font-size: .8125rem; font-weight: 600; line-height: 1.2; color: var(--suave); }
+.param-rot-fim { white-space: nowrap; }
+.param-rot button.info { margin-left: .2rem; }
+/* ⓘ: a explicação abre na largura da grade, por cima da linha de baixo (na coluna de 1/3 ficaria uma tira estreita). */
+.param .info-balao { position: absolute; left: 0; right: 0; z-index: 2; margin-top: .25rem; box-shadow: 0 6px 18px rgb(0 0 0 / .18); }
+.param-valor { display: flex; align-items: center; gap: .3rem; min-width: 0; }
+.param-valor input.param-num { flex: 1 1 auto; width: 0; min-width: 0; }
+.param-valor .unidade { flex: none; color: var(--suave); font-size: var(--t-p); }
+/* seção da receita: os 3 números em destaque, colunas que não esticam além do necessário no computador */
+.param-resumo { grid-template-columns: repeat(3, minmax(0, 9.5rem)); }
+.param-resumo .param { margin-bottom: 0; }
+.param-resumo .param-rot { font-size: var(--t-rotulo); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.param-resumo input.param-num { font-size: var(--t-m); font-weight: 750; text-align: center; }
+.parametros > .titulo-linha { flex-wrap: nowrap; }
+.parametros > .titulo-linha > h3 { flex: 1 1 auto; min-width: 0; }
+.parametros .total-extra { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+button.param-todos { flex: none; display: inline-flex; align-items: center; gap: .3rem; min-height: 2.5rem; padding: .25rem .8rem; font-weight: 650; }
+.param-seta { font-size: 1.25rem; line-height: 1; }
+.param-equip { display: grid; gap: .2rem; }
+.param-equip select { width: 100%; }
+dialog.parametros-janela .fj-metricas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 640px) {
+  .param-resumo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .param-resumo .param-rot { font-size: .75rem; }
+  .param-resumo input.param-num { height: 2.75rem; }
+  button.param-todos { min-height: 2.75rem; }
+  .param-rot { font-size: .8rem; }
+}
+@media (max-width: 360px) {
+  dialog.parametros-janela .fj-corpo { padding-left: .7rem; padding-right: .7rem; }
+  dialog.parametros-janela .param-grade { column-gap: .45rem; }
+  .param-rot { font-size: .75rem; }
+  .param-rot button.info { margin-left: .1rem; }
 }
 
 /* ---------- água ---------- */
@@ -1379,8 +1408,7 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
 }
 :root[data-layout="clean"] .editor-corpo > .cartao::before, :root[data-layout="clean"] .editor-corpo > .cartao::after { content: none; }
 :root[data-layout="clean"] .editor-corpo .titulo-icone { display: none; }
-:root[data-layout="clean"] .editor-corpo > .cartao .titulo-secao,
-:root[data-layout="clean"] .editor-corpo > details.lote .resumo-titulo {
+:root[data-layout="clean"] .editor-corpo > .cartao .titulo-secao {
   font-size: var(--t-rotulo); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); gap: .4rem;
 }
 :root[data-layout="clean"] .editor-corpo > .cartao > h3, :root[data-layout="clean"] .editor-corpo > .cartao > .titulo-linha { margin-bottom: .35rem; }
@@ -1430,6 +1458,29 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
   .linhas-ing.ferm .ing.ficha, .linhas-ing.lup .ing.ficha, .linhas-ing.lev .ing.ficha { grid-template-columns: 1rem minmax(0, 1fr) auto; grid-template-areas: "cor nome num"; gap: 0 .65rem; }
   .ing.ficha .ing-sub { white-space: nowrap; }
   .ficha-num .campo-qtd input.qtd { width: 4.4rem; height: 2rem; }
+
+  /* K2: números num cartão no topo da receita (no fluxo da página, com o copo na cor da cerveja). Quando o cartão sai
+     da tela, o vital.js põe "flutuante" + "com-teclado" e ele vira a linha fina presa no rodapé (a mesma do teclado). */
+  :root[data-layout="clean"] .vital { background: var(--k-cartao); }
+  :root[data-layout="clean"] .grist-copo { display: none; }      /* o copo já está no cartão dos números */
+  :root[data-layout="clean"] .vital .vital-item .regua-marca { border-color: var(--k-cartao); }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) {
+    position: static; max-height: none; overflow: visible; box-shadow: none; border-radius: 0;
+    margin: 0 calc(-1 * var(--lado)) .6rem; padding: .75rem var(--lado) .2rem;
+    grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: .8rem; align-items: center;
+  }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-copo { display: block; align-self: start; padding-top: .2rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-copo .copo { width: 2.75rem; height: 3.85rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .9rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.35rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-mais, .vital-aviso, .vital-ferramentas) { grid-column: 1 / -1; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais { order: 0; margin-top: .3rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais span::before { content: "detalhes ▾"; }
+  :root[data-layout="clean"] .vital.no-topo.aberta:not(.com-teclado) .vital-mais span::before { content: "fechar ▴"; }
+  :root[data-layout="clean"] .vital.no-topo.aberta:not(.com-teclado) .vital-copo { align-self: start; }
+  /* Linha fina por rolagem (sem teclado): fica no rodapé, acima da área do gesto do iPhone. */
+  :root[data-layout="clean"] .vital.flutuante { padding-bottom: calc(.3rem + env(safe-area-inset-bottom)); }
+  :root[data-layout="clean"].teclado-aberto .vital.flutuante { padding-bottom: .3rem; }
 }
 /* Perfil → Aparência: escolha do layout da receita, com miniatura (3 linhas de ingrediente). */
 .temas.layouts { margin-top: 1rem; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
@@ -1443,3 +1494,107 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
 .layout-mini.completo .lm-linha u { width: 26px; height: 9px; background: none; border: 1.5px solid #968674; }
 .layout-mini.clean { background: color-mix(in srgb, var(--tinta) 5%, var(--cartao)); }
 .layout-mini.clean .lm-linha { background: var(--cartao); padding: 2px 4px; }
+
+/* Clean K1: cabeçalho enxuto (meta do lote, nome como título, estilo como link, Parâmetros numa linha) e menu ⋯. */
+.topo-meta { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; }
+.topo-meta:empty { display: none; }
+:root[data-layout="clean"] .topo-clean { display: grid; grid-template-columns: minmax(0, 1fr); gap: .1rem; align-items: start; margin-bottom: .6rem; }
+:root[data-layout="clean"] .topo-clean .nome-linha { flex: none; align-items: center; }
+:root[data-layout="clean"] .topo-clean .titulo-receita {
+  font-size: 1.45rem !important; font-weight: 750; letter-spacing: -.01em; padding: .1rem .3rem !important; margin-left: -.3rem;
+  border-color: transparent; background: transparent; box-shadow: none;
+}
+:root[data-layout="clean"] .topo-clean .titulo-receita:focus { border-color: var(--borda-campo); background: var(--cartao); }
+:root[data-layout="clean"] .topo-clean .estilo-topo { flex: none; min-width: 0; }
+:root[data-layout="clean"] .topo-clean .estilo-topo > .rotulo-campo { display: none; }
+:root[data-layout="clean"] .topo-clean button.escolha {
+  width: auto; max-width: 100%; justify-self: start; min-height: 2.25rem; padding: .1rem 0; border: none; background: transparent;
+  color: var(--destaque-escuro); font-size: var(--t-corpo); font-weight: 600;
+}
+:root[data-layout="clean"] .topo-clean button.escolha .escolha-seta { color: var(--destaque-escuro); }
+:root[data-layout="clean"] .topo-clean details.lote { margin: 0; padding: 0; background: none; }
+:root[data-layout="clean"] .topo-clean details.lote > summary {
+  background: none; box-shadow: none; border-radius: 0; padding: .2rem 0; margin: 0; min-height: 2.75rem;
+  flex-wrap: nowrap; align-items: center; gap: .5rem;
+}
+:root[data-layout="clean"] .topo-clean details.lote .resumo-titulo { display: none; }
+:root[data-layout="clean"] .topo-clean details.lote .resumo-texto { order: 0; flex: 1 1 auto; font-size: var(--t-p); color: var(--suave); }
+:root[data-layout="clean"] .topo-clean details.lote .resumo-acao { margin-left: 0; }
+:root[data-layout="clean"] .topo-clean details.lote .resumo-acao::after {
+  content: "›"; display: inline-block; font-size: 1.3rem; line-height: 1; font-weight: 400; color: var(--suave); transition: transform .15s;
+}
+:root[data-layout="clean"] .topo-clean details.lote[open] .resumo-acao::after { transform: rotate(90deg); }
+:root[data-layout="clean"] .topo-clean details.lote[open] > summary { margin-bottom: .5rem; }
+:root[data-layout="clean"] .topo-clean .acoes-receita { margin-top: .4rem; }
+button.topo-menu { flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: none; color: var(--tinta); }
+button.topo-menu .ico, .barra-app button.app-menu .ico { width: 1.5rem; height: 1.5rem; }
+.barra-app button.app-menu { flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: transparent; color: var(--tinta); }
+.barra-app.sem-titulo .app-titulo { visibility: hidden; }
+
+dialog.menu-receita { padding: 0; width: min(380px, 94vw); border: none; border-radius: 14px; }
+.menu-receita-topo {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .3rem .3rem .3rem 1rem;
+  border-bottom: 1px solid var(--linha);
+}
+.menu-receita-topo strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-receita-lista { display: grid; padding: .3rem 0 .5rem; }
+button.menu-item {
+  display: flex; align-items: center; justify-content: flex-start; gap: .85rem; width: 100%; min-height: 3rem;
+  padding: .5rem 1rem; border: none; border-radius: 0; background: transparent; color: var(--tinta);
+  font-size: var(--t-corpo); font-weight: 500; text-align: left;
+}
+button.menu-item:hover { background: color-mix(in srgb, var(--tinta) 6%, transparent); border: none; color: var(--tinta); }
+button.menu-item .ico { width: 1.35rem; height: 1.35rem; margin: 0; color: var(--suave); }
+button.menu-item.perigo, button.menu-item.perigo .ico { color: var(--erro); background: transparent; }
+button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, transparent); color: var(--erro); }
+
+@media (max-width: 640px) {
+  /* Cabeçalho e cartão dos números formam um bloco liso logo abaixo da barra do app. */
+  :root[data-layout="clean"] .barra-app { margin-bottom: 0; box-shadow: none; }
+  :root[data-layout="clean"] .topo-clean {
+    margin: 0 calc(-1 * var(--lado)); padding: .7rem var(--lado) .15rem; background: var(--k-cartao);
+  }
+  :root[data-layout="clean"] .topo-clean .acoes-receita { display: none; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) { border-top: 1px solid var(--linha); }
+  /* menu ⋯ = folha no rodapé */
+  dialog.menu-receita { width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto auto calc(.5rem + env(safe-area-inset-bottom)); }
+}
+
+/* Clean K4: leveduras, outros, mostura e fermentação em ficha (nome e um dado | número principal e o segundo). */
+.linhas-ing.passos .ing.ficha.passo { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "nome num"; gap: 0 .7rem; }
+.ficha-valor { font-size: var(--t-corpo); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ficha-valor2 { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.linhas-ing.passos .ing-vazio { padding: .5rem 0; }
+
+/* Clean K5: Água, Lote e Notas em resumo (cartão inteiro tocável, › no título); a seção completa abre numa janela. */
+.cartao.resumida { cursor: pointer; }
+.cartao.resumida > .titulo-linha { min-height: 2.75rem; }
+.resumo-seta { font-size: 1.4rem; line-height: 1; color: var(--suave); padding-right: .35rem; }
+.linhas-ing.resumo .ing-sub { white-space: normal; }
+.ficha-valor.estado-dentro { color: var(--lupulo); }
+.ficha-valor.estado-perto { color: var(--ambar); }
+.ficha-valor.estado-fora { color: var(--fora); }
+/* Na janela, o título da própria seção sai (o topo da janela já diz qual é). */
+.resumo-janela .item-corpo > .cartao > :is(h3, .titulo-linha),
+.resumo-janela .item-corpo > div > .cartao > :is(h3, .titulo-linha) { display: none; }
+.resumo-janela .item-corpo .cartao { margin-bottom: .6rem; }
+/* Parâmetros (Clean): Mais números, Volumes e Água do antigo painel lateral, abaixo dos campos. */
+.parametros-numeros { display: grid; gap: .4rem; margin-top: .8rem; }
+.parametros-numeros .bloco-painel { margin: 0; padding: .5rem .7rem; background: var(--k-pagina, var(--painel)); border-radius: var(--raio-p); }
+@media (max-width: 640px) {
+  :root[data-layout="clean"] .resumo-janela { max-height: calc(100dvh - 1rem - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+}
+/* Clean K2 em 320–360 px: no cartão dos números, rótulos curtos ("pH", "EBC"), como na linha fina; com a fonte do
+   GitHub "pH MOSTURA" passava da borda em 320 px (CI do PR #52). */
+@media (max-width: 360px) {
+  :root[data-layout="clean"] .vital.no-topo .rot-longo { display: none; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .6rem; }
+}
+/* Clean: Parâmetros (cartão da main, 24/11/2026) no tom da ficha: números sem moldura, "Todos ›" como link. */
+:root[data-layout="clean"] .param-resumo input.param-num {
+  border-color: transparent; background: color-mix(in srgb, var(--tinta) 6%, transparent); font-weight: 700;
+}
+:root[data-layout="clean"] .param-resumo input.param-num:focus { border-color: var(--destaque); background: var(--cartao); }
+:root[data-layout="clean"] [data-secao="parametros"] button.param-todos {
+  border: none; background: transparent; color: var(--destaque-escuro); min-height: 2.75rem; padding: 0 .2rem;
+}

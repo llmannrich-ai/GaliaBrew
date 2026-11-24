@@ -1,9 +1,9 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
-import { el, svg, numeroBR } from "./ui.js?v=20261124p";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261124p";
-import * as O from "./opcoes.js?v=20261124p";
+import { el, svg, numeroBR } from "./ui.js?v=20261124q";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261124q";
+import * as O from "./opcoes.js?v=20261124q";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -81,7 +81,8 @@ function acompanharTeclado(barra) {
     const alturaRoleta = roleta ? Math.round(roleta.getBoundingClientRect().height) : 0;
     const aberto = window.innerHeight - altura > 120 || digitando || alturaRoleta > 0;
     barra.style.setProperty("--teclado", `${Math.max(0, Math.round(window.innerHeight - altura - topo), alturaRoleta)}px`);
-    barra.classList.toggle("com-teclado", aberto);
+    // Layout Clean: o cartão do topo que saiu da tela também vira a linha fina no rodapé.
+    barra.classList.toggle("com-teclado", aberto || barra.classList.contains("flutuante"));
     if (aberto && barra.classList.contains("aberta")) {         // "detalhes" aberto + teclado = sem espaço: fecha
       barra.classList.remove("aberta");
       barra.querySelector(".vital-mais")?.setAttribute("aria-expanded", "false");
@@ -135,7 +136,7 @@ export function manterAcimaDaBarra(campo, barra) {
  * Cria a barra. atualizar(res, estilo, { mudanca, campo }) a cada cálculo; mudanca = true quando veio de uma edição
  * (aí aparece a diferença em relação ao valor de antes da edição); campo = de onde veio (a diferença acumula no mesmo campo).
  */
-export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
+export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = false } = {}) {
   const defs = indicadores();
   let referencia = null;          // números da tentativa fixada (para comparar), ou null
   const vidro = copo();
@@ -197,9 +198,37 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
     ferramentas,
     leitor);
 
+  // Layout Clean (K2, docs/PLANO-CLEAN.md): no celular os números ficam num CARTÃO no topo da receita, no fluxo da
+  // página (com o copo). Quando o cartão sai da tela (por baixo da barra do app), vira a linha fina presa no rodapé
+  // (classe "flutuante" → a mesma linha do teclado). A "vaga" guarda a altura do cartão para a página não pular.
+  const vaga = noTopo ? el("div", { class: "vital-vaga" }, barra) : null;
+  if (vaga) barra.classList.add("no-topo");
   // Altura da barra para o CSS (no celular ela cobre o rodapé e o conteúdo precisa de espaço embaixo).
   if (window.ResizeObserver) {
-    new ResizeObserver(() => document.documentElement.style.setProperty("--vital-h", `${barra.offsetHeight}px`)).observe(barra);
+    new ResizeObserver(() => {
+      document.documentElement.style.setProperty("--vital-h", `${barra.offsetHeight}px`);
+      if (vaga && !barra.classList.contains("com-teclado")) vaga.style.minHeight = `${barra.offsetHeight}px`;
+    }).observe(barra);
+  }
+  if (vaga && window.IntersectionObserver) {
+    let observador = null;
+    const observar = () => {
+      observador?.disconnect();
+      const app = document.querySelector(".barra-app");
+      const cima = app && app.offsetParent ? Math.round(app.getBoundingClientRect().height) : 0;
+      observador = new IntersectionObserver(([e]) => {
+        const passou = !e.isIntersecting && e.boundingClientRect.top < e.rootBounds.top + 1;
+        if (passou === barra.classList.contains("flutuante")) return;
+        barra.classList.toggle("flutuante", passou);
+        barra.classList.toggle("com-teclado", passou || document.documentElement.classList.contains("teclado-aberto"));
+        if (passou && barra.classList.contains("aberta")) {
+          barra.classList.remove("aberta");
+          botaoMais.setAttribute("aria-expanded", "false");
+        }
+      }, { rootMargin: `-${cima}px 0px 0px 0px` });
+      observador.observe(vaga);
+    };
+    requestAnimationFrame(observar);
   }
   acompanharTeclado(barra);
 
@@ -285,5 +314,5 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
     barra.classList.toggle("com-referencia", Boolean(res));
   }
 
-  return { elemento: barra, atualizar, definirReferencia };
+  return { elemento: barra, lugar: vaga ?? barra, atualizar, definirReferencia };
 }

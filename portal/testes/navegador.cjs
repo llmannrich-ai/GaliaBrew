@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124p");
+    const m = await import("./fontes.js?v=20261124q");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -421,14 +421,40 @@ const erros = [];
   verificar(/^18(,0)?$/.test(await pagina.inputValue('input[aria-label="Água da mostura (L)"]')) && /^14(,0)?$/.test(await pagina.inputValue('input[aria-label="Água de lavagem (L)"]')),
     "água: litros informados nos campos do topo (18 e 14)");
   verificar((await pagina.textContent(".painel-lote")).includes("Água necessária"), "painel mostra a água necessária quando o informado não fecha");
+  // Parâmetros (24/11/2026): na receita só lote, eficiência e fervura; "Todos" abre a janela com o equipamento e os 9 campos.
+  verificar(await pagina.locator('[data-secao="parametros"] .param-resumo input').count() === 3
+    && await pagina.locator('[data-secao="parametros"] input[aria-label="Água/grão na mostura (L/kg)"]').count() === 0,
+    "parâmetros: a seção mostra só os 3 números principais (o resto fica na janela)");
+  await pagina.click('button.param-todos');
+  await pagina.waitForSelector("dialog.parametros-janela[open]");
+  const gradeParam = await pagina.$$eval("dialog.parametros-janela .param-grade .param", (ls) => ({
+    n: ls.length, colunas: new Set(ls.map((l) => Math.round(l.getBoundingClientRect().left))).size,
+    linhas: new Set(ls.map((l) => Math.round(l.querySelector("input").getBoundingClientRect().top))).size }));
+  verificar(gradeParam.n === 9 && gradeParam.colunas === 3 && gradeParam.linhas === 3,
+    `parâmetros: janela com os 9 campos em 3 colunas × 3 linhas (${JSON.stringify(gradeParam)})`);
+  verificar(await pagina.locator('dialog.parametros-janela select[aria-label="Equipamento"]').count() === 1
+    && (await pagina.textContent("dialog.parametros-janela .fj-metricas")).includes("Pré-fervura"), "parâmetros: equipamento e volumes na janela");
   // Água/grão dos Parâmetros = água da mostura informada ÷ grão; mudar a relação recalcula os litros da mostura.
-  const relacao = 'input[aria-label="Água/grão na mostura (L/kg)"]';
+  const relacao = 'dialog.parametros-janela input[aria-label="Água/grão na mostura (L/kg)"]';
   verificar(await pagina.inputValue(relacao) === "3,75", "água/grão dos Parâmetros segue a água da mostura informada (18 L ÷ 4,8 kg = 3,75)");
   const definirRelacao = (v) => pagina.$eval(relacao, (n, v) => { n.value = v; n.dispatchEvent(new Event("input", { bubbles: true })); }, v);
   await definirRelacao("4");
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "19,2", "mudar a água/grão (4 L/kg) recalcula a água da mostura (19,2 L)");
   await definirRelacao("3,75");
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "voltar a 3,75 L/kg devolve 18 L");
+  // Volume do lote na janela: os volumes da janela acompanham; ao fechar, a seção mostra o número novo.
+  const preJanela = await pagina.textContent("dialog.parametros-janela .fj-metricas");
+  const volJanela = 'dialog.parametros-janela input[aria-label="Volume no fermentador (L)"]';
+  await pagina.fill(volJanela, "25");
+  verificar(await pagina.textContent("dialog.parametros-janela .fj-metricas") !== preJanela, "parâmetros: volumes da janela mudam ao vivo");
+  await pagina.fill(volJanela, "23");
+  await pagina.click("dialog.parametros-janela button.item-pronto");
+  await pagina.waitForSelector("dialog.parametros-janela", { state: "detached", timeout: 2000 }).catch(() => {});
+  const fechouParam = { janelas: await pagina.locator("dialog.parametros-janela").count(),
+    volume: await pagina.inputValue('[data-secao="parametros"] input[aria-label="Volume no fermentador (L)"]'),
+    foco: await pagina.evaluate(() => document.activeElement?.className) };
+  verificar(fechouParam.janelas === 0 && fechouParam.volume === "23,0" && fechouParam.foco.includes("param-todos"),
+    `parâmetros: Pronto fecha, a seção mostra o volume e o foco volta ao botão (${JSON.stringify(fechouParam)})`);
   // Seção Água enxuta: sem diluição, sem texto explicativo nos blocos, base e alvo na mesma linha.
   verificar(await pagina.locator('[data-secao="agua"] input[aria-label*="iluição"]').count() === 0
     && await pagina.locator('[data-secao="agua"] .bloco-agua > p.nota').count() === 0, "água: sem campo de diluição e sem texto explicativo nos blocos");
@@ -462,7 +488,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -521,12 +547,13 @@ const erros = [];
     && await pagina.locator('[data-secao="lupulos"] .total-extra').count() === 0
     && await pagina.$eval('[data-secao="fermentaveis"] .total-secao', (n) => parseFloat(getComputedStyle(n).fontSize)) >= 24,
     "fermentáveis: total em destaque e água/malte ao lado (usa a água da mostura informada)");
-  verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
+  verificar(await pagina.$$eval('[data-secao="parametros"] .param-resumo input', (ns) => ns.map((n) => n.value).join(" ")) === "23,0 72 60"
+    && await pagina.textContent('[data-secao="parametros"] .total-extra') === "Panela 50 L", "parâmetros: lote, eficiência, fervura e equipamento à vista");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -548,7 +575,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -658,7 +685,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124p");
+    const m = await import("./calculos.js?v=20261124q");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1180,6 +1207,62 @@ const erros = [];
   verificar(await cel.locator(".roleta").count() === 0 && await qtd2.inputValue() === esperadoRoleta, `roleta: girar as duas rodas e OK grava ${esperadoRoleta} kg`);
   await tocar(".barra-app .app-desfazer");
   verificar(await qtd2.inputValue() === qtdAntes, "roleta: ↶ desfaz a roleta inteira num passo só");
+  // Parâmetros no celular (24/11/2026): tocar no número da seção abre a roleta direto (sem janela); "Todos" abre a janela.
+  const efic = '[data-secao="parametros"] input[aria-label="Eficiência (%)"]';
+  const eficAntes = await cel.inputValue(efic);
+  const ogParam = await ogDaBarra();
+  await cel.evaluate(() => { document.querySelector('[data-secao="parametros"]').scrollIntoView(); window.scrollBy(0, -70); });
+  await cel.waitForTimeout(100);
+  await cel.screenshot({ path: `${SAIDA}/p6p-celular-parametros.png` });
+  await tocar(efic);
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.locator("dialog.parametros-janela").count() === 0 && await cel.locator(".vital.com-teclado").count() === 1,
+    "parâmetros: tocar na eficiência abre a roleta direto, com a barra de números fina acima");
+  await girar(0, String(Number(eficAntes) + 5));
+  await tocar(".roleta-ok");
+  verificar(await cel.inputValue(efic) === String(Number(eficAntes) + 5) && await ogDaBarra() !== ogParam,
+    `parâmetros: a roleta muda a eficiência na receita (${eficAntes} → ${await cel.inputValue(efic)}) e a OG acompanha`);
+  await tocar(".barra-app .app-desfazer");
+  verificar(await cel.inputValue(efic) === eficAntes && await ogDaBarra() === ogParam, "parâmetros: ↶ desfaz a eficiência");
+  const secParam = await cel.$$eval('[data-secao="parametros"] .param-resumo input', (ns) => ns.map((n) => {
+    const b = n.getBoundingClientRect(); return { top: Math.round(b.top), h: Math.round(b.height), right: b.right }; }));
+  verificar(new Set(secParam.map((x) => x.top)).size === 1 && secParam.every((x) => x.h >= 44 && x.right <= 390),
+    `parâmetros: os 3 números numa linha, com 44 px de toque (${JSON.stringify(secParam)})`);
+  const janelaParamCel = async (w) => cel.evaluate((w) => {
+    const d = document.querySelector("dialog.parametros-janela");
+    const b = d.getBoundingClientRect();
+    const ins = [...d.querySelectorAll(".param-grade input")].map((n) => n.getBoundingClientRect());
+    return { cabe: b.left >= 0 && b.right <= w && d.scrollWidth <= d.clientWidth, colunas: new Set(ins.map((x) => Math.round(x.left))).size,
+      linhas: new Set(ins.map((x) => Math.round(x.top))).size, campoMin: Math.round(Math.min(...ins.map((x) => x.width))), altura: Math.round(b.height) };
+  }, w);
+  await tocar("button.param-todos");
+  await cel.waitForSelector("dialog.parametros-janela[open]");
+  const pj390 = await janelaParamCel(390);
+  verificar(pj390.cabe && pj390.colunas === 3 && pj390.linhas === 3 && pj390.campoMin >= 50,
+    `parâmetros 390 px: janela com 9 campos em 3 × 3, cabe na tela (${JSON.stringify(pj390)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6p2-celular-parametros-janela.png` });
+  await tocar('dialog.parametros-janela input[aria-label="Perda na panela (L)"]');
+  await cel.waitForSelector("dialog.parametros-janela .roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.evaluate(() => document.querySelector("dialog.parametros-janela .roleta").matches(":popover-open")),
+    "parâmetros: a roleta abre dentro da janela (camada do topo)");
+  await cel.screenshot({ path: `${SAIDA}/p6p3-celular-parametros-roleta.png` });
+  await tocar(".roleta-cancelar");
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(150);
+  const pj320 = await janelaParamCel(320);
+  verificar(pj320.cabe && pj320.colunas === 3 && pj320.linhas === 3 && pj320.campoMin >= 40,
+    `parâmetros 320 px: janela com 9 campos em 3 × 3, cabe na tela (${JSON.stringify(pj320)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6p4-celular-320-parametros-janela.png` });
+  await tocar("dialog.parametros-janela .item-fechar");
+  await cel.waitForSelector("dialog.parametros-janela", { state: "detached", timeout: 2000 }).catch(() => {});
+  verificar(await cel.locator("dialog.parametros-janela").count() === 0, "parâmetros: × fecha a janela");
+  await conferirLateral("320 px, parâmetros");
+  await cel.evaluate(() => { document.querySelector('[data-secao="parametros"]').scrollIntoView(); window.scrollBy(0, -70); });
+  await cel.screenshot({ path: `${SAIDA}/p6p5-celular-320-parametros.png` });
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(150);
   // Inteiro e decimais bem separados (24/11/2026): vírgula entre as rodas, cada roda com a sua faixa.
   await tocar('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
   await cel.waitForSelector(".roleta");
@@ -1808,6 +1891,142 @@ const erros = [];
   verificar(decoracao.fundo === "none" && decoracao.espuma === "none" && decoracao.icone === false, "clean: seções sem papel de parede, sem espuma e sem ícone em círculo");
   const subLup = await cel.textContent('[data-secao="lupulos"] li.ing.ficha .ing-sub');
   verificar(/^Fervura \d+ min/.test(subLup), `clean: o lúpulo diz quando entra na própria linha (“${subLup}”)`);
+  // K2: números num cartão no topo (no fluxo, com o copo); ao rolar, linha fina no rodapé; de volta ao topo, cartão.
+  const estadoVital = () => cel.evaluate(() => {
+    const v = document.querySelector(".vital"); const b = v.getBoundingClientRect();
+    return { pos: getComputedStyle(v).position, flut: v.classList.contains("flutuante"), copo: v.querySelector(".vital-copo").checkVisibility(),
+      topo: Math.round(b.top), fundo: Math.round(innerHeight - b.bottom), altura: Math.round(b.height),
+      vaga: Math.round(document.querySelector(".vital-vaga").getBoundingClientRect().height) };
+  });
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(200);
+  const noTopo = await estadoVital();
+  verificar(noTopo.pos === "static" && !noTopo.flut && noTopo.copo && noTopo.topo < 420,
+    `clean K2: números num cartão no topo da receita, com o copo (topo em ${noTopo.topo} px, ${noTopo.altura} px de altura)`);
+  await cel.screenshot({ path: `${SAIDA}/p7e-clean-numeros-topo.png` });
+  await cel.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await cel.waitForTimeout(300);
+  const rolado = await estadoVital();
+  verificar(rolado.pos === "fixed" && rolado.flut && rolado.fundo === 0 && rolado.altura <= 64 && !rolado.copo && rolado.vaga === noTopo.altura,
+    `clean K2: ao rolar, linha fina presa no rodapé (${rolado.altura} px) e a página não pula (vaga de ${rolado.vaga} px)`);
+  await cel.screenshot({ path: `${SAIDA}/p7f-clean-rolado.png` });
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(300);
+  verificar((await estadoVital()).pos === "static", "clean K2: de volta ao topo, a linha fina volta a ser o cartão");
+  // K1: cabeçalho enxuto (sem botões na página; números logo abaixo) e menu ⋯.
+  const cab = await cel.evaluate(() => ({
+    acoes: document.querySelector(".acoes-receita").checkVisibility(),
+    relatorio: document.querySelectorAll(".editor-topo .botao-relatorio").length,
+    geral: document.querySelectorAll('.editor-corpo [data-secao="geral"]').length,
+    semTitulo: document.querySelector(".barra-app").classList.contains("sem-titulo"),
+    parametros: document.querySelector(".editor-corpo > .cartao")?.dataset.secao,
+  }));
+  verificar(!cab.acoes && cab.relatorio === 0 && cab.geral === 0 && cab.semTitulo && noTopo.topo <= 250 && cab.parametros === "parametros",
+    `clean K1: topo sem botões, Dados gerais fora da página, nome só no título, Parâmetros 1º cartão e números a ${noTopo.topo} px do topo`);
+  await tocar('[data-secao="parametros"] button.param-todos');
+  await cel.waitForSelector("dialog.parametros-janela[open]");
+  verificar(/Pré-fervura/.test(await cel.textContent("dialog.parametros-janela .parametros-numeros")) && await cel.locator(".painel-lote").count() === 0,
+    "clean: sem painel lateral; Mais números, Volumes e Água dentro da janela dos Parâmetros");
+  await tocar("dialog.parametros-janela .item-pronto");
+  await cel.waitForSelector("dialog.parametros-janela", { state: "detached" });
+  await cel.evaluate(() => window.scrollTo(0, 600));
+  await cel.waitForTimeout(250);
+  verificar(!(await cel.evaluate(() => document.querySelector(".barra-app").classList.contains("sem-titulo"))), "clean K1: ao rolar, o nome aparece na barra do app");
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(250);
+  await tocar(".barra-app .app-menu");
+  await cel.waitForSelector("dialog.menu-receita[open]");
+  const itensMenu = await cel.$$eval("dialog.menu-receita .menu-item", (bs) => bs.map((b) => b.textContent));
+  verificar(itensMenu.join("|") === "Relatório (PDF)|Nova a partir desta|Informações (tipo, autor, pública)|Excluir receita",
+    `clean K1: menu ⋯ com ${itensMenu.join(", ")}`);
+  await cel.waitForTimeout(150);
+  await cel.screenshot({ path: `${SAIDA}/p7g-clean-menu.png` });
+  await tocar("dialog.menu-receita .menu-item:has-text('Informações')");
+  await cel.waitForSelector("dialog.informacoes[open]");
+  verificar(await cel.isVisible('dialog.informacoes select[aria-label="Tipo"]') && await cel.isVisible('dialog.informacoes input[aria-label="Autor"]'),
+    "clean K1: Informações abre tipo, autor e pública numa janela");
+  await tocar("dialog.informacoes .item-pronto");
+  await cel.waitForSelector("dialog.informacoes", { state: "detached" });
+  await tocar(".barra-app .app-menu");
+  await cel.waitForSelector("dialog.menu-receita[open]");
+  await tocar("dialog.menu-receita .menu-item:has-text('Relatório')");
+  await cel.waitForSelector("dialog.relatorio[open]");
+  verificar(await cel.locator("dialog.menu-receita").count() === 0, "clean K1: Relatório (PDF) pelo menu abre o relatório");
+  await cel.keyboard.press("Escape");
+  await cel.waitForSelector("dialog.relatorio", { state: "detached" });
+  // K4: leveduras, outros, mostura e fermentação em ficha; tocar abre a janela com os campos; + abre o passo novo.
+  const passosFicha = await cel.evaluate(() => Object.fromEntries(["leveduras", "outros", "mostura", "fermentacao"].map((k) => [k, {
+    linhas: document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha`).length,
+    tabela: document.querySelectorAll(`[data-secao="${k}"] table`).length,
+    alturas: [...document.querySelectorAll(`[data-secao="${k}"] li.ing.ficha`)].map((l) => Math.round(l.getBoundingClientRect().height)),
+  }])));
+  const nPassos = (t) => db[t].filter((x) => x.receita_id === idPils).length;
+  verificar(Object.values(passosFicha).every((x) => x.tabela === 0 && x.alturas.every((h) => h <= 64))
+    && passosFicha.mostura.linhas === nPassos("receita_mostura_passos") && passosFicha.leveduras.linhas === nPassos("receita_leveduras"),
+    `clean K4: passos, levedura e outros em linhas de até 64 px, sem tabela (${Object.entries(passosFicha).map(([k, x]) => `${k} ${x.linhas}`).join(", ")})`);
+  const linhaMostura = await cel.textContent('[data-secao="mostura"] li.ing.ficha.passo');
+  verificar(/Rampa 1.*°C.*min/.test(linhaMostura), `clean K4: passo da mostura numa linha (“${linhaMostura}”)`);
+  await tocar('[data-secao="mostura"] li.ing.ficha.passo button.ing-nome');
+  await cel.waitForSelector("dialog.passo-janela[open]");
+  verificar(await cel.isVisible('dialog.passo-janela select[aria-label="Passo da mostura"]') && await cel.isVisible('dialog.passo-janela input[aria-label="Temp. (°C)"]'),
+    "clean K4: tocar no passo abre a janela com tipo, temperatura e tempo");
+  await tocar('dialog.passo-janela input[aria-label="Temp. (°C)"]');
+  await cel.waitForSelector("dialog.passo-janela .roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.evaluate(() => document.querySelector(".roleta").matches(":popover-open")), "clean K4: a temperatura do passo usa a roleta, por cima da janela");
+  await cel.screenshot({ path: `${SAIDA}/p7h-clean-passo-roleta.png` });
+  await tocar(".roleta-cancelar");
+  await tocar("dialog.passo-janela .item-pronto");
+  await cel.waitForSelector("dialog.passo-janela", { state: "detached" });
+  const nMosturaAntes = await cel.locator('[data-secao="mostura"] li.ing.ficha.passo').count();
+  await tocar('[data-secao="mostura"] button.adicionar');
+  await cel.waitForSelector("dialog.passo-janela[open]");
+  verificar(await cel.locator('[data-secao="mostura"] li.ing.ficha.passo').count() === nMosturaAntes + 1, "clean K4: + na mostura cria o passo e abre a janela dele");
+  await tocar("dialog.passo-janela button.perigo");
+  await cel.waitForSelector("dialog.passo-janela", { state: "detached" });
+  verificar(await cel.locator('[data-secao="mostura"] li.ing.ficha.passo').count() === nMosturaAntes, "clean K4: Remover na janela tira o passo");
+  await cel.locator('[data-secao="leveduras"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.evaluate(() => window.scrollBy(0, -60));
+  await cel.waitForTimeout(200);
+  await cel.screenshot({ path: `${SAIDA}/p7i-clean-passos.png` });
+  // K5: Água, Lote e Notas em resumo; tocar abre a seção inteira numa janela; o painel lateral vai para os Parâmetros.
+  const resumosK5 = await cel.evaluate(() => Object.fromEntries(["agua", "brassagem", "notas"].map((k) => {
+    const sec = document.querySelector(`.editor-corpo > [data-secao="${k}"]`);
+    const linhas = [...(sec?.querySelectorAll("li.ing") ?? [])].map((l) => Math.round(l.getBoundingClientRect().height));
+    return [k, { resumida: sec?.classList.contains("resumida"), linhas, texto: sec?.textContent ?? "", campos: sec?.querySelectorAll("input, select, textarea").length }];
+  })));
+  verificar(Object.values(resumosK5).every((x) => x.resumida && x.campos === 0 && x.linhas.length >= 1 && x.linhas.length <= 3 && x.linhas.every((h) => h <= 80)),
+    `clean K5: Água, Lote e Notas em resumo, sem campos (${Object.entries(resumosK5).map(([k, x]) => `${k}: ${x.linhas.join("+")} px`).join("; ")})`);
+  verificar(/Mostura \d+,\d L · Lavagem/.test(resumosK5.agua.texto) && /pH 5,\d\d/.test(resumosK5.agua.texto) && /Gesso 6 g/.test(resumosK5.agua.texto),
+    "clean K5: resumo da água com litros, sais e pH");
+  verificar(/OG \/ FG medidas/.test(resumosK5.brassagem.texto) && /1,048/.test(resumosK5.brassagem.texto) && /Priming/.test(resumosK5.brassagem.texto),
+    "clean K5: resumo do lote com OG/FG medidas e priming");
+  await cel.locator('.editor-corpo > [data-secao="agua"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.evaluate(() => window.scrollBy(0, -60));
+  await cel.waitForTimeout(200);
+  await cel.screenshot({ path: `${SAIDA}/p7j-clean-resumos.png` });
+  await tocar('.editor-corpo > [data-secao="agua"] button.ing-nome');
+  await cel.waitForSelector('dialog.resumo-janela[data-secao="agua"][open]');
+  verificar(await cel.locator("dialog.resumo-janela .bloco-agua").count() === 2 && await cel.isVisible("dialog.resumo-janela .ph-cartao"),
+    "clean K5: tocar na Água abre a seção inteira (blocos da mostura e da lavagem, pH) numa janela");
+  await cel.waitForTimeout(150);
+  await cel.screenshot({ path: `${SAIDA}/p7k-clean-agua-janela.png` });
+  await conferirLateral("clean, janela da água");
+  await tocar("dialog.resumo-janela .item-pronto");
+  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
+  await tocar('.editor-corpo > [data-secao="brassagem"] button.ing-nome');
+  await cel.waitForSelector('dialog.resumo-janela[data-secao="brassagem"][open]');
+  verificar(await cel.isVisible('dialog.resumo-janela input[aria-label="OG medida"]') && /Eficiência real/.test(await cel.textContent("dialog.resumo-janela")),
+    "clean K5: tocar no Lote abre os campos da brassagem e o que foi medido");
+  await tocar("dialog.resumo-janela .item-fechar");
+  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
+  await tocar('.editor-corpo > [data-secao="notas"] button.ing-nome');
+  await cel.waitForSelector('dialog.resumo-janela[data-secao="notas"][open]');
+  await cel.fill('dialog.resumo-janela textarea[aria-label="Notas"]', "Moagem 1,1 mm. Dry hop no 3º dia.");
+  await tocar("dialog.resumo-janela .item-pronto");
+  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
+  verificar((await cel.textContent('.editor-corpo > [data-secao="notas"]')).includes("Moagem 1,1 mm. Dry hop no 3º dia."),
+    "clean K5: nota escrita na janela aparece no resumo");
   await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
   const levClean = await cel.evaluate(() => {
     const li = document.querySelector('[data-secao="leveduras"] li.ing.ficha');
@@ -1841,6 +2060,9 @@ const erros = [];
   await cel.setViewportSize({ width: 320, height: 568 });
   await cel.waitForTimeout(200);
   await conferirLateral("clean, 320 px, receita");
+  verificar(await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item")].every((n) => {
+    const b = n.getBoundingClientRect(); return [...n.querySelectorAll(".vital-rot")].every((x) => x.getBoundingClientRect().right <= b.right + 1);
+  })), "clean, 320 px: rótulos do cartão dos números cabem no espaço de cada número");
   await cel.locator('[data-secao="fermentaveis"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p7c-clean-320.png` });
   await cel.setViewportSize({ width: 1366, height: 900 });

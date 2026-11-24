@@ -59,7 +59,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   (modo nuvem da skill /deploy), porque só pode enviar para a própria branch.
 - `docs/PRD.md` — produto, decisões, modelo de dados, fórmulas
 - `docs/PLANO-UX.md` — plano de UX e arte do editor de receitas (entregas E0–E6, 22/11/2026)
-- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; K0 e K3 feitas)
+- `docs/PLANO-CLEAN.md` — plano da versão Clean da receita (opcional no perfil; etapas K0–K6, 24/11/2026; K0–K5 feitas; falta K6)
 - `ferramentas/brewfather/` — importação de receitas de um backup do Brewfather (criada com aprovação, 22/11/2026)
 - `.claude/skills/deploy/` — skill `/deploy` (22/11/2026, pedida pelo responsável): publicar SEMPRE por ela. Fila entre
   sessões paralelas em `refs/fila/*` no origin (`fila.sh`), atualiza com a main, `conferir.sh` (nº de migração, `?v=`),
@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  321 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  358 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -152,8 +152,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   "detalhes" abre estado e faixas) com OG, FG, ABV, IBU, cor, pH da mostura (faixa fixa 5,2–5,6, ideal 5,3–5,5,
   não depende do estilo; "—" sem grão na mostura), régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
   folga de 25%, "perto" = últimos 10% da faixa, valor arredondado como na tela), estado com cor + ícone + texto, e a
-  diferença da última mudança (acumula no mesmo campo, some em 3 s). Estilo no topo; lote numa linha de resumo
-  (`<details>`); volumes e água no painel lateral (coluna única abaixo de 1180 px). SVG pelo `svg()` do ui.js.
+  diferença da última mudança (acumula no mesmo campo, some em 3 s). Estilo no topo; Parâmetros numa seção curta
+  (ver "Parâmetros da receita"); volumes e água no painel lateral (coluna única abaixo de 1180 px). SVG pelo `svg()` do ui.js.
 - Editor (E2, 22/11/2026): fermentáveis e lúpulos em linhas (`secaoLinhas` no receitas.js) com a quantidade em
   destaque (`campoQuantidade` do ui.js: botões ± que não roubam o foco, ↑/↓ = 1 passo, Shift = 10; passo no perfil,
   padrão 250 g malte (era 50 g; 50 salvo no navegador vira 250 no estado.js) / 5 g lúpulo, em `preferencias`), % do grist e pontos da OG por malte, IBU e g/L por lúpulo
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124p.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124q.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -316,9 +316,55 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   alfa) · quantidade (o MESMO `campoQuantidade`, sem ± na linha; toque = roleta direto) + um resultado (grist %; IBU, ou
   g/L no dry hop pela classe `sem-valor`). Sem alça e sem seletor de etapa na linha: ordem, etapa e ± ficam na janela do
   item (tocar no nome). Linha ≤ 64 px (58 px no teste).
-- Falta (plano): K1 cabeçalho e menu ⋯, K2 números no topo, K4 passos/levedura/outros em linha, K5 Água/Lote/Notas em
-  resumo, K6 acabamento + iPhone real. Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
-  escuro); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro).
+- K2 (feito, só celular ≤ 640 px): `criarBarraVital({ noTopo })` põe a barra numa `.vital-vaga` no fluxo, logo abaixo
+  do topo: CARTÃO com o copo e os 6 números (`.vital.no-topo`, position static). IntersectionObserver na vaga (margem
+  de cima = altura da `barra-app`): saiu da tela → classes `flutuante` + `com-teclado` = a linha fina do teclado presa
+  no rodapé (42 px); voltou → cartão. A vaga guarda a altura do cartão (`min-height`) para a página não pular quando a
+  barra fica fixa (rolagem, teclado ou roleta). No Clean o copinho do grist some (o copo está no cartão).
+  K0 + K3 PUBLICADAS em 24/11/2026 (PR #50).
+- K1 (feito): topo `.topo-clean` = meta "Lote nº N · brassagem dd/mm/aaaa" (`metaTopo`, some sem dados), nome como
+  título (o mesmo campo, sem moldura), estilo como link. Parâmetros = o cartão da PR #53 (3 números tocáveis + "Todos ›"
+  que abre `dialog.parametros-janela`), 1º cartão do corpo, logo abaixo dos números; no Clean os 3 números ficam sem
+  moldura e o "Todos ›" vira link (a linha curta dos Parâmetros no topo, de antes da PR #53, saiu). Menu ⋯ (`abrirMenuReceita`: `app-menu` na barra do app; `topo-menu`
+  ao lado do nome no computador): Relatório (PDF), Nova a partir desta, Informações (tipo, autor, pública: os campos da
+  seção Dados gerais numa janela, `abrirInformacoes`; a seção sai da página) e Excluir receita (chamam os botões de
+  sempre). No celular `.acoes-receita` some; o nome só aparece na barra do app depois de rolar (`sem-titulo`). Números a
+  171 px do topo em 390 px (eram 250). Ícones novos: reticencias, copiar, lixeira.
+- K4 (feito): outros, mostura e fermentação em FICHA (`secaoListaFicha` no receitas.js, quando `secaoLista`
+  recebe `resumo(item, i)` → { nome, sub, valor, valor2 }): uma linha por item (ex.: "Rampa 1 | 66 °C · 60 min").
+  Leveduras NÃO: usam o `secaoLinhas` (ver "Leveduras com valores fixos"). Tocar abre `dialog.item-janela.passo-janela` com os MESMOS campos das
+  colunas (roleta por cima, em popover), ↑ ↓ Remover e Pronto; "+" cria e já abre a janela do item novo
+  (`abrirPassoDe`). Sem tabela, sem alça e sem × na linha. Auxiliares de texto `n0` e `juntar`.
+- K5 (feito): Água, Lote e Notas em RESUMO (`secaoResumida(chave, titulo, conteudo, linhas)` no receitas.js; as linhas
+  são refeitas a cada cálculo pelo `aoRecalcular`). Água: "Mostura X L · Lavagem Y L" + sais/ácidos curtos (`SAL_CURTO`,
+  `ACIDO_CURTO`) | pH com estado (`estadoPh`: ideal 5,3–5,5 / aceitável 5,2–5,6), e "Água necessária" quando falta/sobra
+  ≥ 0,5 L. Lote: OG/FG medidas (com o planejado), eficiência real (+ ABV real), priming. Notas: começo da nota. Tocar
+  abre `dialog.item-janela.resumo-janela` com a seção de sempre (os mesmos nós; Lote leva também Medido e Priming) e
+  Pronto. Ordem no Clean: parâmetros, fermentáveis, lúpulos, leveduras, mostura, fermentação, água, outros, lote, notas.
+  Sem painel lateral: Mais números, Volumes e Água (do painel) ficam na janela "Todos ›" dos Parâmetros, abaixo dos
+  campos (`.parametros-numeros`); as notas de rodapé do painel ("Comparando com...", "IBU pelo Tinseth...") não
+  aparecem no Clean. Em ≤ 360 px o cartão dos números usa rótulos curtos (pH, EBC): no CI "pH MOSTURA" passava da borda.
+- Falta (plano): K6 acabamento + iPhone real. Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
+  escuro, K2 topo/rolado); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro),
+  `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (menu ⋯), `p7h` (passo com roleta), `p7i` (levedura em linha),
+  `p7j` (resumos de Água/Lote/Notas), `p7k` (janela da Água).
+
+## Parâmetros da receita (24/11/2026, pedido do responsável; sem migração)
+- Saiu o `<details>` "Parâmetros" que abria na página. Agora: seção `section.cartao.parametros` (`data-secao="parametros"`)
+  com o nome do equipamento no título e SÓ os 3 números principais (Volume, Eficiência, Fervura; `.param-resumo`). São o
+  mesmo `campoNumero`: no celular tocar abre a ROLETA direto (como a quantidade do malte/lúpulo; barra de números fina
+  acima, 1 passo do desfazer); no computador, campo. Botão "Todos ›" (`button.param-todos`) abre a janela.
+- Janela `dialog.parametros-janela` (`abrirParametros` no receitas.js; mesmo molde/CSS da janela das Ferramentas):
+  cabeça presa com Pré-fervura · Pós-fervura · Água total ao vivo (`janelaParam.aoCalcular`), Equipamento (copia os
+  parâmetros, 1 passo) e os 9 campos (`CAMPOS_PARAM`) em grade de 3 colunas × 3 linhas: rótulo curto em cima com ⓘ
+  preso à última palavra, número + unidade embaixo (cabe em 320 px; subgrid alinha os campos quando o rótulo quebra; a
+  explicação do ⓘ abre na largura da grade). Fecha por ×, Pronto, Enter, Esc, toque no fundo ou troca de rota (roleta
+  aberta: fecha só a roleta); ao fechar, a seção redesenha e o foco volta ao "Todos". Desfazer fecha a janela.
+  aria-label dos campos = rótulo completo ("Volume no fermentador (L)"...). Água/grão continua sincronizada com a água da
+  mostura (`campoRelacao` = campo da janela, só enquanto aberta).
+- Teste do navegador: seção com 3 números, janela 3 × 3, volumes ao vivo, Pronto/foco, roleta na eficiência (OG
+  acompanha, ↶ desfaz), roleta dentro da janela, 390/320 px sem passar da largura. Capturas `p6p` (seção 390),
+  `p6p2` (janela 390), `p6p3` (roleta na janela), `p6p4` (janela 320), `p6p5` (seção 320).
 
 ## Janela do item (24/11/2026, pedido do responsável; sem migração)
 - Os detalhes de malte e lúpulo NÃO abrem mais embutidos na linha: tocar no item abre `dialog.item-janela`
@@ -370,7 +416,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   mudaram, então a FG das receitas é a mesma) e 6 só com o tipo corrigido (5 Brettanomyces → BRETT, blend de Flanders →
   MISTA). Ficaram 25 sem ligação (TeckBrew, Fermo* sem a cepa no catálogo, Farmhouse, Vermont Ale bio4, Lager-BF16
   como Ale, nome vazio): ligar pela janela. Datas das receitas intactas (o gatilho de data é só em `receitas`).
-- Outros ingredientes, mostura e fermentação continuam em tabela/cartões (candidatos ao mesmo padrão: K4 do plano Clean).
+- Outros ingredientes, mostura e fermentação: tabela/cartões no Completo; no Clean, ficha + janela (K4, `secaoListaFicha`).
 - Teste do navegador: levedura livre na janela, linha sem campo, tocar no valor abre, Esc; celular 390/320 px (linha de
   64 px, janela cabe, sem teclado nem roleta) e clean. Capturas `p6q-levedura-linha`, `p6q-levedura-janela-390/320`, `p7e`.
 
