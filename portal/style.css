@@ -1261,6 +1261,11 @@ dialog.ferramenta-janela:has(> .roleta) .fj-pe { position: static; }
   .perfil-agua .ion-longo { display: none; }
   .perfil-agua .ion-curto { display: inline; }
 }
+/* 320 px: a tabela tem 6 colunas + o ⓘ das linhas de alcalinidade e SO₄/Cl; menos vão para caber com folga. */
+@media (max-width: 360px) {
+  .perfil-agua th, .perfil-agua td { padding-left: .15rem; padding-right: .15rem; }
+  .perfil-agua td button.info { margin-left: .1rem; }
+}
 
 /* Fotos da brassagem (seção Notas): miniaturas quadradas (3 por linha no celular) e janela para ver a foto inteira. */
 .fotos { margin-top: 1rem; }
