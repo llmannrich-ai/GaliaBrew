@@ -1,11 +1,11 @@
 // relatorio.js — relatório da receita em PDF: monta as páginas (A4), mostra no visualizador próprio (janela) e
 // exporta o arquivo para a folha de compartilhamento do celular. O visualizador desenha em SVG os mesmos itens que o
 // pdf.js escreve no arquivo: o que aparece na tela é o que vai no PDF.
-import { el, svg, numeroBR, avisar } from "./ui.js?v=20261124n";
-import { A4, gerarPdf, limparTexto, larguraTexto, quebrarTexto, encurtarTexto } from "./pdf.js?v=20261124n";
-import { IONS, corHexDeSrm, platoDeSg, etapaSal, leituraSulfatoCloreto, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261124n";
-import * as O from "./opcoes.js?v=20261124n";
-import { icone } from "./icones.js?v=20261124n";
+import { el, svg, numeroBR, avisar } from "./ui.js?v=20261124o";
+import { A4, gerarPdf, limparTexto, larguraTexto, quebrarTexto, encurtarTexto } from "./pdf.js?v=20261124o";
+import { IONS, corHexDeSrm, platoDeSg, etapaSal, leituraSulfatoCloreto, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261124o";
+import * as O from "./opcoes.js?v=20261124o";
+import { icone } from "./icones.js?v=20261124o";
 
 // Documento sempre claro (é para imprimir e mandar), nas cores do tema Clássico.
 const COR = { tinta: "#1a130d", suave: "#4d4237", cobre: "#a14f17", linha: "#ddd1bf", painel: "#f3ece0", branco: "#ffffff" };
