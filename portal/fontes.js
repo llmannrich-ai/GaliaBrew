@@ -1,7 +1,7 @@
 // fontes.js — de onde vêm os dados de um item do cadastro (malte, lúpulo, levedura, outro) e os selos que mostram
 // isso na busca, na tela de Cadastros e nos detalhes do ingrediente na receita.
 // A classificação sai de extras.fonte, gravado pelas cargas do catálogo (0004 e 0009); item com dono = do usuário.
-import { el } from "./ui.js?v=20261124s";
+import { el } from "./ui.js?v=20261124t";
 
 export const TIPOS_FONTE = {
   FABRICANTE: { selo: "Fabricante", classe: "fabricante" },

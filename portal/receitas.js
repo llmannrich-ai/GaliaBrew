@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124s";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124s";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124s";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124s";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124s";
-import { abrirBusca } from "./busca.js?v=20261124s";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124s";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124s";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124s";
-import * as O from "./opcoes.js?v=20261124s";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124s";
-import { icone } from "./icones.js?v=20261124s";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124s";
-import { abrirRelatorio } from "./relatorio.js?v=20261124s";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124s";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124t";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124t";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124t";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124t";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124t";
+import { abrirBusca } from "./busca.js?v=20261124t";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124t";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124t";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124t";
+import * as O from "./opcoes.js?v=20261124t";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124t";
+import { icone } from "./icones.js?v=20261124t";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124t";
+import { abrirRelatorio } from "./relatorio.js?v=20261124t";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124t";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -262,7 +262,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   /** Ação inteira (adicionar, remover, mover, ajuste automático) = um passo próprio. */
   function acao(fn) { registrar(); fn(); registrar(); }
   function irPara(estado) {
-    document.querySelector("dialog.parametros-janela")?.close();    // a janela mostraria os números de antes
+    for (const d of document.querySelectorAll("dialog.parametros-janela, dialog.lote-janela")) d.close();   // mostrariam os números de antes
     const antes = calcularReceita(r);
     Object.assign(r, structuredClone(estado));
     t.base = structuredClone(r);
@@ -411,6 +411,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : el("p", { class: "nota", text: "Escolha um estilo no topo para ver as faixas." }),
       el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
     janelaParam?.aoCalcular(res);
+    janelaLote?.aoCalcular(res);
+    atualizarLote(res);
     tituloApp.textContent = String(r.nome ?? "").trim() || "Receita nova";
     // Clean: "Lote nº 104 · brassagem 29/11/2026" acima do nome (some quando não há nenhum dos dois).
     metaTopo.textContent = [r.lote_numero != null && r.lote_numero !== "" ? `Lote nº ${r.lote_numero}` : null,
@@ -798,25 +800,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       el("label", { class: "linha" }, el("input", { type: "checkbox", checked: r.publica, disabled: des, on: { change: (e) => { r.publica = e.target.checked; mudou(); } } }),
         "Pública (outros usuários podem ver e duplicar)")));
 
-  // Brassagem (receita = lote): nº, data e o que foi medido. Densidade aceita 1,050, 1050 e 50 (pontos).
-  const sg = { de: (x) => x, para: (v) => (v >= 900 ? v / 1000 : v > 2 && v < 200 ? 1 + v / 1000 : v) };
-  const campoLote = (k, rot, extra) => el("label", {}, el("span", {}, rot, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { aoMudar: mudou, desabilitado: des, rotulo: rot, ...extra }));
-  const brassagem = el("section", { class: "cartao", dataset: { secao: "brassagem" } },
-    tituloSecao("brassagem", "Brassagem (lote)"),
-    el("div", { class: "grade-form" },
-      campoLote("lote_numero", "Nº do lote", { casas: 0, placeholder: "automático", roleta: false }),
-      el("label", {}, el("span", { text: "Data da brassagem" }), el("input", {
-        type: "date", value: r.data_brassagem ?? "", disabled: des, "aria-label": "Data da brassagem",
-        on: { change: (e) => { r.data_brassagem = e.target.value || null; mudou(); } },
-      })),
-      // Roleta começa no planejado (OG/FG calculadas, volume do lote): o mais provável de ter sido medido.
-      campoLote("og_medida", "OG medida", { casas: 3, placeholder: "1,050", ...sg, roleta: { inicial: () => Number(calcularReceita(r).og?.toFixed(3)) } }),
-      campoLote("fg_medida", "FG medida", { casas: 3, placeholder: "1,010", ...sg, roleta: { inicial: () => Number(calcularReceita(r).fg?.toFixed(3)) } }),
-      campoLote("volume_final_l", "Volume real no fermentador (L)", { casas: 1, roleta: { inicial: () => Number(r.volume_lote_l) } }),
-      campoLote("co2_alvo_vol", "CO₂ desejado (vol)", { casas: 1, placeholder: "2,4" }),
-      el("label", {}, el("span", {}, "Açúcar do priming", info(O.AJUDA_VOLUME.priming_acucar)),
-        campoSelect(r, "priming_acucar", O.ACUCAR_PRIMING, { aoMudar: mudou, desabilitado: des, vazio: "Açúcar comum (sacarose)", rotulo: "Açúcar do priming" }))));
-
   const inicio = !r.id && !leitura ? el("section", { class: "cartao", dataset: { secao: "inicio" } },
     origem
       ? el("p", { class: "nota", text: `Receita nova a partir de ${origem.lote_numero ? "nº " + origem.lote_numero + " – " : ""}${origem.nome}. A anterior não muda; dados do lote e notas começam em branco.` })
@@ -867,57 +850,43 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     ["relacao_agua_grao_l_kg", "Água/grão", "L/kg", 2, "Água/grão na mostura (L/kg)"],
     ["temp_grao_c", "Temp. grão", "°C", 1, "Temperatura do grão (°C)"],
   ];
-  const campoParam = ([k, curto, un, casas, completo], { ajuda = false } = {}) => {
-    const aoMudar = k === "relacao_agua_grao_l_kg" ? relacaoMudou : mudou;
-    const input = campoNumero(r, k, { casas, aoMudar: () => aoMudar(input), desabilitado: des, rotulo: completo, unidade: un, classe: "num param-num" });
-    // ⓘ preso à última palavra: no 320 px o rótulo quebra ("Perda / panela ⓘ"), mas o ⓘ nunca fica sozinho na linha.
-    const ajudaEl = ajuda ? info(O.AJUDA_VOLUME[k]) : null;
+  // Rótulo curto em cima com o ⓘ preso à última palavra: no 320 px o rótulo quebra ("Perda / panela ⓘ"), mas o ⓘ
+  // nunca fica sozinho na linha.
+  const rotParam = (curto, ajuda) => {
+    const ajudaEl = ajuda ? info(ajuda) : null;
     const palavras = curto.split(" ");
     const fim = palavras.pop();
-    return el("label", { class: "param", dataset: { campo: k } },
-      el("span", { class: "param-rot" }, palavras.length ? palavras.join(" ") + " " : null, ajudaEl ? el("span", { class: "param-rot-fim" }, fim, ajudaEl) : fim),
-      el("span", { class: "param-valor" }, input, el("span", { class: "unidade", text: un, "aria-hidden": "true" })));
+    return el("span", { class: "param-rot" }, palavras.length ? palavras.join(" ") + " " : null, ajudaEl ? el("span", { class: "param-rot-fim" }, fim, ajudaEl) : fim);
   };
-  const nomeEquipamento = () => cat.equipamentos.find((e) => e.id === r.equipamento_id)?.nome ?? "";
-  const equipResumo = el("span", { class: "total-extra" });
-  const paramResumo = el("div", { class: "param-grade param-resumo" });
-  const desenharParamResumo = () => {
-    preencher(paramResumo, CAMPOS_PARAM.slice(0, 3).map((c) => campoParam(c)));
-    equipResumo.textContent = nomeEquipamento();
+  // extra: opções a mais do campoNumero (placeholder, conversão da densidade, roleta...).
+  const campoParam = ([k, curto, un, casas, completo, extra], { ajuda = false } = {}) => {
+    const aoMudar = k === "relacao_agua_grao_l_kg" ? relacaoMudou : mudou;
+    const input = campoNumero(r, k, { casas, desabilitado: des, rotulo: completo, unidade: un, classe: "num param-num", ...extra, aoMudar: () => aoMudar(input) });
+    return el("label", { class: "param", dataset: { campo: k } }, rotParam(curto, ajuda ? O.AJUDA_VOLUME[k] : null),
+      el("span", { class: "param-valor" }, input, un ? el("span", { class: "unidade", text: un, "aria-hidden": "true" }) : null));
   };
-  desenharParamResumo();
-  const bParametros = el("button", {
-    type: "button", class: "secundario pequeno param-todos", "aria-haspopup": "dialog", title: "Equipamento e todos os parâmetros",
-    "aria-label": "Todos os parâmetros", on: { click: () => abrirParametros() } }, "Todos", el("span", { class: "param-seta", "aria-hidden": "true", text: "›" }));
-  let janelaParam = null;     // janela aberta: { aoCalcular(res) } (volumes ao vivo; a barra de números fica atrás)
+  // Célula de 2 colunas na grade (data, seletor): mesmo rótulo em cima, campo embaixo.
+  const celulaLarga = (k, curto, campo) => el("label", { class: "param param-largo", dataset: { campo: k } },
+    rotParam(curto, O.AJUDA_VOLUME[k]), el("span", { class: "param-valor" }, campo));
+  const metricasJanela = (alvo, pares) => preencher(alvo, pares.map(([rot, val]) =>
+    el("div", { class: "metrica" }, el("span", { class: "rot", text: rot }), el("span", { class: "val", text: val }))));
 
-  function abrirParametros() {
-    if (document.querySelector("dialog.parametros-janela")) return;
-    const grade = el("div", { class: "param-grade" });
-    const desenharGrade = () => {
-      preencher(grade, CAMPOS_PARAM.map((c) => campoParam(c, { ajuda: true })));
-      campoRelacao = grade.querySelector('[data-campo="relacao_agua_grao_l_kg"] input');
-    };
-    const equip = el("label", { class: "param-equip" }, el("span", { class: "param-rot", text: "Equipamento" }), campoSelect(r, "equipamento_id",
-      cat.equipamentos.map((e) => [e.id, e.nome]), {
-        desabilitado: des, vazio: cat.equipamentos.length ? "— nenhum —" : "— cadastre em Cadastros —", rotulo: "Equipamento",
-        aoMudar: () => acao(() => {
-          const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
-          if (eq) { aplicarEquipamento(r, eq); desenharGrade(); avisar("Parâmetros copiados do equipamento."); }
-          mudou();
-        }),
-      }));
+  /**
+   * Janela dos Parâmetros e da Brassagem (molde das Ferramentas): cabeça presa com os resultados ao vivo (a barra de
+   * números fica atrás), campos e "Pronto". Fecha por ×, Pronto, Enter num campo, Esc, toque no fundo ou troca de rota
+   * (com a roleta aberta, Esc/toque no fundo fecham só a roleta). Devolve { aoCalcular(res) }.
+   */
+  function abrirJanelaCampos({ classe, titulo, iconeNome, corpo, resultados, aoFechar }) {
     const metricas = el("div", { class: "fj-metricas", "aria-live": "polite" });
     const fechar = () => { if (d.open) d.close(); };
-    const d = el("dialog", { class: "parametros-janela", "aria-labelledby": "pj-titulo" },
+    const d = el("dialog", { class: classe, "aria-labelledby": `${classe}-titulo` },
       el("div", { class: "fj-cabeca" },
         el("div", { class: "fj-topo" },
-          el("span", { class: "fb-icone" }, icone("parametros")),
-          el("div", { class: "fj-titulo" }, el("h2", { id: "pj-titulo", text: "Parâmetros" })),
+          el("span", { class: "fb-icone" }, icone(iconeNome)),
+          el("div", { class: "fj-titulo" }, el("h2", { id: `${classe}-titulo`, text: titulo })),
           el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
         el("div", { class: "fj-resultado" }, metricas)),
-      // Clean: o antigo painel lateral (Mais números, Volumes, Água) fica aqui, abaixo dos campos.
-      el("div", { class: "fj-corpo" }, equip, grade, ficha ? el("div", { class: "parametros-numeros" }, pNumeros, pVolumes, pAgua) : null),
+      el("div", { class: "fj-corpo" }, ...corpo),
       el("div", { class: "fj-pe" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
     // Tocar no fundo escuro fecha; com a roleta aberta, o toque só fecha a roleta (como na janela do item).
     let roletaNoToque = false;
@@ -935,22 +904,119 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     d.addEventListener("close", () => {
       window.removeEventListener("hashchange", fechar);
       if (roletaAberta()) fecharRoleta(true);
-      janelaParam = null;
-      campoRelacao = null;
       d.remove();
-      desenharParamResumo();          // a seção mostra o que mudou na janela (volume, eficiência, equipamento...)
-      if (bParametros.isConnected) bParametros.focus({ preventScroll: true });
+      aoFechar();
     });
-    janelaParam = { aoCalcular: (res) => {
-      const v = res.volumes;
-      preencher(metricas, [["Pré-fervura", v.pre_fervura_l], ["Pós-fervura", v.pos_fervura_l], ["Água total", v.agua_total_l]]
-        .map(([rot, l]) => el("div", { class: "metrica" }, el("span", { class: "rot", text: rot }), el("span", { class: "val", text: `${numeroBR(l, 1)} L` }))));
-    } };
-    desenharGrade();
-    janelaParam.aoCalcular(calcularReceita(r));
+    const janela = { aoCalcular: (res) => metricasJanela(metricas, resultados(res)) };
+    janela.aoCalcular(calcularReceita(r));
     document.body.append(d);
     d.showModal();
     d.querySelector(".item-fechar").focus({ preventScroll: true });   // no celular não abre teclado nem roleta sozinho
+    return janela;
+  }
+
+  const nomeEquipamento = () => cat.equipamentos.find((e) => e.id === r.equipamento_id)?.nome ?? "";
+  const equipResumo = el("span", { class: "total-extra" });
+  const paramResumo = el("div", { class: "param-grade param-resumo" });
+  const desenharParamResumo = () => {
+    preencher(paramResumo, CAMPOS_PARAM.slice(0, 3).map((c) => campoParam(c)));
+    equipResumo.textContent = nomeEquipamento();
+  };
+  desenharParamResumo();
+  const bParametros = el("button", {
+    type: "button", class: "secundario pequeno param-todos", "aria-haspopup": "dialog", title: "Equipamento e todos os parâmetros",
+    "aria-label": "Todos os parâmetros", on: { click: () => abrirParametros() } }, "Todos", el("span", { class: "param-seta", "aria-hidden": "true", text: "›" }));
+  let janelaParam = null;     // janela aberta: { aoCalcular(res) } (volumes ao vivo)
+
+  function abrirParametros() {
+    if (document.querySelector("dialog.parametros-janela, dialog.lote-janela")) return;
+    const grade = el("div", { class: "param-grade" });
+    const desenharGrade = () => {
+      preencher(grade, CAMPOS_PARAM.map((c) => campoParam(c, { ajuda: true })));
+      campoRelacao = grade.querySelector('[data-campo="relacao_agua_grao_l_kg"] input');
+    };
+    const equip = el("label", { class: "param-equip" }, el("span", { class: "param-rot", text: "Equipamento" }), campoSelect(r, "equipamento_id",
+      cat.equipamentos.map((e) => [e.id, e.nome]), {
+        desabilitado: des, vazio: cat.equipamentos.length ? "— nenhum —" : "— cadastre em Cadastros —", rotulo: "Equipamento",
+        aoMudar: () => acao(() => {
+          const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
+          if (eq) { aplicarEquipamento(r, eq); desenharGrade(); avisar("Parâmetros copiados do equipamento."); }
+          mudou();
+        }),
+      }));
+    desenharGrade();
+    janelaParam = abrirJanelaCampos({
+      classe: "parametros-janela", titulo: "Parâmetros", iconeNome: "parametros",
+      // Clean: o antigo painel lateral (Mais números, Volumes, Água) fica aqui, abaixo dos campos.
+      corpo: [equip, grade, ficha ? el("div", { class: "parametros-numeros" }, pNumeros, pVolumes, pAgua) : null],
+      resultados: (res) => [["Pré-fervura", res.volumes.pre_fervura_l], ["Pós-fervura", res.volumes.pos_fervura_l], ["Água total", res.volumes.agua_total_l]]
+        .map(([rot, l]) => [rot, `${numeroBR(l, 1)} L`]),
+      aoFechar: () => {
+        janelaParam = null;
+        campoRelacao = null;
+        desenharParamResumo();          // a seção mostra o que mudou na janela (volume, eficiência, equipamento...)
+        if (bParametros.isConnected) bParametros.focus({ preventScroll: true });
+      },
+    });
+  }
+
+  // Brassagem (receita = lote; 24/11/2026, pedido do responsável: "a mesma coisa dos parâmetros"): na receita ficam à
+  // vista o nº e a data (no título) e os 3 números medidos no dia (OG, FG, volume real), tocáveis como os parâmetros
+  // (celular: roleta, começando no planejado). "Todos" abre a janela com nº, data, medidas, CO₂ e açúcar do priming, e
+  // a eficiência real, o ABV real e o priming ao vivo na cabeça. Densidade aceita 1,050, 1050 e 50 (pontos).
+  const sg = { de: (x) => x, para: (v) => (v >= 900 ? v / 1000 : v > 2 && v < 200 ? 1 + v / 1000 : v) };
+  const CAMPOS_LOTE = [
+    ["og_medida", "OG medida", "", 3, "OG medida", { placeholder: "1,050", ...sg, roleta: { inicial: () => Number(calcularReceita(r).og?.toFixed(3)) } }],
+    ["fg_medida", "FG medida", "", 3, "FG medida", { placeholder: "1,010", ...sg, roleta: { inicial: () => Number(calcularReceita(r).fg?.toFixed(3)) } }],
+    ["volume_final_l", "Volume real", "L", 1, "Volume real no fermentador (L)", { roleta: { inicial: () => Number(r.volume_lote_l) } }],
+    ["lote_numero", "Nº do lote", "", 0, "Nº do lote", { placeholder: "auto", roleta: false }],
+    ["co2_alvo_vol", "CO₂ desejado", "vol", 1, "CO₂ desejado (vol)", { placeholder: "2,4" }],
+  ];
+  const campoLote = (k, opcoes) => campoParam(CAMPOS_LOTE.find((c) => c[0] === k), opcoes);
+  const loteExtra = el("span", { class: "total-extra" });
+  const loteResumo = el("div", { class: "param-grade param-resumo" });
+  const loteMedido = el("p", { class: "nota lote-medido", "aria-live": "polite" });
+  const desenharLoteResumo = () => preencher(loteResumo, CAMPOS_LOTE.slice(0, 3).map((c) => campoParam(c)));
+  desenharLoteResumo();
+  const pctBR = (v) => `${numeroBR(v, 0)}%`;
+  const resultadosLote = (res) => [
+    ["Eficiência real", res.medido.eficiencia_pct != null ? pctBR(res.medido.eficiencia_pct) : "—"],
+    ["ABV real", res.medido.abv_pct != null ? `${numeroBR(res.medido.abv_pct, 1)}%` : "—"],
+    ["Priming", res.priming?.gramas != null ? `${numeroBR(res.priming.gramas, 0)} g` : "—"]];
+  function atualizarLote(res) {
+    loteExtra.textContent = [r.lote_numero != null && r.lote_numero !== "" ? `nº ${r.lote_numero}` : null, dataDoDia(r.data_brassagem) || null].filter(Boolean).join(" · ");
+    loteMedido.textContent = resultadosLote(res).filter(([, v]) => v !== "—").map(([rot, v]) => `${rot} ${v}`).join(" · ");
+    loteMedido.hidden = !loteMedido.textContent;
+  }
+  const bLote = el("button", {
+    type: "button", class: "secundario pequeno param-todos", "aria-haspopup": "dialog", title: "Nº, data, medidas e priming",
+    "aria-label": "Todos os dados do lote", on: { click: () => abrirLote() } }, "Todos", el("span", { class: "param-seta", "aria-hidden": "true", text: "›" }));
+  let janelaLote = null;
+
+  function abrirLote() {
+    if (document.querySelector("dialog.parametros-janela, dialog.lote-janela")) return;
+    // Grade de 3 colunas: Nº | Data (2) · OG | FG | Volume · CO₂ | Açúcar do priming (2).
+    const data = el("input", {
+      type: "date", value: r.data_brassagem ?? "", disabled: des, "aria-label": "Data da brassagem",
+      on: { change: (e) => { r.data_brassagem = e.target.value || null; mudou(); } },
+    });
+    const acucar = campoSelect(r, "priming_acucar", O.ACUCAR_PRIMING, { aoMudar: mudou, desabilitado: des, vazio: "Açúcar comum", rotulo: "Açúcar do priming" });
+    const grade = el("div", { class: "param-grade" },
+      campoLote("lote_numero", { ajuda: true }), celulaLarga("data_brassagem", "Data da brassagem", data),
+      ...CAMPOS_LOTE.slice(0, 3).map((c) => campoParam(c, { ajuda: true })),
+      campoLote("co2_alvo_vol", { ajuda: true }), celulaLarga("priming_acucar", "Açúcar do priming", acucar));
+    janelaLote = abrirJanelaCampos({
+      classe: "lote-janela", titulo: "Brassagem (lote)", iconeNome: "brassagem",
+      // Clean (sem painel lateral): o que foi medido (com o planejado ao lado) e o priming ficam abaixo dos campos.
+      corpo: [grade, ficha ? el("div", { class: "parametros-numeros" }, pMedido, pPriming) : null],
+      resultados: resultadosLote,
+      aoFechar: () => {
+        janelaLote = null;
+        desenharLoteResumo();
+        atualizarLote(calcularReceita(r));
+        if (bLote.isConnected) bLote.focus({ preventScroll: true });
+      },
+    });
   }
 
   // ---------- linhas de ingrediente (fermentáveis e lúpulos): a quantidade é o campo principal ----------
@@ -1599,12 +1665,18 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     // Fotos da brassagem: gravadas na hora no Storage (fora do Salvar e do desfazer); não vão na cópia "a partir de".
     blocoFotos({ receitaId: r.id, dono: r.dono, leitura }));
 
+  // Brassagem: nº e data no título, OG/FG/volume real à vista; "Todos" abre a janela com o resto.
+  const brassagem = el("section", { class: "cartao parametros", dataset: { secao: "brassagem" } },
+    el("div", { class: "titulo-linha" }, tituloSecao("brassagem", "Brassagem (lote)", " ", loteExtra), bLote),
+    loteResumo, loteMedido);
+
   // Parâmetros: os 3 números principais à vista (tocar = roleta no celular); "Todos" abre a janela com o resto.
   const lote = el("section", { class: "cartao parametros", dataset: { secao: "parametros" } },
     el("div", { class: "titulo-linha" }, tituloSecao("parametros", "Parâmetros", " ", equipResumo), bParametros),
     paramResumo);
 
-  // Clean (K5): Água, Lote e Notas em resumo; o painel lateral (Mais números, Volumes, Água) vai para os Parâmetros.
+  // Clean (K5): Água e Notas em resumo; o painel lateral (Mais números, Volumes, Água) vai para os Parâmetros e o
+  // Medido/Priming para a janela da Brassagem (o Lote saiu do resumo em 24/11/2026: usa o cartão da Brassagem).
   let resumos = null;
   if (ficha) {
     for (const b of [pNumeros, pVolumes, pAgua]) b.open = true;
@@ -1627,16 +1699,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           valor: `${numeroBR(v.agua_necessaria_l, 1)} L`, estado: "perto" });
         return linhasAgua;
       }),
-      brassagem: secaoResumida("brassagem", "Lote", el("div", {}, brassagem, pMedido, pPriming), (res) => {
-        const m = res.medido;
-        const fora = [];
-        if (m.og != null || m.fg != null) fora.push({ nome: "OG / FG medidas",
-          sub: `planejado ${numeroBR(res.og, 3)} / ${numeroBR(res.fg, 3)}`,
-          valor: `${m.og != null ? numeroBR(m.og, 3) : "—"} / ${m.fg != null ? numeroBR(m.fg, 3) : "—"}` });
-        if (m.eficiencia_pct != null) fora.push({ nome: "Eficiência real", sub: m.abv_pct != null ? `ABV real ${numeroBR(m.abv_pct, 1)}%` : null, valor: `${numeroBR(m.eficiencia_pct, 0)}%` });
-        if (res.priming?.gramas != null) fora.push({ nome: `Priming (${numeroBR(r.co2_alvo_vol, 1)} vol)`, sub: O.rotulo(O.ACUCAR_PRIMING, res.priming.acucar), valor: `${numeroBR(res.priming.gramas, 0)} g` });
-        return fora.length ? fora : [{ nome: "Medidas do dia", sub: "Nº, data, OG/FG medidas, volume e priming" }];
-      }),
       notas: secaoResumida("notas", "Notas e fotos", notas, () => {
         const t = String(r.notas ?? "").trim().replace(/\s+/g, " ");
         return [{ nome: t ? (t.length > 90 ? `${t.slice(0, 90)}…` : t) : "Sem notas", sub: "Notas e fotos da brassagem" }];
@@ -1655,7 +1717,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
       ...(resumos
-        ? [inicio, lote, fermentaveis, lupulos, leveduras, mostura, fermentacao, resumos.agua, outros, resumos.brassagem, resumos.notas]
+        ? [inicio, lote, fermentaveis, lupulos, leveduras, mostura, fermentacao, resumos.agua, outros, brassagem, resumos.notas]
         : [inicio, lote, fermentaveis, lupulos, leveduras, agua, outros, mostura, fermentacao, brassagem, geral, notas])),
     ficha ? null : painel);
   // Mudar de campo fecha o passo do histórico (cada campo editado = um passo).
