@@ -3,8 +3,8 @@
 // mudando enquanto a roda gira). Cada roda é uma lista com rolagem nativa e "scroll-snap" (inércia do próprio
 // aparelho); o item no meio é o escolhido. O valor vai para o campo AO VIVO; "Cancelar" (ou Esc) volta ao de antes;
 // "OK", tocar fora ou Enter confirmam. "Digitar" fecha a roleta e abre o teclado no próprio campo.
-import { el, numeroBR } from "./ui.js?v=20261124c";
-import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261124c";
+import { el, numeroBR } from "./ui.js?v=20261124d";
+import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261124d";
 
 const ALTURA = 44;                 // altura de um item (alvo de toque); a roda mostra 5 (2 acima, 2 abaixo)
 let atual = null;                  // roleta aberta: { fechar(confirmar) }
@@ -144,7 +144,10 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
   }
 
   atual = { folha, fechar };
-  document.body.append(folha);
+  // Campo dentro de uma janela modal (detalhes do item, cadastros): a roleta entra na própria janela; no body ela
+  // ficaria atrás da janela, sem receber toque.
+  const janela = campo?.closest("dialog[open]") ?? null;
+  (janela ?? document.body).append(folha);
   for (const x of elementos) x.posicionar();
   mostrar();
   if (escolhido !== original) aoEscolher(escolhido);        // vazio → já entra o valor mais provável (Cancelar desfaz)
@@ -161,16 +164,16 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
   // O campo fica à vista, acima da roleta (e da barra de números, que sobe junto).
   setTimeout(() => {
     if (!campo?.isConnected || atual?.folha !== folha) return;
-    const barra = document.querySelector(".vital.com-teclado");
+    const barra = janela ? null : document.querySelector(".vital.com-teclado");
     // Topo final da roleta (offsetHeight: a animação de subida ainda pode estar no meio).
     const topoLivre = Math.min(window.innerHeight - folha.offsetHeight, barra ? barra.getBoundingClientRect().top : Infinity) - 12;
-    const app = document.querySelector(".barra-app, .barra-movel");
-    const topo = app && app.getBoundingClientRect().bottom > 0 ? app.getBoundingClientRect().bottom + 8 : 8;
+    const app = janela ? null : document.querySelector(".barra-app, .barra-movel");
+    const topo = janela ? janela.getBoundingClientRect().top + 8 : app && app.getBoundingClientRect().bottom > 0 ? app.getBoundingClientRect().bottom + 8 : 8;
     const r = campo.getBoundingClientRect();
     let delta = 0;
     if (r.bottom > topoLivre) delta = r.bottom - topoLivre;
     else if (r.top < topo) delta = r.top - topo;
-    if (Math.abs(delta) >= 1) window.scrollBy({ top: delta, behavior: "instant" });
+    if (Math.abs(delta) >= 1) (janela ?? window).scrollBy({ top: delta, behavior: "instant" });
   }, 80);
   return atual;
 }
