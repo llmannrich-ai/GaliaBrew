@@ -131,7 +131,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  243 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  246 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -207,7 +207,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261123z.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124a.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -253,6 +253,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   lado à direita do nome, que abre 6,6rem para os dois (antes abria só 3,3rem e o ↑ cobria o nome); os botões ficam no
   meio da altura do campo do nome (`top: 1.75rem`). Vale para leveduras, outros, mostura e fermentação (`secaoLista`).
   Teste "toque 320/390 px: ↑ e × dos passos da mostura" (captura `p6m`). A lista de opções do Tipo é a nativa do iOS.
+- Tipo do passo da mostura (24/11/2026, pedido do responsável, sem migração): na tela só "Rampa N" (numerada pela ordem
+  entre as rampas; trocar o tipo ou mover renumera), "Mash out" e "Lavagem" (`TIPO_MOSTURA`, `tipoPasso`, `rotuloPasso`
+  no opcoes.js; o relatório em PDF usa o mesmo rótulo). Rampa grava `TEMPERATURA` (tipo genérico do BeerJSON); INFUSAO e
+  DECOCCAO antigos (importadas do Brewfather) ficam no banco e aparecem como rampa. O tipo não entra em nenhum cálculo.
 - Rolagem só na vertical (23/11/2026, pedido do responsável: a tela podia ser arrastada para o lado): `html`/`body` com
   `overflow-x: clip` (o que passar da largura é cortado, sem criar área de rolagem; não atrapalha o `sticky`). A causa
   era a lista dos Cadastros, tabela larga demais no celular: até 640 px virou cartões (`.tabela.lista-cad`, nome em cima

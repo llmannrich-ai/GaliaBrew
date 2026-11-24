@@ -1,17 +1,17 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261123z";
-import { sb, sessao, preferencias } from "./estado.js?v=20261123z";
-import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261123z";
-import { abrirBusca } from "./busca.js?v=20261123z";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261123z";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261123z";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261123z";
-import * as O from "./opcoes.js?v=20261123z";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261123z";
-import { icone } from "./icones.js?v=20261123z";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261123z";
-import { abrirRelatorio } from "./relatorio.js?v=20261123z";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261123z";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, info } from "./ui.js?v=20261124a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124a";
+import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124a";
+import { abrirBusca } from "./busca.js?v=20261124a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124a";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124a";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124a";
+import * as O from "./opcoes.js?v=20261124a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124a";
+import { icone } from "./icones.js?v=20261124a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124a";
+import { abrirRelatorio } from "./relatorio.js?v=20261124a";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -115,7 +115,7 @@ const PADRAO = () => ({
   lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null, co2_alvo_vol: null, priming_acucar: null,
   agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, agua_mostura_l: null, agua_lavagem_l: null, sais: [], acidos: [],
   fermentaveis: [], lupulos: [], leveduras: [], outros: [],
-  mostura: [{ nome: "Sacarificação", tipo: "INFUSAO", temperatura_c: 66, tempo_min: 60 }],
+  mostura: [{ nome: "Sacarificação", tipo: "TEMPERATURA", temperatura_c: 66, tempo_min: 60 }],
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
 });
 
@@ -1071,7 +1071,14 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     vazio: "Sem passos.",
     colunas: [
       { r: "Passo", campo: txt("nome") },
-      { r: "Tipo", campo: sel("tipo", O.TIPO_MOSTURA) },
+      // Rampa com o número que ela tem (ou teria) pela ordem; trocar o tipo renumera as outras.
+      { r: "Tipo", campo: (item, i) => {
+        const antes = O.numerosRampa(r.mostura.slice(0, i)).filter(Boolean).length;
+        const opcoes = O.TIPO_MOSTURA.map(([v, t]) => [v, v === "TEMPERATURA" ? `Rampa ${antes + 1}` : t]);
+        const vista = { tipo: O.tipoPasso(item.tipo) };
+        return campoSelect(vista, "tipo", opcoes, { desabilitado: des, rotulo: "Tipo do passo",
+          aoMudar: () => { item.tipo = vista.tipo; secoes.mostura(); mudou(); } });
+      } },
       { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1) },
       { r: "Tempo (min)", num: true, campo: num("tempo_min", 0) },
     ],

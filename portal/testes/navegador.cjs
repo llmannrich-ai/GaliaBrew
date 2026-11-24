@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261123z");
+    const m = await import("./fontes.js?v=20261124a");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -380,7 +380,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123z");
+    const m = await import("./calculos.js?v=20261124a");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -441,7 +441,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123z");
+    const m = await import("./calculos.js?v=20261124a");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -460,7 +460,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123z");
+    const m = await import("./calculos.js?v=20261124a");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -552,7 +552,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261123z");
+    const m = await import("./calculos.js?v=20261124a");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1027,6 +1027,17 @@ const erros = [];
     verificar(passos.length === 2 && passos[1].botoes === 2 && passos.every((p) => !p.sobrepoe && p.alinhado && p.cabe && p.toque && p.nome >= 120),
       `toque ${w} px: ↑ e × dos passos da mostura sem cobrir campo e alinhados ao nome (${JSON.stringify(passos)})`);
   }
+  // Tipo do passo (24/11/2026, pedido do responsável): só Rampa (numerada pela ordem), Mash out e Lavagem.
+  const tiposPasso = () => cel.evaluate(() => [...document.querySelectorAll('[data-secao="mostura"] select[aria-label="Tipo do passo"]')]
+    .map((s) => ({ opcoes: [...s.options].map((o) => o.text).join("|"), escolhido: s.selectedOptions[0].text })));
+  const t1 = await tiposPasso();
+  verificar(t1.length === 2 && t1[0].opcoes === "Rampa 1|Mash out|Lavagem" && t1[1].opcoes === "Rampa 2|Mash out|Lavagem" && t1.every((t) => t.escolhido.startsWith("Rampa")),
+    `mostura: tipo só Rampa (numerada), Mash out e Lavagem (${JSON.stringify(t1)})`);
+  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Tipo do passo"]', "MASH_OUT");
+  const t2 = await tiposPasso();
+  verificar(t2[0].escolhido === "Mash out" && t2[1].escolhido === "Rampa 1", `mostura: trocar o tipo renumera as rampas (${JSON.stringify(t2)})`);
+  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Tipo do passo"]', "TEMPERATURA");
+  verificar((await tiposPasso())[1].escolhido === "Rampa 2", "mostura: voltar a rampa renumera de novo");
   await cel.evaluate(() => { document.querySelector('[data-secao="mostura"]').scrollIntoView(); window.scrollBy(0, -20); });
   await cel.screenshot({ path: `${SAIDA}/p6m-celular-mostura.png` });
   await cel.locator('[data-secao="mostura"] tbody tr:nth-child(2) button[aria-label="Remover"]').click();
