@@ -794,22 +794,28 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
 
   // Brassagem (receita = lote): nº, data e o que foi medido. Densidade aceita 1,050, 1050 e 50 (pontos).
   const sg = { de: (x) => x, para: (v) => (v >= 900 ? v / 1000 : v > 2 && v < 200 ? 1 + v / 1000 : v) };
-  const campoLote = (k, rot, extra) => el("label", {}, el("span", {}, rot, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { aoMudar: mudou, desabilitado: des, rotulo: rot, ...extra }));
+  // Campos em 3 grupos (24/11/2026, pedido do responsável: campos estreitos e agrupados): Lote (nº, data) · Medido
+  // (OG, FG, volume) · Priming (CO₂, açúcar). Rótulo curto na tela; aria-label com o nome completo.
+  const campoLote = (k, rot, extra, curto = rot) => el("label", {}, el("span", {}, curto, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { aoMudar: mudou, desabilitado: des, rotulo: rot, ...extra }));
+  const grupoLote = (nome, classe, ...campos) => el("fieldset", { class: `lote-grupo ${classe}` }, el("legend", { text: nome }), el("div", { class: "lote-campos" }, ...campos));
   const brassagem = el("section", { class: "cartao", dataset: { secao: "brassagem" } },
     tituloSecao("brassagem", "Brassagem (lote)"),
-    el("div", { class: "grade-form" },
-      campoLote("lote_numero", "Nº do lote", { casas: 0, placeholder: "automático", roleta: false }),
-      el("label", {}, el("span", { text: "Data da brassagem" }), el("input", {
-        type: "date", value: r.data_brassagem ?? "", disabled: des, "aria-label": "Data da brassagem",
-        on: { change: (e) => { r.data_brassagem = e.target.value || null; mudou(); } },
-      })),
+    el("div", { class: "lote-grupos" },
+      grupoLote("Lote", "lg-id",
+        campoLote("lote_numero", "Nº do lote", { casas: 0, placeholder: "auto", roleta: false }, "Nº"),
+        el("label", {}, el("span", { text: "Data" }), el("input", {
+          type: "date", value: r.data_brassagem ?? "", disabled: des, "aria-label": "Data da brassagem",
+          on: { change: (e) => { r.data_brassagem = e.target.value || null; mudou(); } },
+        }))),
       // Roleta começa no planejado (OG/FG calculadas, volume do lote): o mais provável de ter sido medido.
-      campoLote("og_medida", "OG medida", { casas: 3, placeholder: "1,050", ...sg, roleta: { inicial: () => Number(calcularReceita(r).og?.toFixed(3)) } }),
-      campoLote("fg_medida", "FG medida", { casas: 3, placeholder: "1,010", ...sg, roleta: { inicial: () => Number(calcularReceita(r).fg?.toFixed(3)) } }),
-      campoLote("volume_final_l", "Volume real no fermentador (L)", { casas: 1, roleta: { inicial: () => Number(r.volume_lote_l) } }),
-      campoLote("co2_alvo_vol", "CO₂ desejado (vol)", { casas: 1, placeholder: "2,4" }),
-      el("label", {}, el("span", {}, "Açúcar do priming", info(O.AJUDA_VOLUME.priming_acucar)),
-        campoSelect(r, "priming_acucar", O.ACUCAR_PRIMING, { aoMudar: mudou, desabilitado: des, vazio: "Açúcar comum (sacarose)", rotulo: "Açúcar do priming" }))));
+      grupoLote("Medido", "lg-medido",
+        campoLote("og_medida", "OG medida", { casas: 3, placeholder: "1,050", ...sg, roleta: { inicial: () => Number(calcularReceita(r).og?.toFixed(3)) } }, "OG"),
+        campoLote("fg_medida", "FG medida", { casas: 3, placeholder: "1,010", ...sg, roleta: { inicial: () => Number(calcularReceita(r).fg?.toFixed(3)) } }, "FG"),
+        campoLote("volume_final_l", "Volume real no fermentador (L)", { casas: 1, roleta: { inicial: () => Number(r.volume_lote_l) } }, "Volume (L)")),
+      grupoLote("Priming", "lg-priming",
+        campoLote("co2_alvo_vol", "CO₂ desejado (vol)", { casas: 1, placeholder: "2,4" }, "CO₂ (vol)"),
+        el("label", {}, el("span", {}, "Açúcar", info(O.AJUDA_VOLUME.priming_acucar)),
+          campoSelect(r, "priming_acucar", O.ACUCAR_PRIMING, { aoMudar: mudou, desabilitado: des, vazio: "Açúcar comum (sacarose)", rotulo: "Açúcar do priming" })))));
 
   const inicio = !r.id && !leitura ? el("section", { class: "cartao", dataset: { secao: "inicio" } },
     origem

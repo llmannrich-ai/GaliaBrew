@@ -1222,6 +1222,35 @@ const erros = [];
   await cel.evaluate(() => { document.querySelector('[data-secao="parametros"]').scrollIntoView(); window.scrollBy(0, -70); });
   await cel.screenshot({ path: `${SAIDA}/p6p5-celular-320-parametros.png` });
   await cel.setViewportSize({ width: 390, height: 844 });
+
+  // Brassagem (lote) em grupos (24/11/2026): Lote (nº | data), Medido (OG | FG | volume), Priming (CO₂ | açúcar),
+  // cada grupo numa linha, campos estreitos lado a lado, sem passar da largura.
+  const loteCel = async (w) => {
+    await cel.setViewportSize({ width: w, height: 844 });
+    await cel.waitForTimeout(150);
+    return cel.evaluate((w) => {
+      const s = document.querySelector('.editor-corpo > [data-secao="brassagem"]');
+      s.scrollIntoView(); window.scrollBy(0, -60);
+      const topo = (q) => Math.round(s.querySelector(q).getBoundingClientRect().bottom);
+      const caixas = [...s.querySelectorAll(".lote-campos input, .lote-campos select")].map((n) => n.getBoundingClientRect());
+      return {
+        grupos: s.querySelectorAll("fieldset.lote-grupo").length,
+        idLinha: topo('input[aria-label="Nº do lote"]') === topo('input[aria-label="Data da brassagem"]'),
+        medidoLinha: new Set(["OG medida", "FG medida", "Volume real no fermentador (L)"].map((a) => topo(`input[aria-label="${a}"]`))).size === 1,
+        primingLinha: topo('input[aria-label="CO₂ desejado (vol)"]') === topo('select[aria-label="Açúcar do priming"]'),
+        cabe: caixas.every((b) => b.left >= 0 && b.right <= w) && s.scrollWidth <= s.clientWidth,
+        dataAlta: Math.round(s.querySelector('input[aria-label="Data da brassagem"]').getBoundingClientRect().height),
+        alturas: caixas.map((b) => Math.round(b.height)).join(","),
+      };
+    }, w);
+  };
+  for (const w of [390, 320]) {
+    const lt = await loteCel(w);
+    verificar(lt.grupos === 3 && lt.idLinha && lt.medidoLinha && lt.primingLinha && lt.cabe && lt.dataAlta >= 30,
+      `lote ${w} px: 3 grupos, campos lado a lado, cabe na tela, data com altura (${JSON.stringify(lt)})`);
+    await cel.screenshot({ path: `${SAIDA}/p6k-celular-lote${w === 320 ? "-320" : ""}.png` });
+  }
+  await cel.setViewportSize({ width: 390, height: 844 });
   await cel.waitForTimeout(150);
   // Inteiro e decimais bem separados (24/11/2026): vírgula entre as rodas, cada roda com a sua faixa.
   await tocar('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
