@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124r";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124r";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124r";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124r";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124r";
-import { abrirBusca } from "./busca.js?v=20261124r";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124r";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124r";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124r";
-import * as O from "./opcoes.js?v=20261124r";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124r";
-import { icone } from "./icones.js?v=20261124r";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124r";
-import { abrirRelatorio } from "./relatorio.js?v=20261124r";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124r";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124s";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124s";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124s";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124s";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124s";
+import { abrirBusca } from "./busca.js?v=20261124s";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124s";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124s";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124s";
+import * as O from "./opcoes.js?v=20261124s";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124s";
+import { icone } from "./icones.js?v=20261124s";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124s";
+import { abrirRelatorio } from "./relatorio.js?v=20261124s";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124s";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -453,32 +453,38 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
 
   // ---------- seção genérica de lista ----------
-  function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao, resumo }) {
+  // `linhaUnica` (24/11/2026, pedido do responsável, mostura e fermentação): o passo inteiro numa linha, com a alça ⠿ à ESQUERDA
+  // (como nos maltes e lúpulos) e o × no fim; no celular a unidade (`u`) vai depois do número, sem rótulo em cima.
+  // No layout Clean vale a ficha (`resumo`).
+  function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao, resumo, linhaUnica = false }) {
     if (ficha && resumo) return secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo });
     const corpo = el("tbody");
+    const alcaNaFrente = linhaUnica && !leitura;
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
       el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo), leitura ? null : adicionar()),
       el("div", { class: "tabela-rolagem" },
-        el("table", { class: "tabela editavel" },
-          el("thead", {}, el("tr", {}, colunas.map((c) => el("th", { class: c.num ? "num" : "", text: c.r })), leitura ? null : el("th"))),
+        el("table", { class: `tabela editavel${linhaUnica ? " passos-linha" : ""}` },
+          el("thead", {}, el("tr", {}, alcaNaFrente ? el("th", { class: "alca-linha" }) : null,
+            colunas.map((c) => el("th", { class: c.num ? "num" : "", text: c.r })), leitura ? null : el("th"))),
           corpo)));
     const desenhar = () => {
       limpar(corpo);
-      if (!r[chave].length) corpo.append(el("tr", {}, el("td", { colspan: colunas.length + 1, class: "nota", text: vazio })));
+      if (!r[chave].length) corpo.append(el("tr", {}, el("td", { colspan: colunas.length + 1 + (alcaNaFrente ? 1 : 0), class: "nota", text: vazio })));
       r[chave].forEach((item, i) => {
+        // Alça ⠿ (24/11/2026, pedido do responsável: no lugar do ↑), a mesma dos maltes e lúpulos: arrastar ou ↑/↓.
+        const alca = leitura ? null : el("button", {
+          type: "button", class: "icone ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
+          "aria-label": `Mover ${rotuloItem(item, i)}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
+          on: {
+            keydown: (e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); mover(i, i + (e.key === "ArrowUp" ? -1 : 1), true); } },
+            pointerdown: (e) => arrastarPelaAlca(e, i, (para, focar) => mover(i, para, focar), [...corpo.querySelectorAll(":scope > tr")]),
+          },
+        });
+        const remover = leitura ? null : el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover", text: "×", on: { click: () => acao(() => { r[chave].splice(i, 1); desenhar(); mudou(); }) } });
         corpo.append(el("tr", {},
-          colunas.map((c) => el("td", { class: c.num ? "num" : "", dataset: { rotulo: c.r } }, comRotulo(c.campo(item, i), c.r))),
-          leitura ? null : el("td", { class: "acoes-linha" },
-            // Alça ⠿ (24/11/2026, pedido do responsável: no lugar do ↑), a mesma dos maltes e lúpulos: arrastar ou ↑/↓.
-            el("button", {
-              type: "button", class: "icone ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
-              "aria-label": `Mover ${rotuloItem(item, i)}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
-              on: {
-                keydown: (e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); mover(i, i + (e.key === "ArrowUp" ? -1 : 1), true); } },
-                pointerdown: (e) => arrastarPelaAlca(e, i, (para, focar) => mover(i, para, focar), [...corpo.querySelectorAll(":scope > tr")]),
-              },
-            }),
-            el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover", text: "×", on: { click: () => acao(() => { r[chave].splice(i, 1); desenhar(); mudou(); }) } }))));
+          alcaNaFrente ? el("td", { class: "alca-linha" }, alca) : null,
+          colunas.map((c) => el("td", { class: c.num ? "num" : "", dataset: { rotulo: c.r, ...(c.u ? { unidade: c.u } : {}) } }, comRotulo(c.campo(item, i), c.r))),
+          leitura ? null : el("td", { class: "acoes-linha" }, alcaNaFrente ? null : alca, remover)));
       });
       atualizarResultados();
     };
@@ -1560,9 +1566,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         return campoSelect(vista, "tipo", opcoes, { desabilitado: des, rotulo: "Passo da mostura",
           aoMudar: () => { item.tipo = vista.tipo; secoes.mostura(); mudou(); } });
       } },
-      { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_mostura }) },
-      { r: "Tempo (min)", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_mostura }) },
+      { r: "Temp. (°C)", u: "°C", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_mostura }) },
+      { r: "Tempo (min)", u: "min", num: true, campo: num("tempo_min", 0, { roleta: FAIXAS_LUGAR.tempo_mostura }) },
     ],
+    linhaUnica: true,
     resumo: (p, i) => ({
       nome: O.rotuloPasso(r.mostura, i),
       valor: n0(p.temperatura_c) != null ? `${n0(p.temperatura_c)} °C` : "—",
@@ -1574,10 +1581,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     iconeSecao: "fermentacao",
     vazio: "Sem passos.",
     colunas: [
-      { r: "Passo", campo: txt("nome") },
-      { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_fermentacao }) },
-      { r: "Dias", num: true, campo: num("dias", 0) },
+      { r: "Passo", campo: txt("nome", { placeholder: "Passo" }) },
+      { r: "Temp. (°C)", u: "°C", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_fermentacao }) },
+      { r: "Dias", u: "dias", num: true, campo: num("dias", 0) },
     ],
+    linhaUnica: true,
     resumo: (p, i) => ({
       nome: String(p.nome ?? "").trim() || `Passo ${i + 1}`,
       valor: n0(p.temperatura_c) != null ? `${n0(p.temperatura_c)} °C` : "—",
