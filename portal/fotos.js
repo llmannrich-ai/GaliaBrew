@@ -1,9 +1,9 @@
 // fotos.js — fotos da brassagem (seção Notas da receita). Cada foto é REDUZIDA no aparelho antes de subir
 // (lado maior até 1600 px, JPEG, alvo ~300 kB) para gastar pouco do Storage; o bucket recusa acima de 400 kB (0011).
 // As fotos são gravadas na hora (não dependem do "Salvar" da receita) em <dono>/<receita>/<arquivo>.jpg.
-import { el, preencher, avisar, mensagemErro, confirmar, numeroBR } from "./ui.js?v=20261124t";
-import { sb } from "./estado.js?v=20261124t";
-import { icone } from "./icones.js?v=20261124t";
+import { el, preencher, avisar, mensagemErro, confirmar, numeroBR } from "./ui.js?v=20261124u";
+import { sb } from "./estado.js?v=20261124u";
+import { icone } from "./icones.js?v=20261124u";
 
 export const FOTOS = { bucket: "fotos-brassagem", lado: 1600, ladoMinimo: 700, alvoBytes: 300_000, tetoBytes: 400_000, porReceita: 12, qualidades: [0.78, 0.66, 0.54] };
 

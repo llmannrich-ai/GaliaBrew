@@ -1156,8 +1156,8 @@ button.ferramenta-botao:active { transform: scale(.985); }
 /* Janela da ferramenta: cabeça presa no topo (ícone, nome, × e o RESULTADO, que fica à vista enquanto a roleta ou o
    teclado mudam os números); campos; "Pronto" no pé. No celular é um cartão no meio da tela (como a janela do item);
    com a roleta aberta o roleta.js prende a janela onde está e ela rola por dentro. */
-dialog:is(.ferramenta-janela, .parametros-janela) { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
-dialog:is(.ferramenta-janela, .parametros-janela)[open] { display: flex; flex-direction: column; }
+dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela) { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
+dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela)[open] { display: flex; flex-direction: column; }
 .fj-cabeca { position: sticky; top: 0; z-index: 1; background: var(--fc, var(--painel)); }
 .fj-topo { display: flex; align-items: center; gap: .7rem; padding: .5rem .4rem .35rem .9rem; }
 .fj-topo .fb-icone { width: 2.5rem; height: 2.5rem; border-radius: 12px; }
@@ -1188,10 +1188,10 @@ dialog:is(.ferramenta-janela, .parametros-janela)[open] { display: flex; flex-di
   position: sticky; bottom: 0; display: flex; justify-content: flex-end; padding: .55rem .9rem;
   background: var(--cartao); border-top: 1px solid var(--linha);
 }
-dialog:is(.ferramenta-janela, .parametros-janela):has(> .roleta) .fj-pe { position: static; }
+dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela):has(> .roleta) .fj-pe { position: static; }
 @media (max-width: 640px) {
   .ferramentas-menu { gap: .55rem; }
-  dialog:is(.ferramenta-janela, .parametros-janela) {
+  dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela) {
     width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto; border: none; border-radius: 16px;
     max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
@@ -1230,7 +1230,11 @@ button.param-todos { flex: none; display: inline-flex; align-items: center; gap:
 .param-seta { font-size: 1.25rem; line-height: 1; }
 .param-equip { display: grid; gap: .2rem; }
 .param-equip select { width: 100%; }
-dialog.parametros-janela .fj-metricas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+dialog:is(.parametros-janela, .lote-janela) .fj-metricas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* Brassagem (lote): data e açúcar do priming ocupam 2 das 3 colunas; abaixo dos números, o que já se sabe do lote. */
+.param-largo { grid-column: span 2; }
+.param-largo .param-valor > :is(input, select) { flex: 1 1 auto; width: 0; min-width: 0; }
+.lote-medido { margin: .45rem 0 0; }
 @media (max-width: 640px) {
   .param-resumo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .param-resumo .param-rot { font-size: .75rem; }
@@ -1239,8 +1243,8 @@ dialog.parametros-janela .fj-metricas { grid-template-columns: repeat(3, minmax(
   .param-rot { font-size: .8rem; }
 }
 @media (max-width: 360px) {
-  dialog.parametros-janela .fj-corpo { padding-left: .7rem; padding-right: .7rem; }
-  dialog.parametros-janela .param-grade { column-gap: .45rem; }
+  dialog:is(.parametros-janela, .lote-janela) .fj-corpo { padding-left: .7rem; padding-right: .7rem; }
+  dialog:is(.parametros-janela, .lote-janela) .param-grade { column-gap: .45rem; }
   .param-rot { font-size: .75rem; }
   .param-rot button.info { margin-left: .1rem; }
 }
@@ -1622,7 +1626,7 @@ button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, t
   border-color: transparent; background: color-mix(in srgb, var(--tinta) 6%, transparent); font-weight: 700;
 }
 :root[data-layout="clean"] .param-resumo input.param-num:focus { border-color: var(--destaque); background: var(--cartao); }
-:root[data-layout="clean"] [data-secao="parametros"] button.param-todos {
+:root[data-layout="clean"] .parametros button.param-todos {
   border: none; background: transparent; color: var(--destaque-escuro); min-height: 2.75rem; padding: 0 .2rem;
 }
 

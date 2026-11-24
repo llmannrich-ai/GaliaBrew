@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  375 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  389 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124t.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124u.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -347,12 +347,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Leveduras NÃO: usam o `secaoLinhas` (ver "Leveduras com valores fixos"). Tocar abre `dialog.item-janela.passo-janela` com os MESMOS campos das
   colunas (roleta por cima, em popover), ↑ ↓ Remover e Pronto; "+" cria e já abre a janela do item novo
   (`abrirPassoDe`). Sem tabela, sem alça e sem × na linha. Auxiliares de texto `n0` e `juntar`.
-- K5 (feito): Água, Lote e Notas em RESUMO (`secaoResumida(chave, titulo, conteudo, linhas)` no receitas.js; as linhas
+- K5 (feito): Água e Notas em RESUMO (o Lote também, até 24/11/2026: hoje usa o cartão da Brassagem, ver abaixo) (`secaoResumida(chave, titulo, conteudo, linhas)` no receitas.js; as linhas
   são refeitas a cada cálculo pelo `aoRecalcular`). Água: "Mostura X L · Lavagem Y L" + sais/ácidos curtos (`SAL_CURTO`,
   `ACIDO_CURTO`) | pH com estado (`estadoPh`: ideal 5,3–5,5 / aceitável 5,2–5,6), e "Água necessária" quando falta/sobra
   ≥ 0,5 L. Lote: OG/FG medidas (com o planejado), eficiência real (+ ABV real), priming. Notas: começo da nota. Tocar
   abre `dialog.item-janela.resumo-janela` com a seção de sempre (os mesmos nós; Lote leva também Medido e Priming) e
-  Pronto. Ordem no Clean: parâmetros, fermentáveis, lúpulos, leveduras, mostura, fermentação, água, outros, lote, notas.
+  Pronto. Ordem no Clean: parâmetros, fermentáveis, lúpulos, leveduras, mostura, fermentação, água, outros, brassagem, notas.
   Sem painel lateral: Mais números, Volumes e Água (do painel) ficam na janela "Todos ›" dos Parâmetros, abaixo dos
   campos (`.parametros-numeros`); as notas de rodapé do painel ("Comparando com...", "IBU pelo Tinseth...") não
   aparecem no Clean. Em ≤ 360 px o cartão dos números usa rótulos curtos (pH, EBC): no CI "pH MOSTURA" passava da borda.
@@ -386,6 +386,23 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: seção com 3 números, janela 3 × 3, volumes ao vivo, Pronto/foco, roleta na eficiência (OG
   acompanha, ↶ desfaz), roleta dentro da janela, 390/320 px sem passar da largura. Capturas `p6p` (seção 390),
   `p6p2` (janela 390), `p6p3` (roleta na janela), `p6p4` (janela 320), `p6p5` (seção 320).
+
+## Brassagem (lote) no molde dos Parâmetros (24/11/2026, pedido do responsável; sem migração)
+- O cartão "Brassagem (lote)" (`data-secao="brassagem"`, classes `cartao parametros`) mostra o nº e a data no título
+  ("nº 104 · 20/04/2026", `loteExtra`) e SÓ os 3 números medidos no dia: OG medida, FG medida, Volume real (o mesmo
+  `campoParam` dos Parâmetros; no celular tocar = roleta direto, começando no planejado). Abaixo, linha curta com o que já
+  se sabe (`.lote-medido`: "Eficiência real 83% · ABV real · Priming 135 g"; some vazia). "Todos ›" (`bLote`) abre
+  `dialog.lote-janela` (`abrirLote`): cabeça com Eficiência real · ABV real · Priming ao vivo e grade 3 × 3:
+  Nº | Data (2 colunas, `celulaLarga`) · OG | FG | Volume · CO₂ | Açúcar do priming (2 colunas). Placeholder do nº = "auto".
+- As duas janelas usam o mesmo `abrirJanelaCampos` do receitas.js (fecha por ×, Pronto, Enter, Esc, fundo, rota; roleta
+  em popover; foco volta ao "Todos"). `campoParam` aceita um 6º item com opções extras do `campoNumero` (sg, roleta).
+  Desfazer (`irPara`) fecha as duas.
+- Clean: o resumo "Lote" saiu; usa o mesmo cartão. Na janela, abaixo dos campos, Medido no lote e Priming
+  (`.parametros-numeros`), já que o Clean não tem painel lateral.
+- Teste do navegador: seção com só os 3 números, OG 1048 → 1,048, eficiência real na seção, janela (ordem dos campos,
+  priming ao vivo, Pronto/foco/data no título), reabre com "nº 1 · 20/04/2026"; celular: roleta na OG (↶ desfaz),
+  janela 3 × 3 em 390/320 px, roleta do CO₂ em popover. Capturas `p6p6` (seção 390), `p6p7` (janela 390), `p6p8`
+  (janela 320), `p6p9` (seção 320).
 
 ## Janela do item (24/11/2026, pedido do responsável; sem migração)
 - Os detalhes de malte e lúpulo NÃO abrem mais embutidos na linha: tocar no item abre `dialog.item-janela`
@@ -496,6 +513,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - `calculos.js` → `res.medido`: eficiência real (OG medida no volume real + perda da panela, menos açúcar pronto,
   sobre o açúcar possível do grão), ABV real, atenuação aparente real.
 - Portal: card "Brassagem (lote)" no fim do editor (nº, data, OG/FG medidas aceitam 1,050 / 1050 / 50, volume real;
+  desde 24/11/2026 no molde dos Parâmetros: ver "Brassagem (lote) no molde dos Parâmetros";
   o resumo dos parâmetros de equipamento no topo passou a se chamar "Parâmetros"); bloco "Medido no lote" no painel
   lateral (só aparece com OG/FG medida); lista por nº com a data;
   "Nova a partir desta" (rota `#/receita/nova/<id>`) e, na receita nova, "Começar a partir de uma receita anterior".

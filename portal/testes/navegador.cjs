@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124t");
+    const m = await import("./fontes.js?v=20261124u");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -383,12 +383,31 @@ const erros = [];
   await pagina.keyboard.press("Escape");
   await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
   verificar((await pagina.textContent(`${linhaLev} .ing-sub`)).startsWith("Lager"), "a linha da levedura mostra o tipo do cadastro");
-  // Lote: data, OG medida digitada como 1048 (vira 1,048).
-  await pagina.fill('input[aria-label="Data da brassagem"]', "2026-04-20");
-  await pagina.fill('input[aria-label="OG medida"]', "1048");
-  await pagina.locator('input[aria-label="OG medida"]').blur();
+  // Brassagem (24/11/2026, como os Parâmetros): OG, FG e volume real à vista; "Todos" abre a janela com nº, data,
+  // CO₂ e açúcar, e a eficiência real / ABV real / priming ao vivo na cabeça. OG medida digitada 1048 vira 1,048.
+  verificar(await pagina.$$eval('[data-secao="brassagem"] .param-resumo input', (ns) => ns.map((n) => n.getAttribute("aria-label")).join("|"))
+    === "OG medida|FG medida|Volume real no fermentador (L)" && await pagina.locator('[data-secao="brassagem"] input[aria-label="Nº do lote"], [data-secao="brassagem"] input[type="date"]').count() === 0,
+    "brassagem: só OG medida, FG medida e volume real na seção (nº e data na janela)");
+  await pagina.fill('[data-secao="brassagem"] input[aria-label="OG medida"]', "1048");
+  await pagina.locator('[data-secao="brassagem"] input[aria-label="OG medida"]').blur();
   verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "1,048", "OG medida digitada 1048 aparece como 1,048 ao sair do campo");
-  await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "2,5");
+  verificar(/Eficiência real \d+%/.test(await pagina.textContent('[data-secao="brassagem"] .lote-medido')), "brassagem: a seção mostra a eficiência real abaixo dos números");
+  await pagina.click('[data-secao="brassagem"] button.param-todos');
+  await pagina.waitForSelector("dialog.lote-janela[open]");
+  const gradeLote = await pagina.$$eval("dialog.lote-janela .param-grade .param", (ls) => ls.map((l) => l.dataset.campo).join(" "));
+  verificar(gradeLote === "lote_numero data_brassagem og_medida fg_medida volume_final_l co2_alvo_vol priming_acucar"
+    && /Eficiência real\d+%/.test(await pagina.textContent("dialog.lote-janela .fj-metricas")),
+    `brassagem: janela com nº | data · OG | FG | volume · CO₂ | açúcar e a eficiência real na cabeça (${gradeLote})`);
+  await pagina.fill('dialog.lote-janela input[aria-label="Data da brassagem"]', "2026-04-20");
+  const primingAntes = await pagina.textContent("dialog.lote-janela .fj-metricas");
+  await pagina.fill('dialog.lote-janela input[aria-label="CO₂ desejado (vol)"]', "2,5");
+  verificar(/Priming\d+ g/.test(await pagina.textContent("dialog.lote-janela .fj-metricas")) && primingAntes.includes("Priming—"),
+    "brassagem: CO₂ desejado mostra o priming ao vivo na cabeça da janela");
+  await pagina.click("dialog.lote-janela button.item-pronto");
+  await pagina.waitForSelector("dialog.lote-janela", { state: "detached", timeout: 2000 }).catch(() => {});
+  verificar(await pagina.locator("dialog.lote-janela").count() === 0 && await pagina.textContent('[data-secao="brassagem"] .total-extra') === "20/04/2026"
+    && await pagina.evaluate(() => document.activeElement?.closest('[data-secao="brassagem"]') && document.activeElement.classList.contains("param-todos")),
+    "brassagem: Pronto fecha, a data aparece no título e o foco volta ao Todos");
   // Água: origem e alvo do cadastro (copiados), 6 g de gesso.
   await pagina.selectOption('select[aria-label="Água de base"]', "ag-tor");
   await pagina.selectOption('select[aria-label="Perfil alvo"]', "ag-alvo");
@@ -425,7 +444,7 @@ const erros = [];
   verificar(await pagina.locator('[data-secao="parametros"] .param-resumo input').count() === 3
     && await pagina.locator('[data-secao="parametros"] input[aria-label="Água/grão na mostura (L/kg)"]').count() === 0,
     "parâmetros: a seção mostra só os 3 números principais (o resto fica na janela)");
-  await pagina.click('button.param-todos');
+  await pagina.click('[data-secao="parametros"] button.param-todos');
   await pagina.waitForSelector("dialog.parametros-janela[open]");
   const gradeParam = await pagina.$$eval("dialog.parametros-janela .param-grade .param", (ls) => ({
     n: ls.length, colunas: new Set(ls.map((l) => Math.round(l.getBoundingClientRect().left))).size,
@@ -488,7 +507,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124t");
+    const m = await import("./calculos.js?v=20261124u");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -553,7 +572,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124t");
+    const m = await import("./calculos.js?v=20261124u");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -575,7 +594,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124t");
+    const m = await import("./calculos.js?v=20261124u");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -685,7 +704,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124t");
+    const m = await import("./calculos.js?v=20261124u");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -763,7 +782,7 @@ const erros = [];
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "água da mostura reabre com 18,0 L");
   verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de base"]')) === "__atual", "água reabre como 'guardada nesta receita'");
-  verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "1", "receita reabre com o nº do lote 1");
+  verificar(await pagina.textContent('[data-secao="brassagem"] .total-extra') === "nº 1 · 20/04/2026", "receita reabre com o nº do lote 1 e a data no título da Brassagem");
   verificar(await pagina.inputValue(".titulo-receita") === "Pils da Galia", "receita reabre do banco com o nome");
   verificar(await pagina.inputValue('input[aria-label="Qtd (kg)"]') === "4,800", "fermentável reabre com 4,800 kg");
 
@@ -992,8 +1011,8 @@ const erros = [];
   const copia = chamadas.filter((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita")).pop().corpo.p;
   verificar(copia.id === null && copia.publica === false && copia.og_medida === null && copia.lote_numero === null, "salva como receita nova, privada, sem dados do lote");
   verificar(copia.fermentaveis[0].fermentavel_id === null && copia.equipamento_id === null && copia.fermentaveis[0].quantidade_kg === 6, "não leva ligação com cadastro que não enxergo, mas leva os dados");
-  await pagina.waitForSelector('input[aria-label="Nº do lote"]');
-  verificar(await pagina.inputValue('input[aria-label="Nº do lote"]') === "2", "receita nova recebe o próximo nº (2)");
+  await pagina.waitForSelector('[data-secao="brassagem"] .total-extra:text("nº 2")');
+  verificar(await pagina.textContent('[data-secao="brassagem"] .total-extra') === "nº 2", "receita nova recebe o próximo nº (2)");
   verificar(db.receitas.find((x) => x.id === "r-outro").nome === "IPA do Vizinho", "a receita anterior não muda");
 
   // Excluir só dentro da receita: a lista não tem botão; no editor pede confirmação (Cancelar não apaga).
@@ -1236,7 +1255,7 @@ const erros = [];
     return { cabe: b.left >= 0 && b.right <= w && d.scrollWidth <= d.clientWidth, colunas: new Set(ins.map((x) => Math.round(x.left))).size,
       linhas: new Set(ins.map((x) => Math.round(x.top))).size, campoMin: Math.round(Math.min(...ins.map((x) => x.width))), altura: Math.round(b.height) };
   }, w);
-  await tocar("button.param-todos");
+  await tocar('[data-secao="parametros"] button.param-todos');
   await cel.waitForSelector("dialog.parametros-janela[open]");
   const pj390 = await janelaParamCel(390);
   verificar(pj390.cabe && pj390.colunas === 3 && pj390.linhas === 3 && pj390.campoMin >= 50,
@@ -1263,6 +1282,63 @@ const erros = [];
   await cel.screenshot({ path: `${SAIDA}/p6p5-celular-320-parametros.png` });
   await cel.setViewportSize({ width: 390, height: 844 });
   await cel.waitForTimeout(150);
+  // Brassagem no celular (24/11/2026, como os Parâmetros): OG/FG/volume real tocáveis (roleta direto, no planejado);
+  // "Todos" abre a janela com nº | data · OG | FG | volume · CO₂ | açúcar.
+  const ogMed = '[data-secao="brassagem"] input[aria-label="OG medida"]';
+  const ogMedAntes = await cel.inputValue(ogMed);
+  await cel.evaluate(() => { document.querySelector('[data-secao="brassagem"]').scrollIntoView(); window.scrollBy(0, -70); });
+  await cel.waitForTimeout(100);
+  await tocar(ogMed);
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.locator("dialog.lote-janela").count() === 0 && await cel.locator(".vital.com-teclado").count() === 1,
+    "brassagem: tocar na OG medida abre a roleta direto, com a barra de números fina acima");
+  await tocar(".roleta-ok");
+  const ogPlan = await cel.inputValue(ogMed);
+  verificar(/^1,0\d\d$/.test(ogPlan) && /Eficiência real \d+%/.test(await cel.textContent('[data-secao="brassagem"] .lote-medido')),
+    `brassagem: a roleta grava a OG medida (${ogMedAntes || "vazia"} → ${ogPlan}) e a eficiência real aparece`);
+  await cel.screenshot({ path: `${SAIDA}/p6p6-celular-brassagem.png` });
+  const secLote = await cel.$$eval('[data-secao="brassagem"] .param-resumo input', (ns) => ns.map((n) => {
+    const b = n.getBoundingClientRect(); return { top: Math.round(b.top), h: Math.round(b.height), right: b.right }; }));
+  verificar(new Set(secLote.map((x) => x.top)).size === 1 && secLote.every((x) => x.h >= 44 && x.right <= 390),
+    `brassagem: os 3 números numa linha, com 44 px de toque (${JSON.stringify(secLote)})`);
+  const janelaLoteCel = async (w) => cel.evaluate((w) => {
+    const d = document.querySelector("dialog.lote-janela");
+    const b = d.getBoundingClientRect();
+    const ps = [...d.querySelectorAll(".param-grade .param")].map((n) => n.querySelector("input, select").getBoundingClientRect());
+    const vs = [...d.querySelectorAll(".param-grade .param-valor")].map((n) => n.getBoundingClientRect());
+    return { cabe: b.left >= 0 && b.right <= w && d.scrollWidth <= d.clientWidth, colunas: new Set(ps.map((x) => Math.round(x.left))).size,
+      linhas: new Set(vs.map((x) => Math.round(x.top))).size, campoMin: Math.round(Math.min(...ps.map((x) => x.width))),
+      dentro: ps.every((x) => x.right <= b.right - 4), altura: Math.round(b.height) };
+  }, w);
+  await tocar('[data-secao="brassagem"] button.param-todos');
+  await cel.waitForSelector("dialog.lote-janela[open]");
+  await cel.screenshot({ path: `${SAIDA}/p6p7-celular-brassagem-janela.png` });
+  const lj390 = await janelaLoteCel(390);
+  verificar(lj390.cabe && lj390.dentro && lj390.colunas === 3 && lj390.linhas === 3 && lj390.campoMin >= 50,
+    `brassagem 390 px: janela com os campos em 3 linhas × 3 colunas, cabe na tela (${JSON.stringify(lj390)})`);
+  await tocar('dialog.lote-janela input[aria-label="CO₂ desejado (vol)"]');
+  await cel.waitForSelector("dialog.lote-janela .roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.evaluate(() => document.querySelector("dialog.lote-janela .roleta").matches(":popover-open")),
+    "brassagem: a roleta do CO₂ abre dentro da janela (camada do topo)");
+  await tocar(".roleta-cancelar");
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(150);
+  const lj320 = await janelaLoteCel(320);
+  verificar(lj320.cabe && lj320.dentro && lj320.colunas === 3 && lj320.linhas === 3 && lj320.campoMin >= 40,
+    `brassagem 320 px: janela em 3 × 3, cabe na tela (${JSON.stringify(lj320)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6p8-celular-320-brassagem-janela.png` });
+  await tocar("dialog.lote-janela .item-fechar");
+  await cel.waitForSelector("dialog.lote-janela", { state: "detached", timeout: 2000 }).catch(() => {});
+  verificar(await cel.locator("dialog.lote-janela").count() === 0, "brassagem: × fecha a janela");
+  await conferirLateral("320 px, brassagem");
+  await cel.evaluate(() => { document.querySelector('[data-secao="brassagem"]').scrollIntoView(); window.scrollBy(0, -70); });
+  await cel.screenshot({ path: `${SAIDA}/p6p9-celular-320-brassagem.png` });
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(150);
+  await tocar(".barra-app .app-desfazer");
+  verificar(await cel.inputValue(ogMed) === ogMedAntes, "brassagem: ↶ desfaz a OG medida");
   // Inteiro e decimais bem separados (24/11/2026): vírgula entre as rodas, cada roda com a sua faixa.
   await tocar('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
   await cel.waitForSelector(".roleta");
@@ -2033,17 +2109,21 @@ const erros = [];
   await cel.waitForTimeout(200);
   await cel.screenshot({ path: `${SAIDA}/p7i-clean-passos.png` });
   // K5: Água, Lote e Notas em resumo; tocar abre a seção inteira numa janela; o painel lateral vai para os Parâmetros.
-  const resumosK5 = await cel.evaluate(() => Object.fromEntries(["agua", "brassagem", "notas"].map((k) => {
+  const resumosK5 = await cel.evaluate(() => Object.fromEntries(["agua", "notas"].map((k) => {
     const sec = document.querySelector(`.editor-corpo > [data-secao="${k}"]`);
     const linhas = [...(sec?.querySelectorAll("li.ing") ?? [])].map((l) => Math.round(l.getBoundingClientRect().height));
     return [k, { resumida: sec?.classList.contains("resumida"), linhas, texto: sec?.textContent ?? "", campos: sec?.querySelectorAll("input, select, textarea").length }];
   })));
   verificar(Object.values(resumosK5).every((x) => x.resumida && x.campos === 0 && x.linhas.length >= 1 && x.linhas.length <= 3 && x.linhas.every((h) => h <= 80)),
-    `clean K5: Água, Lote e Notas em resumo, sem campos (${Object.entries(resumosK5).map(([k, x]) => `${k}: ${x.linhas.join("+")} px`).join("; ")})`);
+    `clean K5: Água e Notas em resumo, sem campos (${Object.entries(resumosK5).map(([k, x]) => `${k}: ${x.linhas.join("+")} px`).join("; ")})`);
   verificar(/Mostura \d+,\d L · Lavagem/.test(resumosK5.agua.texto) && /pH 5,\d\d/.test(resumosK5.agua.texto) && /Gesso 6 g/.test(resumosK5.agua.texto),
     "clean K5: resumo da água com litros, sais e pH");
-  verificar(/OG \/ FG medidas/.test(resumosK5.brassagem.texto) && /1,048/.test(resumosK5.brassagem.texto) && /Priming/.test(resumosK5.brassagem.texto),
-    "clean K5: resumo do lote com OG/FG medidas e priming");
+  const loteClean = await cel.evaluate(() => {
+    const sec = document.querySelector('.editor-corpo > [data-secao="brassagem"]');
+    return { cartao: sec?.classList.contains("parametros"), numeros: [...sec.querySelectorAll(".param-resumo input")].map((n) => n.value), texto: sec.textContent };
+  });
+  verificar(loteClean.cartao && loteClean.numeros[0] === "1,048" && /Priming \d+ g/.test(loteClean.texto),
+    `clean: Brassagem no cartão dos Parâmetros, com a OG medida e o priming (${JSON.stringify(loteClean.numeros)})`);
   await cel.locator('.editor-corpo > [data-secao="agua"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.evaluate(() => window.scrollBy(0, -60));
   await cel.waitForTimeout(200);
@@ -2057,12 +2137,12 @@ const erros = [];
   await conferirLateral("clean, janela da água");
   await tocar("dialog.resumo-janela .item-pronto");
   await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
-  await tocar('.editor-corpo > [data-secao="brassagem"] button.ing-nome');
-  await cel.waitForSelector('dialog.resumo-janela[data-secao="brassagem"][open]');
-  verificar(await cel.isVisible('dialog.resumo-janela input[aria-label="OG medida"]') && /Eficiência real/.test(await cel.textContent("dialog.resumo-janela")),
-    "clean K5: tocar no Lote abre os campos da brassagem e o que foi medido");
-  await tocar("dialog.resumo-janela .item-fechar");
-  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
+  await tocar('.editor-corpo > [data-secao="brassagem"] button.param-todos');
+  await cel.waitForSelector("dialog.lote-janela[open]");
+  verificar(await cel.isVisible('dialog.lote-janela input[aria-label="OG medida"]') && /Eficiência real/.test(await cel.textContent("dialog.lote-janela .parametros-numeros")),
+    "clean: Todos da Brassagem abre os campos e o que foi medido (sem painel lateral)");
+  await tocar("dialog.lote-janela .item-fechar");
+  await cel.waitForSelector("dialog.lote-janela", { state: "detached" });
   await tocar('.editor-corpo > [data-secao="notas"] button.ing-nome');
   await cel.waitForSelector('dialog.resumo-janela[data-secao="notas"][open]');
   await cel.fill('dialog.resumo-janela textarea[aria-label="Notas"]', "Moagem 1,1 mm. Dry hop no 3º dia.");
