@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124m");
+    const m = await import("./fontes.js?v=20261124n");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -359,10 +359,11 @@ const erros = [];
   await pagina.fill('input[aria-label="Gramas na lavagem"]', "2");
   await pagina.waitForTimeout(150);
   const phAntes = await pagina.textContent("section:has(h3:text('Água'))");
-  verificar(/pH estimado da mostura[\s\S]*?5,\d\d/.test(phAntes) && phAntes.includes("Para chegar a 5,4"), "mostra o pH estimado e quanto ácido falta para 5,4");
-  await pagina.click("button:has-text('Adicionar o lático')");
-  const phDepois = await pagina.textContent("section:has(h3:text('Água'))");
-  verificar(/pH estimado da mostura[\s\S]*?(5,40|5,39|5,41)/.test(phDepois) && phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
+  verificar(/pH da mostura[\s\S]*?5,\d\d/.test(phAntes) && /\+ \d+,\d mL de lático 88%/.test(phAntes) && !phAntes.includes("Para chegar"),
+    "mostra o pH estimado e o botão com o ácido que falta para 5,4 (sem texto)");
+  await pagina.click(".ph-cartao button.ph-acido");
+  const phDepois = await pagina.textContent(".ph-cartao");
+  verificar(/(5,40|5,39|5,41)/.test(phDepois) && !phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
   // Volumes das duas águas (0010): vazio mostra a sugestão; informados mudam ppm/pH e avisam se não fecham.
   verificar(await pagina.getAttribute('input[aria-label="Água da mostura (L)"]', "placeholder") === "14,4"
     && await pagina.getAttribute('input[aria-label="Água de lavagem (L)"]', "placeholder") === "18,4", "volumes vazios mostram a sugestão (14,4 L + 18,4 L)");
@@ -395,7 +396,7 @@ const erros = [];
   // Cada água no seu bloco: litros, sais e (na mostura) ácido e pH ficam dentro do bloco da própria água.
   const blocoM = '.bloco-agua.mostura', blocoL = '.bloco-agua.lavagem';
   verificar(await pagina.locator(`${blocoM} input[aria-label="Água da mostura (L)"]`).count() === 1 && await pagina.locator(`${blocoM} input[aria-label="Gramas na mostura"]`).count() === 1
-    && await pagina.locator(`${blocoM} button:has-text("+ Ácido")`).count() === 1 && (await pagina.textContent(blocoM)).includes("pH estimado da mostura")
+    && await pagina.locator(`${blocoM} button:has-text("+ Ácido")`).count() === 1 && (await pagina.textContent(blocoM)).includes("pH da mostura")
     && await pagina.locator(`${blocoM} input[aria-label="Gramas na lavagem"]`).count() === 0,
     "bloco da mostura: litros, sais da mostura, ácido e pH (sem sal da lavagem)");
   verificar(await pagina.locator(`${blocoL} input[aria-label="Água de lavagem (L)"]`).count() === 1 && await pagina.locator(`${blocoL} input[aria-label="Gramas na lavagem"]`).count() === 1
@@ -409,12 +410,18 @@ const erros = [];
     const rm = m.getBoundingClientRect(), re = e.getBoundingClientRect(), v = Number(c.querySelector(".ph-valor").textContent.replace(",", "."));
     return { v, pos: (rm.left + rm.width / 2 - re.left) / re.width, esperado: Math.min(1, Math.max(0, (v - 5) / 0.8)), estado: c.querySelector(".ph-estado").textContent };
   });
-  verificar(ph && Math.abs(ph.pos - ph.esperado) < 0.02 && ph.estado, `pH em cartão: número, selo do estado e marcador na escala (${JSON.stringify(ph)})`);
+  verificar(ph && Math.abs(ph.pos - ph.esperado) < 0.02 && ph.estado, `pH: número, selo do estado e marcador na escala (${JSON.stringify(ph)})`);
+  const phCompacto = await pagina.evaluate(() => {
+    const c = document.querySelector(".ph-cartao"), cs = getComputedStyle(c);
+    return { fonte: parseFloat(getComputedStyle(c.querySelector(".ph-valor")).fontSize), fundo: cs.backgroundColor, sombra: cs.boxShadow, paragrafos: c.querySelectorAll("p").length };
+  });
+  verificar(phCompacto.fonte <= 19 && phCompacto.fundo === "rgba(0, 0, 0, 0)" && phCompacto.sombra === "none" && phCompacto.paragrafos === 0,
+    `pH compacto: número ≤ 19 px, sem fundo próprio e sem texto (${JSON.stringify(phCompacto)})`);
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -478,7 +485,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -500,7 +507,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -610,7 +617,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });

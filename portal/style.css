@@ -1202,53 +1202,39 @@ dialog.ferramenta-janela:has(> .roleta) .fj-pe { position: static; }
 .bloco-agua > .nota { margin: .25rem 0 .7rem; }
 .bloco-agua h5 { font-size: var(--t-p); font-weight: 700; color: var(--tinta); margin: 1rem 0 .3rem; }
 .bloco-agua .titulo-linha { margin-bottom: .2rem; }
-/* pH estimado da mostura (24/11/2026, pedido do responsável: layout mais moderno): cartão liso sobre o papel de parede,
-   número grande, selo do estado (cor sólida, texto na cor do cartão) e escala de 5,0 a 5,8: trilho em zonas (fora,
-   aceitável, ideal) e marcador redondo no valor. Posições das marcas = (pH − 5,0) ÷ 0,8. */
+/* pH estimado da mostura (24/11/2026; 2ª rodada pedida pelo responsável: "muito grande", sem texto, sem fundo próprio):
+   uma linha (rótulo | número | selo) e uma escala fina de 5,0 a 5,8 em zonas (fora, aceitável, ideal) com o marcador
+   no valor (posição = (pH − 5,0) ÷ 0,8). Fica no papel do bloco, separado só por um traço na cor do bloco. */
 .ph-cartao {
   --ph-cor: var(--lupulo);
-  margin-top: 1rem; padding: .85rem .95rem .9rem; background: var(--cartao); border-radius: var(--raio); box-shadow: var(--sombra);
+  margin-top: .9rem; padding-top: .55rem; border-top: 1px solid color-mix(in srgb, var(--bloco-cor, var(--linha)) 30%, transparent);
 }
 .ph-cartao[hidden] { display: none; }
 .ph-cartao.estado-perto { --ph-cor: var(--ambar); }
 .ph-cartao.estado-fora { --ph-cor: var(--fora); }
-.ph-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-.ph-rot { font-size: var(--t-p); font-weight: 700; color: var(--suave); }
-.ph-rot .junto { white-space: nowrap; }
-@media (max-width: 360px) { .ph-cartao { padding: .75rem .75rem .8rem; } .ph-rot { font-size: .8125rem; } }
-.ph-estado {
-  display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .6rem .2rem .5rem; border-radius: 999px;
-  background: var(--ph-cor); color: var(--cartao); font-size: .8125rem; font-weight: 800; white-space: nowrap;
-}
-.ph-estado::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: currentColor; }
-.ph-numeros { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; margin: .15rem 0 .55rem; }
-.ph-valor { font-size: 2.5rem; line-height: 1.05; font-weight: 800; color: var(--tinta); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.ph-topo { display: flex; align-items: center; gap: .5rem; }
+.ph-rot { flex: 1; min-width: 0; font-size: var(--t-p); font-weight: 700; color: var(--tinta); }
+.ph-valor { font-size: 1.125rem; font-weight: 800; color: var(--tinta); font-variant-numeric: tabular-nums; }
 .ph-cartao.estado-fora .ph-valor { color: var(--fora); }
-.ph-antes { display: inline-flex; flex-direction: column; align-items: flex-end; font-size: .8125rem; color: var(--suave); line-height: 1.25; }
-.ph-antes b { font-size: var(--t-m); color: var(--tinta); font-variant-numeric: tabular-nums; }
-.ph-escala { position: relative; height: 1.25rem; }
+.ph-estado {
+  padding: .1rem .5rem; border-radius: 999px; background: var(--ph-cor); color: var(--cartao);
+  font-size: .75rem; font-weight: 800; white-space: nowrap;
+}
+.ph-escala { position: relative; height: .75rem; margin-top: .35rem; }
 .ph-trilho {
-  position: absolute; left: 0; right: 0; top: 50%; height: .5rem; transform: translateY(-50%); border-radius: 999px;
+  position: absolute; left: 0; right: 0; top: 50%; height: .3125rem; transform: translateY(-50%); border-radius: 999px;
   background: linear-gradient(to right,
-    color-mix(in srgb, var(--fora) 38%, var(--cartao)) 0 25%,
-    color-mix(in srgb, var(--ambar) 42%, var(--cartao)) 25% 37.5%,
-    color-mix(in srgb, var(--lupulo) 55%, var(--cartao)) 37.5% 62.5%,
-    color-mix(in srgb, var(--ambar) 42%, var(--cartao)) 62.5% 75%,
-    color-mix(in srgb, var(--fora) 38%, var(--cartao)) 75% 100%);
+    color-mix(in srgb, var(--fora) 45%, transparent) 0 25%,
+    color-mix(in srgb, var(--ambar) 50%, transparent) 25% 37.5%,
+    color-mix(in srgb, var(--lupulo) 60%, transparent) 37.5% 62.5%,
+    color-mix(in srgb, var(--ambar) 50%, transparent) 62.5% 75%,
+    color-mix(in srgb, var(--fora) 45%, transparent) 75% 100%);
 }
 .ph-marca {
-  position: absolute; top: 50%; width: 1.25rem; height: 1.25rem; transform: translate(-50%, -50%); border-radius: 50%;
-  background: var(--ph-cor); border: 3px solid var(--cartao); box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  position: absolute; top: 50%; width: .75rem; height: .75rem; transform: translate(-50%, -50%); border-radius: 50%;
+  background: var(--ph-cor); box-shadow: 0 0 0 2px var(--cartao), 0 1px 3px rgba(0, 0, 0, .3);
 }
-.ph-marcas { position: relative; height: 1.1rem; margin-top: .2rem; font-size: .75rem; color: var(--suave); font-variant-numeric: tabular-nums; }
-.ph-marcas span { position: absolute; top: 0; transform: translateX(-50%); }
-.ph-marcas .m1 { left: 25%; } .ph-marcas .m2 { left: 37.5%; } .ph-marcas .m3 { left: 62.5%; } .ph-marcas .m4 { left: 75%; }
-.ph-sugestao {
-  display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap;
-  margin-top: .7rem; padding-top: .65rem; border-top: 1px solid var(--linha);
-}
-.ph-sugestao p { margin: 0; flex: 1 1 12rem; font-size: var(--t-p); color: var(--tinta); }
-.ph-cartao > .nota { margin: .6rem 0 0; }
+button.ph-acido { margin-top: .5rem; }
 /* Alcalinidade residual e SO₄/Cl só na tabela do perfil (24/11/2026): linhas separadas dos íons; leitura no pé. */
 .perfil-agua tbody.perfil-indices tr:first-child td { border-top: 2px solid var(--linha); }
 .perfil-agua tbody.perfil-indices td:first-child { white-space: nowrap; }
