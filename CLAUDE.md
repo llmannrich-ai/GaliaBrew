@@ -138,7 +138,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  295 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  305 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -217,7 +217,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124j.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124l.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -263,6 +263,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   lado à direita do nome, que abre 6,6rem para os dois (antes abria só 3,3rem e o ↑ cobria o nome); os botões ficam no
   meio da altura do campo do nome (`top: 1.75rem`). Vale para leveduras, outros, mostura e fermentação (`secaoLista`).
   Teste "toque 320/390 px: ↑ e × dos passos da mostura" (captura `p6m`). A lista de opções do Tipo é a nativa do iOS.
+- Alça ⠿ no lugar do ↑ (24/11/2026, pedido do responsável): leveduras, outros, mostura e fermentação (`secaoLista`) usam a
+  mesma alça dos maltes/lúpulos (`ing-alca`), em TODOS os itens, ao lado do ×: arrastar (mouse e dedo) ou ↑/↓ no teclado
+  (1 passo do desfazer). Arrastar é o `arrastarPelaAlca` do receitas.js (serve a `li` e `tr`). Teste "mostura: alça ⠿".
 - Tipo do passo da mostura (24/11/2026, pedido do responsável, sem migração): na tela só "Rampa N" (numerada pela ordem
   entre as rampas; trocar o tipo ou mover renumera), "Mash out" e "Lavagem" (`TIPO_MOSTURA`, `tipoPasso`, `rotuloPasso`
   no opcoes.js; o relatório em PDF usa o mesmo rótulo). Rampa grava `TEMPERATURA` (tipo genérico do BeerJSON); INFUSAO e
@@ -461,6 +464,15 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   com destilada (não se usa no Brasil; nenhuma receita usava; `agua_diluicao_pct` segue no banco e no calculos.js);
   "Água de base" (era "Água de origem"; coluna "Base" no perfil e no PDF, de `res.agua.base`) e "Perfil alvo" lado a
   lado também no celular (`.agua-perfis`, duas colunas fixas; o seletor corta o nome longo). Capturas `p5j`/`p5k`.
+- Blocos da água mais limpos (24/11/2026, pedido do responsável, sem migração): (1) litros num CAMPO ÚNICO no topo de
+  cada bloco, ao lado do título (`.bloco-agua-litros`: campo + "L"; antes os litros apareciam no título E num campo
+  abaixo); vazio mostra a sugestão como número de fundo (sem "(sugestão)", que não cabe; `title` = "Sugestão: N L").
+  (2) Alcalinidade residual e sulfato/cloreto SAÍRAM dos blocos e do pé da seção: ficam só na tabela do perfil, em
+  `tbody.perfil-indices` (Base, Mostura, Lavagem, Panela e Alvo; alvo por `perfilAgua` sem sais) e a leitura no `tfoot`
+  ("Sulfato/cloreto: mostura X · panela Y"); no celular "Alc. res."/"SO₄/Cl" com ⓘ. (3) pH estimado em cartão próprio
+  (`.ph-cartao`): número grande, selo do estado (ideal 5,3–5,5 verde, aceitável âmbar, baixo/alto vermelho), "Sem o
+  ácido" ao lado, escala 5,0–5,8 em zonas com marcador redondo (posição = (pH − 5) ÷ 0,8) e a sugestão de lático com o
+  botão no pé do cartão. Capturas `p5l` (pH) e `p5m` (tabela), 390 e 320 px.
 - Água/grão = água da mostura (24/11/2026, pedido do responsável: "o volume da mostura deve dar a razão água/malte"):
   com a água da mostura informada, `relacao_agua_grao_l_kg` (Parâmetros) = litros ÷ kg de grão da mostura, sincronizada
   a cada cálculo (`sincronizarRelacao` no receitas.js) e gravada assim; mudar a relação nos Parâmetros recalcula os

@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124j";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124j";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124j";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124j";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124j";
-import { abrirBusca } from "./busca.js?v=20261124j";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124j";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124j";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124j";
-import * as O from "./opcoes.js?v=20261124j";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124j";
-import { icone } from "./icones.js?v=20261124j";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124j";
-import { abrirRelatorio } from "./relatorio.js?v=20261124j";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124j";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124l";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124l";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124l";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124l";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124l";
+import { abrirBusca } from "./busca.js?v=20261124l";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124l";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124l";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124l";
+import * as O from "./opcoes.js?v=20261124l";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124l";
+import { icone } from "./icones.js?v=20261124l";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124l";
+import { abrirRelatorio } from "./relatorio.js?v=20261124l";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124l";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -416,6 +416,40 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return res;
   }
 
+  /** Arrastar pela alça ⠿ (mouse e toque): a linha (li ou tr) segue o ponteiro; ao soltar, vai para a posição. */
+  function arrastarPelaAlca(e, i, mover, linhas) {
+    if (e.button !== 0) return;
+    const alca = e.currentTarget;
+    const li = alca.closest("li, tr");
+    const centros = linhas.map((l) => { const b = l.getBoundingClientRect(); return b.top + b.height / 2; });
+    const y0 = e.clientY;
+    let destino = i;
+    let moveu = false;
+    alca.setPointerCapture?.(e.pointerId);
+    const aoMover = (ev) => {
+      const dy = ev.clientY - y0;
+      if (!moveu && Math.abs(dy) < 4) return;
+      moveu = true;
+      li.classList.add("arrastando");
+      li.style.transform = `translateY(${dy}px)`;
+      destino = centros.filter((c, k) => k !== i && c < centros[i] + dy).length;
+    };
+    const fim = (ev) => {
+      alca.removeEventListener("pointermove", aoMover);
+      alca.removeEventListener("pointerup", fim);
+      alca.removeEventListener("pointercancel", fim);
+      li.classList.remove("arrastando");
+      li.style.transform = "";
+      // Solta a captura e só redesenha no próximo quadro: remover a alça ainda capturada deixa o Chrome sem
+      // gerar o "click" do toque seguinte.
+      if (alca.hasPointerCapture?.(ev.pointerId)) alca.releasePointerCapture(ev.pointerId);
+      if (moveu && destino !== i) requestAnimationFrame(() => mover(destino, false));
+    };
+    alca.addEventListener("pointermove", aoMover);
+    alca.addEventListener("pointerup", fim);
+    alca.addEventListener("pointercancel", fim);
+  }
+
   // ---------- seção genérica de lista ----------
   function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao }) {
     const corpo = el("tbody");
@@ -432,11 +466,26 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         corpo.append(el("tr", {},
           colunas.map((c) => el("td", { class: c.num ? "num" : "", dataset: { rotulo: c.r } }, comRotulo(c.campo(item, i), c.r))),
           leitura ? null : el("td", { class: "acoes-linha" },
-            i > 0 ? el("button", { type: "button", class: "icone", title: "Subir", "aria-label": "Subir", text: "↑", on: { click: () => acao(() => { [r[chave][i - 1], r[chave][i]] = [r[chave][i], r[chave][i - 1]]; desenhar(); mudou(); }) } }) : null,
+            // Alça ⠿ (24/11/2026, pedido do responsável: no lugar do ↑), a mesma dos maltes e lúpulos: arrastar ou ↑/↓.
+            el("button", {
+              type: "button", class: "icone ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
+              "aria-label": `Mover ${rotuloItem(item, i)}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
+              on: {
+                keydown: (e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); mover(i, i + (e.key === "ArrowUp" ? -1 : 1), true); } },
+                pointerdown: (e) => arrastarPelaAlca(e, i, (para, focar) => mover(i, para, focar), [...corpo.querySelectorAll(":scope > tr")]),
+              },
+            }),
             el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover", text: "×", on: { click: () => acao(() => { r[chave].splice(i, 1); desenhar(); mudou(); }) } }))));
       });
       atualizarResultados();
     };
+    const rotuloItem = (item, i) => (chave === "mostura" ? O.rotuloPasso(r.mostura, i) : String(item.nome ?? "").trim() || "item");
+    /** Muda o passo de posição (um passo do desfazer); no teclado o foco acompanha a alça. */
+    function mover(de, para, focar) {
+      if (para < 0 || para >= r[chave].length || para === de) return;
+      acao(() => { const [x] = r[chave].splice(de, 1); r[chave].splice(para, 0, x); desenhar(); mudou(); });
+      if (focar) corpo.querySelectorAll(".ing-alca")[para]?.focus();
+    }
     secoes[chave] = desenhar;
     desenhar();
     return sec;
@@ -667,7 +716,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         "aria-label": `Mover ${String(item.nome ?? "").trim() || "item"}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
         on: {
           keydown: (e) => { if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); mover(i + (e.key === "ArrowUp" ? -1 : 1)); } },
-          pointerdown: (e) => arrastar(e, i, mover),
+          pointerdown: (e) => arrastarPelaAlca(e, i, mover, [...lista.querySelectorAll(":scope > li.ing")]),
         },
       });
       const li = el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas);
@@ -782,41 +831,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       if (focarNome && !leitura) d.querySelector('.grade-form input[aria-label="Nome"]')?.focus();
       else if (editarQtd && !leitura) editarCampo(d.querySelector("input.qtd"));
       else d.querySelector(".item-fechar").focus({ preventScroll: true });
-    }
-
-    /** Arrastar pela alça (mouse e toque): a linha segue o ponteiro; ao soltar, vai para a posição. */
-    function arrastar(e, i, mover) {
-      if (e.button !== 0) return;
-      const alca = e.currentTarget;
-      const li = alca.closest("li");
-      const linhas = [...lista.querySelectorAll(":scope > li.ing")];
-      const centros = linhas.map((l) => { const b = l.getBoundingClientRect(); return b.top + b.height / 2; });
-      const y0 = e.clientY;
-      let destino = i;
-      let moveu = false;
-      alca.setPointerCapture?.(e.pointerId);
-      const aoMover = (ev) => {
-        const dy = ev.clientY - y0;
-        if (!moveu && Math.abs(dy) < 4) return;
-        moveu = true;
-        li.classList.add("arrastando");
-        li.style.transform = `translateY(${dy}px)`;
-        destino = centros.filter((c, k) => k !== i && c < centros[i] + dy).length;
-      };
-      const fim = (ev) => {
-        alca.removeEventListener("pointermove", aoMover);
-        alca.removeEventListener("pointerup", fim);
-        alca.removeEventListener("pointercancel", fim);
-        li.classList.remove("arrastando");
-        li.style.transform = "";
-        // Solta a captura e só redesenha no próximo quadro: remover a alça ainda capturada deixa o Chrome sem
-        // gerar o "click" do toque seguinte.
-        if (alca.hasPointerCapture?.(ev.pointerId)) alca.releasePointerCapture(ev.pointerId);
-        if (moveu && destino !== i) requestAnimationFrame(() => mover(destino, false));
-      };
-      alca.addEventListener("pointermove", aoMover);
-      alca.addEventListener("pointerup", fim);
-      alca.addEventListener("pointercancel", fim);
     }
 
     function desenhar() {
@@ -988,7 +1002,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     };
 
     // Sais separados: os da mostura vão na água da mostura, os da lavagem na água de lavagem (perfis calculados à parte).
-    const grupos = Object.fromEntries(["MOSTURA", "LAVAGEM"].map((etapa) => [etapa, { corpo: el("tbody"), litros: el("span", { class: "bloco-agua-litros" }) }]));
+    const grupos = Object.fromEntries(["MOSTURA", "LAVAGEM"].map((etapa) => [etapa, { corpo: el("tbody") }]));
     const desenharSais = () => {
       for (const [etapa, g] of Object.entries(grupos)) {
         limpar(g.corpo);
@@ -1034,19 +1048,32 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("button", { type: "button", class: "icone perigo", title: "Remover", "aria-label": "Remover ácido", text: "×", on: { click: () => { r.acidos.splice(i, 1); desenharAcidos(); mudou(); } } })))));
       atualizarResultados();
     };
-    const caixaPh = el("div", { class: "resumo-agua", "aria-live": "polite" });
+    // pH estimado da mostura em cartão próprio (24/11/2026, pedido do responsável: layout mais moderno): número grande,
+    // selo do estado, escala de 5,0 a 5,8 com a faixa boa (5,2–5,6) e a ideal (5,3–5,5) e o marcador no valor.
+    const caixaPh = el("div", { class: "ph-cartao", "aria-live": "polite", hidden: true });
+    const posicaoPh = (ph) => `${(Math.min(1, Math.max(0, (ph - 5.0) / 0.8)) * 100).toFixed(1)}%`;
     aoRecalcular.push((res) => {
       const m = res.ph_mostura;
+      caixaPh.hidden = !m;
       if (!m) { preencher(caixaPh); return; }
-      const faixa = m.ph < 5.2 ? "baixo" : m.ph > 5.6 ? "alto" : m.ph >= 5.3 && m.ph <= 5.5 ? "ideal" : "ok";
+      const [estado, rotulo] = m.ph < 5.2 ? ["fora", "baixo"] : m.ph > 5.6 ? ["fora", "alto"] : m.ph >= 5.3 && m.ph <= 5.5 ? ["ideal", "ideal"] : ["perto", "aceitável"];
+      caixaPh.className = `ph-cartao estado-${estado}`;
+      const marca = el("span", { class: "ph-marca" });
+      marca.style.left = posicaoPh(m.ph);
       const sugestao = m.latico_88_ml >= 0.1;
       preencher(caixaPh,
-        el("div", { class: "metrica" }, el("span", { class: "rot" }, "pH estimado da mostura", info(O.AJUDA_VOLUME.ph_mostura)),
-          el("span", { class: "val", text: numeroBR(m.ph, 2) }),
-          el("span", { class: `faixa ${faixa === "ideal" || faixa === "ok" ? "dentro" : faixa === "alto" ? "acima" : "abaixo"}`, text: faixa })),
-        r.acidos.length ? el("div", { class: "metrica" }, el("span", { class: "rot", text: "Sem o ácido" }), el("span", { class: "val", text: numeroBR(m.ph_sem_acido, 2) })) : null,
+        el("div", { class: "ph-topo" },
+          el("span", { class: "ph-rot" }, "pH estimado da ", el("span", { class: "junto" }, "mostura", info(O.AJUDA_VOLUME.ph_mostura))),
+          el("span", { class: "ph-estado", text: rotulo })),
+        el("div", { class: "ph-numeros" },
+          el("span", { class: "ph-valor", text: numeroBR(m.ph, 2) }),
+          r.acidos.length ? el("span", { class: "ph-antes" }, el("span", { text: "Sem o ácido" }), el("b", { text: numeroBR(m.ph_sem_acido, 2) })) : null),
+        el("div", { class: "ph-escala", role: "img", "aria-label": `pH ${numeroBR(m.ph, 2)}: ${rotulo}. Faixa boa 5,2 a 5,6; ideal 5,3 a 5,5.` },
+          el("span", { class: "ph-trilho" }), marca),
+        el("div", { class: "ph-marcas", "aria-hidden": "true" }, ["5,2", "5,3", "5,5", "5,6"].map((t, i) => el("span", { class: `m${i + 1}`, text: t }))),
         sugestao
-          ? el("p", { class: "nota" }, `Para chegar a ${numeroBR(m.alvo, 1)}: mais ${numeroBR(m.latico_88_ml, 1)} mL de ácido lático 88% (ou ${numeroBR(m.fosforico_10_ml, 0)} mL de fosfórico 10%). `,
+          ? el("div", { class: "ph-sugestao" },
+              el("p", {}, `Para chegar a ${numeroBR(m.alvo, 1)}: mais ${numeroBR(m.latico_88_ml, 1)} mL de ácido lático 88% (ou ${numeroBR(m.fosforico_10_ml, 0)} mL de fosfórico 10%).`),
               leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "Adicionar o lático", on: { click: () => {
                 const ja = r.acidos.find((x) => x.acido === "LATICO_88");
                 const ml = Number(m.latico_88_ml.toFixed(1));
@@ -1063,8 +1090,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     const notaVolumes = el("p", { class: "nota largo", "aria-live": "polite" });
     aoRecalcular.push((res) => {
       const v = res.volumes;
-      campoMostura.placeholder = `${numeroBR(v.agua_mostura_sugerida_l, 1)} (sugestão)`;
-      campoLavagem.placeholder = `${numeroBR(v.agua_lavagem_sugerida_l, 1)} (sugestão)`;
+      // Campo único no topo de cada bloco (24/11/2026): sem espaço para "(sugestão)"; o número de fundo (itálico) é a sugestão.
+      campoMostura.placeholder = numeroBR(v.agua_mostura_sugerida_l, 1);
+      campoLavagem.placeholder = numeroBR(v.agua_lavagem_sugerida_l, 1);
+      campoMostura.title = `Sugestão: ${numeroBR(v.agua_mostura_sugerida_l, 1)} L`;
+      campoLavagem.title = `Sugestão: ${numeroBR(v.agua_lavagem_sugerida_l, 1)} L`;
       const partes = [`Total ${numeroBR(v.agua_total_l, 1)} L`];
       if (v.relacao_agua_grao_l_kg != null) partes.push(`${numeroBR(v.relacao_agua_grao_l_kg, 1)} L/kg na mostura`);
       const informou = v.agua_mostura_informada || v.agua_lavagem_informada;
@@ -1075,42 +1105,37 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       notaVolumes.textContent = partes.join(" · ");
     });
 
+    // Alcalinidade residual e sulfato/cloreto só na tabela do perfil (24/11/2026, pedido do responsável), em linhas
+    // abaixo dos íons, para base, mostura, lavagem, panela e alvo; a leitura do SO₄/Cl fica no pé da tabela.
     const perfil = el("div", { class: "tabela-rolagem" });
-    const resumo = el("div", { class: "resumo-agua" });            // panela (as duas águas juntas)
-    const resumoMostura = el("div", { class: "resumo-agua" });
-    const resumoLavagem = el("div", { class: "resumo-agua" });
     aoRecalcular.push((res) => {
       ultimoRes = res;
-      grupos.MOSTURA.litros.textContent = `${numeroBR(res.volumes.agua_mostura_l, 1)} L`;
-      grupos.LAVAGEM.litros.textContent = `${numeroBR(res.volumes.agua_lavagem_l, 1)} L`;
       const a = res.agua;
-      if (!a) {
-        preencher(perfil);
-        preencher(resumo); preencher(resumoMostura); preencher(resumoLavagem);
-        return;
-      }
+      if (!a) { preencher(perfil); return; }
       const alvo = r.agua_alvo;
+      const pAlvo = alvo ? perfilAgua({ origem: alvo, litros: 1 }) : null;
       const longe = (v, k) => alvo && Math.abs(v - Number(alvo[k] ?? 0)) > Math.max(15, 0.25 * Number(alvo[k] ?? 0));
+      const nome = (longo, curto, ajuda) => el("td", {}, el("span", { class: "ion-longo", text: longo }), el("abbr", { class: "ion-curto", title: longo, text: curto }), ajuda ? info(ajuda) : null);
+      const linhaIndice = (longo, curto, ajuda, valor) => el("tr", {}, nome(longo, curto, ajuda),
+        [a.base, a.mostura, a.lavagem, a.panela, pAlvo].filter((p, i) => i < 4 || alvo).map((p) => el("td", { class: "num", text: valor(p) })));
+      const so4cl = (p) => (p.sulfato_cloreto == null ? "—" : numeroBR(p.sulfato_cloreto, 2));
+      const leituraSo4 = (p) => (p.sulfato_cloreto == null ? "—" : O.LEITURA_SO4_CL[leituraSulfatoCloreto(p.sulfato_cloreto)]);
+      const colunas = alvo ? 6 : 5;
       preencher(perfil, el("table", { class: "tabela perfil-agua" },
         el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Base", "Base"], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Panela", "Pan."], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
           .map(([longo, curto], i) => el("th", { class: i ? "num" : "" }, el("span", { class: "ion-longo", text: longo }), el("abbr", { class: "ion-curto", title: longo, text: curto }))))),
         el("tbody", {}, IONS.map((k) => el("tr", {},
-          el("td", {}, el("span", { class: "ion-longo", text: O.NOME_ION[k] }), el("abbr", { class: "ion-curto", title: O.NOME_ION[k], text: O.SIMBOLO_ION[k] })),
+          nome(O.NOME_ION[k], O.SIMBOLO_ION[k]),
           el("td", { class: "num", text: numeroBR(a.base.ions[k], 0) }),
           el("td", { class: `num${longe(a.mostura.ions[k], k) ? " longe" : ""}`, text: numeroBR(a.mostura.ions[k], 0) }),
           el("td", { class: "num", text: numeroBR(a.lavagem.ions[k], 0) }),
           el("td", { class: `num${longe(a.panela.ions[k], k) ? " longe" : ""}`, text: numeroBR(a.panela.ions[k], 0) }),
-          alvo ? el("td", { class: "num", text: numeroBR(Number(alvo[k] ?? 0), 0) }) : null)))));
-      const so4cl = (p) => (p.sulfato_cloreto == null ? "—" : `${numeroBR(p.sulfato_cloreto, 2)} (${O.LEITURA_SO4_CL[leituraSulfatoCloreto(p.sulfato_cloreto)]})`);
-      preencher(resumoMostura,
-        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Alcalinidade residual da mostura", info(O.AJUDA_VOLUME.alcalinidade_residual)),
-          el("span", { class: "val", text: `${numeroBR(a.mostura.alcalinidade_residual, 0)} ppm` })),
-        el("div", { class: "metrica" }, el("span", { class: "rot", text: "Sulfato/cloreto na mostura" }), el("span", { class: "val", text: so4cl(a.mostura) })));
-      preencher(resumoLavagem,
-        el("div", { class: "metrica" }, el("span", { class: "rot", text: "Alcalinidade residual da lavagem" }), el("span", { class: "val", text: `${numeroBR(a.lavagem.alcalinidade_residual, 0)} ppm` })));
-      preencher(resumo,
-        el("div", { class: "metrica" }, el("span", { class: "rot" }, "Sulfato/cloreto na panela", info(O.AJUDA_VOLUME.sulfato_cloreto)),
-          el("span", { class: "val", text: so4cl(a.panela) })));
+          alvo ? el("td", { class: "num", text: numeroBR(Number(alvo[k] ?? 0), 0) }) : null))),
+        el("tbody", { class: "perfil-indices" },
+          linhaIndice("Alcalinidade residual (ppm)", "Alc. res.", O.AJUDA_VOLUME.alcalinidade_residual, (p) => numeroBR(p.alcalinidade_residual, 0)),
+          linhaIndice("Sulfato/cloreto", "SO₄/Cl", O.AJUDA_VOLUME.sulfato_cloreto, so4cl)),
+        el("tfoot", {}, el("tr", {}, el("td", { colspan: colunas, class: "leitura-so4" },
+          "Sulfato/cloreto: mostura ", el("b", { text: leituraSo4(a.mostura) }), " · panela ", el("b", { text: leituraSo4(a.panela) }))))));
     });
 
     const sec = el("section", { class: "cartao", dataset: { secao: "agua" } },
@@ -1120,26 +1145,24 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         escolha("agua_alvo", "Perfil alvo", O.AJUDA_VOLUME.agua_alvo, "— sem alvo —")),
       // Cada água num bloco próprio, com tudo o que vai nela (litros, sais, ácido) e o que resulta dela.
       el("div", { class: "bloco-agua mostura" },
-        el("div", { class: "bloco-agua-topo" }, el("h4", { class: "bloco-agua-titulo", text: "Água da mostura" }), grupos.MOSTURA.litros),
-        el("label", { class: "bloco-agua-litros-campo" }, el("span", {}, "Litros de água da mostura", info(O.AJUDA_VOLUME.agua_mostura_l)), campoMostura),
+        el("div", { class: "bloco-agua-topo" }, el("h4", { class: "bloco-agua-titulo" }, "Água da mostura", info(O.AJUDA_VOLUME.agua_mostura_l)),
+          el("label", { class: "bloco-agua-litros" }, campoMostura, el("span", { class: "sufixo", text: "L" }))),
         tabelaSais("MOSTURA"),
         el("div", { class: "titulo-linha" }, el("h5", {}, "Ácido na mostura", info(O.AJUDA_VOLUME.acidos)),
           leitura ? null : el("button", { type: "button", class: "secundario pequeno", text: "+ Ácido", on: { click: () => { r.acidos.push({ acido: "LATICO_88", ml: null }); desenharAcidos(); mudou(); } } })),
         el("div", { class: "tabela-rolagem" }, el("table", { class: "tabela editavel linha-unica" },
           el("thead", {}, el("tr", {}, ["Ácido", "mL"].map((h, i) => el("th", { class: i ? "num" : "", text: h })), leitura ? null : el("th"))),
           corpoAcidos)),
-        caixaPh,
-        resumoMostura),
+        caixaPh),
       el("div", { class: "bloco-agua lavagem" },
-        el("div", { class: "bloco-agua-topo" }, el("h4", { class: "bloco-agua-titulo", text: "Água de lavagem" }), grupos.LAVAGEM.litros),
-        el("label", { class: "bloco-agua-litros-campo" }, el("span", {}, "Litros de água de lavagem", info(O.AJUDA_VOLUME.agua_lavagem_l)), campoLavagem),
+        el("div", { class: "bloco-agua-topo" }, el("h4", { class: "bloco-agua-titulo" }, "Água de lavagem", info(O.AJUDA_VOLUME.agua_lavagem_l)),
+          el("label", { class: "bloco-agua-litros" }, campoLavagem, el("span", { class: "sufixo", text: "L" }))),
         tabelaSais("LAVAGEM",
-          el("button", { type: "button", class: "secundario pequeno", text: "Igual à mostura", title: "Troca os sais da lavagem pelos da mostura, na proporção dos volumes", on: { click: lavagemIgualMostura } })),
-        resumoLavagem),
+          el("button", { type: "button", class: "secundario pequeno", text: "Igual à mostura", title: "Troca os sais da lavagem pelos da mostura, na proporção dos volumes", on: { click: lavagemIgualMostura } }))),
       el("h4", { text: "Total do dia" }),
       notaVolumes,
       el("h4", { text: "Perfil: mostura, lavagem e panela" }),
-      perfil, resumo);
+      perfil);
     desenharSais();
     desenharAcidos();
     return sec;

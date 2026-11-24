@@ -2,13 +2,13 @@
 // 24/11/2026 (pedido do responsável): a página é um menu de botões, um por ferramenta; cada ferramenta abre numa janela
 // (dialog modal). O botão mostra o resultado da última conta; na janela o resultado fica preso no topo, à vista enquanto
 // a roleta (celular) ou o teclado mudam os números.
-import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261124j";
-import { icone } from "./icones.js?v=20261124j";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124j";
-import { FAIXAS, FAIXAS_LUGAR as F } from "./faixas.js?v=20261124j";
-import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261124j";
-import { preferencias, salvarPreferencias } from "./estado.js?v=20261124j";
-import * as O from "./opcoes.js?v=20261124j";
+import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261124l";
+import { icone } from "./icones.js?v=20261124l";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124l";
+import { FAIXAS, FAIXAS_LUGAR as F } from "./faixas.js?v=20261124l";
+import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261124l";
+import { preferencias, salvarPreferencias } from "./estado.js?v=20261124l";
+import * as O from "./opcoes.js?v=20261124l";
 
 // Volume que o grão ocupa na tina (L por kg), para saber se a mostura cabe.
 const VOLUME_GRAO_L_KG = 0.67;

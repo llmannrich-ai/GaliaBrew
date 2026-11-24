@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124j");
+    const m = await import("./fontes.js?v=20261124l");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -364,14 +364,20 @@ const erros = [];
   const phDepois = await pagina.textContent("section:has(h3:text('Água'))");
   verificar(/pH estimado da mostura[\s\S]*?(5,40|5,39|5,41)/.test(phDepois) && phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
   // Volumes das duas águas (0010): vazio mostra a sugestão; informados mudam ppm/pH e avisam se não fecham.
-  verificar(await pagina.getAttribute('input[aria-label="Água da mostura (L)"]', "placeholder") === "14,4 (sugestão)"
-    && await pagina.getAttribute('input[aria-label="Água de lavagem (L)"]', "placeholder") === "18,4 (sugestão)", "volumes vazios mostram a sugestão (14,4 L + 18,4 L)");
+  verificar(await pagina.getAttribute('input[aria-label="Água da mostura (L)"]', "placeholder") === "14,4"
+    && await pagina.getAttribute('input[aria-label="Água de lavagem (L)"]', "placeholder") === "18,4", "volumes vazios mostram a sugestão (14,4 L + 18,4 L)");
   await pagina.fill('input[aria-label="Água da mostura (L)"]', "18");
   await pagina.fill('input[aria-label="Água de lavagem (L)"]', "14");
   await pagina.waitForTimeout(150);
   const textoVol = await pagina.textContent("section:has(h3:text('Água'))");
-  verificar(textoVol.includes("Total 32,0 L · 3,8 L/kg na mostura") && textoVol.includes("faltam 0,8 L") && textoVol.includes("Água da mostura18,0 L") && textoVol.includes("Água de lavagem14,0 L"),
-    "volumes informados: total, L/kg, aviso de falta 0,8 L e litros nas tabelas de sais");
+  verificar(textoVol.includes("Total 32,0 L · 3,8 L/kg na mostura") && textoVol.includes("faltam 0,8 L"), "volumes informados: total, L/kg e aviso de falta 0,8 L");
+  // Volume de cada água num campo só, no topo do bloco ao lado do título (24/11/2026), sem repetir os litros em texto.
+  const topoAgua = await pagina.$$eval(".bloco-agua", (bs) => bs.map((b) => ({ campos: b.querySelectorAll('input[aria-label$="(L)"]').length,
+    noTopo: !!b.querySelector('.bloco-agua-topo input[aria-label$="(L)"]'), texto: b.querySelector(".bloco-agua-topo").textContent.trim() })));
+  verificar(topoAgua.length === 2 && topoAgua.every((b) => b.campos === 1 && b.noTopo && !/\d/.test(b.texto)),
+    `água: um campo de litros por bloco, no topo, sem litros repetidos em texto (${JSON.stringify(topoAgua)})`);
+  verificar(/^18(,0)?$/.test(await pagina.inputValue('input[aria-label="Água da mostura (L)"]')) && /^14(,0)?$/.test(await pagina.inputValue('input[aria-label="Água de lavagem (L)"]')),
+    "água: litros informados nos campos do topo (18 e 14)");
   verificar((await pagina.textContent(".painel-lote")).includes("Água necessária"), "painel mostra a água necessária quando o informado não fecha");
   // Água/grão dos Parâmetros = água da mostura informada ÷ grão; mudar a relação recalcula os litros da mostura.
   const relacao = 'input[aria-label="Água/grão na mostura (L/kg)"]';
@@ -395,11 +401,20 @@ const erros = [];
   verificar(await pagina.locator(`${blocoL} input[aria-label="Água de lavagem (L)"]`).count() === 1 && await pagina.locator(`${blocoL} input[aria-label="Gramas na lavagem"]`).count() === 1
     && await pagina.locator(`${blocoL} input[aria-label="Gramas na mostura"]`).count() === 0 && await pagina.locator(`${blocoL} button:has-text("+ Ácido")`).count() === 0,
     "bloco da lavagem: litros e sais da lavagem (sem sal da mostura nem ácido)");
+  const textoBlocos = (await pagina.textContent(blocoM)) + (await pagina.textContent(blocoL));
+  verificar(!/Alcalinidade|Sulfato\/cloreto/.test(textoBlocos), "blocos da mostura e da lavagem sem alcalinidade residual e sem sulfato/cloreto (só na tabela)");
+  const ph = await pagina.evaluate(() => {
+    const c = document.querySelector(".bloco-agua.mostura .ph-cartao"), m = c?.querySelector(".ph-marca"), e = c?.querySelector(".ph-escala");
+    if (!c || !m) return null;
+    const rm = m.getBoundingClientRect(), re = e.getBoundingClientRect(), v = Number(c.querySelector(".ph-valor").textContent.replace(",", "."));
+    return { v, pos: (rm.left + rm.width / 2 - re.left) / re.width, esperado: Math.min(1, Math.max(0, (v - 5) / 0.8)), estado: c.querySelector(".ph-estado").textContent };
+  });
+  verificar(ph && Math.abs(ph.pos - ph.esperado) < 0.02 && ph.estado, `pH em cartão: número, selo do estado e marcador na escala (${JSON.stringify(ph)})`);
   await pagina.waitForTimeout(200);
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124j");
+    const m = await import("./calculos.js?v=20261124l");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -463,7 +478,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124j");
+    const m = await import("./calculos.js?v=20261124l");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -473,7 +488,10 @@ const erros = [];
   });
   verificar(textoAgua.includes(`Sulfato (SO₄)SO₄10${esperadoAgua.so4.join("")}255`), `perfil da água: sulfato origem 10 → mostura/lavagem/panela ${esperadoAgua.so4.join(" / ")} (alvo 255)`);
   verificar(textoAgua.includes(`Cloreto (Cl)Cl15${esperadoAgua.cl.join("")}`), `perfil da água: cloreto da lavagem só na lavagem e na panela (${esperadoAgua.cl.join(" / ")})`);
-  verificar(/Sulfato\/cloreto[\s\S]*?\d+,\d\d \((seca e amarga|levemente amarga)\)/.test(textoAgua), "mostra a relação sulfato/cloreto com a leitura");
+  const indices = await pagina.$$eval(".perfil-agua tbody.perfil-indices tr", (trs) => trs.map((tr) => [...tr.children].map((td) => td.textContent)));
+  verificar(indices.length === 2 && indices[0][0].startsWith("Alcalinidade residual") && indices[1][0].startsWith("Sulfato/cloreto") && indices.every((l) => l.length === 6 && l.slice(1).every((x) => /^-?\d|—/.test(x))),
+    `tabela do perfil: alcalinidade residual e sulfato/cloreto em base/mostura/lavagem/panela/alvo (${JSON.stringify(indices)})`);
+  verificar(/Sulfato\/cloreto: mostura [a-z ]+ · panela (seca e amarga|levemente amarga)/.test(textoAgua), "pé da tabela: leitura do sulfato/cloreto na mostura e na panela");
   verificar(/Priming.*Açúcar comum \(sacarose\)\d+ g/.test(textoPainel), "CO₂ desejado mostra os gramas de priming");
   verificar(/Temperatura da água da mostura[\s\S]{0,300}?absorve\.\d+,\d °C/.test(textoPainel), "painel mostra a temperatura da água da mostura");
 
@@ -482,7 +500,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124j");
+    const m = await import("./calculos.js?v=20261124l");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -592,7 +610,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124j");
+    const m = await import("./calculos.js?v=20261124l");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -816,6 +834,17 @@ const erros = [];
   await pagina.screenshot({ path: `${SAIDA}/p5j-celular-agua-topo.png` });
   await pagina.evaluate(() => document.querySelector(".bloco-agua").scrollIntoView());
   await pagina.screenshot({ path: `${SAIDA}/p5g-celular-sais.png` });
+  // pH em cartão e tabela do perfil com alcalinidade residual e SO₄/Cl, sem rolar para o lado (390 e 320 px).
+  const tabelaPerfil = () => pagina.evaluate(() => { const t = document.querySelector(".perfil-agua"), p = t.parentElement; return { cabe: t.scrollWidth <= p.clientWidth + 1, t: t.scrollWidth, p: p.clientWidth }; });
+  const fotosAgua = async (sufixo) => {
+    await pagina.evaluate(() => { document.querySelector(".ph-cartao").scrollIntoView({ block: "center" }); });
+    await pagina.screenshot({ path: `${SAIDA}/p5l-celular-ph${sufixo}.png` });
+    await pagina.evaluate(() => { document.querySelector(".perfil-agua").scrollIntoView({ block: "center" }); });
+    await pagina.screenshot({ path: `${SAIDA}/p5m-celular-perfil-agua${sufixo}.png` });
+  };
+  await fotosAgua("");
+  const perfil390 = await tabelaPerfil();
+  verificar(perfil390.cabe, `celular 390 px: tabela do perfil da água cabe sem rolar (${JSON.stringify(perfil390)})`);
   // Papel de parede próprio em cada água (23/11/2026): mostura e lavagem em tons diferentes entre si e da seção, com desenho.
   const fundosAgua = await pagina.evaluate(() => ["[data-secao=\"agua\"]", ".bloco-agua.mostura", ".bloco-agua.lavagem"].map((s) => {
     const cs = getComputedStyle(document.querySelector(s)); return { cor: cs.backgroundColor, desenho: cs.backgroundImage.startsWith("url(") };
@@ -830,6 +859,9 @@ const erros = [];
   const sal320 = await linhaDoSal();
   verificar(sal320.alinhado && sal320.ordem && sal320.cabe && sal320.select >= 100, `celular 320 px: sal numa linha só (${JSON.stringify(sal320)})`);
   await pagina.screenshot({ path: `${SAIDA}/p5h-celular-sais-320.png` });
+  await fotosAgua("-320");
+  const perfil320 = await tabelaPerfil();
+  verificar(perfil320.cabe, `celular 320 px: tabela do perfil da água cabe sem rolar (${JSON.stringify(perfil320)})`);
   const perfis320 = await perfisAgua();
   verificar(perfis320.linha && perfis320.cabe, `celular 320 px: água de base e perfil alvo na mesma linha (${JSON.stringify(perfis320)})`);
   await pagina.evaluate(() => { document.querySelector('[data-secao="agua"]').scrollIntoView(); window.scrollBy(0, -20); });
@@ -1263,9 +1295,30 @@ const erros = [];
   for (const w of [320, 390]) {
     await cel.setViewportSize({ width: w, height: w === 320 ? 700 : 844 });
     const passos = await passosMostura();
-    verificar(passos.length === 2 && passos[1].botoes === 2 && passos.every((p) => !p.sobrepoe && p.alinhado && p.cabe && p.toque && p.nome >= 120),
-      `toque ${w} px: ↑ e × dos passos da mostura sem cobrir campo e alinhados ao nome (${JSON.stringify(passos)})`);
+    verificar(passos.length === 2 && passos.every((p) => p.botoes === 2 && !p.sobrepoe && p.alinhado && p.cabe && p.toque && p.nome >= 120),
+      `toque ${w} px: alça ⠿ e × dos passos da mostura sem cobrir campo e alinhados ao nome (${JSON.stringify(passos)})`);
   }
+  // Alça ⠿ no lugar do ↑ (24/11/2026, pedido do responsável): arrastar com o dedo e mover pelas setas.
+  const linhaM = '[data-secao="mostura"] tbody tr';
+  const tempsM = () => cel.$$eval(`${linhaM} input[aria-label="Temp. (°C)"]`, (ns) => ns.map((n) => n.value));
+  const antesM = await tempsM();
+  verificar(await cel.locator(`${linhaM} .ing-alca`).count() === 2 && await cel.locator('[data-secao="mostura"] button[aria-label="Subir"]').count() === 0
+    && (await cel.textContent(`${linhaM}:nth-child(1) .ing-alca`)) === "⠿", "mostura: alça ⠿ em todos os passos, sem o botão ↑");
+  await cel.evaluate(() => { document.querySelector('[data-secao="mostura"]').scrollIntoView(); window.scrollBy(0, -20); });
+  const [pmx, pmy] = await centro(`${linhaM}:nth-child(2) .ing-alca`);
+  const m1 = await cel.locator(`${linhaM}:nth-child(1)`).boundingBox();
+  await toque("touchStart", pmx, pmy);
+  for (let k = 1; k <= 8; k++) { await toque("touchMove", pmx, pmy + ((m1.y + 6 - pmy) * k) / 8); await cel.waitForTimeout(16); }
+  await toque("touchEnd");
+  await cel.waitForTimeout(100);
+  const depoisM = await tempsM();
+  verificar(antesM.length === 2 && antesM[0] !== antesM[1] && depoisM[0] === antesM[1] && depoisM[1] === antesM[0],
+    `mostura: arrastar a alça com o dedo leva o passo para cima (${antesM} → ${depoisM})`);
+  await tocar('[data-secao="mostura"] .titulo-linha h3');   // toque neutro (pendência do simulador, ver lúpulos)
+  await cel.focus(`${linhaM}:nth-child(1) .ing-alca`);
+  await cel.keyboard.press("ArrowDown");
+  verificar(JSON.stringify(await tempsM()) === JSON.stringify(antesM) && (await cel.evaluate(() => document.activeElement.getAttribute("aria-label"))).includes("posição 2 de 2"),
+    "mostura: seta ↓ na alça desce o passo e o foco acompanha");
   // Tipo do passo (24/11/2026, pedido do responsável): só Rampa (numerada pela ordem), Mash out e Lavagem.
   const tiposPasso = () => cel.evaluate(() => [...document.querySelectorAll('[data-secao="mostura"] select[aria-label="Passo da mostura"]')]
     .map((s) => ({ opcoes: [...s.options].map((o) => o.text).join("|"), escolhido: s.selectedOptions[0].text })));
