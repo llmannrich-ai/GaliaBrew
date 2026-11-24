@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124d";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124d";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124d";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124d";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124d";
-import { abrirBusca } from "./busca.js?v=20261124d";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124d";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124d";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124d";
-import * as O from "./opcoes.js?v=20261124d";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124d";
-import { icone } from "./icones.js?v=20261124d";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124d";
-import { abrirRelatorio } from "./relatorio.js?v=20261124d";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124e";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124e";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124e";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124e";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124e";
+import { abrirBusca } from "./busca.js?v=20261124e";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124e";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124e";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124e";
+import * as O from "./opcoes.js?v=20261124e";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124e";
+import { icone } from "./icones.js?v=20261124e";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124e";
+import { abrirRelatorio } from "./relatorio.js?v=20261124e";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124e";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -228,7 +228,7 @@ function aplicarEquipamento(r, eq) {
 
 function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem = null } = {}) {
   const calculados = new Map();      // item → função que escreve os valores calculados da linha (% do grist, IBU...)
-  let janelaItem = null;             // janela de detalhes aberta: { chave, item, aoCalcular, receita }
+  let janelaItem = null;             // janela de detalhes aberta: { chave, item, aoCalcular }
   const totais = [];                 // funções que escrevem o total no cabeçalho de cada seção
   const estiloAtual = () => cat.estilos.find((e) => e.id === r.estilo_id);
   /** Título de seção com ícone. */
@@ -374,7 +374,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     if (janelaItem) {
       const x = res[janelaItem.chave]?.[r[janelaItem.chave].indexOf(janelaItem.item)];
       if (x) janelaItem.aoCalcular(x);
-      janelaItem.receita(res);
     }
     for (const t of totais) t(res);
     const estilo = estiloAtual();
@@ -699,22 +698,29 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
      * da receita ao vivo (a barra de números fica atrás da janela), os dados copiados do cadastro e subir/descer/remover.
      * Os campos são os mesmos da linha (montarLinha), ligados ao mesmo item; ao fechar, a seção é redesenhada.
      */
-    function abrirItem(item, { focarNome = false } = {}) {
+    function abrirItem(item, { focarNome = false, editarQtd = false } = {}) {
       if (!r[chave].includes(item) || document.querySelector("dialog.item-janela")) return;
       const nome = el("strong", { class: "item-nome" });
       const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
       const partes = montarLinha(item, ctx);
       const sub = el("span", { class: "item-sub" });
-      const receitaTxt = el("p", { class: "item-receita", "aria-live": "polite" });
       function refrescar() {
         nome.textContent = String(item.nome ?? "").trim() || "(sem nome)";
         sub.textContent = (partes.sub?.() ?? []).filter(Boolean).join(" · ");
         partes.refrescar?.();
       }
       const pega = (classe) => partes.colunas.find((n) => n.classList.contains(classe)) ?? null;
-      const rotuloBloco = (texto, n) => (n ? el("div", { class: "item-bloco" }, el("span", { class: "item-rotulo", text: texto }), n) : null);
-      const bSubir = el("button", { type: "button", class: "secundario pequeno", text: "↑ Subir", on: { click: () => deslocar(-1) } });
-      const bDescer = el("button", { type: "button", class: "secundario pequeno", text: "↓ Descer", on: { click: () => deslocar(1) } });
+      // Rótulo do bloco; na quantidade, os números do item (grist e OG / IBU e g/L) ficam na mesma linha do rótulo.
+      const rotuloBloco = (texto, n, extra = null) => (n ? el("div", { class: "item-bloco" },
+        el("div", { class: "item-rotulo-linha" }, el("span", { class: "item-rotulo", text: texto }), extra), n) : null);
+      // Pé numa linha só (24/11/2026, janela mais baixa): ↑ ↓ só com a seta.
+      const bSubir = el("button", { type: "button", class: "secundario pequeno item-mover", text: "↑", title: "Subir na lista", "aria-label": "Subir", on: { click: () => deslocar(-1) } });
+      const bDescer = el("button", { type: "button", class: "secundario pequeno item-mover", text: "↓", title: "Descer na lista", "aria-label": "Descer", on: { click: () => deslocar(1) } });
+      // Fonte dos dados recolhida (o texto é longo): o resumo mostra o selo; tocar abre.
+      const detalhes = partes.detalhes();
+      const fonteEl = detalhes.find((n) => n?.classList?.contains("fonte-dados")) ?? null;
+      const fonte = fonteEl ? el("details", { class: "item-fonte" },
+        el("summary", {}, "Fonte dos dados ", fonteEl.querySelector(".selo")?.cloneNode(true) ?? null), fonteEl) : null;
       const posicao = () => r[chave].indexOf(item);
       const botoesPosicao = () => { bSubir.disabled = posicao() <= 0; bDescer.disabled = posicao() >= r[chave].length - 1; };
       const deslocar = (n) => { moverItem(posicao(), posicao() + n, false); botoesPosicao(); };
@@ -728,10 +734,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         el("div", { class: "item-corpo" },
           el("div", { class: "item-principal" },
             rotuloBloco("Quando", pega("ing-quando")),
-            rotuloBloco("Quantidade", pega("ing-qtd")),
-            el("div", { class: "item-dados" }, partes.colunas.filter((n) => n.classList.contains("ing-dado")))),
-          receitaTxt,
-          el("div", { class: "grade-form" }, partes.detalhes())),
+            rotuloBloco("Quantidade", pega("ing-qtd"), el("div", { class: "item-dados" }, partes.colunas.filter((n) => n.classList.contains("ing-dado"))))),
+          el("div", { class: "grade-form" }, detalhes.filter((n) => n !== fonteEl)),
+          fonte),
         el("div", { class: "item-acoes" },
           leitura ? null : [bSubir, bDescer, el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: () => {
             acao(() => { r[chave].splice(posicao(), 1); desenhar(); mudou(); });
@@ -747,6 +752,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         const b = d.getBoundingClientRect();
         if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
       });
+      // Enter num campo de digitar (computador: digitou a quantidade) = Pronto.
+      d.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.defaultPrevented && e.target.matches?.("input") && !roletaAberta()) { e.preventDefault(); fechar(); }
+      });
       // Esc com a roleta aberta fecha só a roleta.
       d.addEventListener("cancel", (e) => { if (roletaAberta()) { e.preventDefault(); fecharRoleta(false); } });
       window.addEventListener("hashchange", fechar);
@@ -761,19 +770,17 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         if (k >= 0 && lista.isConnected) lista.querySelectorAll(":scope > li.ing button.ing-nome")[k]?.focus({ preventScroll: true });
       });
 
-      janelaItem = { chave, item, aoCalcular: partes.aoCalcular, receita: (res) => {
-        receitaTxt.textContent = `Na receita: OG ${numeroBR(res.og, 3)} · IBU ${numeroBR(res.ibu, 0)} · ABV ${numeroBR(res.abv_pct, 1)}% · cor ${numeroBR(O.corParaTela(res.cor_srm), 0)} ${O.unidadeCor()}`;
-      } };
+      janelaItem = { chave, item, aoCalcular: partes.aoCalcular };
       refrescar();
       botoesPosicao();
       document.body.append(d);
       d.showModal();
-      const res = calcularReceita(r);
-      const x = res[chave]?.[posicao()];
+      const x = calcularReceita(r)[chave]?.[posicao()];
       if (x) partes.aoCalcular(x);
-      janelaItem.receita(res);
-      // Item livre (sem cadastro): o foco vai ao nome; senão o foco fica na janela (no celular não abre teclado nem roleta).
+      // Item livre (sem cadastro): foco no nome. Item novo do cadastro: direto na quantidade (celular: roleta no valor
+      // mais provável). Senão o foco fica no × (no celular não abre teclado nem roleta).
       if (focarNome && !leitura) d.querySelector('.grade-form input[aria-label="Nome"]')?.focus();
+      else if (editarQtd && !leitura) editarCampo(d.querySelector("input.qtd"));
       else d.querySelector(".item-fechar").focus({ preventScroll: true });
     }
 
@@ -819,12 +826,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       atualizarResultados();
     }
     secoes[chave] = desenhar;
-    /** Depois de adicionar: item do cadastro → foco na quantidade; item livre → janela do item com o foco no nome. */
-    focos[chave] = (livre) => {
-      if (livre) { abrirItem(r[chave].at(-1), { focarNome: true }); return; }
-      const ultima = lista.querySelector(":scope > li.ing:last-of-type");
-      editarCampo(ultima?.querySelector("input.qtd"));      // celular: abre a roleta já na quantidade mais provável
-    };
+    /** Depois de adicionar, abre a janela do item (24/11/2026, pedido do responsável): do cadastro → na quantidade;
+     *  item livre → no nome. */
+    focos[chave] = (livre) => abrirItem(r[chave].at(-1), livre ? { focarNome: true } : { editarQtd: true });
     desenhar();
     return sec;
   }

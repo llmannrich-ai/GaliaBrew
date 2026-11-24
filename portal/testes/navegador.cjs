@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124d");
+    const m = await import("./fontes.js?v=20261124e");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -302,8 +302,12 @@ const erros = [];
     && await pagina.locator("dialog.busca .chip, dialog.busca .busca-filtros").count() === 0, "busca mostra o selo da fonte e não tem filtros");
   await pagina.keyboard.press("Enter");
   await pagina.waitForSelector("dialog.busca", { state: "detached" });
-  verificar(await focado() === "Qtd (kg)", "Enter adiciona o malte e o foco vai direto para a quantidade");
+  verificar(await focado() === "Qtd (kg)" && await pagina.evaluate(() => document.activeElement.closest("dialog.item-janela")?.open === true),
+    "Enter adiciona o malte e abre a janela do item com o foco na quantidade");
   await pagina.keyboard.type("4,8");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
+  verificar(await pagina.inputValue('[data-secao="fermentaveis"] li.ing input[aria-label="Qtd (kg)"]') === "4,800", "Enter na quantidade fecha a janela e a linha mostra 4,800 kg");
 
   // Lúpulo só com teclado: Adicionar → "saaz" → Enter → 60.
   await pagina.focus('[data-secao="lupulos"] button.adicionar');
@@ -312,7 +316,9 @@ const erros = [];
   await pagina.keyboard.type("saaz");
   await pagina.keyboard.press("Enter");
   await pagina.keyboard.type("60");
-  verificar(await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60", "lúpulo adicionado só com o teclado (Adicionar, 'saaz', Enter, 60)");
+  verificar(await pagina.inputValue('dialog.item-janela input[aria-label="Qtd (g)"]') === "60", "lúpulo adicionado só com o teclado (Adicionar, 'saaz', Enter, 60)");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
 
   // Levedura: catálogo de 901 itens, Esc fecha sem adicionar; depois item livre.
   await adicionar("leveduras");
@@ -393,7 +399,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124d");
+    const m = await import("./calculos.js?v=20261124e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -454,7 +460,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124d");
+    const m = await import("./calculos.js?v=20261124e");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -473,7 +479,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124d");
+    const m = await import("./calculos.js?v=20261124e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -503,6 +509,8 @@ const erros = [];
   verificar(await pagina.textContent(".busca-grupo") === "Recentes", "busca mostra os recentes primeiro");
   await pagina.keyboard.press("Enter");
   await pagina.keyboard.type("20");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
   const segunda = `${linhaL}:nth-child(2)`;
   await pagina.selectOption(`${segunda} select[aria-label="Etapa"]`, "DRY_HOP");
   verificar(await pagina.isVisible(`${segunda} input[aria-label="Dia"]`) && !(await pagina.isVisible(`${segunda} input[aria-label="Tempo (min)"]`)) && await pagina.textContent(`${segunda} .d1 .ing-dado-val`) === "—",
@@ -545,8 +553,7 @@ const erros = [];
   await pagina.fill(`${janelaItem} input[aria-label="Qtd (g)"]`, "40");
   await pagina.waitForTimeout(50);
   const glJanela2 = await pagina.textContent(`${janelaItem} .ing-dado.d2 .ing-dado-val`);
-  verificar(glJanela2 !== glJanela && (await pagina.textContent(`${janelaItem} .item-receita`)).includes("IBU"),
-    `quantidade na janela: o g/L do lúpulo muda ao vivo e a janela mostra o resumo da receita (${glJanela} → ${glJanela2} g/L)`);
+  verificar(glJanela2 !== glJanela, `quantidade na janela: o g/L do lúpulo muda ao vivo (${glJanela} → ${glJanela2} g/L)`);
   await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
   await pagina.keyboard.press("Escape");
   await pagina.waitForTimeout(50);
@@ -582,7 +589,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124d");
+    const m = await import("./calculos.js?v=20261124e");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1076,9 +1083,11 @@ const erros = [];
   // Mínimo de 100 g de malte (24/11/2026): 0 | ,05 vira 0,100 e a roda dos decimais volta para 10.
   await girar(0, "0");
   await girar(1, "05");
-  await cel.waitForTimeout(500);
-  verificar(await qtd2.inputValue() === "0,100" && await cel.evaluate(() => document.querySelectorAll(".roleta-roda")[1].querySelector(".no-meio")?.textContent) === "10",
-    `roleta: malte no mínimo 100 g (pedido 0,05 → ${await qtd2.inputValue()} kg)`);
+  // A roda volta para 10 com rolagem suave: espera ela parar (até 3 s) em vez de um tempo fixo (falhava às vezes com 500 ms).
+  await cel.waitForFunction(() => document.querySelectorAll(".roleta-roda")[1]?.querySelector(".no-meio")?.textContent === "10", null, { timeout: 3000 }).catch(() => {});
+  const rodaMin = await cel.evaluate(() => document.querySelectorAll(".roleta-roda")[1].querySelector(".no-meio")?.textContent);
+  verificar(await qtd2.inputValue() === "0,100" && rodaMin === "10",
+    `roleta: malte no mínimo 100 g (pedido 0,05 → ${await qtd2.inputValue()} kg, roda em ${rodaMin})`);
   await cel.screenshot({ path: `${SAIDA}/p6t-roleta-minimo.png` });
   await tocar(".roleta-cancelar");
   // Fora do editor do celular a roleta também cabe (320 px é conferido mais abaixo). Agora: trocar para o teclado.
@@ -1126,11 +1135,13 @@ const erros = [];
     const q = d?.querySelector('input[aria-label="Qtd (kg)"]')?.getBoundingClientRect();
     const b = d?.getBoundingClientRect();
     const passa = [...d.querySelectorAll("*")].filter((n) => n.getBoundingClientRect().right > innerWidth + 0.5).map((n) => (n.className || n.tagName) + ":" + Math.round(n.getBoundingClientRect().right)).slice(0, 8);
-    return { passa, aberta: Boolean(d?.open), larg: b?.width, topo: b?.top, qTopo: q?.top, qFundo: q?.bottom, qAlt: q?.height, vw: innerWidth, rolagem: d ? d.scrollWidth - d.clientWidth : 0 };
+    return { passa, aberta: Boolean(d?.open), larg: b?.width, topo: b?.top, fundo: innerHeight - b?.bottom, alt: b?.height, qTopo: q?.top, qFundo: q?.bottom, qAlt: q?.height, vw: innerWidth, rolagem: d ? d.scrollWidth - d.clientWidth : 0 };
   }, janItem);
-  verificar(tamNome.height >= 44 && geo.aberta && Math.abs(geo.larg - geo.vw) <= 1 && geo.topo <= 1 && geo.rolagem <= 0,
-    `toque: tocar no nome do malte abre a janela do item na largura toda, presa no topo (alvo de ${Math.round(tamNome.height)} px; ${JSON.stringify(geo)})`);
-  verificar(geo.qFundo < 260 && geo.qAlt >= 40, `toque: a quantidade fica no alto da janela (${Math.round(geo.qTopo)}–${Math.round(geo.qFundo)} px, ${Math.round(geo.qAlt)} px de altura)`);
+  verificar(tamNome.height >= 44 && geo.aberta && geo.larg >= geo.vw - 20 && Math.abs(geo.topo - geo.fundo) <= 2 && geo.topo >= 16 && geo.rolagem <= 0 && !geo.passa.length,
+    `toque: tocar no nome do malte abre a janela do item no meio da tela, mesma folga em cima e embaixo (${Math.round(geo.topo)} / ${Math.round(geo.fundo)} px, altura ${Math.round(geo.alt)} px; alvo de ${Math.round(tamNome.height)} px)`);
+  verificar(await cel.locator("dialog.item-janela .item-receita").count() === 0 && (await cel.textContent("dialog.item-janela .item-rotulo-linha")).toLowerCase().includes("grist"),
+    "toque: janela sem o texto 'Na receita'; grist e OG do malte na linha do rótulo da quantidade");
+  verificar(geo.qAlt >= 40 && geo.qTopo - geo.topo < 130, `toque: a quantidade fica no alto da janela (${Math.round(geo.qTopo - geo.topo)} px abaixo do topo dela, ${Math.round(geo.qAlt)} px de altura)`);
   await cel.screenshot({ path: `${SAIDA}/p6i-celular-detalhes-toque.png` });
   const qJan = `${janItem} input[aria-label="Qtd (kg)"]`;
   const qLinha = '[data-secao="fermentaveis"] li.ing:first-of-type input[aria-label="Qtd (kg)"]';
@@ -1141,12 +1152,13 @@ const erros = [];
   const rj = await cel.evaluate((j) => {
     const f = document.querySelector(`${j} > .roleta`).getBoundingClientRect();
     const q = document.querySelector(`${j} input[aria-label="Qtd (kg)"]`).getBoundingClientRect();
-    const x = f.left + f.width / 2;
     const y = document.querySelector(`${j} .roleta-ok`).getBoundingClientRect();
     const alvo = document.elementFromPoint(y.left + y.width / 2, y.top + y.height / 2);
-    return { qFundo: q.bottom, rTopo: f.top, okTocavel: Boolean(alvo?.closest(".roleta-ok")), x };
+    const d = document.querySelector(j).getBoundingClientRect();
+    return { qFundo: q.bottom, rTopo: f.top, okTocavel: Boolean(alvo?.closest(".roleta-ok")), jTopo: d.top, jFundo: d.bottom };
   }, janItem);
-  verificar(rj.okTocavel && rj.qFundo <= rj.rTopo, `roleta: dentro da janela do item ela recebe o toque e a quantidade fica acima dela (${Math.round(rj.rTopo - rj.qFundo)} px de folga; ${JSON.stringify(rj)})`);
+  verificar(rj.okTocavel && rj.qFundo <= rj.rTopo && Math.abs(rj.jTopo - geo.topo) <= 1 && rj.jFundo <= rj.rTopo,
+    `roleta: dentro da janela do item ela recebe o toque, a janela não pula e termina acima da roleta, quantidade à vista (${Math.round(rj.rTopo - rj.qFundo)} px de folga)`);
   await cel.screenshot({ path: `${SAIDA}/p6u-janela-item-roleta.png` });
   await cel.keyboard.press("ArrowUp");                        // roda dos decimais um passo acima
   await cel.waitForTimeout(250);
@@ -1171,7 +1183,7 @@ const erros = [];
     const passa = [...d.querySelectorAll("*")].filter((n) => n.getBoundingClientRect().right > innerWidth + 0.5 && n.getClientRects().length).map((n) => n.className || n.tagName);
     return { passa, q: d.querySelector('input[aria-label="Qtd (kg)"]').getBoundingClientRect().bottom };
   }, janItem);
-  verificar(!g320.passa.length && g320.q < 240, `toque: em 320 px a janela do item cabe na largura e a quantidade fica no alto${g320.passa.length ? " (passam: " + g320.passa.slice(0, 5).join(", ") + ")" : ""}`);
+  verificar(!g320.passa.length && g320.q < 260, `toque: em 320 px a janela do item cabe na largura e a quantidade fica no alto${g320.passa.length ? " (passam: " + g320.passa.slice(0, 5).join(", ") + ")" : ""}`);
   await cel.screenshot({ path: `${SAIDA}/p6v-janela-item-320.png` });
   await tocar(`${janItem} .item-fechar`);
   await cel.setViewportSize({ width: 390, height: 844 });
@@ -1247,17 +1259,17 @@ const erros = [];
   await cel.waitForTimeout(250);
   // Mais provável no amargor de 60 min: 20 g em 20 L, proporcional ao volume do lote.
   const gLup = Math.round(20 * Number(db.receitas.find((x) => x.nome === "Pils da Galia").volume_lote_l) / 20);
-  verificar(await cel.textContent(".roleta-valor") === `${gLup},0 g` && await cel.inputValue('[data-secao="lupulos"] li.ing:last-child input[aria-label="Qtd (g)"]') === `${gLup},0`,
-    `roleta: lúpulo novo abre a roleta já na quantidade mais provável (${gLup} g para o lote)`);
+  verificar(await cel.textContent(".roleta-valor") === `${gLup},0 g` && await cel.locator("dialog.item-janela > .roleta").count() === 1
+    && await cel.inputValue('dialog.item-janela input[aria-label="Qtd (g)"]') === `${gLup},0`,
+    `roleta: lúpulo novo abre a janela do item com a roleta já na quantidade mais provável (${gLup} g para o lote)`);
+  await cel.screenshot({ path: `${SAIDA}/p6x-lupulo-novo-janela.png` });
   await tocar(".roleta-ok");
+  await cel.waitForTimeout(150);
   // Janela do lúpulo: etapa e tempo junto da quantidade.
-  await cel.evaluate(() => document.querySelector('[data-secao="lupulos"] li.ing:last-child button.ing-nome').scrollIntoView({ block: "center" }));
-  await tocar('[data-secao="lupulos"] li.ing:last-child button.ing-nome');
-  await cel.waitForSelector("dialog.item-janela");
   verificar(await cel.isVisible('dialog.item-janela select[aria-label="Etapa"]') && await cel.inputValue('dialog.item-janela input[aria-label="Qtd (g)"]') === `${gLup},0`,
     "toque: janela do lúpulo com etapa, tempo e quantidade");
   await cel.screenshot({ path: `${SAIDA}/p6w-janela-lupulo.png` });
-  await tocar("dialog.item-janela .item-fechar");
+  await tocar("dialog.item-janela .item-pronto");
   await cel.waitForSelector("dialog.item-janela", { state: "detached" });
   const linhaLCel = '[data-secao="lupulos"] li.ing';
   const [ax, ay] = await centro(`${linhaLCel}:nth-child(2) .ing-alca`);

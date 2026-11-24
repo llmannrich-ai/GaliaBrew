@@ -3,8 +3,8 @@
 // mudando enquanto a roda gira). Cada roda é uma lista com rolagem nativa e "scroll-snap" (inércia do próprio
 // aparelho); o item no meio é o escolhido. O valor vai para o campo AO VIVO; "Cancelar" (ou Esc) volta ao de antes;
 // "OK", tocar fora ou Enter confirmam. "Digitar" fecha a roleta e abre o teclado no próprio campo.
-import { el, numeroBR } from "./ui.js?v=20261124d";
-import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261124d";
+import { el, numeroBR } from "./ui.js?v=20261124e";
+import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261124e";
 
 const ALTURA = 44;                 // altura de um item (alvo de toque); a roda mostra 5 (2 acima, 2 abaixo)
 let atual = null;                  // roleta aberta: { fechar(confirmar) }
@@ -78,10 +78,22 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
       espera = setTimeout(assentar, 160);           // iOS sem "scrollend": espera a rolagem parar
     }, { passive: true });
     n.addEventListener("scrollend", assentar);
+    // Rolagem suave pode ser interrompida (fim do arrasto, encaixe do scroll-snap) e a roda parar fora do destino,
+    // mostrando um número diferente do gravado (visto no teste do mínimo de 100 g de malte). Conferência: se em 0,6 s a
+    // roda não chegou e o dedo não voltou a mexer nela, vai direto (sem animação).
+    let gesto = 0;
+    let conferir = null;
+    n.addEventListener("touchstart", () => { gesto++; }, { passive: true });
+    n.addEventListener("pointerdown", () => { gesto++; });
     const irPara = (i, suave) => {
       const alvo = Math.min(itens.length - 1, Math.max(0, i));
+      clearTimeout(conferir);
       n.scrollTo({ top: alvo * ALTURA, behavior: suave ? "smooth" : "instant" });
-      if (!suave) { pintar(); assentar(); }
+      if (!suave) { pintar(); assentar(); return; }
+      const g = gesto;
+      conferir = setTimeout(() => {
+        if (g === gesto && n.isConnected && Math.round(n.scrollTop / ALTURA) !== alvo) irPara(alvo, false);
+      }, 600);
     };
     // Tocar num item leva ele ao meio (arrastar a roda não gera "click").
     n.addEventListener("click", (e) => {
@@ -137,6 +149,7 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
     if (!confirmar && escolhido !== original) aoEscolher(original);
     else if (confirmar && !jaGravado && escolhido !== original) aoEscolher(escolhido);   // garante o valor mostrado
     folha.remove();
+    if (janela) { janela.style.marginTop = estiloJanela.mt; janela.style.marginBottom = estiloJanela.mb; janela.style.maxHeight = estiloJanela.mh; }
     campo?.classList.remove("em-roleta");
     document.documentElement.classList.remove("roleta-aberta");
     document.documentElement.style.removeProperty("--roleta-h");
@@ -148,6 +161,14 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
   // ficaria atrás da janela, sem receber toque.
   const janela = campo?.closest("dialog[open]") ?? null;
   (janela ?? document.body).append(folha);
+  // A janela fica onde está (sem pular) e termina acima da roleta: o que ficaria atrás dela passa a rolar por dentro.
+  const estiloJanela = janela ? { mt: janela.style.marginTop, mb: janela.style.marginBottom, mh: janela.style.maxHeight } : null;
+  if (janela) {
+    const topoJanela = janela.getBoundingClientRect().top;
+    janela.style.marginTop = `${Math.round(topoJanela)}px`;
+    janela.style.marginBottom = "auto";
+    janela.style.maxHeight = `${Math.max(160, Math.round(window.innerHeight - topoJanela - folha.offsetHeight - 8))}px`;
+  }
   for (const x of elementos) x.posicionar();
   mostrar();
   if (escolhido !== original) aoEscolher(escolhido);        // vazio → já entra o valor mais provável (Cancelar desfaz)
