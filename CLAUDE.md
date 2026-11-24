@@ -364,7 +364,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   "Ligar ao cadastro": abre a busca já com o código entre parênteses ou o nome sem "Yeast" (`buscaDaLevedura`: "US-05",
   "Nottingham"); escolher copia tipo/forma/atenuação/nome, mantém quantidade/unidade/etapa e reabre a janela (1 passo do
   desfazer). Ligada: "Trocar por outra do cadastro". `abrirBusca` aceita `texto` (busca inicial) e `titulo`.
-  Dado: no banco as importadas têm tipo chutado (Brett como Ale); religar em massa por SQL não foi feito (pedir antes).
+  Dado corrigido em 24/11/2026 (pedido do responsável), pelo MCP, script `ferramentas/brewfather/corrigir-leveduras.sql`
+  (com o desfazer): 81 leveduras importadas LIGADAS ao cadastro por código/nome (Nottingham, US-05, S-04, W-34/70,
+  Diamond, Abbaye, Verdant, T-58, M54, BE-256, BE-134, Philly Sour...; copiados tipo e forma; nome e atenuação NÃO
+  mudaram, então a FG das receitas é a mesma) e 6 só com o tipo corrigido (5 Brettanomyces → BRETT, blend de Flanders →
+  MISTA). Ficaram 25 sem ligação (TeckBrew, Fermo* sem a cepa no catálogo, Farmhouse, Vermont Ale bio4, Lager-BF16
+  como Ale, nome vazio): ligar pela janela. Datas das receitas intactas (o gatilho de data é só em `receitas`).
 - Outros ingredientes, mostura e fermentação continuam em tabela/cartões (candidatos ao mesmo padrão: K4 do plano Clean).
 - Teste do navegador: levedura livre na janela, linha sem campo, tocar no valor abre, Esc; celular 390/320 px (linha de
   64 px, janela cabe, sem teclado nem roleta) e clean. Capturas `p6q-levedura-linha`, `p6q-levedura-janela-390/320`, `p7e`.
