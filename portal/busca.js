@@ -4,10 +4,10 @@
 // Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
 // Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
 // azeda, belga...); "Mais perto da receita" pelos números do editor.
-import { el, preencher, numeroBR } from "./ui.js?v=20261124b";
-import { corHexDeSrm, encaixeEstilo } from "./calculos.js?v=20261124b";
-import * as O from "./opcoes.js?v=20261124b";
-import { fonteDados, seloFonte } from "./fontes.js?v=20261124b";
+import { el, preencher, numeroBR } from "./ui.js?v=20261124c";
+import { corHexDeSrm, corHexDeMalte, encaixeEstilo } from "./calculos.js?v=20261124c";
+import * as O from "./opcoes.js?v=20261124c";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261124c";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
@@ -94,6 +94,7 @@ export const TIPOS_BUSCA = {
       x.cor_srm != null ? `${numeroBR(O.corParaTela(Number(x.cor_srm)), 0)} ${O.unidadeCor()}` : null,
       x.rendimento_pct != null ? `rend. ${numeroBR(x.rendimento_pct, 0)}%` : null, x.produtor],
     cor: (x) => x.cor_srm,
+    corDe: corHexDeMalte,   // amostra = cor do grão (o estilo usa a da cerveja)
   },
   lupulos: {
     titulo: "Adicionar lúpulo",
@@ -231,7 +232,7 @@ export function abrirBusca({ tipo, itens: recebidos, aoEscolher, aoLivre, contex
     let amostra = null;
     if (def.cor) {
       amostra = el("span", { class: "amostra", "aria-hidden": "true" });
-      amostra.style.background = corHexDeSrm(def.cor(x));
+      amostra.style.background = (def.corDe ?? corHexDeSrm)(def.cor(x));
     }
     return el("li", {
       role: "option", id: `${idLista}-${i}`, class: "busca-opcao", "aria-selected": "false",

@@ -1,11 +1,11 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261124b";
-import { sb, sessao } from "./estado.js?v=20261124b";
-import * as O from "./opcoes.js?v=20261124b";
-import { faixaCor } from "./faixas.js?v=20261124b";
-import { corHexDeSrm } from "./calculos.js?v=20261124b";
-import { buscarItens, ordemCodigo } from "./busca.js?v=20261124b";
-import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261124b";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261124c";
+import { sb, sessao } from "./estado.js?v=20261124c";
+import * as O from "./opcoes.js?v=20261124c";
+import { faixaCor } from "./faixas.js?v=20261124c";
+import { corHexDeSrm, corHexDeMalte } from "./calculos.js?v=20261124c";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261124c";
+import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261124c";
 
 // Cadastros de ingrediente: mostram de onde vêm os dados (fabricante, genérico, análise, meu).
 const INGREDIENTES = new Set(["fermentaveis", "lupulos", "leveduras", "outros"]);
@@ -187,7 +187,7 @@ export async function telaCadastros(conteudo, chave) {
     const linhas = lista.map((x) => el("tr", { class: "clicavel", tabindex: 0, on: { click: () => abrirFormulario(chave, x, recarregar), keydown: (e) => { if (e.key === "Enter") abrirFormulario(chave, x, recarregar); } } },
       // data-rotulo: no celular a linha vira cartão e cada dado leva o nome da coluna na frente (style.css).
       def.colunas.map(([k, r, f]) => {
-        if (f === "cor") return el("td", { class: "num", "data-rotulo": `${r} (${O.unidadeCor()})` }, amostraCor(x[k]), numeroBR(O.corParaTela(x[k]), 1));
+        if (f === "cor") return el("td", { class: "num", "data-rotulo": `${r} (${O.unidadeCor()})` }, amostraCor(x[k], corHexDeMalte), numeroBR(O.corParaTela(x[k]), 1));
         if (typeof f === "number") return el("td", { class: "num", "data-rotulo": r, text: numeroBR(x[k], f) });
         if (typeof f === "function") return el("td", { "data-rotulo": r, text: f(x[k], x) });
         return el("td", { "data-rotulo": r, text: x[k] ?? "" });
@@ -201,9 +201,10 @@ export async function telaCadastros(conteudo, chave) {
   await recarregar();
 }
 
-export function amostraCor(srm) {
+/** Amostra de cor. Padrão = cor da cerveja; para malte, passar corHexDeMalte (cor do grão). */
+export function amostraCor(srm, corDe = corHexDeSrm) {
   const s = el("span", { class: "amostra", "aria-hidden": "true" });
-  s.style.background = corHexDeSrm(srm);   // CSSOM (não é atributo style): permitido pela CSP
+  s.style.background = corDe(srm);   // CSSOM (não é atributo style): permitido pela CSP
   return s;
 }
 

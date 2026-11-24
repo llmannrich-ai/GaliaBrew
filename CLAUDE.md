@@ -107,6 +107,11 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   mais longo; temperatura = média ponderada pelos gramas). Bate com o Brewfather (ele usa a mesma curva).
 - Fim de linha: `portal/vendor/** -text` no .gitattributes; com CRLF o hash do SRI muda e o portal não carrega.
 - Cor: Morey com °L = (SRM + 0,76) ÷ 1,3546 no volume pós-fervura. EBC = SRM × 1,97.
+- Cor na TELA (24/11/2026, pergunta do responsável: "por que o Caramunich é preto?"): duas escalas. `corHexDeSrm` = cor
+  da CERVEJA (copo, barra vital, lista, relatório; acima de 40 SRM é preta). `corHexDeMalte` = cor do GRÃO, no log do SRM
+  de 1 a 600 (palha → dourado → castanho → marrom → preto), para a amostra do malte na receita, a barra do grist, a busca
+  de fermentável e a lista dos Cadastros (`amostraCor(srm, corHexDeMalte)`). Antes todo malte acima de 40 SRM (cristal,
+  chocolate, carafa) saía no mesmo preto. Só tela: nenhum cálculo muda.
 - 0002: `fermentaveis.umidade_pct` (+ cópia em `receita_fermentaveis`): o rendimento da ficha do malte é base seca;
   sem a umidade a OG sai ~4% alta. `receitas.relacao_agua_grao_l_kg` e `perda_tina_l` (água da mostura × lavagem).
 
@@ -208,7 +213,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124b.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124c.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).

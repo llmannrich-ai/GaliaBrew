@@ -695,13 +695,9 @@ export function reguaDoEstilo(valor, min, max, { folga = 0.25, perto = 0.1 } = {
   return { estado, pos: pos(v), ini: pos(a), fim: pos(b), eixo: [eixoIni, eixoFim], foraDoEixo: v < eixoIni || v > eixoFim };
 }
 
-/** Cor aproximada para a tela (#rrggbb) a partir do SRM, por interpolação numa escala de referência. */
-export function corHexDeSrm(srm) {
-  const escala = [
-    [0, [255, 245, 200]], [2, [248, 227, 120]], [4, [234, 189, 60]], [6, [222, 155, 30]], [9, [198, 120, 20]],
-    [12, [172, 90, 15]], [16, [140, 62, 12]], [20, [110, 42, 10]], [26, [80, 28, 8]], [35, [50, 18, 6]], [40, [30, 10, 4]],
-  ];
-  const s = Math.max(0, Math.min(40, num(srm)));
+/** Interpola uma cor (#rrggbb) numa escala [[valor, [r, g, b]], ...] em ordem crescente; fora dela, a ponta. */
+function corNaEscala(escala, s) {
+  s = Math.max(escala[0][0], Math.min(escala[escala.length - 1][0], s));
   let i = escala.findIndex(([v]) => v >= s);
   if (i <= 0) i = 1;
   const [v0, c0] = escala[i - 1];
@@ -709,6 +705,30 @@ export function corHexDeSrm(srm) {
   const t = v1 > v0 ? (s - v0) / (v1 - v0) : 0;
   const hex = c0.map((c, k) => Math.round(c + (c1[k] - c) * t).toString(16).padStart(2, "0")).join("");
   return `#${hex}`;
+}
+
+const ESCALA_CERVEJA = [
+  [0, [255, 245, 200]], [2, [248, 227, 120]], [4, [234, 189, 60]], [6, [222, 155, 30]], [9, [198, 120, 20]],
+  [12, [172, 90, 15]], [16, [140, 62, 12]], [20, [110, 42, 10]], [26, [80, 28, 8]], [35, [50, 18, 6]], [40, [30, 10, 4]],
+];
+
+/** Cor aproximada da CERVEJA para a tela (#rrggbb) a partir do SRM. Acima de 40 SRM a cerveja é preta. */
+export function corHexDeSrm(srm) {
+  return corNaEscala(ESCALA_CERVEJA, num(srm));
+}
+
+// Cor do GRÃO, não da cerveja (24/11/2026): o SRM do malte é a cor do mosto de laboratório feito só com ele, por isso
+// cristal (45-160) e torrado (300-600) passavam do fim da escala da cerveja e saíam todos pretos. Escala própria, no
+// logaritmo do SRM: palha (pilsen) → dourado (munique) → castanho (cristal) → marrom (chocolate) → preto (carafa).
+const ESCALA_MALTE = [
+  [1, [242, 228, 182]], [2, [236, 215, 158]], [4, [228, 196, 128]], [8, [214, 168, 92]], [15, [200, 142, 68]],
+  [30, [180, 114, 52]], [60, [150, 86, 40]], [120, [116, 62, 30]], [250, [78, 42, 24]], [400, [48, 28, 18]],
+  [600, [26, 17, 12]],
+].map(([v, c]) => [Math.log(v), c]);
+
+/** Cor aproximada do MALTE (do grão) para a tela (#rrggbb) a partir do SRM do malte. */
+export function corHexDeMalte(srm) {
+  return corNaEscala(ESCALA_MALTE, Math.log(Math.max(1, num(srm))));
 }
 
 /**
