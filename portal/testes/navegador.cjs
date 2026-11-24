@@ -381,14 +381,40 @@ const erros = [];
   verificar(/^18(,0)?$/.test(await pagina.inputValue('input[aria-label="Água da mostura (L)"]')) && /^14(,0)?$/.test(await pagina.inputValue('input[aria-label="Água de lavagem (L)"]')),
     "água: litros informados nos campos do topo (18 e 14)");
   verificar((await pagina.textContent(".painel-lote")).includes("Água necessária"), "painel mostra a água necessária quando o informado não fecha");
+  // Parâmetros (24/11/2026): na receita só lote, eficiência e fervura; "Todos" abre a janela com o equipamento e os 9 campos.
+  verificar(await pagina.locator('[data-secao="parametros"] .param-resumo input').count() === 3
+    && await pagina.locator('[data-secao="parametros"] input[aria-label="Água/grão na mostura (L/kg)"]').count() === 0,
+    "parâmetros: a seção mostra só os 3 números principais (o resto fica na janela)");
+  await pagina.click('button.param-todos');
+  await pagina.waitForSelector("dialog.parametros-janela[open]");
+  const gradeParam = await pagina.$$eval("dialog.parametros-janela .param-grade .param", (ls) => ({
+    n: ls.length, colunas: new Set(ls.map((l) => Math.round(l.getBoundingClientRect().left))).size,
+    linhas: new Set(ls.map((l) => Math.round(l.querySelector("input").getBoundingClientRect().top))).size }));
+  verificar(gradeParam.n === 9 && gradeParam.colunas === 3 && gradeParam.linhas === 3,
+    `parâmetros: janela com os 9 campos em 3 colunas × 3 linhas (${JSON.stringify(gradeParam)})`);
+  verificar(await pagina.locator('dialog.parametros-janela select[aria-label="Equipamento"]').count() === 1
+    && (await pagina.textContent("dialog.parametros-janela .fj-metricas")).includes("Pré-fervura"), "parâmetros: equipamento e volumes na janela");
   // Água/grão dos Parâmetros = água da mostura informada ÷ grão; mudar a relação recalcula os litros da mostura.
-  const relacao = 'input[aria-label="Água/grão na mostura (L/kg)"]';
+  const relacao = 'dialog.parametros-janela input[aria-label="Água/grão na mostura (L/kg)"]';
   verificar(await pagina.inputValue(relacao) === "3,75", "água/grão dos Parâmetros segue a água da mostura informada (18 L ÷ 4,8 kg = 3,75)");
   const definirRelacao = (v) => pagina.$eval(relacao, (n, v) => { n.value = v; n.dispatchEvent(new Event("input", { bubbles: true })); }, v);
   await definirRelacao("4");
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "19,2", "mudar a água/grão (4 L/kg) recalcula a água da mostura (19,2 L)");
   await definirRelacao("3,75");
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "voltar a 3,75 L/kg devolve 18 L");
+  // Volume do lote na janela: os volumes da janela acompanham; ao fechar, a seção mostra o número novo.
+  const preJanela = await pagina.textContent("dialog.parametros-janela .fj-metricas");
+  const volJanela = 'dialog.parametros-janela input[aria-label="Volume no fermentador (L)"]';
+  await pagina.fill(volJanela, "25");
+  verificar(await pagina.textContent("dialog.parametros-janela .fj-metricas") !== preJanela, "parâmetros: volumes da janela mudam ao vivo");
+  await pagina.fill(volJanela, "23");
+  await pagina.click("dialog.parametros-janela button.item-pronto");
+  await pagina.waitForSelector("dialog.parametros-janela", { state: "detached", timeout: 2000 }).catch(() => {});
+  const fechouParam = { janelas: await pagina.locator("dialog.parametros-janela").count(),
+    volume: await pagina.inputValue('[data-secao="parametros"] input[aria-label="Volume no fermentador (L)"]'),
+    foco: await pagina.evaluate(() => document.activeElement?.className) };
+  verificar(fechouParam.janelas === 0 && fechouParam.volume === "23,0" && fechouParam.foco.includes("param-todos"),
+    `parâmetros: Pronto fecha, a seção mostra o volume e o foco volta ao botão (${JSON.stringify(fechouParam)})`);
   // Seção Água enxuta: sem diluição, sem texto explicativo nos blocos, base e alvo na mesma linha.
   verificar(await pagina.locator('[data-secao="agua"] input[aria-label*="iluição"]').count() === 0
     && await pagina.locator('[data-secao="agua"] .bloco-agua > p.nota').count() === 0, "água: sem campo de diluição e sem texto explicativo nos blocos");
@@ -481,7 +507,8 @@ const erros = [];
     && await pagina.locator('[data-secao="lupulos"] .total-extra').count() === 0
     && await pagina.$eval('[data-secao="fermentaveis"] .total-secao', (n) => parseFloat(getComputedStyle(n).fontSize)) >= 24,
     "fermentáveis: total em destaque e água/malte ao lado (usa a água da mostura informada)");
-  verificar((await pagina.textContent(".resumo-texto")).startsWith("23,0 L no fermentador · 72% de eficiência · 60 min de fervura · Panela 50 L"), "lote resumido em uma linha");
+  verificar(await pagina.$$eval('[data-secao="parametros"] .param-resumo input', (ns) => ns.map((n) => n.value).join(" ")) === "23,0 72 60"
+    && await pagina.textContent('[data-secao="parametros"] .total-extra') === "Panela 50 L", "parâmetros: lote, eficiência, fervura e equipamento à vista");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
@@ -1140,6 +1167,62 @@ const erros = [];
   verificar(await cel.locator(".roleta").count() === 0 && await qtd2.inputValue() === esperadoRoleta, `roleta: girar as duas rodas e OK grava ${esperadoRoleta} kg`);
   await tocar(".barra-app .app-desfazer");
   verificar(await qtd2.inputValue() === qtdAntes, "roleta: ↶ desfaz a roleta inteira num passo só");
+  // Parâmetros no celular (24/11/2026): tocar no número da seção abre a roleta direto (sem janela); "Todos" abre a janela.
+  const efic = '[data-secao="parametros"] input[aria-label="Eficiência (%)"]';
+  const eficAntes = await cel.inputValue(efic);
+  const ogParam = await ogDaBarra();
+  await cel.evaluate(() => { document.querySelector('[data-secao="parametros"]').scrollIntoView(); window.scrollBy(0, -70); });
+  await cel.waitForTimeout(100);
+  await cel.screenshot({ path: `${SAIDA}/p6p-celular-parametros.png` });
+  await tocar(efic);
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.locator("dialog.parametros-janela").count() === 0 && await cel.locator(".vital.com-teclado").count() === 1,
+    "parâmetros: tocar na eficiência abre a roleta direto, com a barra de números fina acima");
+  await girar(0, String(Number(eficAntes) + 5));
+  await tocar(".roleta-ok");
+  verificar(await cel.inputValue(efic) === String(Number(eficAntes) + 5) && await ogDaBarra() !== ogParam,
+    `parâmetros: a roleta muda a eficiência na receita (${eficAntes} → ${await cel.inputValue(efic)}) e a OG acompanha`);
+  await tocar(".barra-app .app-desfazer");
+  verificar(await cel.inputValue(efic) === eficAntes && await ogDaBarra() === ogParam, "parâmetros: ↶ desfaz a eficiência");
+  const secParam = await cel.$$eval('[data-secao="parametros"] .param-resumo input', (ns) => ns.map((n) => {
+    const b = n.getBoundingClientRect(); return { top: Math.round(b.top), h: Math.round(b.height), right: b.right }; }));
+  verificar(new Set(secParam.map((x) => x.top)).size === 1 && secParam.every((x) => x.h >= 44 && x.right <= 390),
+    `parâmetros: os 3 números numa linha, com 44 px de toque (${JSON.stringify(secParam)})`);
+  const janelaParamCel = async (w) => cel.evaluate((w) => {
+    const d = document.querySelector("dialog.parametros-janela");
+    const b = d.getBoundingClientRect();
+    const ins = [...d.querySelectorAll(".param-grade input")].map((n) => n.getBoundingClientRect());
+    return { cabe: b.left >= 0 && b.right <= w && d.scrollWidth <= d.clientWidth, colunas: new Set(ins.map((x) => Math.round(x.left))).size,
+      linhas: new Set(ins.map((x) => Math.round(x.top))).size, campoMin: Math.round(Math.min(...ins.map((x) => x.width))), altura: Math.round(b.height) };
+  }, w);
+  await tocar("button.param-todos");
+  await cel.waitForSelector("dialog.parametros-janela[open]");
+  const pj390 = await janelaParamCel(390);
+  verificar(pj390.cabe && pj390.colunas === 3 && pj390.linhas === 3 && pj390.campoMin >= 50,
+    `parâmetros 390 px: janela com 9 campos em 3 × 3, cabe na tela (${JSON.stringify(pj390)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6p2-celular-parametros-janela.png` });
+  await tocar('dialog.parametros-janela input[aria-label="Perda na panela (L)"]');
+  await cel.waitForSelector("dialog.parametros-janela .roleta");
+  await cel.waitForTimeout(250);
+  verificar(await cel.evaluate(() => document.querySelector("dialog.parametros-janela .roleta").matches(":popover-open")),
+    "parâmetros: a roleta abre dentro da janela (camada do topo)");
+  await cel.screenshot({ path: `${SAIDA}/p6p3-celular-parametros-roleta.png` });
+  await tocar(".roleta-cancelar");
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(150);
+  const pj320 = await janelaParamCel(320);
+  verificar(pj320.cabe && pj320.colunas === 3 && pj320.linhas === 3 && pj320.campoMin >= 40,
+    `parâmetros 320 px: janela com 9 campos em 3 × 3, cabe na tela (${JSON.stringify(pj320)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6p4-celular-320-parametros-janela.png` });
+  await tocar("dialog.parametros-janela .item-fechar");
+  await cel.waitForSelector("dialog.parametros-janela", { state: "detached", timeout: 2000 }).catch(() => {});
+  verificar(await cel.locator("dialog.parametros-janela").count() === 0, "parâmetros: × fecha a janela");
+  await conferirLateral("320 px, parâmetros");
+  await cel.evaluate(() => { document.querySelector('[data-secao="parametros"]').scrollIntoView(); window.scrollBy(0, -70); });
+  await cel.screenshot({ path: `${SAIDA}/p6p5-celular-320-parametros.png` });
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(150);
   // Inteiro e decimais bem separados (24/11/2026): vírgula entre as rodas, cada roda com a sua faixa.
   await tocar('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
   await cel.waitForSelector(".roleta");

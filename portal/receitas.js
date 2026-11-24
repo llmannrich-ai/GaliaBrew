@@ -262,6 +262,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   /** Ação inteira (adicionar, remover, mover, ajuste automático) = um passo próprio. */
   function acao(fn) { registrar(); fn(); registrar(); }
   function irPara(estado) {
+    document.querySelector("dialog.parametros-janela")?.close();    // a janela mostraria os números de antes
     const antes = calcularReceita(r);
     Object.assign(r, structuredClone(estado));
     t.base = structuredClone(r);
@@ -342,7 +343,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   });
   t.atalhos = { desfazer, refazer, marcador: vital.elemento };
   const painel = el("aside", { class: "painel-lote" });
-  const resumoLote = el("span", { class: "resumo-texto" });
   const secoes = {};
   const des = leitura;
   let montado = false;            // antes de montar, os cálculos não contam como "mudança" (sem diferença na barra)
@@ -407,14 +407,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     preencher(pNotas,
       estilo ? el("p", { class: "nota", text: `Comparando com ${estilo.codigo ? estilo.codigo + " " : ""}${estilo.nome}.` }) : el("p", { class: "nota", text: "Escolha um estilo no topo para ver as faixas." }),
       el("p", { class: "nota", text: `IBU pelo Tinseth. Whirlpool conta menos quanto mais frio (sem temperatura = ${TEMPERATURA_WHIRLPOOL_PADRAO_C} °C); dry hop não conta.` }));
-    const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
+    janelaParam?.aoCalcular(res);
     tituloApp.textContent = String(r.nome ?? "").trim() || "Receita nova";
-    resumoLote.textContent = [
-      `${numeroBR(r.volume_lote_l, 1)} L no fermentador`,
-      `${numeroBR(r.eficiencia_pct, 0)}% de eficiência`,
-      `${numeroBR(r.fervura_min, 0)} min de fervura`,
-      eq ? eq.nome : null,
-    ].filter(Boolean).join(" · ");
     return res;
   }
 
@@ -595,17 +589,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       el("label", { class: "linha" }, el("input", { type: "checkbox", checked: r.publica, disabled: des, on: { change: (e) => { r.publica = e.target.checked; mudou(); } } }),
         "Pública (outros usuários podem ver e duplicar)")));
 
-  const equipamentoCampo = el("div", { class: "grade-form" },
-    el("label", {}, el("span", { text: "Equipamento" }), campoSelect(r, "equipamento_id",
-      cat.equipamentos.map((e) => [e.id, e.nome]), {
-        desabilitado: des, vazio: cat.equipamentos.length ? "— nenhum —" : "— cadastre em Cadastros —", rotulo: "Equipamento",
-        aoMudar: () => acao(() => {
-          const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
-          if (eq) { aplicarEquipamento(r, eq); desenharParametros(); avisar("Parâmetros copiados do equipamento."); }
-          mudou();
-        }),
-      })));
-
   // Brassagem (receita = lote): nº, data e o que foi medido. Densidade aceita 1,050, 1050 e 50 (pontos).
   const sg = { de: (x) => x, para: (v) => (v >= 900 ? v / 1000 : v > 2 && v < 200 ? 1 + v / 1000 : v) };
   const campoLote = (k, rot, extra) => el("label", {}, el("span", {}, rot, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { aoMudar: mudou, desabilitado: des, rotulo: rot, ...extra }));
@@ -640,19 +623,18 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     return el("label", { class: "origem" }, el("span", { text: "Começar a partir de uma receita anterior" }), s);
   }
 
-  const parametros = el("div", { class: "grade-form" });
   // Água/grão e água da mostura são a mesma informação: com a água da mostura informada, a relação = litros ÷ kg de
   // grão (sincronizada a cada cálculo e gravada); mudar a relação recalcula os litros da mostura.
   let campoRelacao = null;
   let campoAguaMostura = null;
   const graosMostura = () => calcularReceita(r).volumes.graos_kg;
-  const relacaoMudou = () => {
+  const relacaoMudou = (campo) => {
     const kg = graosMostura();
     if (r.agua_mostura_l != null && kg > 0 && Number(r.relacao_agua_grao_l_kg) > 0) {
       r.agua_mostura_l = Number((Number(r.relacao_agua_grao_l_kg) * kg).toFixed(1));
       if (campoAguaMostura && document.activeElement !== campoAguaMostura) campoAguaMostura.value = numeroBR(r.agua_mostura_l, 1);
     }
-    mudou();
+    mudou(campo);
   };
   const sincronizarRelacao = (v) => {
     if (!v.agua_mostura_informada || !(v.graos_kg > 0)) return;
@@ -660,22 +642,106 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     r.relacao_agua_grao_l_kg = Number((v.agua_mostura_l / v.graos_kg).toFixed(2));
     if (campoRelacao) campoRelacao.value = numeroBR(r.relacao_agua_grao_l_kg, 2);
   };
-  function desenharParametros() {
-    const p = (k, rot, casas, aoMudar = mudou) => el("label", {}, el("span", {}, rot, info(O.AJUDA_VOLUME[k])), campoNumero(r, k, { casas, aoMudar, desabilitado: des, rotulo: rot }));
-    const relacao = p("relacao_agua_grao_l_kg", "Água/grão na mostura (L/kg)", 2, relacaoMudou);
-    campoRelacao = relacao.querySelector("input");
-    preencher(parametros, 
-      p("volume_lote_l", "Volume no fermentador (L)", 1),
-      p("eficiencia_pct", "Eficiência (%)", 0),
-      p("fervura_min", "Fervura (min)", 0),
-      p("evaporacao_l_h", "Evaporação (L/h)", 1),
-      p("perda_panela_l", "Perda na panela (L)", 1),
-      p("perda_tina_l", "Perda na tina (L)", 1),
-      p("absorcao_grao_l_kg", "Absorção do grão (L/kg)", 2),
-      relacao,
-      p("temp_grao_c", "Temperatura do grão (°C)", 1));
+
+  // Parâmetros (24/11/2026, pedido do responsável): na receita ficam à vista os 3 números principais, tocáveis como a
+  // quantidade do malte/lúpulo (celular: roleta direto; computador: campo). "Todos" abre a JANELA com o equipamento e
+  // os 9 campos numa grade de 3 colunas (rótulo curto em cima, número + unidade embaixo: cada número tem ≤ 5 dígitos).
+  // [chave, rótulo curto, unidade, casas, rótulo completo = aria-label e nome da roleta]
+  const CAMPOS_PARAM = [
+    ["volume_lote_l", "Volume", "L", 1, "Volume no fermentador (L)"],
+    ["eficiencia_pct", "Eficiência", "%", 0, "Eficiência (%)"],
+    ["fervura_min", "Fervura", "min", 0, "Fervura (min)"],
+    ["evaporacao_l_h", "Evaporação", "L/h", 1, "Evaporação (L/h)"],
+    ["perda_panela_l", "Perda panela", "L", 1, "Perda na panela (L)"],
+    ["perda_tina_l", "Perda tina", "L", 1, "Perda na tina (L)"],
+    ["absorcao_grao_l_kg", "Absorção", "L/kg", 2, "Absorção do grão (L/kg)"],
+    ["relacao_agua_grao_l_kg", "Água/grão", "L/kg", 2, "Água/grão na mostura (L/kg)"],
+    ["temp_grao_c", "Temp. grão", "°C", 1, "Temperatura do grão (°C)"],
+  ];
+  const campoParam = ([k, curto, un, casas, completo], { ajuda = false } = {}) => {
+    const aoMudar = k === "relacao_agua_grao_l_kg" ? relacaoMudou : mudou;
+    const input = campoNumero(r, k, { casas, aoMudar: () => aoMudar(input), desabilitado: des, rotulo: completo, unidade: un, classe: "num param-num" });
+    // ⓘ preso à última palavra: no 320 px o rótulo quebra ("Perda / panela ⓘ"), mas o ⓘ nunca fica sozinho na linha.
+    const ajudaEl = ajuda ? info(O.AJUDA_VOLUME[k]) : null;
+    const palavras = curto.split(" ");
+    const fim = palavras.pop();
+    return el("label", { class: "param", dataset: { campo: k } },
+      el("span", { class: "param-rot" }, palavras.length ? palavras.join(" ") + " " : null, ajudaEl ? el("span", { class: "param-rot-fim" }, fim, ajudaEl) : fim),
+      el("span", { class: "param-valor" }, input, el("span", { class: "unidade", text: un, "aria-hidden": "true" })));
+  };
+  const nomeEquipamento = () => cat.equipamentos.find((e) => e.id === r.equipamento_id)?.nome ?? "";
+  const equipResumo = el("span", { class: "total-extra" });
+  const paramResumo = el("div", { class: "param-grade param-resumo" });
+  const desenharParamResumo = () => {
+    preencher(paramResumo, CAMPOS_PARAM.slice(0, 3).map((c) => campoParam(c)));
+    equipResumo.textContent = nomeEquipamento();
+  };
+  desenharParamResumo();
+  const bParametros = el("button", {
+    type: "button", class: "secundario pequeno param-todos", "aria-haspopup": "dialog", title: "Equipamento e todos os parâmetros",
+    "aria-label": "Todos os parâmetros", on: { click: () => abrirParametros() } }, "Todos", el("span", { class: "param-seta", "aria-hidden": "true", text: "›" }));
+  let janelaParam = null;     // janela aberta: { aoCalcular(res) } (volumes ao vivo; a barra de números fica atrás)
+
+  function abrirParametros() {
+    if (document.querySelector("dialog.parametros-janela")) return;
+    const grade = el("div", { class: "param-grade" });
+    const desenharGrade = () => {
+      preencher(grade, CAMPOS_PARAM.map((c) => campoParam(c, { ajuda: true })));
+      campoRelacao = grade.querySelector('[data-campo="relacao_agua_grao_l_kg"] input');
+    };
+    const equip = el("label", { class: "param-equip" }, el("span", { class: "param-rot", text: "Equipamento" }), campoSelect(r, "equipamento_id",
+      cat.equipamentos.map((e) => [e.id, e.nome]), {
+        desabilitado: des, vazio: cat.equipamentos.length ? "— nenhum —" : "— cadastre em Cadastros —", rotulo: "Equipamento",
+        aoMudar: () => acao(() => {
+          const eq = cat.equipamentos.find((e) => e.id === r.equipamento_id);
+          if (eq) { aplicarEquipamento(r, eq); desenharGrade(); avisar("Parâmetros copiados do equipamento."); }
+          mudou();
+        }),
+      }));
+    const metricas = el("div", { class: "fj-metricas", "aria-live": "polite" });
+    const fechar = () => { if (d.open) d.close(); };
+    const d = el("dialog", { class: "parametros-janela", "aria-labelledby": "pj-titulo" },
+      el("div", { class: "fj-cabeca" },
+        el("div", { class: "fj-topo" },
+          el("span", { class: "fb-icone" }, icone("parametros")),
+          el("div", { class: "fj-titulo" }, el("h2", { id: "pj-titulo", text: "Parâmetros" })),
+          el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+        el("div", { class: "fj-resultado" }, metricas)),
+      el("div", { class: "fj-corpo" }, equip, grade),
+      el("div", { class: "fj-pe" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+    // Tocar no fundo escuro fecha; com a roleta aberta, o toque só fecha a roleta (como na janela do item).
+    let roletaNoToque = false;
+    d.addEventListener("pointerdown", () => { roletaNoToque = roletaAberta(); }, true);
+    d.addEventListener("click", (e) => {
+      if (e.target !== d || roletaNoToque) return;
+      const b = d.getBoundingClientRect();
+      if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+    });
+    d.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.defaultPrevented && e.target.matches?.("input") && !roletaAberta()) { e.preventDefault(); fechar(); }
+    });
+    d.addEventListener("cancel", (e) => { if (roletaAberta()) { e.preventDefault(); fecharRoleta(false); } });
+    window.addEventListener("hashchange", fechar);
+    d.addEventListener("close", () => {
+      window.removeEventListener("hashchange", fechar);
+      if (roletaAberta()) fecharRoleta(true);
+      janelaParam = null;
+      campoRelacao = null;
+      d.remove();
+      desenharParamResumo();          // a seção mostra o que mudou na janela (volume, eficiência, equipamento...)
+      if (bParametros.isConnected) bParametros.focus({ preventScroll: true });
+    });
+    janelaParam = { aoCalcular: (res) => {
+      const v = res.volumes;
+      preencher(metricas, [["Pré-fervura", v.pre_fervura_l], ["Pós-fervura", v.pos_fervura_l], ["Água total", v.agua_total_l]]
+        .map(([rot, l]) => el("div", { class: "metrica" }, el("span", { class: "rot", text: rot }), el("span", { class: "val", text: `${numeroBR(l, 1)} L` }))));
+    } };
+    desenharGrade();
+    janelaParam.aoCalcular(calcularReceita(r));
+    document.body.append(d);
+    d.showModal();
+    d.querySelector(".item-fechar").focus({ preventScroll: true });   // no celular não abre teclado nem roleta sozinho
   }
-  desenharParametros();
 
   // ---------- linhas de ingrediente (fermentáveis e lúpulos): a quantidade é o campo principal ----------
   const rotular = (texto, campo) => el("label", {}, el("span", { text: texto }), campo);
@@ -1241,11 +1307,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     // Fotos da brassagem: gravadas na hora no Storage (fora do Salvar e do desfazer); não vão na cópia "a partir de".
     blocoFotos({ receitaId: r.id, dono: r.dono, leitura }));
 
-  // Lote: uma linha de resumo; os parâmetros abrem ao clicar. Receita nova sem equipamento já abre (falta o volume).
-  const lote = el("details", { class: "cartao lote", open: !r.id && !r.equipamento_id && !leitura },
-    el("summary", {}, el("span", { class: "resumo-titulo" }, el("span", { class: "titulo-icone" }, icone("parametros")), "Parâmetros"), resumoLote, el("span", { class: "resumo-acao", "aria-hidden": "true" })),
-    equipamentoCampo,
-    parametros);
+  // Parâmetros: os 3 números principais à vista (tocar = roleta no celular); "Todos" abre a janela com o resto.
+  const lote = el("section", { class: "cartao parametros", dataset: { secao: "parametros" } },
+    el("div", { class: "titulo-linha" }, tituloSecao("parametros", "Parâmetros", " ", equipResumo), bParametros),
+    paramResumo);
 
   conteudo.classList.add("com-vital");
   const topo = el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
