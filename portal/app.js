@@ -1,11 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261124l";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261124l";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261124l";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261124l";
-import { telaFerramentas } from "./ferramentas.js?v=20261124l";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261124l";
-import { icone } from "./icones.js?v=20261124l";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261124m";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261124m";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261124m";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261124m";
+import { telaFerramentas } from "./ferramentas.js?v=20261124m";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261124m";
+import { icone } from "./icones.js?v=20261124m";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -106,7 +106,19 @@ function secaoTemas() {
         el("div", { class: "tema-mini", "aria-hidden": "true" },
           t.modo === "auto" ? [metade("classico", "claro"), metade("adega", "escuro")] : metade(t.id, t.modo)),
         el("span", { class: "tema-nome" }, t.nome, icone("certo")),
-        el("span", { class: "tema-desc", text: t.descricao })))));
+        el("span", { class: "tema-desc", text: t.descricao })))),
+    // Layout da receita (24/11/2026): Completo (como sempre) ou Clean (ficha enxuta, docs/PLANO-CLEAN.md).
+    el("fieldset", { class: "temas layouts" },
+      el("legend", { class: "nota", text: "Layout da receita. Vale neste aparelho." }),
+      T.layouts.map((l) => el("label", { class: "tema-opcao", dataset: { opcao: l.id } },
+        el("input", {
+          type: "radio", name: "layout", value: l.id, checked: l.id === T.layout(),
+          on: { change: () => { preferencias.layout = l.id; salvarPreferencias(); T.aplicarLayout(l.id); } },
+        }),
+        el("div", { class: `layout-mini ${l.id}`, "aria-hidden": "true" },
+          [0, 1, 2].map(() => el("div", { class: "lm-linha" }, el("i"), el("b"), el("u")))),
+        el("span", { class: "tema-nome" }, l.nome, icone("certo")),
+        el("span", { class: "tema-desc", text: l.descricao })))));
 }
 
 function telaPerfil(conteudo) {

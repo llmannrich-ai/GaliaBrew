@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124l";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124l";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124l";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124l";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124l";
-import { abrirBusca } from "./busca.js?v=20261124l";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124l";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124l";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124l";
-import * as O from "./opcoes.js?v=20261124l";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124l";
-import { icone } from "./icones.js?v=20261124l";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124l";
-import { abrirRelatorio } from "./relatorio.js?v=20261124l";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124l";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124m";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124m";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124m";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124m";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124m";
+import { abrirBusca } from "./busca.js?v=20261124m";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124m";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124m";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124m";
+import * as O from "./opcoes.js?v=20261124m";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124m";
+import { icone } from "./icones.js?v=20261124m";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124m";
+import { abrirRelatorio } from "./relatorio.js?v=20261124m";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124m";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -231,6 +231,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   let janelaItem = null;             // janela de detalhes aberta: { chave, item, aoCalcular }
   const totais = [];                 // funções que escrevem o total no cabeçalho de cada seção
   const estiloAtual = () => cat.estilos.find((e) => e.id === r.estilo_id);
+  // Layout Clean (perfil → Aparência; docs/PLANO-CLEAN.md): malte e lúpulo viram ficha de uma linha.
+  const ficha = document.documentElement.dataset.layout === "clean";
   /** Título de seção com ícone. */
   const tituloSecao = (nomeIcone, titulo, ...resto) => el("h3", { class: "titulo-secao" }, el("span", { class: "titulo-icone" }, icone(nomeIcone)), titulo, ...resto);
 
@@ -695,10 +697,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
       const partes = montarLinha(item, ctx);
       // Linha de dados abaixo do nome só quando a seção a define (fermentáveis: só a cor, desde 23/11/2026).
-      const sub = partes.sub ? el("span", { class: "ing-sub" }) : null;
+      const textoSub = ficha && partes.subFicha ? partes.subFicha : partes.sub;
+      const sub = textoSub ? el("span", { class: "ing-sub" }) : null;
       function refrescar() {
         nome.textContent = String(item.nome ?? "").trim() || "(sem nome)";
-        if (sub) sub.textContent = partes.sub().filter(Boolean).join(" · ");
+        if (sub) sub.textContent = textoSub().filter(Boolean).join(" · ");
         partes.refrescar?.();
       }
       /** focar = true no teclado (o foco acompanha o item); com dedo/mouse não mexe no foco. */
@@ -719,7 +722,16 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           pointerdown: (e) => arrastarPelaAlca(e, i, mover, [...lista.querySelectorAll(":scope > li.ing")]),
         },
       });
-      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas);
+      const pega = (classe) => partes.colunas.find((n) => n.classList.contains(classe)) ?? null;
+      // Clean: ficha de uma linha (amostra · nome e um dado · quantidade e um resultado). A quantidade é o mesmo campo
+      // (toque = roleta direto; computador = digitar/setas); o ± e o "quando" ficam na janela do item; sem alça (a
+      // ordem muda pelo Subir/Descer da janela).
+      const li = ficha
+        ? el("li", { class: "ing ficha" },
+          partes.visual ?? el("span", { class: "ing-cor ficha-ponto", "aria-hidden": "true" }),
+          botaoNome,
+          el("div", { class: "ficha-num" }, pega("ing-qtd"), pega("d1"), pega("d2")))
+        : el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas);
       // Tocar fora dos campos (amostra de cor, números calculados) também abre os detalhes.
       li.addEventListener("click", (e) => {
         if (e.target.closest("input, select, textarea, button, a, label, .ing-qtd, .ing-quando")) return;
@@ -879,6 +891,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         visual: amostra,
         // Linha pequena abaixo do nome: só a cor do malte, na unidade do perfil (EBC padrão). Pedido do responsável, 23/11/2026.
         sub: () => [item.cor_srm != null && item.cor_srm !== "" ? `${numeroBR(O.corParaTela(Number(item.cor_srm)), 1).replace(/,0$/, "")} ${O.unidadeCor()}` : null],
+        // Clean: o tipo só quando não é grão (açúcar, extrato, fruta...) e a cor.
+        subFicha: () => [item.tipo && item.tipo !== "GRAO" ? O.rotulo(O.TIPO_FERMENTAVEL, item.tipo) : null,
+          item.cor_srm != null && item.cor_srm !== "" ? `${numeroBR(O.corParaTela(Number(item.cor_srm)), 1).replace(/,0$/, "")} ${O.unidadeCor()}` : null],
         refrescar: () => { amostra.style.background = corHexDeMalte(item.cor_srm ?? 0); },
         colunas: [
           el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_kg", { casas: 3, passo: passoG / 1000, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "kg", rotulo: "Qtd (kg)", desabilitado: des, aoMudar: (c) => mudou(c), roleta: { inicial: () => presetFermentavel(item, r) } })),
@@ -936,6 +951,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       });
       return {
         sub: () => [O.rotulo(O.FORMA_LUPULO, item.forma), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
+        // Clean: quando entra (o seletor fica na janela) e o alfa. Ex.: "Fervura 60 min · alfa 12,5%".
+        subFicha: () => [quandoLupulo(item), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
         colunas: [
           el("div", { class: "ing-quando" }, etapa, tempo),
           el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_g", { casas: 1, passo: passoG, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "g", rotulo: "Qtd (g)", desabilitado: des, aoMudar: (c) => mudou(c), roleta: { inicial: () => presetLupulo(item, r) } })),
@@ -948,6 +965,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         aoCalcular: (x) => {
           const conta = DA_IBU.has(item.etapa);
           ibu.textContent = conta ? numeroBR(x.ibu, 1) : "—";
+          ibu.parentElement?.classList.toggle("sem-valor", !conta);      // Clean: no dry hop mostra o g/L no lugar
           ibu.title = conta ? "" : "Dry hop, mostura e envase não dão amargor no cálculo";
           gl.textContent = numeroBR(x.g_l, 1);
         },
@@ -1253,6 +1271,18 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   if (resAnterior) atualizarResultados("historico");
   atualizarFerramentas();
   if (!r.id && !leitura && !resAnterior) nomeInput.focus();
+}
+
+/** Quando o lúpulo entra, em texto (ficha do layout Clean): "Fervura 60 min", "Whirlpool 20 min a 80 °C", "Dry hop · dia 3". */
+function quandoLupulo(h) {
+  const etapa = O.rotulo(O.ETAPA_LUPULO, h.etapa);
+  const n = (v) => v != null && v !== "" && Number.isFinite(Number(v));
+  if (h.etapa === "DRY_HOP") return n(h.dia) ? `${etapa} · dia ${numeroBR(Number(h.dia), 0)}` : etapa;
+  if (["FERVURA", "WHIRLPOOL", "MOSTURA"].includes(h.etapa) && n(h.tempo_min)) {
+    const temp = h.etapa === "WHIRLPOOL" && n(h.temperatura_c) ? ` a ${numeroBR(Number(h.temperatura_c), 0)} °C` : "";
+    return `${etapa} ${numeroBR(Number(h.tempo_min), 0)} min${temp}`;
+  }
+  return etapa;
 }
 
 /** Dá nome acessível ao campo da tabela (o cabeçalho da coluna). */

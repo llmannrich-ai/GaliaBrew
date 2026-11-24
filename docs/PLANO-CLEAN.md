@@ -4,8 +4,9 @@ Versão 1 — 24/11/2026. Pedido do responsável: uma versão **Clean**, opciona
 layout da página da receita: muito menos informação na tela, mais prática e rápida, tom mais sério, sem papel de
 parede, com arte, na linha do Brewfather.
 
-Status: **plano para aprovação**. Nada do portal mudou ainda. Maquete estática (não é o app) em 390 e 320 px,
-mostrada ao responsável junto com este plano.
+Status: **aprovado em 24/11/2026** (o responsável aceitou as recomendações da seção 10: cores do tema sem decoração,
+números no topo + linha fina ao rolar, roleta direto na quantidade, Completo sai se o Clean for aprovado).
+**K0 e K3 feitas em 24/11/2026.** Próximas: K2 → K1 → K4 → K5 → K6.
 
 Plataforma: CELULAR (regra nº 0). Tudo abaixo é desenhado e conferido primeiro em 390 px e 320 px com toque;
 o computador só precisa não quebrar.

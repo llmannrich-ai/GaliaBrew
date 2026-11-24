@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124l");
+    const m = await import("./fontes.js?v=20261124m");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -414,7 +414,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124l");
+    const m = await import("./calculos.js?v=20261124m");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -478,7 +478,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124l");
+    const m = await import("./calculos.js?v=20261124m");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -500,7 +500,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124l");
+    const m = await import("./calculos.js?v=20261124m");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -610,7 +610,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124l");
+    const m = await import("./calculos.js?v=20261124m");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1607,11 +1607,11 @@ const erros = [];
   cel.once("dialog", (d) => d.accept());
   await cel.evaluate(() => { location.hash = "#/perfil"; });
   await cel.waitForSelector(".tema-opcao");
-  const temasIds = await cel.$$eval(".tema-opcao", (ls) => ls.map((l) => l.dataset.opcao));
+  const temasIds = await cel.$$eval("fieldset.temas:not(.layouts) .tema-opcao", (ls) => ls.map((l) => l.dataset.opcao));
   verificar(temasIds.length === 9 && temasIds[0] === "auto" && await cel.isChecked('.tema-opcao[data-opcao="auto"] input'),
     "perfil: 9 temas, Automático marcado por padrão");
   verificar(await larguraSobra() <= 1, "320 px: temas do perfil sem rolagem para o lado");
-  await cel.locator(".temas").evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.locator(".temas").first().evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-temas.png` });
   await cel.setViewportSize({ width: 390, height: 844 });
   const corFundo = () => cel.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -1621,7 +1621,7 @@ const erros = [];
     && await corFundo() === "rgb(12, 10, 9)" && fundoAntes === "rgb(255, 255, 255)", "toque no tema Stout troca as cores na hora (fundo preto)");
   verificar(await cel.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).tema) === "stout"
     && await cel.getAttribute('meta[name="theme-color"]', "content") === "#050404", "tema fica salvo no aparelho e pinta a barra do sistema");
-  await cel.locator(".temas").evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.locator(".temas").first().evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p6h-celular-temas-stout.png` });
   await cel.reload();
   await cel.waitForSelector(".tema-opcao");
@@ -1688,6 +1688,88 @@ const erros = [];
   }
   cel.off("dialog", aceitar);
   await cel.setViewportSize({ width: 390, height: 844 });
+
+  // Layout Clean (perfil → Aparência; docs/PLANO-CLEAN.md, etapas K0 + K3): ficha de malte e lúpulo, sem decoração.
+  await cel.evaluate(() => { window.GaliaTema.aplicar("auto"); location.hash = "#/perfil"; });
+  await cel.waitForSelector(".layouts .tema-opcao");
+  verificar(await cel.isChecked('.layouts .tema-opcao[data-opcao="completo"] input') && await cel.evaluate(() => document.documentElement.dataset.layout) === "completo",
+    "clean: o layout Completo é o padrão");
+  await tocar('.tema-opcao[data-opcao="auto"]');          // capturas no tema padrão (o Stout ficou salvo acima)
+  await tocar('.layouts .tema-opcao[data-opcao="clean"]');
+  verificar(await cel.evaluate(() => document.documentElement.dataset.layout + "/" + JSON.parse(localStorage.getItem("galiabrew.preferencias")).layout) === "clean/clean",
+    "clean: escolher no perfil marca o <html> e fica salvo no aparelho");
+  await cel.locator(".layouts").evaluate((n) => n.scrollIntoView({ block: "center" }));
+  await cel.screenshot({ path: `${SAIDA}/p7-perfil-layout.png` });
+  await cel.reload();
+  await cel.waitForSelector(".layouts .tema-opcao");
+  verificar(await cel.evaluate(() => document.documentElement.dataset.layout) === "clean" && await cel.isChecked('.layouts .tema-opcao[data-opcao="clean"] input'),
+    "clean: continua depois de recarregar");
+  await cel.evaluate(() => { location.hash = "#/receitas"; });
+  await tocar(".receita-cartao >> text=Pils da Galia");
+  await cel.waitForSelector('[data-secao="fermentaveis"] li.ing.ficha');
+  const nFerm = db.receita_fermentaveis.filter((x) => x.receita_id === idPils).length;
+  const nLup = db.receita_lupulos.filter((x) => x.receita_id === idPils).length;
+  const fichas = await cel.evaluate(() => ({
+    ferm: document.querySelectorAll('[data-secao="fermentaveis"] li.ing.ficha').length,
+    lup: document.querySelectorAll('[data-secao="lupulos"] li.ing.ficha').length,
+    alcas: document.querySelectorAll(".linhas-ing .ing-alca").length,
+    passos: [...document.querySelectorAll(".linhas-ing button.passo")].filter((b) => b.checkVisibility()).length,
+    quando: document.querySelectorAll(".linhas-ing .ing-quando").length,
+    alturas: [...document.querySelectorAll("li.ing.ficha")].map((l) => Math.round(l.getBoundingClientRect().height)),
+  }));
+  verificar(fichas.ferm === nFerm && fichas.lup === nLup && fichas.alcas === 0 && fichas.passos === 0 && fichas.quando === 0,
+    `clean: malte e lúpulo em ficha, sem alça, sem ± e sem o seletor de etapa na linha (${fichas.ferm} + ${fichas.lup})`);
+  verificar(fichas.alturas.every((h) => h <= 64), `clean: cada linha da ficha com até 64 px (${fichas.alturas.join(", ")} px)`);
+  const decoracao = await cel.evaluate(() => {
+    const sec = document.querySelector('[data-secao="fermentaveis"]');
+    return { fundo: getComputedStyle(sec).backgroundImage, espuma: getComputedStyle(sec, "::after").content, icone: document.querySelector(".editor-corpo .titulo-icone")?.checkVisibility() };
+  });
+  verificar(decoracao.fundo === "none" && decoracao.espuma === "none" && decoracao.icone === false, "clean: seções sem papel de parede, sem espuma e sem ícone em círculo");
+  const subLup = await cel.textContent('[data-secao="lupulos"] li.ing.ficha .ing-sub');
+  verificar(/^Fervura \d+ min/.test(subLup), `clean: o lúpulo diz quando entra na própria linha (“${subLup}”)`);
+  await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
+  // Tocar na quantidade = roleta direto (sem abrir a janela); a OG acompanha e Cancelar volta.
+  const qtdFicha = '[data-secao="fermentaveis"] li.ing.ficha input.qtd';
+  const qtdFichaAntes = await cel.inputValue(qtdFicha);
+  await tocar(qtdFicha);
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);           // a roleta sobe em 0,18 s
+  verificar(await cel.locator("dialog.item-janela").count() === 0 && (await cel.textContent(".roleta-valor")).startsWith(qtdFichaAntes),
+    "clean: tocar na quantidade abre a roleta direto, no valor atual");
+  const campoAcima = await cel.evaluate((sel) => document.querySelector(sel).getBoundingClientRect().bottom <= document.querySelector(".roleta").getBoundingClientRect().top, qtdFicha);
+  verificar(campoAcima, "clean: a linha do malte fica à vista acima da roleta");
+  await cel.screenshot({ path: `${SAIDA}/p7b-clean-roleta.png` });
+  await tocar(".roleta-cancelar");
+  await cel.waitForSelector(".roleta", { state: "detached" });
+  verificar(await cel.inputValue(qtdFicha) === qtdFichaAntes, "clean: Cancelar volta a quantidade");
+  // Tocar no nome = janela do item (com o ± e o resto dos campos).
+  await tocar('[data-secao="lupulos"] li.ing.ficha button.ing-nome');
+  await cel.waitForSelector("dialog.item-janela[open]");
+  verificar(await cel.locator("dialog.item-janela button.passo").count() === 2 && await cel.isVisible("dialog.item-janela select.etapa"),
+    "clean: tocar no nome abre a janela do item, com ± e a etapa");
+  await tocar("dialog.item-janela .item-fechar");
+  await cel.waitForSelector("dialog.item-janela", { state: "detached" });
+  await conferirLateral("clean, 390 px, receita");
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(200);
+  await conferirLateral("clean, 320 px, receita");
+  await cel.locator('[data-secao="fermentaveis"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.screenshot({ path: `${SAIDA}/p7c-clean-320.png` });
+  await cel.setViewportSize({ width: 1366, height: 900 });
+  await cel.waitForTimeout(200);
+  const computador = await cel.evaluate(() => ({ sobra: document.documentElement.scrollWidth - innerWidth,
+    alturas: [...document.querySelectorAll("li.ing.ficha")].map((l) => Math.round(l.getBoundingClientRect().height)) }));
+  verificar(computador.sobra <= 1 && computador.alturas.every((h) => h <= 64), `clean, 1366 px: não quebra (linhas de ${computador.alturas.join(", ")} px)`);
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.evaluate(() => window.GaliaTema.aplicar("adega"));
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.screenshot({ path: `${SAIDA}/p7d-clean-escuro.png` });
+  // Volta ao Completo para o resto do teste.
+  await cel.evaluate(() => {
+    window.GaliaTema.aplicar("auto"); window.GaliaTema.aplicarLayout("completo");
+    const p = JSON.parse(localStorage.getItem("galiabrew.preferencias")); p.layout = "completo"; localStorage.setItem("galiabrew.preferencias", JSON.stringify(p));
+  });
+
   // Excluir a receita leva as fotos dela junto.
   await cel.evaluate(() => { window.GaliaTema.aplicar("auto"); location.hash = "#/receitas"; });
   await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
