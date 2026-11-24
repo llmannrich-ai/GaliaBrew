@@ -1489,6 +1489,23 @@ const erros = [];
   // Investigado sem sucesso: captura do ponteiro, redesenho da lista, foco, rolagem suave, toque duplo, ritmo do arrasto.
   // Aqui, um toque neutro (título da seção) encerra a sequência antes de seguir.
   await tocar('[data-secao="lupulos"] .titulo-linha h3');
+  // Lúpulo em 2 linhas (24/11/2026, pedido do responsável): etapa e tempo à direita do nome, quantidade embaixo.
+  const lupuloEmDuasLinhas = (larg) => cel.evaluate((larg) => [...document.querySelectorAll('[data-secao="lupulos"] li.ing')].map((li) => {
+    const b = (q) => li.querySelector(q).getBoundingClientRect();
+    const nome = b(".ing-nome"), quando = b(".ing-quando"), qtd = b(".ing-qtd");
+    return quando.left >= nome.right - 1 && quando.top < qtd.top && quando.bottom <= qtd.top + 1 && quando.right <= Math.min(li.getBoundingClientRect().right, larg) + 1
+      && nome.width >= 60;
+  }).every(Boolean), larg);
+  verificar(await lupuloEmDuasLinhas(390), "toque 390 px: etapa e tempo do lúpulo à direita do nome (2 linhas por lúpulo)");
+  await cel.evaluate(() => { document.querySelector('[data-secao="lupulos"]').scrollIntoView(); window.scrollBy(0, -20); });
+  await cel.screenshot({ path: `${SAIDA}/p6l-celular-lupulos.png` });
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(200);
+  verificar(await lupuloEmDuasLinhas(320) && await larguraSobra() <= 1, "toque 320 px: etapa e tempo do lúpulo à direita do nome, sem passar da largura");
+  await cel.evaluate(() => { document.querySelector('[data-secao="lupulos"]').scrollIntoView(); window.scrollBy(0, -20); });
+  await cel.screenshot({ path: `${SAIDA}/p6l-celular-lupulos-320.png` });
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(200);
   // Janela "Chegar à OG" cabe na tela.
   await tocar('.vital [data-metrica="og"] button.vital-val');
   await cel.waitForSelector("dialog.alvo");
