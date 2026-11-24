@@ -1,18 +1,27 @@
 // graficos.js — gráficos do editor, desenhados para o celular primeiro (largura total, toque).
 // Barra do grist: proporção de cada malte no peso, na cor do próprio malte.
 // Linha do tempo da fervura: quando cada lúpulo entra (tamanho = gramas); tocar leva à linha do lúpulo.
-import { el, preencher, numeroBR } from "./ui.js?v=20261124f";
-import { corHexDeMalte } from "./calculos.js?v=20261124f";
-import * as O from "./opcoes.js?v=20261124f";
+import { el, preencher, numeroBR } from "./ui.js?v=20261124h";
+import { corHexDeMalte, corHexDeSrm } from "./calculos.js?v=20261124h";
+import * as O from "./opcoes.js?v=20261124h";
+import { copo } from "./vital.js?v=20261124h";
 
 const nomeDe = (x) => String(x.nome ?? "").trim() || "(sem nome)";
 
 /** Barra empilhada: um segmento por fermentável com quantidade, largura = % do peso. */
 export function barraGrist() {
   const barra = el("div", { class: "grist", role: "img" });
+  // Copo ao lado da barra com a cor FINAL da cerveja (24/11/2026, pedido do responsável): a barra mostra a cor de cada
+  // grão; o copo, o que eles dão juntos na receita (mesma cor do copo da barra de números).
+  const vidro = copo();
+  vidro.removeAttribute("aria-hidden");
+  vidro.setAttribute("role", "img");
   // Sem legenda de texto abaixo da barra (retirada em 23/11/2026, pedido do responsável): o nome e o % estão nas linhas.
-  const elemento = el("div", { class: "grafico-grist" }, barra);
+  const elemento = el("div", { class: "grafico-grist" }, barra, el("span", { class: "grist-copo" }, vidro));
   function atualizar(res, fermentaveis) {
+    const cor = `${numeroBR(O.corParaTela(res.cor_srm ?? 0), 0)} ${O.unidadeCor()}`;
+    vidro.cerveja.setAttribute("fill", corHexDeSrm(res.cor_srm ?? 0));
+    vidro.setAttribute("aria-label", `Cor da cerveja: ${cor}`);
     const itens = fermentaveis.map((f, i) => ({ f, pct: res.fermentaveis[i]?.pct_peso ?? 0 })).filter((x) => x.pct > 0);
     elemento.hidden = itens.length === 0;
     const desc = itens.map(({ f, pct }) => `${nomeDe(f)} ${numeroBR(pct, 0)}%`).join(", ");
