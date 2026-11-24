@@ -3,8 +3,8 @@
 // mudando enquanto a roda gira). Cada roda é uma lista com rolagem nativa e "scroll-snap" (inércia do próprio
 // aparelho); o item no meio é o escolhido. O valor vai para o campo AO VIVO; "Cancelar" (ou Esc) volta ao de antes;
 // "OK", tocar fora ou Enter confirmam. "Digitar" fecha a roleta e abre o teclado no próprio campo.
-import { el, numeroBR } from "./ui.js?v=20261124h";
-import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261124h";
+import { el, numeroBR } from "./ui.js?v=20261124i";
+import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261124i";
 
 const ALTURA = 44;                 // altura de um item (alvo de toque); a roda mostra 5 (2 acima, 2 abaixo)
 let atual = null;                  // roleta aberta: { fechar(confirmar) }
@@ -160,7 +160,12 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
   // Campo dentro de uma janela modal (detalhes do item, cadastros): a roleta entra na própria janela; no body ela
   // ficaria atrás da janela, sem receber toque.
   const janela = campo?.closest("dialog[open]") ?? null;
+  // Dentro da janela, a roleta vira "popover" (camada do topo): no Safari do iPhone, dentro da janela comum ela era
+  // cortada pela área de rolagem da janela e não aparecia (print do responsável, 24/11/2026).
+  const emPopover = Boolean(janela && folha.showPopover);
+  if (emPopover) folha.setAttribute("popover", "manual");
   (janela ?? document.body).append(folha);
+  if (emPopover) folha.showPopover();
   // A janela fica onde está (sem pular) e termina acima da roleta: o que ficaria atrás dela passa a rolar por dentro.
   const estiloJanela = janela ? { mt: janela.style.marginTop, mb: janela.style.marginBottom, mh: janela.style.maxHeight } : null;
   if (janela) {
