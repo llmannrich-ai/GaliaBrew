@@ -1,11 +1,11 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261124m";
-import { sb, sessao } from "./estado.js?v=20261124m";
-import * as O from "./opcoes.js?v=20261124m";
-import { faixaCor } from "./faixas.js?v=20261124m";
-import { corHexDeSrm, corHexDeMalte } from "./calculos.js?v=20261124m";
-import { buscarItens, ordemCodigo } from "./busca.js?v=20261124m";
-import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261124m";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261124n";
+import { sb, sessao } from "./estado.js?v=20261124n";
+import * as O from "./opcoes.js?v=20261124n";
+import { faixaCor } from "./faixas.js?v=20261124n";
+import { corHexDeSrm, corHexDeMalte } from "./calculos.js?v=20261124n";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261124n";
+import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261124n";
 
 // Cadastros de ingrediente: mostram de onde vêm os dados (fabricante, genérico, análise, meu).
 const INGREDIENTES = new Set(["fermentaveis", "lupulos", "leveduras", "outros"]);
