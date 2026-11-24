@@ -890,12 +890,18 @@ dialog form { display: grid; gap: .9rem; }
     grid-template-columns: 1.8rem 1.2rem minmax(0, 1fr) 3.4rem 2.8rem;
     grid-template-areas: "alca cor nome nome nome" "qtd qtd qtd d1 d2";
   }
+  /* Lúpulo em 2 linhas (24/11/2026, pedido do responsável): etapa e tempo à direita do nome; quantidade e números embaixo.
+     Seletor e tempo mais estreitos só na linha (o nome longo quebra em vez de cortar); whirlpool: a temperatura desce. */
   .linhas-ing.lup .ing {
-    grid-template-columns: 1.8rem minmax(0, 1fr) 3.4rem 2.8rem;
-    grid-template-areas: "alca nome nome nome" "quando quando quando quando" "qtd qtd d1 d2";
+    grid-template-columns: 1.8rem minmax(0, 1fr) auto 3.4rem 2.8rem;
+    grid-template-areas: "alca nome quando quando quando" "qtd qtd qtd d1 d2";
   }
   .linhas-ing.lev .ing { grid-template-columns: 1.8rem minmax(0, 1fr) auto; grid-template-areas: "alca nome fixo"; }
   .ing-fixo { grid-area: fixo; }
+  .linhas-ing.lup .ing-quando { flex-wrap: wrap; justify-content: flex-end; align-self: center; gap: .3rem; }
+  .linhas-ing.lup .ing-quando select.etapa { width: 6.4rem; min-width: 0; }
+  .linhas-ing.lup .ing-quando input.num.curto { width: 2.9rem; }
+  .linhas-ing.lup .ing-nome-txt { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
   .ing-alca { grid-area: alca; height: 2.75rem; }
   .ing-cor { grid-area: cor; }
   .ing-nome { grid-area: nome; }
