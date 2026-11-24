@@ -270,9 +270,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   no opcoes.js; o relatório em PDF usa o mesmo rótulo). Rampa grava `TEMPERATURA` (tipo genérico do BeerJSON); INFUSAO e
   DECOCCAO antigos (importadas do Brewfather) ficam no banco e aparecem como rampa. O tipo não entra em nenhum cálculo.
   Passo = tipo (24/11/2026, pedido do responsável: o nome só repetia o tipo): o cartão tem só "Passo" (seletor Rampa N /
-  Mash out / Lavagem, `aria-label` "Passo da mostura"), Temp. e Tempo, em 2 linhas. Sem campo de nome: ao salvar,
+  Mash out / Lavagem, `aria-label` "Passo da mostura"), Temp. e Tempo. Sem campo de nome: ao salvar,
   `montarPayload` grava `nome` = o rótulo ("Rampa 2"; a coluna é not null). Nomes antigos (ex.: "Protein rest" das
   importadas) são trocados pelo rótulo quando a receita é salva. Relatório: colunas Passo | Temperatura | Tempo.
+  Passo numa LINHA SÓ (24/11/2026, pedido do responsável): ⠿ à ESQUERDA (padrão dos maltes e lúpulos) | passo | temp. °C |
+  tempo min | ×, sem rótulo em cima (unidade depois do número). `secaoLista(..., { linhaUnica: true })` + coluna `u`
+  (unidade) no receitas.js; tabela `.passos-linha` no style.css (seletor com seta própria e estreita: a nativa cortava
+  "Rampa 1" em 320 px). Fermentação, leveduras e outros seguem em cartão (alça à direita). Teste "toque 320/390 px: cada
+  passo da mostura numa linha" (ordem, mesma altura, sem sobrepor, sem cortar texto); capturas `p6m-celular-mostura-320/390`.
 - Rolagem só na vertical (23/11/2026, pedido do responsável: a tela podia ser arrastada para o lado): `html`/`body` com
   `overflow-x: clip` (o que passar da largura é cortado, sem criar área de rolagem; não atrapalha o `sticky`). A causa
   era a lista dos Cadastros, tabela larga demais no celular: até 640 px virou cartões (`.tabela.lista-cad`, nome em cima

@@ -386,6 +386,8 @@ button.ing-alca:hover { background: var(--painel); border: none; color: var(--ti
 /* Passos e itens em tabela (mostura, fermentação, leveduras, outros): a mesma alça ⠿ no lugar do antigo ↑. */
 .tabela.editavel tr.arrastando { position: relative; z-index: 3; box-shadow: var(--sombra-forte); background: var(--cartao); opacity: .96; }
 .tabela.editavel tr.arrastando .ing-alca { cursor: grabbing; }
+.tabela.editavel .alca-linha { width: 1.8rem; padding-right: 0; }
+.tabela.editavel td.alca-linha .ing-alca { border: none; padding: 0; }
 .ing-cor { width: 1.2rem; height: 1.2rem; margin: 0; border-radius: 50%; }
 /* Nome do item = botão que abre os detalhes (sem o antigo ⋯). Parece texto; a seta › gira quando aberto. */
 button.ing-nome {
@@ -1016,6 +1018,24 @@ dialog form { display: grid; gap: .9rem; }
   .tabela.editavel.linha-unica td[data-unidade] { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .3rem; }
   .tabela.editavel.linha-unica td[data-unidade]::after { content: attr(data-unidade); font-size: .875rem; color: var(--suave); }
   .tabela.editavel.linha-unica td.acoes-linha { position: static; grid-column: auto; }
+  /* Passos da mostura numa linha só (24/11/2026, pedido do responsável): ⠿ à esquerda (padrão dos maltes e lúpulos) |
+     passo | temperatura °C | tempo min | ×, sem rótulo em cima (a unidade vai depois do número). */
+  .tabela.editavel.passos-linha tr { grid-template-columns: 1.4rem minmax(0, 1fr) 4.1rem 4rem 2.75rem; align-items: center; gap: .2rem; padding: .3rem 0; }
+  .tabela.editavel.passos-linha td:first-child:not(.nota) { grid-column: auto; padding-right: 0; }
+  .tabela.editavel.passos-linha td[data-rotulo]::before { content: none; }
+  .tabela.editavel.passos-linha td[data-unidade] { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .2rem; }
+  .tabela.editavel.passos-linha td[data-unidade]::after { content: attr(data-unidade); font-size: .875rem; color: var(--suave); }
+  .tabela.editavel.passos-linha td.alca-linha { display: flex; align-items: center; }
+  .tabela.editavel.passos-linha td.alca-linha .ing-alca { width: 1.4rem; height: 2.75rem; padding: 0; border: none; font-size: 1.15rem; }
+  .tabela.editavel.passos-linha td.acoes-linha { position: static; grid-column: auto; }
+  .tabela.editavel.passos-linha input.num { padding-left: .25rem; padding-right: .25rem; text-align: right; }
+  /* Seta própria e estreita (a nativa do Chrome come ~26 px e cortava "Rampa 1" em 320 px); cor do tema. */
+  .tabela.editavel.passos-linha select { appearance: none; -webkit-appearance: none; padding-left: .4rem; padding-right: 1rem; text-overflow: ellipsis; }
+  .tabela.editavel.passos-linha td:has(> select) { position: relative; }
+  .tabela.editavel.passos-linha td:has(> select)::after {
+    content: ""; position: absolute; right: .45rem; top: 50%; width: .4rem; height: .4rem; margin-top: -.3rem;
+    border-right: 2px solid var(--suave); border-bottom: 2px solid var(--suave); transform: rotate(45deg); pointer-events: none;
+  }
   .vital-rot { font-size: .75rem; }
   .vital-delta { font-size: .72rem; }
   .vital-faixa { font-size: .8rem; }
