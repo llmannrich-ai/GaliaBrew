@@ -1,7 +1,7 @@
 // Testes das faixas da roleta (portal/faixas.js): valores das rodas, valor atual fora da grade, presets.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { valoresDaFaixa, rodasDaFaixa, valorDasRodas, valorInicial, FAIXAS, FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "../faixas.js";
+import { valoresDaFaixa, rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor, FAIXAS, FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "../faixas.js";
 
 const fmt = (v, c) => v.toFixed(c).replace(".", ",");
 
@@ -32,7 +32,7 @@ test("duas rodas (inteiro | fração): 4,25 kg e volta", () => {
   const rodas = rodasDaFaixa(f, 4.25, fmt);
   assert.equal(rodas.length, 2);
   assert.equal(rodas[0].valores[rodas[0].indice], 4);
-  assert.equal(rodas[1].textos[rodas[1].indice], ",25");
+  assert.equal(rodas[1].textos[rodas[1].indice], "25");      // a vírgula fica entre as rodas
   assert.equal(rodas[1].valores.length, 100);
   assert.equal(valorDasRodas(f, rodas, rodas.map((r) => r.indice)), 4.25);
   // girar a fração para ,50
@@ -42,6 +42,19 @@ test("duas rodas (inteiro | fração): 4,25 kg e volta", () => {
   // fração fora da grade (4,255) entra na roda das frações
   const r2 = rodasDaFaixa(f, 4.255, fmt);
   assert.equal(valorDasRodas(f, r2, r2.map((r) => r.indice)), 4.255);
+});
+
+test("malte: no mínimo 100 g na roleta (0 | ,05 vira 0,10 e as rodas voltam para 0 | 10)", () => {
+  const f = FAIXAS.quantidade_kg;
+  const rodas = rodasDaFaixa(f, 4, fmt);
+  const v = valorDasRodas(f, rodas, [rodas[0].valores.indexOf(0), rodas[1].valores.indexOf(0.05)]);
+  assert.equal(v, 0.1);
+  const [i0, i1] = indicesDoValor(rodas, v);
+  assert.equal(rodas[0].textos[i0], "0");
+  assert.equal(rodas[1].textos[i1], "10");
+  // malte que já estava abaixo (30 g de acidificado de uma receita antiga) não sobe sozinho ao abrir
+  const antigas = rodasDaFaixa(f, 0.03, fmt);
+  assert.equal(valorDasRodas(f, antigas, antigas.map((r) => r.indice)), 0.03);
 });
 
 test("valor inicial: atual; vazio → o mais provável; dentro da faixa", () => {

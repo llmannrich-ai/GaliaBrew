@@ -1085,7 +1085,10 @@ dialog.foto-janela[open] { display: flex; flex-direction: column; }
 .roleta-titulo { display: grid; justify-items: center; text-align: center; min-width: 0; }
 .roleta-rotulo { max-width: 100%; font-size: var(--t-rotulo); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .roleta-valor { font-size: var(--t-g); line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.roleta-rodas { position: relative; display: flex; justify-content: center; align-items: center; gap: 0; height: 220px; margin: .2rem 0 .35rem; }
+.roleta-rodas { position: relative; display: flex; justify-content: center; align-items: center; gap: .5rem; height: 220px; margin: .2rem 0 .35rem; }
+/* Cada roda numa coluna com a sua faixa do meio: inteiro e decimais bem separados (pedido do responsável, 24/11/2026:
+   "estão muito próximas"), com a vírgula entre eles. */
+.roleta-coluna { position: relative; height: 220px; }
 .roleta-faixa {
   position: absolute; left: 0; right: 0; top: 88px; height: 44px; border-radius: 10px; pointer-events: none;
   background: var(--painel); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--destaque) 60%, transparent);
@@ -1104,11 +1107,9 @@ dialog.foto-janela[open] { display: flex; flex-direction: column; }
   font-size: 1.375rem; font-variant-numeric: tabular-nums; color: var(--tinta); user-select: none; -webkit-user-select: none;
 }
 .roleta-item.no-meio { font-weight: 750; color: var(--destaque-escuro); }
-/* Duas rodas (inteiro | ,fração) lidas como um número só: "4" encostado em ",80". */
-.roleta-roda.inteiro { min-width: 4rem; }
-.roleta-roda.inteiro .roleta-item { justify-content: flex-end; padding-right: 0; }
-.roleta-roda.fracao { min-width: 4rem; }
-.roleta-roda.fracao .roleta-item { justify-content: flex-start; padding-left: 0; }
+.roleta-rodas.duas { gap: .35rem; }
+.roleta-rodas.duas .roleta-roda { min-width: 5rem; }
+.roleta-virgula { position: relative; align-self: center; font-size: 1.75rem; font-weight: 800; line-height: 1; padding: 0 .55rem; color: var(--tinta); }
 .roleta-unidade { position: relative; font-size: 1.125rem; font-weight: 650; color: var(--suave); padding-left: .25rem; }
 .roleta-pe { display: flex; justify-content: center; flex-wrap: wrap; gap: .5rem; }
 .roleta-pe button { min-height: 44px; }
