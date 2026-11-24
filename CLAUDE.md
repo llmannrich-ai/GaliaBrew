@@ -147,7 +147,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
   (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, ~157 px desde
-  22/11/2026: puxador "detalhes" + 2 linhas de 3 cartões com número e régua; com teclado aberto fica baixa, sem régua;
+  22/11/2026: puxador "detalhes" + 2 linhas de 3 números com régua; com teclado aberto fica baixa, sem régua;
   "detalhes" abre estado e faixas) com OG, FG, ABV, IBU, cor, pH da mostura (faixa fixa 5,2–5,6, ideal 5,3–5,5,
   não depende do estilo; "—" sem grão na mostura), régua da faixa do estilo (`reguaDoEstilo()` no calculos.js:
   folga de 25%, "perto" = últimos 10% da faixa, valor arredondado como na tela), estado com cor + ícone + texto, e a
@@ -215,7 +215,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124f.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124g.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -288,6 +288,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   style.css + linha no `TEMAS` do tema.js + reconferir o contraste.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
   ingrediente só ficam compactas até 640 px.
+
+## Barra de números limpa no celular (24/11/2026, pedido do responsável: "carregada, com bordas"; só style.css + vital.js)
+- Sem cartões, sem bordas e sem cantos arredondados: os 6 números ficam direto no papel da barra (`--painel`), que se
+  separa da página só por uma sombra suave para cima. Estado = ponto colorido antes do rótulo (verde no estilo, âmbar
+  perto, vermelho fora; fora o número também fica vermelho). Régua de 4 px com o marcador recortado no papel; na cor, a
+  faixa do estilo são dois traços [ ] sobre a escala de cor. Ponto com a cor da cerveja antes do número da cor
+  (`.vital-amostra`, só no celular; some na linha fina do teclado). Diferença da última mudança = texto solto no canto,
+  sem pílula. Computador não mudou. Capturas `p5`, `p5c`, `p6d`, `p6g`.
 
 ## Janela do item (24/11/2026, pedido do responsável; sem migração)
 - Os detalhes de malte e lúpulo NÃO abrem mais embutidos na linha: tocar no item abre `dialog.item-janela`
