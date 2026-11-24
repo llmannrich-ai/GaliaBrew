@@ -136,7 +136,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  275 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  282 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -202,7 +202,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   sem arquivo .svg para não precisar de requisição nem mexer na CSP): títulos de seção com ícone num círculo, botões
   (adicionar, desfazer, refazer, voltar) e copinho na marca. Barra do grist (cada malte na própria cor, % do peso,
   descrição para leitor de tela) e linha do tempo da fervura (`graficos.js`: bolinha por lúpulo, tamanho ~ gramas,
-  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Lista de receitas em cartões no celular
+  fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Copo ao lado da barra do grist (24/11/2026, pedido do
+  responsável) na cor FINAL da cerveja (`corHexDeSrm`, igual ao copo da barra vital; `aria-label` "Cor da cerveja: N EBC");
+  a barra mostra a cor de cada grão (`corHexDeMalte`). Captura `p6u` (390 e 320 px). Lista de receitas em cartões no celular
   (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app mantido.
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
@@ -213,7 +215,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124g.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124i.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -438,6 +440,17 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   dois campos com a sugestão de fundo e aviso quando a soma não fecha com a necessária (≥ 0,5 L); painel mostra "Água
   necessária" quando difere. "Criar a partir de" copia os volumes. Teste `supabase/testes/0010_volumes_agua.sql`
   (7 ok, ensaiado no banco em transação desfeita antes de aplicar). A 0009 (catálogo de marcas) é de outra sessão.
+- Seção Água enxuta (24/11/2026, pedido do responsável, sem migração): SEM textos explicativos visíveis (o responsável
+  não quer; ficam só os ⓘ, o aviso de água que falta/sobra e a sugestão de ácido com o botão); SEM o campo de diluição
+  com destilada (não se usa no Brasil; nenhuma receita usava; `agua_diluicao_pct` segue no banco e no calculos.js);
+  "Água de base" (era "Água de origem"; coluna "Base" no perfil e no PDF, de `res.agua.base`) e "Perfil alvo" lado a
+  lado também no celular (`.agua-perfis`, duas colunas fixas; o seletor corta o nome longo). Capturas `p5j`/`p5k`.
+- Água/grão = água da mostura (24/11/2026, pedido do responsável: "o volume da mostura deve dar a razão água/malte"):
+  com a água da mostura informada, `relacao_agua_grao_l_kg` (Parâmetros) = litros ÷ kg de grão da mostura, sincronizada
+  a cada cálculo (`sincronizarRelacao` no receitas.js) e gravada assim; mudar a relação nos Parâmetros recalcula os
+  litros da mostura (`relacaoMudou`). Sem água informada, a relação gera a sugestão, como antes. Os cálculos (pH,
+  ppm, temperatura da água) já usavam os litros informados; o erro era o campo e o banco ficarem em 3 (ex.: Hop lager,
+  22 L ÷ 5,7 kg = 3,86 L/kg, gravada 3).
 - Card Água em blocos (23/11/2026, pedido do responsável: no celular não ficava claro a que água pertencia cada sal):
   origem/diluição/alvo no topo; depois um BLOCO "Água da mostura" (litros, sais, ácido, pH estimado, alcalinidade
   residual e SO₄/Cl da mostura) e um BLOCO "Água de lavagem" (litros, sais com "Igual à mostura", alcalinidade residual);
