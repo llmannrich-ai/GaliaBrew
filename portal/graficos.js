@@ -1,9 +1,9 @@
 // graficos.js — gráficos do editor, desenhados para o celular primeiro (largura total, toque).
 // Barra do grist: proporção de cada malte no peso, na cor do próprio malte.
 // Linha do tempo da fervura: quando cada lúpulo entra (tamanho = gramas); tocar leva à linha do lúpulo.
-import { el, preencher, numeroBR } from "./ui.js?v=20261124c";
-import { corHexDeSrm } from "./calculos.js?v=20261124c";
-import * as O from "./opcoes.js?v=20261124c";
+import { el, preencher, numeroBR } from "./ui.js?v=20261124d";
+import { corHexDeMalte } from "./calculos.js?v=20261124d";
+import * as O from "./opcoes.js?v=20261124d";
 
 const nomeDe = (x) => String(x.nome ?? "").trim() || "(sem nome)";
 
@@ -20,7 +20,7 @@ export function barraGrist() {
     preencher(barra, itens.map(({ f, pct }) => {
       const seg = el("span", { class: "grist-seg", title: `${nomeDe(f)}: ${numeroBR(pct, 1)}%` });
       seg.style.width = `${pct}%`;
-      seg.style.background = corHexDeSrm(f.cor_srm ?? 0);
+      seg.style.background = corHexDeMalte(f.cor_srm ?? 0);
       return seg;
     }));
   }

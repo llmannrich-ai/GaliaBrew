@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   platoDeSg, sgDePlato, platoDeAcucar, abv, utilizacaoTinseth, ibuTinseth, srmMorey, ebcDeSrm,
-  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao, acucarDeSg, sgDeAcucar,
+  lovibondDeSrm, srmDeLovibond, calcularReceita, compararComEstilo, corHexDeSrm, corHexDeMalte, reguaDoEstilo, ajustarParaOG, ajustarParaIBU, lupulosAjustaveis, fatorIsomerizacao, acucarDeSg, sgDeAcucar,
   temperaturaAguaMostura, co2Residual, primingGramas,
   sgDeBrix, refratometro, corrigirDensimetro,
   SAIS, perfilAgua, leituraSulfatoCloreto, etapaSal, separarSaisAntigos,
@@ -159,6 +159,18 @@ test("Cor: Morey, conversões e cor da tela", () => {
   perto(r.cor_srm, srmMorey(2), 1e-6);
   assert.match(corHexDeSrm(r.cor_srm), /^#[0-9a-f]{6}$/);
   assert.equal(corHexDeSrm(0), "#fff5c8");
+});
+
+test("Cor do malte (grão): cristal não fica preto e maltes acima de 40 SRM se distinguem", () => {
+  const brilho = (hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)); return 0.299 * r + 0.587 * g + 0.114 * b; };
+  for (const s of [0, 1.6, 9, 45, 76, 350, 500, 1000]) assert.match(corHexDeMalte(s), /^#[0-9a-f]{6}$/);
+  // Mais SRM = grão mais escuro, sem empatar (na cerveja tudo acima de 40 vira o mesmo preto).
+  const srms = [1.6, 4, 9, 20, 45, 76, 150, 350, 550];
+  for (let i = 1; i < srms.length; i++) assert.ok(brilho(corHexDeMalte(srms[i])) < brilho(corHexDeMalte(srms[i - 1])), `${srms[i]} SRM mais escuro que ${srms[i - 1]}`);
+  assert.equal(corHexDeSrm(45), corHexDeSrm(350), "a escala da cerveja empata acima de 40");
+  assert.ok(brilho(corHexDeMalte(45)) > 90, "Caramunich Type 1 é castanho, não preto");
+  assert.ok(brilho(corHexDeMalte(500)) < 40, "Carafa é quase preto");
+  assert.equal(corHexDeMalte(0), corHexDeMalte(1));
 });
 
 test("Volumes de água", () => {
