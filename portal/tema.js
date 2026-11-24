@@ -18,11 +18,23 @@
     { id: "black-ipa", nome: "Black IPA", descricao: "Preto com verde lúpulo.", modo: "escuro" },
     { id: "sol", nome: "Sol forte", descricao: "Alto contraste, para ler ao ar livre.", modo: "claro" },
   ];
+  // Layout da receita (24/11/2026, pedido do responsável; plano em docs/PLANO-CLEAN.md): "clean" = receita como ficha,
+  // tom neutro, sem papel de parede/espuma. Vale com qualquer tema; fica em galiabrew.preferencias.layout.
+  var LAYOUTS = [
+    { id: "completo", nome: "Completo", descricao: "Como sempre: campos à vista, papel de parede por seção." },
+    { id: "clean", nome: "Clean", descricao: "Ficha enxuta, tom sóbrio. Toque no número para mudar." },
+  ];
   var escuroSistema = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
-  function lerPreferencia() {
-    try { return (JSON.parse(localStorage.getItem(PREF) || "{}") || {}).tema; } catch (e) { return undefined; }
+  function lerPreferencia(chave) {
+    try { return (JSON.parse(localStorage.getItem(PREF) || "{}") || {})[chave || "tema"]; } catch (e) { return undefined; }
   }
+  function aplicarLayout(id) {
+    layout = id === "clean" ? "clean" : "completo";
+    document.documentElement.setAttribute("data-layout", layout);
+  }
+  var layout = "completo";
+  aplicarLayout(lerPreferencia("layout"));
   function achar(id) {
     for (var i = 0; i < TEMAS.length; i++) if (TEMAS[i].id === id) return TEMAS[i];
     return TEMAS[0];
@@ -61,5 +73,8 @@
     lista: TEMAS,
     atual: function () { return atual; },
     aplicar: aplicar,
+    layouts: LAYOUTS,
+    layout: function () { return layout; },
+    aplicarLayout: aplicarLayout,
   };
 })();

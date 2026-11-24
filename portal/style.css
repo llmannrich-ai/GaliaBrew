@@ -1351,3 +1351,89 @@ input.em-roleta { outline: 2px solid var(--destaque); outline-offset: -1px; bord
 html.roleta-aberta .conteudo { padding-bottom: calc(var(--roleta-h, 0px) + 4rem); }
 /* Roleta dentro de uma janela (detalhes do item, cadastros): ver roleta.js (a janela fica acima da roleta e rola por dentro). */
 dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
+
+/* ---------- layout Clean (24/11/2026, pedido do responsável; plano em docs/PLANO-CLEAN.md) ----------
+   Opcional no perfil (data-layout="clean" no <html>, posto pelo tema.js antes da 1ª pintura). Vale com qualquer tema:
+   tira papel de parede, espuma e ícones em círculo do editor; seções viram cartões lisos sobre a página um pouco mais
+   escura (claro) ou mais clara (escuro); títulos em versalete pequeno; malte e lúpulo em ficha de uma linha (.ing.ficha,
+   montada pelo receitas.js). Arte só onde é dado: copo, barra do grist, linha do tempo, cor do malte. */
+:root[data-layout="clean"] {
+  --k-pagina: color-mix(in srgb, var(--tinta) 5%, var(--cartao));
+  --k-cartao: var(--cartao);
+  --pp-ferm: var(--k-cartao); --pp-lup: var(--k-cartao); --pp-lev: var(--k-cartao); --pp-agua: var(--k-cartao);
+  --pp-neutro: var(--k-cartao); --pp-liso: var(--k-cartao);
+  --pp-ferm-cor: var(--suave); --pp-lup-cor: var(--suave); --pp-lev-cor: var(--suave); --pp-agua-cor: var(--suave);
+  --pp-ferm-motivo: none; --pp-lup-motivo: none; --pp-lev-motivo: none; --pp-agua-motivo: none; --pp-notas-motivo: none;
+  --pp-mostura: transparent; --pp-lavagem: transparent; --pp-mostura-motivo: none; --pp-lavagem-motivo: none;
+}
+:root[data-layout="clean"][data-modo="escuro"] {
+  --k-pagina: var(--fundo);
+  --k-cartao: color-mix(in srgb, var(--tinta) 7%, var(--cartao));
+}
+:root[data-layout="clean"] body.no-editor { background: var(--k-pagina); }
+:root[data-layout="clean"] .editor-corpo > .cartao {
+  background-color: var(--k-cartao); background-image: none; border-radius: var(--raio); padding: .7rem 1rem .4rem; margin-bottom: .6rem;
+}
+:root[data-layout="clean"] .editor-corpo > .cartao::before, :root[data-layout="clean"] .editor-corpo > .cartao::after { content: none; }
+:root[data-layout="clean"] .editor-corpo .titulo-icone { display: none; }
+:root[data-layout="clean"] .editor-corpo > .cartao .titulo-secao,
+:root[data-layout="clean"] .editor-corpo > details.lote .resumo-titulo {
+  font-size: var(--t-rotulo); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); gap: .4rem;
+}
+:root[data-layout="clean"] .editor-corpo > .cartao > h3, :root[data-layout="clean"] .editor-corpo > .cartao > .titulo-linha { margin-bottom: .35rem; }
+/* totais do título: normais (versalete só no nome da seção) */
+:root[data-layout="clean"] .titulo-linha h3 :is(.total-secao, .total-extra) { text-transform: none; letter-spacing: 0; }
+:root[data-layout="clean"] .titulo-linha h3 .total-secao.destaque { font-size: var(--t-corpo); font-weight: 700; }
+:root[data-layout="clean"] button.adicionar { font-size: 1.75rem; font-weight: 400; color: var(--destaque); }
+:root[data-layout="clean"] .editor-corpo .ing,
+:root[data-layout="clean"] .editor-corpo .tabela :is(th, td) { border-color: var(--linha); }
+
+/* ficha de malte e lúpulo: amostra · nome e um dado · quantidade e um resultado */
+.linhas-ing .ing.ficha {
+  grid-template-columns: 1rem minmax(0, 1fr) auto; grid-template-areas: "cor nome num"; gap: 0 .7rem; padding: .3rem 0;
+}
+.ing.ficha .ing-cor { grid-area: cor; width: .9rem; height: .9rem; border-radius: 3px; border: 1px solid rgb(0 0 0 / .18); }
+.ing.ficha .ficha-ponto { border-radius: 50%; border: none; background: var(--lupulo); }
+.ing.ficha button.ing-nome { grid-area: nome; min-height: 2.75rem; }
+.ing.ficha .ing-nome-txt { font-weight: 500; }
+.ing.ficha .ing-seta { display: none; }
+.ing.ficha .ing-sub { font-size: var(--t-p); white-space: nowrap; }
+.ficha-num { grid-area: num; display: grid; justify-items: end; align-content: center; gap: .05rem; }
+.ficha-num .ing-qtd { grid-area: auto; }
+.ficha-num .campo-qtd { gap: .2rem; }
+.ficha-num button.passo { display: none; }
+.ficha-num .campo-qtd input.qtd {
+  width: 4.6rem; height: auto; padding: .15rem .3rem; border: 1px solid transparent; border-radius: var(--raio-p);
+  background: color-mix(in srgb, var(--tinta) 6%, transparent); text-align: right; font-size: var(--t-corpo); font-weight: 700;
+}
+.ficha-num .campo-qtd input.qtd:focus { border-color: var(--destaque); background: var(--cartao); }
+.ficha-num .campo-qtd .unidade { min-width: 1.1rem; font-size: var(--t-p); }
+.ficha-num .ing-dado { grid-area: auto; display: flex; gap: .25rem; align-items: baseline; font-size: var(--t-p); color: var(--suave); }
+.ficha-num .ing-dado-val { font-weight: 400; order: 1; }
+.ficha-num .ing-dado-rot { order: 2; font-size: var(--t-p); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.ing.ficha .ing-dado.d2 { display: none; }
+.ing.ficha .ing-dado.d1.sem-valor { display: none; }
+.ing.ficha .ing-dado.d1.sem-valor + .ing-dado.d2 { display: flex; }
+.linhas-ing.ferm .ing.ficha .ing-dado-rot { display: none; }      /* grist: só o "84,0%" */
+
+@media (max-width: 640px) {
+  /* cartões de ponta a ponta, separados por um vão da cor da página */
+  :root[data-layout="clean"] .editor-corpo > .cartao {
+    margin: 0 calc(-1 * var(--lado)) .6rem; border-radius: 0; padding: .75rem var(--lado) .35rem;
+  }
+  .linhas-ing.ferm .ing.ficha, .linhas-ing.lup .ing.ficha { grid-template-columns: 1rem minmax(0, 1fr) auto; grid-template-areas: "cor nome num"; gap: 0 .65rem; }
+  .ing.ficha .ing-sub { white-space: nowrap; }
+  .ficha-num .campo-qtd input.qtd { width: 4.4rem; height: 2rem; }
+}
+/* Perfil → Aparência: escolha do layout da receita, com miniatura (3 linhas de ingrediente). */
+.temas.layouts { margin-top: 1rem; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.layout-mini { display: grid; align-content: center; gap: 5px; height: 64px; padding: 6px 8px; border-radius: var(--raio-p); border: 1px solid var(--linha); }
+.lm-linha { display: flex; align-items: center; gap: 5px; }
+.lm-linha i { width: 7px; height: 7px; border-radius: 2px; background: #d9b24c; }
+.lm-linha b { flex: 1; height: 5px; border-radius: 3px; background: var(--suave); opacity: .55; }
+.lm-linha u { width: 18px; height: 6px; border-radius: 3px; background: var(--tinta); }
+.layout-mini.completo { background: #fbf1c9; }
+.layout-mini.completo .lm-linha { gap: 4px; }
+.layout-mini.completo .lm-linha u { width: 26px; height: 9px; background: none; border: 1.5px solid #968674; }
+.layout-mini.clean { background: color-mix(in srgb, var(--tinta) 5%, var(--cartao)); }
+.layout-mini.clean .lm-linha { background: var(--cartao); padding: 2px 4px; }
