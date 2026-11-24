@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124o.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124p.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -357,6 +357,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Forma, Atenuação, Etapa, fonte dos dados; ↑ ↓ Remover e Pronto. Ordem: alça ⠿ na linha (Completo) ou ↑ ↓ na janela.
 - Adicionar: do catálogo abre a janela SEM roleta (`editarAoAdicionar: false`: já vem 1 pacote, Pronto basta);
   item livre abre com o foco no nome. Clean: ficha (ponto · nome + forma e atenuação · "1 pacote"/etapa), sem alça.
+- TIPO vem do CADASTRO (24/11/2026, pedido do responsável): levedura ligada a um cadastro que a pessoa enxerga
+  (`ligadaAoCadastro`) mostra o tipo FIXO (`.campo-fixo`, sem seletor), copiado ao escolher (`copiaLevedura`: nome, tipo,
+  forma, atenuação média; regra 5: mudar o cadastro depois não altera a receita). Sem ligação (106 de 107 leveduras das
+  receitas, importadas do Brewfather sem `levedura_id`; item livre) o tipo segue no seletor e a janela tem o botão
+  "Ligar ao cadastro": abre a busca já com o código entre parênteses ou o nome sem "Yeast" (`buscaDaLevedura`: "US-05",
+  "Nottingham"); escolher copia tipo/forma/atenuação/nome, mantém quantidade/unidade/etapa e reabre a janela (1 passo do
+  desfazer). Ligada: "Trocar por outra do cadastro". `abrirBusca` aceita `texto` (busca inicial) e `titulo`.
+  Dado: no banco as importadas têm tipo chutado (Brett como Ale); religar em massa por SQL não foi feito (pedir antes).
 - Outros ingredientes, mostura e fermentação continuam em tabela/cartões (candidatos ao mesmo padrão: K4 do plano Clean).
 - Teste do navegador: levedura livre na janela, linha sem campo, tocar no valor abre, Esc; celular 390/320 px (linha de
   64 px, janela cabe, sem teclado nem roleta) e clean. Capturas `p6q-levedura-linha`, `p6q-levedura-janela-390/320`, `p7e`.

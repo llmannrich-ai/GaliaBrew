@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124o";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124o";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124o";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124o";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124o";
-import { abrirBusca } from "./busca.js?v=20261124o";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124o";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124o";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124o";
-import * as O from "./opcoes.js?v=20261124o";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124o";
-import { icone } from "./icones.js?v=20261124o";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124o";
-import { abrirRelatorio } from "./relatorio.js?v=20261124o";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124o";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124p";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124p";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124p";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124p";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124p";
+import { abrirBusca } from "./busca.js?v=20261124p";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124p";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124p";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124p";
+import * as O from "./opcoes.js?v=20261124p";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124p";
+import { icone } from "./icones.js?v=20261124p";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124p";
+import { abrirRelatorio } from "./relatorio.js?v=20261124p";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124p";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -764,7 +764,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     function abrirItem(item, { focarNome = false, editarQtd = false } = {}) {
       if (!r[chave].includes(item) || document.querySelector("dialog.item-janela")) return;
       const nome = el("strong", { class: "item-nome" });
-      const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
+      // reabrir: fecha e abre de novo a janela (a levedura trocada pelo cadastro muda campos fixos, como o tipo).
+      let reabrirDepois = false;
+      const ctx = { mudou: (campo) => { refrescar(); mudou(campo); }, reabrir: () => { reabrirDepois = true; fechar(); } };
       const partes = montarLinha(item, ctx);
       const sub = el("span", { class: "item-sub" });
       function refrescar() {
@@ -830,6 +832,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         desenhar();                  // a linha mostra o que mudou na janela (quantidade, nome, cor...)
         // O foco volta ao item (a linha foi refeita); item removido ou outra tela: fica onde estiver.
         const k = posicao();
+        if (reabrirDepois && k >= 0) { abrirItem(item); return; }
         if (k >= 0 && lista.isConnected) lista.querySelectorAll(":scope > li.ing button.ing-nome")[k]?.focus({ preventScroll: true });
       });
 
@@ -991,6 +994,20 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     const u = item.unidade === "PACOTE" && q !== 1 ? "pacotes" : O.rotulo(O.UNIDADE_LEVEDURA, item.unidade);
     return u ? `${n} ${u}` : n;
   };
+  /** Dados que a receita copia do cadastro da levedura (regra 5): nome, tipo, forma e atenuação média. */
+  const copiaLevedura = (y) => ({
+    levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma,
+    atenuacao_pct: y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null),
+  });
+  /** Texto inicial da busca ao ligar uma levedura antiga ao cadastro: o código entre parênteses ("US-05") ou o nome
+   *  sem "yeast"/"levedura" ("Nottingham Yeast" → "Nottingham"). */
+  const buscaDaLevedura = (nome) => {
+    const n = String(nome ?? "");
+    const cod = n.match(/\(([A-Za-z]{1,4}[- ]?\d[\w/-]*)\)/);
+    return cod ? cod[1] : n.replace(/\(.*?\)/g, " ").replace(/\b(yeast|levedura|fermento)\b/gi, " ").replace(/\s+/g, " ").trim();
+  };
+  /** Ligada a um cadastro que a pessoa enxerga (o catálogo ou um seu). */
+  const ligadaAoCadastro = (item) => item.levedura_id != null && cat.leveduras.some((y) => y.id === item.levedura_id);
   const atenLevedura = (item) => (item.atenuacao_pct != null && item.atenuacao_pct !== "" ? `${numeroBR(Number(item.atenuacao_pct), 0)}% aten.` : null);
   const leveduras = secaoLinhas("leveduras", "Leveduras", {
     iconeSecao: "levedura",
@@ -999,8 +1016,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     vazio: "Nenhuma levedura (a FG fica igual à OG). Toque em “+” para adicionar.",
     total: () => "",
     adicionar: botaoAdicionar("leveduras", (y) => {
-      const media = y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null);
-      adicionarItem("leveduras", { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" });
+      adicionarItem("leveduras", { ...copiaLevedura(y), quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" });
     }, () => adicionarItem("leveduras", { levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, true)),
     montarLinha: (item, ctx) => {
       const campo = { desabilitado: des, aoMudar: ctx.mudou };
@@ -1019,10 +1035,25 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
             campoSelect(item, "unidade", O.UNIDADE_LEVEDURA, { ...campo, vazio: "—", rotulo: "Unidade" }))],
         detalhes: () => [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
-          rotular("Tipo", campoSelect(item, "tipo", O.TIPO_LEVEDURA, { ...campo, rotulo: "Tipo" })),
+          // Tipo (24/11/2026, pedido do responsável): vem do CADASTRO, não se escolhe à mão. Levedura ligada ao cadastro =
+          // tipo fixo (copiado ao escolher). Sem ligação (importadas do Brewfather, item livre) o tipo fica no seletor
+          // até a levedura ser ligada ao cadastro pelo botão abaixo.
+          ligadaAoCadastro(item)
+            ? el("div", { class: "campo-fixo-bloco" }, el("span", { text: "Tipo" }),
+              el("span", { class: "campo-fixo", "aria-label": "Tipo", title: "Vem do cadastro da levedura", text: O.rotulo(O.TIPO_LEVEDURA, item.tipo) || "—" }))
+            : rotular("Tipo", campoSelect(item, "tipo", O.TIPO_LEVEDURA, { ...campo, rotulo: "Tipo" })),
           rotular("Forma", campoSelect(item, "forma", O.FORMA_LEVEDURA, { ...campo, rotulo: "Forma" })),
           rotular("Atenuação (%)", campoNumero(item, "atenuacao_pct", { ...campo, casas: 0, rotulo: "Atenuação %" })),
           rotular("Etapa", campoSelect(item, "etapa", O.ETAPA_LEVEDURA, { ...campo, rotulo: "Etapa" })),
+          leitura || !ctx.reabrir ? null : el("button", {
+            type: "button", class: "secundario pequeno largo ligar-cadastro", "aria-haspopup": "dialog",
+            text: ligadaAoCadastro(item) ? "Trocar por outra do cadastro" : "Ligar ao cadastro (tipo, forma e atenuação)",
+            on: { click: () => abrirBusca({
+              tipo: "leveduras", itens: cat.leveduras, atualId: item.levedura_id, texto: ligadaAoCadastro(item) ? "" : buscaDaLevedura(item.nome),
+              titulo: "Levedura do cadastro",
+              aoEscolher: (y) => { acao(() => { Object.assign(item, copiaLevedura(y)); mudou(); }); ctx.reabrir(); },
+            }) },
+          }),
           blocoFonte(fonteNaReceita(item, cat.leveduras, "levedura_id"), { classe: "largo" })],
         aoCalcular: () => {},
       };

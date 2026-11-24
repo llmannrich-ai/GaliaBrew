@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124o");
+    const m = await import("./fontes.js?v=20261124p");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -362,6 +362,27 @@ const erros = [];
   await pagina.keyboard.press("Escape");
   await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
   verificar(await pagina.textContent(`${linhaLev} .ing-fixo-qtd`) === "1 pacote", "janela fechada: a linha da levedura mostra o valor novo (1 pacote)");
+  // Tipo vem do cadastro: levedura sem ligação (livre/importada) tem o seletor e o botão "Ligar ao cadastro"; ligada,
+  // o tipo é fixo (copiado do cadastro, com forma e atenuação).
+  await pagina.click(`${linhaLev} .ing-nome`);
+  await pagina.waitForSelector("dialog.item-janela.lev");
+  verificar(await pagina.locator('dialog.item-janela select[aria-label="Tipo"]').count() === 1, "levedura sem cadastro: tipo no seletor");
+  await pagina.click("dialog.item-janela button.ligar-cadastro");
+  await pagina.waitForSelector("dialog.busca");
+  verificar(await pagina.inputValue("dialog.busca .busca-campo") === "W-34/70"
+    && await pagina.textContent('.busca-opcao[aria-selected="true"] .busca-opcao-nome') === "Fermentis SafLager W-34/70 Fermentação baixa",
+    "ligar ao cadastro: a busca já vem com o nome da levedura e acha a do catálogo");
+  await pagina.keyboard.press("Enter");
+  await pagina.waitForSelector("dialog.busca", { state: "detached" });
+  await pagina.waitForSelector("dialog.item-janela.lev .campo-fixo");
+  verificar(await pagina.locator('dialog.item-janela select[aria-label="Tipo"]').count() === 0
+    && await pagina.textContent("dialog.item-janela .campo-fixo") === "Lager" && await pagina.inputValue('dialog.item-janela input[aria-label="Atenuação %"]') === "82"
+    && await pagina.inputValue('dialog.item-janela input[aria-label="Quantidade"]') === "1,0" && (await pagina.textContent("dialog.item-janela .item-sub")).startsWith("Lager"),
+    "ligada ao cadastro: tipo fixo Lager vindo do cadastro (sem seletor), atenuação copiada e quantidade mantida");
+  await pagina.fill('dialog.item-janela input[aria-label="Atenuação %"]', "80");
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.item-janela", { state: "detached" });
+  verificar((await pagina.textContent(`${linhaLev} .ing-sub`)).startsWith("Lager"), "a linha da levedura mostra o tipo do cadastro");
   // Lote: data, OG medida digitada como 1048 (vira 1,048).
   await pagina.fill('input[aria-label="Data da brassagem"]', "2026-04-20");
   await pagina.fill('input[aria-label="OG medida"]', "1048");
@@ -441,7 +462,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124o");
+    const m = await import("./calculos.js?v=20261124p");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -505,7 +526,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124o");
+    const m = await import("./calculos.js?v=20261124p");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -527,7 +548,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124o");
+    const m = await import("./calculos.js?v=20261124p");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -637,7 +658,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124o");
+    const m = await import("./calculos.js?v=20261124p");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
