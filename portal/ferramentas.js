@@ -2,13 +2,13 @@
 // 24/11/2026 (pedido do responsável): a página é um menu de botões, um por ferramenta; cada ferramenta abre numa janela
 // (dialog modal). O botão mostra o resultado da última conta; na janela o resultado fica preso no topo, à vista enquanto
 // a roleta (celular) ou o teclado mudam os números.
-import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261124v";
-import { icone } from "./icones.js?v=20261124v";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124v";
-import { FAIXAS, FAIXAS_LUGAR as F } from "./faixas.js?v=20261124v";
-import { temperaturaAguaMostura, primingGramas, sgDeBrix, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261124v";
-import { preferencias, salvarPreferencias } from "./estado.js?v=20261124v";
-import * as O from "./opcoes.js?v=20261124v";
+import { el, preencher, numeroBR, campoNumero, campoSelect, info } from "./ui.js?v=20261124w";
+import { icone } from "./icones.js?v=20261124w";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124w";
+import { FAIXAS, FAIXAS_LUGAR as F } from "./faixas.js?v=20261124w";
+import { temperaturaAguaMostura, primingGramas, refratometro, corrigirDensimetro, platoDeSg, FATOR_REFRATOMETRO_PADRAO } from "./calculos.js?v=20261124w";
+import { preferencias, salvarPreferencias } from "./estado.js?v=20261124w";
+import * as O from "./opcoes.js?v=20261124w";
 
 // Volume que o grão ocupa na tina (L por kg), para saber se a mostura cabe.
 const VOLUME_GRAO_L_KG = 0.67;
@@ -17,7 +17,7 @@ const VOLUME_GRAO_L_KG = 0.67;
 const agua = { graos_kg: 5, relacao: 3, grao_c: 20, alvo_c: 66 };
 const prim = { litros: 20, co2: 2.4, temp_c: 20, acucar: "SACAROSE" };
 // Fator do refratômetro e calibração do densímetro são do aparelho: ficam salvos neste navegador.
-const refr = { brix_ini: 12, brix_fim: null, get fator() { return preferencias.fator_refratometro ?? FATOR_REFRATOMETRO_PADRAO; },
+const refr = { og: 1.046, brix_fim: null, get fator() { return preferencias.fator_refratometro ?? FATOR_REFRATOMETRO_PADRAO; },
   set fator(v) { preferencias.fator_refratometro = v; salvarPreferencias(); } };
 const dens = { sg: 1.050, temp_c: 25, get calibracao_c() { return preferencias.calibracao_densimetro_c ?? 20; },
   set calibracao_c(v) { preferencias.calibracao_densimetro_c = v; salvarPreferencias(); } };
@@ -36,7 +36,7 @@ const FERRAMENTAS = [
     descricao: "Açúcar para carbonatar na garrafa ou no barril.",
     contas: contasPriming, campos: camposPriming, resumo: (c) => (c.metricas.length ? `${c.metricas[0][1]} de ${c.metricas[0][0].split(" (")[0].toLowerCase()} para ${curto(prim.litros)} L` : "") },
   { id: "refratometro", nome: "Refratômetro", grupo: "Medição", icone: "refratometro", cor: "lavagem",
-    descricao: "Converte °Brix em densidade. Com a cerveja fermentando, corrige o efeito do álcool (equação de Terrill).",
+    descricao: "Com a densidade do mosto e o °Brix da cerveja fermentando, corrige o efeito do álcool (equação de Terrill).",
     contas: contasRefratometro, campos: camposRefratometro, resumo: (c) => c.metricas.slice(0, 2).map(([r, v]) => `${r.split(" ")[0]} ${v}`).join(" · ") },
   { id: "densimetro", nome: "Densímetro", grupo: "Medição", icone: "densimetro", cor: "agua",
     descricao: "Corrige a leitura de uma amostra fora da temperatura de calibração do densímetro.",
@@ -165,17 +165,18 @@ function camposPriming(calcular) {
 
 // ---------- Refratômetro ----------
 function contasRefratometro() {
-  if (!(refr.fator > 0) || !(refr.brix_ini > 0)) return { metricas: [], avisos: [aviso("Preencha o °Brix do mosto e o fator.")] };
-  const og = sgDeBrix(refr.brix_ini, refr.fator);
-  if (refr.brix_fim == null) return { metricas: [["OG (densidade do mosto)", numeroBR(og, 3)]],
+  if (!(refr.fator > 0) || !(refr.og > 1)) return { metricas: [], avisos: [aviso("Preencha a densidade do mosto e o fator.")] };
+  // O mosto entra em densidade (SG); a equação de Terrill usa o °Brix que o refratômetro leria nele.
+  const brixIni = platoDeSg(refr.og) * refr.fator;
+  if (refr.brix_fim == null) return { metricas: [["OG (densidade do mosto)", numeroBR(refr.og, 3)], ["°Brix esperado no refratômetro", numeroBR(brixIni, 1)]],
     avisos: [aviso("Com a cerveja já fermentando, preencha também o °Brix atual: o álcool muda a leitura.")] };
-  const r = refratometro({ brixInicial: refr.brix_ini, brixFinal: refr.brix_fim, fator: refr.fator });
+  const r = refratometro({ brixInicial: brixIni, brixFinal: refr.brix_fim, fator: refr.fator });
   return { metricas: [
     ["OG", numeroBR(r.og, 3)],
     ["FG (densidade atual)", numeroBR(r.fg, 3)],
     r.abv_pct != null ? ["ABV", `${numeroBR(r.abv_pct, 1)}%`] : null,
     r.atenuacao_pct != null ? ["Atenuação aparente", `${numeroBR(r.atenuacao_pct, 0)}%`] : null].filter(Boolean),
-  avisos: r.fg > r.og ? [aviso("O °Brix atual parece alto demais para essa leitura inicial.", true)] : [] };
+  avisos: r.fg > r.og ? [aviso("O °Brix atual parece alto demais para essa densidade do mosto.", true)] : [] };
 }
 
 function camposRefratometro(calcular) {
@@ -190,8 +191,8 @@ function camposRefratometro(calcular) {
   calcularFator();
   return [
     el("div", { class: "grade-form" },
-      campo(refr, "brix_ini", "°Brix do mosto (antes de fermentar)", 1, null, calcular, { roleta: F.brix }),
-      campo(refr, "brix_fim", "°Brix atual (fermentando)", 1, "Deixe em branco se a cerveja ainda não fermentou.", calcular, { roleta: { ...F.brix, inicial: () => (Number(refr.brix_ini) > 0 ? Number((refr.brix_ini / 2).toFixed(1)) : 6), vazio: "Ainda não fermentou" } }),
+      campo(refr, "og", "Densidade do mosto (antes de fermentar)", 3, null, calcular, { placeholder: "1,050", ...sg, roleta: F.sg }),
+      campo(refr, "brix_fim", "°Brix atual (fermentando)", 1, "Deixe em branco se a cerveja ainda não fermentou.", calcular, { roleta: { ...F.brix, inicial: () => (Number(refr.og) > 1 ? Number((platoDeSg(refr.og) * refr.fator / 2).toFixed(1)) : 6), vazio: "Ainda não fermentou" } }),
       el("label", {}, el("span", {}, "Fator do refratômetro", info("O mosto lê um pouco acima de açúcar puro. 1,04 é o valor comum; o seu fica salvo neste navegador.")), campoFator)),
     el("details", {}, el("summary", { text: "Descobrir o fator do meu refratômetro" }),
       el("div", { class: "grade-form" },
