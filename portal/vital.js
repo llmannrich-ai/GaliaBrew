@@ -1,9 +1,9 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
-import { el, svg, numeroBR } from "./ui.js?v=20261124e";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261124e";
-import * as O from "./opcoes.js?v=20261124e";
+import { el, svg, numeroBR } from "./ui.js?v=20261124f";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261124f";
+import * as O from "./opcoes.js?v=20261124f";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -167,12 +167,14 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
       faixa: el("span", { class: "regua-faixa" }),
       marca: el("span", { class: "regua-marca" }),
       faixaTxt: el("span", { class: "vital-faixa" }),
+      amostra: d.chave === "cor" ? el("span", { class: "vital-amostra", "aria-hidden": "true" }) : null,
       ultimo: undefined, base: null, timer: null,
     };
     n.regua = el("div", { class: "regua", "aria-hidden": "true" }, n.faixa, n.marca);
     n.raiz = el("div", { class: "vital-item", dataset: { metrica: d.chave } },
       el("div", { class: "vital-cab" }, n.rot, n.estado),
-      el("div", { class: "vital-linha" }, n.val, n.delta),
+      // Cor: ponto com a cor da cerveja antes do número (no celular, onde o copo não aparece).
+      el("div", { class: "vital-linha" }, d.chave === "cor" ? n.amostra : null, n.val, n.delta),
       n.regua,
       el("div", { class: "vital-pe" }, n.faixaTxt, n.extra),
       n.ref);
@@ -205,6 +207,7 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null } = {}) {
   let campoAnterior = null;       // a diferença acumula só enquanto a pessoa mexe no MESMO campo
   function atualizar(res, estilo, { mudanca = false, campo = document.activeElement } = {}) {
     vidro.cerveja.setAttribute("fill", corHexDeSrm(res.cor_srm));
+    itens.get("cor").amostra.style.background = corHexDeSrm(res.cor_srm);
     const outroCampo = mudanca && campo !== campoAnterior;
     if (mudanca) campoAnterior = campo;
     const falas = [];
