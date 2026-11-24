@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124u";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124u";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124u";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124u";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124u";
-import { abrirBusca } from "./busca.js?v=20261124u";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124u";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124u";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124u";
-import * as O from "./opcoes.js?v=20261124u";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124u";
-import { icone } from "./icones.js?v=20261124u";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124u";
-import { abrirRelatorio } from "./relatorio.js?v=20261124u";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124u";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124v";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124v";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124v";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124v";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124v";
+import { abrirBusca } from "./busca.js?v=20261124v";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124v";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124v";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124v";
+import * as O from "./opcoes.js?v=20261124v";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124v";
+import { icone } from "./icones.js?v=20261124v";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124v";
+import { abrirRelatorio } from "./relatorio.js?v=20261124v";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124v";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -1545,7 +1545,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       const leituraSo4 = (p) => (p.sulfato_cloreto == null ? "—" : O.LEITURA_SO4_CL[leituraSulfatoCloreto(p.sulfato_cloreto)]);
       const colunas = alvo ? 6 : 5;
       preencher(perfil, el("table", { class: "tabela perfil-agua" },
-        el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Base", "Base"], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Panela", "Pan."], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
+        el("thead", {}, el("tr", {}, [["Íon (ppm)", "ppm"], ["Base", "Base"], ["Mostura", "Most."], ["Lavagem", "Lav."], ["Total", "Total"], alvo ? ["Alvo", "Alvo"] : null].filter(Boolean)
           .map(([longo, curto], i) => el("th", { class: i ? "num" : "" }, el("span", { class: "ion-longo", text: longo }), el("abbr", { class: "ion-curto", title: longo, text: curto }))))),
         el("tbody", {}, IONS.map((k) => el("tr", {},
           nome(O.NOME_ION[k], O.SIMBOLO_ION[k]),
@@ -1558,7 +1558,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           linhaIndice("Alcalinidade residual (ppm)", "Alc. res.", O.AJUDA_VOLUME.alcalinidade_residual, (p) => numeroBR(p.alcalinidade_residual, 0)),
           linhaIndice("Sulfato/cloreto", "SO₄/Cl", O.AJUDA_VOLUME.sulfato_cloreto, so4cl)),
         el("tfoot", {}, el("tr", {}, el("td", { colspan: colunas, class: "leitura-so4" },
-          "Sulfato/cloreto: mostura ", el("b", { text: leituraSo4(a.mostura) }), " · panela ", el("b", { text: leituraSo4(a.panela) }))))));
+          "Sulfato/cloreto: mostura ", el("b", { text: leituraSo4(a.mostura) }), " · total ", el("b", { text: leituraSo4(a.panela) }))))));
     });
 
     const sec = el("section", { class: "cartao", dataset: { secao: "agua" } },
@@ -1584,7 +1584,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("button", { type: "button", class: "secundario pequeno", text: "Igual à mostura", title: "Troca os sais da lavagem pelos da mostura, na proporção dos volumes", on: { click: lavagemIgualMostura } }))),
       el("h4", { text: "Total do dia" }),
       notaVolumes,
-      el("h4", { text: "Perfil: mostura, lavagem e panela" }),
+      el("h4", { text: "Perfil: mostura, lavagem e total" }),
       perfil);
     desenharSais();
     desenharAcidos();

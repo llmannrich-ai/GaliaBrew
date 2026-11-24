@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261124u";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261124u";
+import { preferencias } from "./estado.js?v=20261124v";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261124v";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -72,7 +72,7 @@ export const AJUDA_VOLUME = {
   agua_origem: "A água que você usa (cadastre a sua em Cadastros → Águas, com os números da análise ou da companhia de água). Fica copiada na receita.",
   agua_alvo: "Perfil que você quer atingir, só para comparar. Os 'Alvo — …' do catálogo são pontos de partida por tipo de cerveja.",
   agua_diluicao_pct: "Parte da água trocada por destilada ou de osmose (sem íons). 50% corta pela metade todos os íons da origem.",
-  sais_agua: "Gramas de cada sal, separados por água: os da mostura dissolvem na água da mostura (e entram no pH), os da lavagem na água de lavagem. Cada perfil é calculado no próprio volume; Panela = as duas águas juntas, o que chega à fervura.",
+  sais_agua: "Gramas de cada sal, separados por água: os da mostura dissolvem na água da mostura (e entram no pH), os da lavagem na água de lavagem. Cada perfil é calculado no próprio volume; Total = as duas águas juntas, o que chega à fervura.",
   sulfato_cloreto: "Sulfato realça o amargor e seca; cloreto arredonda e dá corpo. Abaixo de 0,8: maltada; 0,8 a 1,3: equilibrada; acima de 2: seca e amarga.",
   alcalinidade_residual: "Alcalinidade (como CaCO₃) menos o efeito do cálcio e do magnésio. Alta (acima de ~50) puxa o pH da mostura para cima: combina com maltes escuros; para cervejas claras, quanto mais baixa melhor.",
   acidos: "Ácido colocado na água da mostura, em mL. Baixa o pH. Para acidificar a água de lavagem, anote em Notas.",

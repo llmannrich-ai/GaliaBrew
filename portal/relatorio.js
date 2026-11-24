@@ -1,11 +1,11 @@
 // relatorio.js — relatório da receita em PDF: monta as páginas (A4), mostra no visualizador próprio (janela) e
 // exporta o arquivo para a folha de compartilhamento do celular. O visualizador desenha em SVG os mesmos itens que o
 // pdf.js escreve no arquivo: o que aparece na tela é o que vai no PDF.
-import { el, svg, numeroBR, avisar } from "./ui.js?v=20261124u";
-import { A4, gerarPdf, limparTexto, larguraTexto, quebrarTexto, encurtarTexto } from "./pdf.js?v=20261124u";
-import { IONS, corHexDeSrm, platoDeSg, etapaSal, leituraSulfatoCloreto, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261124u";
-import * as O from "./opcoes.js?v=20261124u";
-import { icone } from "./icones.js?v=20261124u";
+import { el, svg, numeroBR, avisar } from "./ui.js?v=20261124v";
+import { A4, gerarPdf, limparTexto, larguraTexto, quebrarTexto, encurtarTexto } from "./pdf.js?v=20261124v";
+import { IONS, corHexDeSrm, platoDeSg, etapaSal, leituraSulfatoCloreto, TEMPERATURA_WHIRLPOOL_PADRAO_C } from "./calculos.js?v=20261124v";
+import * as O from "./opcoes.js?v=20261124v";
+import { icone } from "./icones.js?v=20261124v";
 
 // Documento sempre claro (é para imprimir e mandar), nas cores do tema Clássico.
 const COR = { tinta: "#1a130d", suave: "#4d4237", cobre: "#a14f17", linha: "#ddd1bf", painel: "#f3ece0", branco: "#ffffff" };
@@ -279,14 +279,14 @@ export function montarRelatorio(r, res, { estilo = null, equipamento = null, ago
       const lIon = alvo ? 75 : 90;
       d.tabela([
         { rot: "ÍON (ppm)", l: LARGURA - lIon * (alvo ? 5 : 4) }, { rot: "BASE", l: lIon, alinh: "fim" }, { rot: "MOSTURA", l: lIon, alinh: "fim" },
-        { rot: "LAVAGEM", l: lIon, alinh: "fim" }, { rot: "PANELA", l: lIon, alinh: "fim" }, alvo ? { rot: "ALVO", l: lIon, alinh: "fim" } : null,
+        { rot: "LAVAGEM", l: lIon, alinh: "fim" }, { rot: "TOTAL", l: lIon, alinh: "fim" }, alvo ? { rot: "ALVO", l: lIon, alinh: "fim" } : null,
       ].filter(Boolean), IONS.map((k) => [
         O.NOME_ION[k], n(a.base.ions[k], 0), n(a.mostura.ions[k], 0), n(a.lavagem.ions[k], 0), n(a.panela.ions[k], 0),
         ...(alvo ? [n(Number(alvo[k] ?? 0), 0)] : []),
       ]));
       d.pares([
         ["Sulfato/cloreto na mostura", so4cl(a.mostura)],
-        ["Sulfato/cloreto na panela", so4cl(a.panela)],
+        ["Sulfato/cloreto no total", so4cl(a.panela)],
         ["Alcalinidade residual da mostura", comUnidade(a.mostura.alcalinidade_residual, 0, "ppm")],
         ["Alcalinidade residual da lavagem", comUnidade(a.lavagem.alcalinidade_residual, 0, "ppm")],
       ]);

@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124u.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124v.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -727,3 +727,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Fase 2: receita = lote ("criar a partir de", dados do lote na receita), ferramentas (água de mostura, priming,
   refratômetro, correção do densímetro), escalar receita.
 - Fase 3: importar/exportar BeerJSON e BeerXML, estoque, química da água.
+
+## Coluna "Total" no perfil da água (24/11/2026, pedido do responsável; só texto)
+- A coluna "Panela" da tabela do perfil (tela e PDF) passou a se chamar "Total" (as duas águas juntas com todos os
+  sais, o que chega à fervura). Pé da tabela: "mostura X · total Y"; PDF: "Sulfato/cloreto no total". No código o
+  perfil continua `res.agua.panela`.
