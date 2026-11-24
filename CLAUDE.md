@@ -131,7 +131,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  259 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  261 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -257,6 +257,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   entre as rampas; trocar o tipo ou mover renumera), "Mash out" e "Lavagem" (`TIPO_MOSTURA`, `tipoPasso`, `rotuloPasso`
   no opcoes.js; o relatório em PDF usa o mesmo rótulo). Rampa grava `TEMPERATURA` (tipo genérico do BeerJSON); INFUSAO e
   DECOCCAO antigos (importadas do Brewfather) ficam no banco e aparecem como rampa. O tipo não entra em nenhum cálculo.
+  Passo = tipo (24/11/2026, pedido do responsável: o nome só repetia o tipo): o cartão tem só "Passo" (seletor Rampa N /
+  Mash out / Lavagem, `aria-label` "Passo da mostura"), Temp. e Tempo, em 2 linhas. Sem campo de nome: ao salvar,
+  `montarPayload` grava `nome` = o rótulo ("Rampa 2"; a coluna é not null). Nomes antigos (ex.: "Protein rest" das
+  importadas) são trocados pelo rótulo quando a receita é salva. Relatório: colunas Passo | Temperatura | Tempo.
 - Rolagem só na vertical (23/11/2026, pedido do responsável: a tela podia ser arrastada para o lado): `html`/`body` com
   `overflow-x: clip` (o que passar da largura é cortado, sem criar área de rolagem; não atrapalha o `sticky`). A causa
   era a lista dos Cadastros, tabela larga demais no celular: até 640 px virou cartões (`.tabela.lista-cad`, nome em cima

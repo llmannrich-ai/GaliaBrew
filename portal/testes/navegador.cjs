@@ -625,6 +625,8 @@ const erros = [];
   verificar(salvo.corpo.p.agua_origem?.nome === "Torneira teste" && salvo.corpo.p.agua_origem.sulfato_ppm === 10 && !("id" in salvo.corpo.p.agua_origem)
     && salvo.corpo.p.agua_alvo?.nome === "Alvo IPA" && JSON.stringify(salvo.corpo.p.sais) === '[{"sal":"GESSO","gramas":6,"etapa":"MOSTURA"},{"sal":"CLORETO_CALCIO","gramas":2,"etapa":"LAVAGEM"}]', "água vai como cópia (sem id) e sais em gramas, cada um com a sua água");
   verificar(salvo.corpo.p.agua_mostura_l === 18 && salvo.corpo.p.agua_lavagem_l === 14, "água da mostura e da lavagem vão em litros");
+  verificar(salvo.corpo.p.mostura.length > 0 && salvo.corpo.p.mostura.every((m, i) => m.nome === `Rampa ${i + 1}` && m.tipo === "TEMPERATURA"),
+    `passo da mostura grava o próprio rótulo como nome (${salvo.corpo.p.mostura.map((m) => m.nome).join(", ")})`);
   verificar(await pagina.inputValue('input[aria-label="Água da mostura (L)"]') === "18,0", "água da mostura reabre com 18,0 L");
   verificar(salvo.corpo.p.acidos.length === 1 && salvo.corpo.p.acidos[0].acido === "LATICO_88" && salvo.corpo.p.acidos[0].ml > 0, "ácido vai em mL");
   verificar((await pagina.inputValue('select[aria-label="Água de origem"]')) === "__atual", "água reabre como 'guardada nesta receita'");
@@ -1103,15 +1105,17 @@ const erros = [];
       `toque ${w} px: ↑ e × dos passos da mostura sem cobrir campo e alinhados ao nome (${JSON.stringify(passos)})`);
   }
   // Tipo do passo (24/11/2026, pedido do responsável): só Rampa (numerada pela ordem), Mash out e Lavagem.
-  const tiposPasso = () => cel.evaluate(() => [...document.querySelectorAll('[data-secao="mostura"] select[aria-label="Tipo do passo"]')]
+  const tiposPasso = () => cel.evaluate(() => [...document.querySelectorAll('[data-secao="mostura"] select[aria-label="Passo da mostura"]')]
     .map((s) => ({ opcoes: [...s.options].map((o) => o.text).join("|"), escolhido: s.selectedOptions[0].text })));
+  verificar(await cel.locator('[data-secao="mostura"] tbody input.nome').count() === 0
+    && await cel.locator('[data-secao="mostura"] tbody td[data-rotulo="Tipo"]').count() === 0, "mostura: sem campo de nome nem Tipo separado (passo = tipo)");
   const t1 = await tiposPasso();
   verificar(t1.length === 2 && t1[0].opcoes === "Rampa 1|Mash out|Lavagem" && t1[1].opcoes === "Rampa 2|Mash out|Lavagem" && t1.every((t) => t.escolhido.startsWith("Rampa")),
-    `mostura: tipo só Rampa (numerada), Mash out e Lavagem (${JSON.stringify(t1)})`);
-  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Tipo do passo"]', "MASH_OUT");
+    `mostura: passo = tipo, só Rampa (numerada), Mash out e Lavagem (${JSON.stringify(t1)})`);
+  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Passo da mostura"]', "MASH_OUT");
   const t2 = await tiposPasso();
   verificar(t2[0].escolhido === "Mash out" && t2[1].escolhido === "Rampa 1", `mostura: trocar o tipo renumera as rampas (${JSON.stringify(t2)})`);
-  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Tipo do passo"]', "TEMPERATURA");
+  await cel.selectOption('[data-secao="mostura"] tbody tr:nth-child(1) select[aria-label="Passo da mostura"]', "TEMPERATURA");
   verificar((await tiposPasso())[1].escolhido === "Rampa 2", "mostura: voltar a rampa renumera de novo");
   await cel.evaluate(() => { document.querySelector('[data-secao="mostura"]').scrollIntoView(); window.scrollBy(0, -20); });
   await cel.screenshot({ path: `${SAIDA}/p6m-celular-mostura.png` });

@@ -117,7 +117,7 @@ const PADRAO = () => ({
   lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null, co2_alvo_vol: null, priming_acucar: null,
   agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, agua_mostura_l: null, agua_lavagem_l: null, sais: [], acidos: [],
   fermentaveis: [], lupulos: [], leveduras: [], outros: [],
-  mostura: [{ nome: "Sacarificação", tipo: "TEMPERATURA", temperatura_c: 66, tempo_min: 60 }],
+  mostura: [{ nome: "Rampa 1", tipo: "TEMPERATURA", temperatura_c: 66, tempo_min: 60 }],
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
 });
 
@@ -1076,13 +1076,13 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     iconeSecao: "mostura",
     vazio: "Sem passos.",
     colunas: [
-      { r: "Passo", campo: txt("nome") },
-      // Rampa com o número que ela tem (ou teria) pela ordem; trocar o tipo renumera as outras.
-      { r: "Tipo", campo: (item, i) => {
+      // Passo = tipo (24/11/2026, pedido do responsável: o nome só repetia o tipo). Rampa com o número que ela tem (ou
+      // teria) pela ordem; trocar o tipo renumera as outras. O nome gravado é o próprio rótulo (montarPayload).
+      { r: "Passo", campo: (item, i) => {
         const antes = O.numerosRampa(r.mostura.slice(0, i)).filter(Boolean).length;
         const opcoes = O.TIPO_MOSTURA.map(([v, t]) => [v, v === "TEMPERATURA" ? `Rampa ${antes + 1}` : t]);
         const vista = { tipo: O.tipoPasso(item.tipo) };
-        return campoSelect(vista, "tipo", opcoes, { desabilitado: des, rotulo: "Tipo do passo",
+        return campoSelect(vista, "tipo", opcoes, { desabilitado: des, rotulo: "Passo da mostura",
           aoMudar: () => { item.tipo = vista.tipo; secoes.mostura(); mudou(); } });
       } },
       { r: "Temp. (°C)", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_mostura }) },
@@ -1198,7 +1198,7 @@ function validar(r) {
   if (falta(r.lupulos, (h) => String(h.nome ?? "").trim() && h.quantidade_g > 0 && h.alfa_pct != null && (h.etapa !== "FERVURA" || h.tempo_min != null))) p.push("Lúpulos: preencha nome, quantidade (> 0), alfa e o tempo na fervura.");
   if (falta(r.leveduras, (y) => String(y.nome ?? "").trim() && (y.quantidade == null || y.quantidade > 0))) p.push("Leveduras: preencha o nome.");
   if (falta(r.outros, (o) => String(o.nome ?? "").trim() && o.quantidade > 0)) p.push("Outros: preencha nome e quantidade (> 0).");
-  if (falta(r.mostura, (m) => String(m.nome ?? "").trim() && m.temperatura_c != null && m.tempo_min != null)) p.push("Mostura: preencha nome, temperatura e tempo de cada passo.");
+  if (falta(r.mostura, (m) => m.temperatura_c != null && m.tempo_min != null)) p.push("Mostura: preencha temperatura e tempo de cada passo.");
   if (falta(r.fermentacao, (f) => String(f.nome ?? "").trim() && f.temperatura_c != null && f.dias != null)) p.push("Fermentação: preencha nome, temperatura e dias.");
   return p;
 }
@@ -1219,7 +1219,7 @@ function montarPayload(r, res) {
     lupulos: r.lupulos.map((x) => so(x, ["lupulo_id", "nome", "forma", "alfa_pct", "quantidade_g", "etapa", "tempo_min", "temperatura_c", "dia"])),
     leveduras: r.leveduras.map((x) => so(x, ["levedura_id", "nome", "tipo", "forma", "atenuacao_pct", "quantidade", "unidade", "etapa"])),
     outros: r.outros.map((x) => so(x, ["outro_id", "nome", "tipo", "quantidade", "unidade", "etapa", "tempo_min"])),
-    mostura: r.mostura.map((x) => ({ ...so(x, ["nome", "tipo", "temperatura_c", "rampa_min", "volume_agua_l", "temperatura_infusao_c"]), tempo_min: Math.round(x.tempo_min ?? 0) })),
+    mostura: r.mostura.map((x, i) => ({ ...so(x, ["tipo", "temperatura_c", "rampa_min", "volume_agua_l", "temperatura_infusao_c"]), nome: O.rotuloPasso(r.mostura, i), tempo_min: Math.round(x.tempo_min ?? 0) })),
     fermentacao: r.fermentacao.map((x) => so(x, ["nome", "temperatura_c", "temperatura_fim_c", "dias"])),
   };
 }

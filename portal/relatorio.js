@@ -229,8 +229,8 @@ export function montarRelatorio(r, res, { estilo = null, equipamento = null, ago
   // ---------- processo ----------
   if (r.mostura.length) {
     d.secao("Mostura");
-    d.tabela([{ rot: "PASSO", l: 235 }, { rot: "TIPO", l: 120 }, { rot: "TEMPERATURA", l: 80, alinh: "fim" }, { rot: "TEMPO", l: 80, alinh: "fim" }],
-      r.mostura.map((m, i) => [String(m.nome ?? "").trim() || "(sem nome)", O.rotuloPasso(r.mostura, i), comUnidade(m.temperatura_c, 1, "°C"), comUnidade(m.tempo_min, 0, "min")]));
+    d.tabela([{ rot: "PASSO", l: 355 }, { rot: "TEMPERATURA", l: 80, alinh: "fim" }, { rot: "TEMPO", l: 80, alinh: "fim" }],
+      r.mostura.map((m, i) => [O.rotuloPasso(r.mostura, i), comUnidade(m.temperatura_c, 1, "°C"), comUnidade(m.tempo_min, 0, "min")]));
   }
   if (r.fermentacao.length) {
     d.secao("Fermentação");
