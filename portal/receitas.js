@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124n";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124n";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124n";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124n";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124n";
-import { abrirBusca } from "./busca.js?v=20261124n";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124n";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124n";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124n";
-import * as O from "./opcoes.js?v=20261124n";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124n";
-import { icone } from "./icones.js?v=20261124n";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124n";
-import { abrirRelatorio } from "./relatorio.js?v=20261124n";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124n";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124o";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124o";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124o";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124o";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124o";
+import { abrirBusca } from "./busca.js?v=20261124o";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124o";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124o";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124o";
+import * as O from "./opcoes.js?v=20261124o";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124o";
+import { icone } from "./icones.js?v=20261124o";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124o";
+import { abrirRelatorio } from "./relatorio.js?v=20261124o";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124o";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -677,7 +677,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
 
-  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico }) {
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico, editarAoAdicionar = true }) {
     const lista = el("ol", { class: `linhas-ing ${classe}` });
     const totalEl = el("span", { class: destaque ? "total-secao destaque" : "total-secao" });
     // extra: dado complementar ao lado do total (ex.: água/malte nos fermentáveis); some quando não há valor.
@@ -723,6 +723,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         },
       });
       const pega = (classe) => partes.colunas.find((n) => n.classList.contains(classe)) ?? null;
+      // fixo: a linha só MOSTRA os valores (texto, sem campo); editar é só na janela do item (leveduras, 24/11/2026).
+      const fixo = partes.fixo?.() ?? null;
       // Clean: ficha de uma linha (amostra · nome e um dado · quantidade e um resultado). A quantidade é o mesmo campo
       // (toque = roleta direto; computador = digitar/setas); o ± e o "quando" ficam na janela do item; sem alça (a
       // ordem muda pelo Subir/Descer da janela).
@@ -730,8 +732,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         ? el("li", { class: "ing ficha" },
           partes.visual ?? el("span", { class: "ing-cor ficha-ponto", "aria-hidden": "true" }),
           botaoNome,
-          el("div", { class: "ficha-num" }, pega("ing-qtd"), pega("d1"), pega("d2")))
-        : el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas);
+          el("div", { class: "ficha-num" }, fixo ?? [pega("ing-qtd"), pega("d1"), pega("d2")]))
+        : el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, fixo ?? partes.colunas);
       // Tocar fora dos campos (amostra de cor, números calculados) também abre os detalhes.
       li.addEventListener("click", (e) => {
         if (e.target.closest("input, select, textarea, button, a, label, .ing-qtd, .ing-quando")) return;
@@ -854,7 +856,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     secoes[chave] = desenhar;
     /** Depois de adicionar, abre a janela do item (24/11/2026, pedido do responsável): do cadastro → na quantidade;
      *  item livre → no nome. */
-    focos[chave] = (livre) => abrirItem(r[chave].at(-1), livre ? { focarNome: true } : { editarQtd: true });
+    // editarAoAdicionar = false (leveduras: a quantidade já vem 1 pacote): abre a janela sem a roleta.
+    focos[chave] = (livre) => abrirItem(r[chave].at(-1), livre ? { focarNome: true } : { editarQtd: editarAoAdicionar });
     desenhar();
     return sec;
   }
@@ -973,30 +976,57 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     },
   });
 
-  /** Leveduras e outros (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
+  /** Outros ingredientes (tabela): acrescenta e põe o foco no campo indicado da linha nova. */
   const adicionarLinhaTabela = (chave, item, focar) => {
     acao(() => { r[chave].push(item); secoes[chave](); mudou(); });
     editarCampo(document.querySelector(`[data-secao="${chave}"] tbody tr:last-child [aria-label="${focar}"]`));
   };
 
-  const leveduras = secaoLista("leveduras", "Leveduras", {
+  // Leveduras (24/11/2026, pedido do responsável): a linha da receita só MOSTRA os valores (nome · tipo · forma ·
+  // atenuação | quantidade e etapa); tudo se edita na janela do item, a mesma dos maltes e lúpulos.
+  const qtdLevedura = (item) => {
+    const q = Number(item.quantidade);
+    if (item.quantidade == null || item.quantidade === "" || !Number.isFinite(q)) return "—";
+    const n = numeroBR(q, 1).replace(/,0$/, "");
+    const u = item.unidade === "PACOTE" && q !== 1 ? "pacotes" : O.rotulo(O.UNIDADE_LEVEDURA, item.unidade);
+    return u ? `${n} ${u}` : n;
+  };
+  const atenLevedura = (item) => (item.atenuacao_pct != null && item.atenuacao_pct !== "" ? `${numeroBR(Number(item.atenuacao_pct), 0)}% aten.` : null);
+  const leveduras = secaoLinhas("leveduras", "Leveduras", {
     iconeSecao: "levedura",
-    vazio: "Nenhuma levedura (a FG fica igual à OG).",
-    colunas: [
-      { r: "Nome", campo: txt("nome") },
-      { r: "Tipo", campo: sel("tipo", O.TIPO_LEVEDURA) },
-      { r: "Forma", campo: sel("forma", O.FORMA_LEVEDURA) },
-      { r: "Atenuação %", num: true, campo: num("atenuacao_pct", 0) },
-      // Roleta começa no comum para a unidade: 1 pacote, 11 g de fermento seco, 100 mL de fermento líquido/cultivado.
-      { r: "Qtd", num: true, campo: (item) => num("quantidade", 1, { roleta: { min: 0, max: 1000, segmentos: [[10, 0.5], [200, 1], [1000, 10]],
-        inicial: () => ({ G: 11, ML: 100, BILHOES_CELULAS: 200 })[item.unidade] ?? 1 } })(item) },
-      { r: "Unidade", campo: sel("unidade", O.UNIDADE_LEVEDURA, { vazio: "—" }) },
-      { r: "Etapa", campo: sel("etapa", O.ETAPA_LEVEDURA) },
-    ],
+    classe: "lev",
+    editarAoAdicionar: false,
+    vazio: "Nenhuma levedura (a FG fica igual à OG). Toque em “+” para adicionar.",
+    total: () => "",
     adicionar: botaoAdicionar("leveduras", (y) => {
       const media = y.atenuacao_min_pct != null && y.atenuacao_max_pct != null ? (Number(y.atenuacao_min_pct) + Number(y.atenuacao_max_pct)) / 2 : num0(y.atenuacao_min_pct ?? y.atenuacao_max_pct, null);
-      adicionarLinhaTabela("leveduras", { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Atenuação %");
-    }, () => adicionarLinhaTabela("leveduras", { levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, "Nome")),
+      adicionarItem("leveduras", { levedura_id: y.id, nome: y.nome, tipo: y.tipo, forma: y.forma, atenuacao_pct: media, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" });
+    }, () => adicionarItem("leveduras", { levedura_id: null, nome: "", tipo: "ALE", forma: "SECA", atenuacao_pct: 75, quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }, true)),
+    montarLinha: (item, ctx) => {
+      const campo = { desabilitado: des, aoMudar: ctx.mudou };
+      return {
+        sub: () => [item.tipo ? O.rotulo(O.TIPO_LEVEDURA, item.tipo) : null, item.forma ? O.rotulo(O.FORMA_LEVEDURA, item.forma) : null, atenLevedura(item)],
+        subFicha: () => [item.forma ? O.rotulo(O.FORMA_LEVEDURA, item.forma) : null, atenLevedura(item)],
+        // Na receita: só texto. Quantidade em destaque e a etapa embaixo.
+        fixo: () => el("div", { class: "ing-fixo" },
+          el("strong", { class: "ing-fixo-qtd", text: qtdLevedura(item) }),
+          el("span", { class: "ing-fixo-sub", text: item.etapa ? O.rotulo(O.ETAPA_LEVEDURA, item.etapa) : "" })),
+        // Na janela: quantidade (± de 1, roleta no comum para a unidade: 1 pacote, 11 g de seco, 100 mL de líquido) e unidade.
+        colunas: [
+          el("div", { class: "ing-qtd lev-qtd" },
+            campoQuantidade(item, "quantidade", { casas: 1, passo: 1, passoTxt: "1", rotulo: "Quantidade", desabilitado: des, aoMudar: (c) => ctx.mudou(c),
+              roleta: { min: 0, max: 1000, segmentos: [[10, 0.5], [200, 1], [1000, 10]], inicial: () => ({ G: 11, ML: 100, BILHOES_CELULAS: 200 })[item.unidade] ?? 1 } }),
+            campoSelect(item, "unidade", O.UNIDADE_LEVEDURA, { ...campo, vazio: "—", rotulo: "Unidade" }))],
+        detalhes: () => [
+          rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
+          rotular("Tipo", campoSelect(item, "tipo", O.TIPO_LEVEDURA, { ...campo, rotulo: "Tipo" })),
+          rotular("Forma", campoSelect(item, "forma", O.FORMA_LEVEDURA, { ...campo, rotulo: "Forma" })),
+          rotular("Atenuação (%)", campoNumero(item, "atenuacao_pct", { ...campo, casas: 0, rotulo: "Atenuação %" })),
+          rotular("Etapa", campoSelect(item, "etapa", O.ETAPA_LEVEDURA, { ...campo, rotulo: "Etapa" })),
+          blocoFonte(fonteNaReceita(item, cat.leveduras, "levedura_id"), { classe: "largo" })],
+        aoCalcular: () => {},
+      };
+    },
   });
 
   // ---------- água: base, alvo, sais e perfil final (diluição fora da tela desde 24/11/2026) ----------

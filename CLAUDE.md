@@ -145,7 +145,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   priming e temperatura da água no painel, tela Ferramentas (água da mostura, priming, refratômetro, correção do densímetro), água da
   receita (perfil de íons e sulfato/cloreto, pH estimado e ácido, volumes das águas informados),
   receita de outro, sair; e um bloco de celular com toque: barra do app, toque/segurar no ±, teclado aberto,
-  cartões, arrastar com o dedo, janelas em 390 e 320 px). O container não acessa o supabase.co: teste real só depois de publicar.
+  cartões, arrastar com o dedo, janelas em 390 e 320 px, levedura em linha fixa + janela). O container não acessa o supabase.co: teste real só depois de publicar.
 - Editor (E0 + E1 do `docs/PLANO-UX.md`, 22/11/2026, fonte do sistema): tokens de cor/tipo no topo do `style.css`
   (contraste AA conferido nos dois modos); barra vital fixa (computador: abaixo do topo; celular: no rodapé, ~157 px desde
   22/11/2026: puxador "detalhes" + 2 linhas de 3 números com régua; com teclado aberto fica baixa, sem régua;
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124n.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124o.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -348,6 +348,18 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: janela no computador (abrir pelos números e pelo nome, × e foco, quantidade ao vivo, Esc, Ctrl+Z,
   remover) e no celular (390 px no topo, roleta dentro da janela, OK, Pronto, ↶, 320 px sem passar da largura,
   janela do lúpulo). Capturas `p6i` (malte), `p6u` (roleta na janela), `p6v` (320 px), `p6w` (lúpulo), `p6x` (lúpulo novo).
+
+## Leveduras com valores fixos e janela (24/11/2026, pedido do responsável; sem migração)
+- A seção Leveduras saiu da tabela editável (`secaoLista`) e usa o `secaoLinhas` (classe `lev`), como malte e lúpulo,
+  mas a linha NÃO tem campo: só texto (`fixo` no `montarLinha`: nome ›, "Ale · Seca · 80% aten." e, à direita,
+  "1 pacote" / "2 pacotes" em destaque com a etapa embaixo). Tocar em qualquer parte da linha abre a janela do item
+  (`dialog.item-janela.lev`): Quantidade (± de 1, roleta no comum para a unidade) + Unidade na mesma linha; Nome, Tipo,
+  Forma, Atenuação, Etapa, fonte dos dados; ↑ ↓ Remover e Pronto. Ordem: alça ⠿ na linha (Completo) ou ↑ ↓ na janela.
+- Adicionar: do catálogo abre a janela SEM roleta (`editarAoAdicionar: false`: já vem 1 pacote, Pronto basta);
+  item livre abre com o foco no nome. Clean: ficha (ponto · nome + forma e atenuação · "1 pacote"/etapa), sem alça.
+- Outros ingredientes, mostura e fermentação continuam em tabela/cartões (candidatos ao mesmo padrão: K4 do plano Clean).
+- Teste do navegador: levedura livre na janela, linha sem campo, tocar no valor abre, Esc; celular 390/320 px (linha de
+  64 px, janela cabe, sem teclado nem roleta) e clean. Capturas `p6q-levedura-linha`, `p6q-levedura-janela-390/320`, `p7e`.
 
 ## Roleta para números no celular (23/11/2026, pedido do responsável: digitar quantidade era ruim; sem migração)
 - Tela de toque (`pointer: coarse`): todo `campoNumero` com faixa vira "botão" da roleta (somente leitura, o teclado não
