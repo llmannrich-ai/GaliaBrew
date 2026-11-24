@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124a");
+    const m = await import("./fontes.js?v=20261124b");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -380,7 +380,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124b");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -441,7 +441,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124b");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -460,7 +460,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124b");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -552,7 +552,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124a");
+    const m = await import("./calculos.js?v=20261124b");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -969,7 +969,7 @@ const erros = [];
       vitalFundo: v.bottom, vitalAltura: v.height, roletaTopo: ro.top, roletaAltura: ro.height, campoFundo: c.bottom, larg: ro.width,
       meio: [...document.querySelectorAll(".roleta-item.no-meio")].map((n) => n.textContent) };
   });
-  verificar(!r1.teclado && r1.rodas === 2 && r1.valor === `${qtdAntes} kg` && r1.meio.join("") === qtdAntes.replace(/0$/, ""),
+  verificar(!r1.teclado && r1.rodas === 2 && r1.valor === `${qtdAntes} kg` && r1.meio.join(",") === qtdAntes.replace(/0$/, ""),
     `roleta: tocar na quantidade abre a roleta (sem teclado), com o valor atual no meio das rodas (${r1.meio.join(" ")} kg)`);
   verificar(r1.linhaFina && Math.abs(r1.vitalFundo - r1.roletaTopo) <= 1 && r1.vitalAltura <= 52 && r1.campoFundo <= r1.vitalFundo - r1.vitalAltura,
     `roleta: a barra de números vira a linha fina logo acima da roleta e o campo fica à vista (roleta com ${Math.round(r1.roletaAltura)} px)`);
@@ -1000,7 +1000,7 @@ const erros = [];
       await cel.waitForTimeout(450);
     }
   };
-  await girar(1, ",50");
+  await girar(1, "50");
   const depoisGiro = await qtd2.inputValue();
   verificar(depoisGiro === `${qtdAntes.split(",")[0]},500` && await cel.textContent(".roleta-valor") === `${depoisGiro} kg`,
     `roleta: girar a roda dos decimais muda a quantidade na hora (${qtdAntes} → ${depoisGiro} kg)`);
@@ -1012,12 +1012,31 @@ const erros = [];
   await cel.waitForSelector(".roleta");
   await cel.waitForTimeout(150);
   await girar(0, String(Number(qtdAntes.split(",")[0]) + 2));
-  await girar(1, ",25");
+  await girar(1, "25");
   await tocar(".roleta-ok");
   const esperadoRoleta = `${Number(qtdAntes.split(",")[0]) + 2},250`;
   verificar(await cel.locator(".roleta").count() === 0 && await qtd2.inputValue() === esperadoRoleta, `roleta: girar as duas rodas e OK grava ${esperadoRoleta} kg`);
   await tocar(".barra-app .app-desfazer");
   verificar(await qtd2.inputValue() === qtdAntes, "roleta: ↶ desfaz a roleta inteira num passo só");
+  // Inteiro e decimais bem separados (24/11/2026): vírgula entre as rodas, cada roda com a sua faixa.
+  await tocar('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(250);
+  const sep = await cel.evaluate(() => {
+    const [a, b] = [...document.querySelectorAll(".roleta-roda")].map((n) => n.getBoundingClientRect());
+    const meio = [...document.querySelectorAll(".roleta-item.no-meio")].map((n) => n.getBoundingClientRect());
+    return { vao: Math.round(b.left - a.right), textos: Math.round(meio[1].left - meio[0].right), faixas: document.querySelectorAll(".roleta-faixa").length,
+      virgula: document.querySelector(".roleta-virgula")?.textContent };
+  });
+  verificar(sep.vao >= 30 && sep.faixas === 2 && sep.virgula === ",", `roleta: inteiro e decimais separados (${sep.vao} px entre as rodas, ${sep.textos} px entre os números, vírgula no meio)`);
+  // Mínimo de 100 g de malte (24/11/2026): 0 | ,05 vira 0,100 e a roda dos decimais volta para 10.
+  await girar(0, "0");
+  await girar(1, "05");
+  await cel.waitForTimeout(500);
+  verificar(await qtd2.inputValue() === "0,100" && await cel.evaluate(() => document.querySelectorAll(".roleta-roda")[1].querySelector(".no-meio")?.textContent) === "10",
+    `roleta: malte no mínimo 100 g (pedido 0,05 → ${await qtd2.inputValue()} kg)`);
+  await cel.screenshot({ path: `${SAIDA}/p6t-roleta-minimo.png` });
+  await tocar(".roleta-cancelar");
   // Fora do editor do celular a roleta também cabe (320 px é conferido mais abaixo). Agora: trocar para o teclado.
   await centro('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');
   const [qx2, qy2] = await centro('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]');

@@ -68,10 +68,21 @@ export function rodasDaFaixa(f, valor, fmt) {
   for (let k = 0; k * f.passo < 1 - 1e-9; k++) fracs.push(arred(k * f.passo, casas));
   const iFrac = incluir(fracs, fracao);
   const casasFrac = Math.max(casas, casasDe(fracao));
-  return [
+  // A vírgula fica entre as duas rodas (roleta.js), não no texto: "4" | , | "80".
+  const rodas = [
     { valores: ints, textos: ints.map(String), indice: iInt },
-    { valores: fracs, textos: fracs.map((x) => "," + x.toFixed(casasFrac).split(".")[1]), indice: iFrac },
+    { valores: fracs, textos: fracs.map((x) => x.toFixed(casasFrac).split(".")[1]), indice: iFrac },
   ];
+  rodas.piso = Math.min(f.min, valor);          // abaixo do mínimo só se o valor atual já estava abaixo
+  return rodas;
+}
+
+/** Índices das rodas que mostram `v` (o mais perto em cada roda). Usado quando o valor bate no mínimo/máximo. */
+export function indicesDoValor(rodas, v) {
+  const perto = (lista, x) => lista.reduce((m, y, i) => (Math.abs(y - x) < Math.abs(lista[m] - x) ? i : m), 0);
+  if (rodas.length === 1) return [perto(rodas[0].valores, v)];
+  const inteiro = Math.floor(v + 1e-9);
+  return [perto(rodas[0].valores, inteiro), perto(rodas[1].valores, arred(v - inteiro, 6))];
 }
 
 /** Valor das rodas (índices escolhidos), arredondado; com duas rodas, inteiro + fração dentro de [min, max]. */
@@ -80,14 +91,14 @@ export function valorDasRodas(f, rodas, indices) {
   const v = arred(rodas[0].valores[indices[0]] + rodas[1].valores[indices[1]], 6);
   // Teto = max (ex.: 50 | ,99 vira 50), a não ser que o valor atual já passasse dele (aí a roda de inteiros cresceu).
   const teto = rodas[0].valores.at(-1) > Math.floor(f.max) ? Infinity : f.max;
-  return Math.min(Math.max(v, Math.min(f.min, rodas[0].valores[0])), teto);
+  return Math.min(Math.max(v, rodas.piso ?? f.min), teto);
 }
 
 // ---------- faixas do GaliaBrew (unidades do banco, regra 4; cor na unidade da tela) ----------
 const sgFaixa = (inicial) => ({ min: 0.99, max: 1.15, passo: 0.001, inicial });
 export const FAIXAS = {
   // ingredientes
-  quantidade_kg: { min: 0, max: 50, passo: 0.01, partes: true, inicial: 4 },
+  quantidade_kg: { min: 0.1, max: 50, passo: 0.01, partes: true, inicial: 4 },     // mínimo 100 g (pedido do responsável)
   quantidade_g: { min: 0, max: 1000, segmentos: [[100, 1], [300, 5], [1000, 10]], inicial: 20 },
   rendimento_pct: { min: 0, max: 100, passo: 0.1, partes: true, inicial: 80 },
   umidade_pct: { min: 0, max: 20, passo: 0.1, partes: true, inicial: 4 },
@@ -187,7 +198,7 @@ export function presetFermentavel(item, receita) {
   else if (cor >= 15) kg = 0.25;
   else if (cor >= 5) kg = 0.5;
   else kg = outrosComQtd.length ? 1 : 4;
-  return Math.max(0.05, Math.round((kg * escala) / 0.05) * 0.05);
+  return Math.max(0.1, Number((Math.round((kg * escala) / 0.05) * 0.05).toFixed(2)));
 }
 
 /** Gramas mais prováveis de um lúpulo (20 L): amargor 20 g; sabor/aroma 30 g; whirlpool 40 g; dry hop 50 g. */

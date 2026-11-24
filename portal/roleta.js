@@ -3,8 +3,8 @@
 // mudando enquanto a roda gira). Cada roda é uma lista com rolagem nativa e "scroll-snap" (inércia do próprio
 // aparelho); o item no meio é o escolhido. O valor vai para o campo AO VIVO; "Cancelar" (ou Esc) volta ao de antes;
 // "OK", tocar fora ou Enter confirmam. "Digitar" fecha a roleta e abre o teclado no próprio campo.
-import { el, numeroBR } from "./ui.js?v=20261124a";
-import { rodasDaFaixa, valorDasRodas, valorInicial } from "./faixas.js?v=20261124a";
+import { el, numeroBR } from "./ui.js?v=20261124b";
+import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261124b";
 
 const ALTURA = 44;                 // altura de um item (alvo de toque); a roda mostra 5 (2 acima, 2 abaixo)
 let atual = null;                  // roleta aberta: { fechar(confirmar) }
@@ -28,6 +28,9 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
   const mostrar = () => { valorTxt.textContent = `${numeroBR(escolhido, casas)}${unidade ? " " + unidade : ""}`; };
   const aplicar = () => {
     const v = valorDasRodas(faixa, rodas, indices);
+    // Bateu no mínimo/máximo (ex.: malte 0 | ,05 → 100 g): as rodas voltam para mostrar o valor que valeu.
+    const certos = indicesDoValor(rodas, v);
+    certos.forEach((i, k) => { if (i !== indices[k]) { indices[k] = i; elementos[k].irPara(i, true); } });
     if (v === escolhido) return;
     escolhido = v;
     mostrar();
@@ -93,7 +96,7 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
       else if (e.key === "Enter") { e.preventDefault(); fechar(true); }
     });
     anunciar();
-    return { n, pintar, posicionar: () => { n.scrollTop = indices[k] * ALTURA; pintar(); } };
+    return { n, pintar, irPara, posicionar: () => { n.scrollTop = indices[k] * ALTURA; pintar(); } };
   });
 
   const folha = el("div", { class: "roleta", role: "dialog", "aria-label": rotulo ? `Escolher: ${rotulo}` : "Escolher número" },
@@ -101,9 +104,12 @@ export function abrirRoleta({ campo, faixa, valor, casas = 2, unidade = "", rotu
       el("button", { type: "button", class: "link roleta-cancelar", text: "Cancelar", on: { click: () => fechar(false) } }),
       el("div", { class: "roleta-titulo" }, el("span", { class: "roleta-rotulo", text: rotulo }), valorTxt),
       el("button", { type: "button", class: "roleta-ok", text: "OK", on: { click: () => fechar(true) } })),
-    el("div", { class: "roleta-rodas" },
-      el("div", { class: "roleta-faixa", "aria-hidden": "true" }),
-      elementos.map((x) => x.n),
+    // Cada roda na sua coluna, com a própria faixa do meio; com duas rodas, a vírgula fica entre elas (bem separadas
+    // para o dedo girar uma sem mexer na outra).
+    el("div", { class: `roleta-rodas${rodas.length > 1 ? " duas" : ""}` },
+      elementos.map((x, k) => [
+        k === 1 ? el("span", { class: "roleta-virgula", text: ",", "aria-hidden": "true" }) : null,
+        el("div", { class: "roleta-coluna" }, el("div", { class: "roleta-faixa", "aria-hidden": "true" }), x.n)]),
       unidade ? el("span", { class: "roleta-unidade", text: unidade, "aria-hidden": "true" }) : null),
     el("div", { class: "roleta-pe" },
       el("button", { type: "button", class: "secundario pequeno roleta-digitar", text: "Digitar o número", on: { click: () => { fechar(true); aoDigitar?.(); } } }),
