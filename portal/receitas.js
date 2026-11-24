@@ -1087,7 +1087,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("span", { class: "ph-estado", text: rotulo })),
         el("div", { class: "ph-escala", role: "img", "aria-label": `pH estimado ${numeroBR(m.ph, 2)}: ${rotulo}. Faixa boa 5,2 a 5,6; ideal 5,3 a 5,5.` },
           el("span", { class: "ph-trilho" }), marca),
-        ml >= 0.1 && !leitura
+        ml >= 0.1 && estado !== "ideal" && !leitura   // já ideal (5,3–5,5): sem botão (24/11/2026, pedido do responsável)
           ? el("button", { type: "button", class: "secundario pequeno ph-acido", text: `+ ${numeroBR(ml, 1)} mL de lático 88%`,
               title: `Leva o pH a ${numeroBR(m.alvo, 1)}`, on: { click: () => {
                 const ja = r.acidos.find((x) => x.acido === "LATICO_88");

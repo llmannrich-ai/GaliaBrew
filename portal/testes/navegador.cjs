@@ -364,6 +364,7 @@ const erros = [];
   await pagina.click(".ph-cartao button.ph-acido");
   const phDepois = await pagina.textContent(".ph-cartao");
   verificar(/(5,40|5,39|5,41)/.test(phDepois) && !phDepois.includes("Sem o ácido"), "com o lático sugerido o pH vai a 5,40");
+  verificar(await pagina.locator(".ph-cartao button.ph-acido").count() === 0, "pH ideal (5,3–5,5): sem o botão de ácido");
   // Volumes das duas águas (0010): vazio mostra a sugestão; informados mudam ppm/pH e avisam se não fecham.
   verificar(await pagina.getAttribute('input[aria-label="Água da mostura (L)"]', "placeholder") === "14,4"
     && await pagina.getAttribute('input[aria-label="Água de lavagem (L)"]', "placeholder") === "18,4", "volumes vazios mostram a sugestão (14,4 L + 18,4 L)");
