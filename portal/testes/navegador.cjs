@@ -514,18 +514,35 @@ const erros = [];
   verificar(await pagina.inputValue(`${linhaL}:nth-child(2) input[aria-label="Qtd (g)"]`) === "20,0" && (await focado()).includes("posição 2 de 2"),
     "seta ↓ na alça desce o item e o foco acompanha");
   verificar(await pagina.locator(".ing-mais").count() === 0, "sem o botão ⋯ nas linhas de ingrediente");
+  // Detalhes do item numa janela (24/11/2026): tocar no item abre; a quantidade está na janela.
+  const janelaItem = "dialog.item-janela";
   await pagina.click(`${segunda} .ing-dado.d1`);
-  verificar(await pagina.getAttribute(`${segunda} button.ing-nome`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes`), "clicar nos números da linha abre os detalhes");
-  await pagina.click(`${segunda} button.ing-nome`);
-  verificar(await pagina.getAttribute(`${segunda} button.ing-nome`, "aria-expanded") === "false" && !(await pagina.isVisible(`${segunda} .ing-detalhes`)), "clicar no nome fecha os detalhes");
+  verificar(await pagina.isVisible(janelaItem) && await pagina.locator(".ing-detalhes").count() === 0, "clicar nos números da linha abre a janela do item (sem detalhes embutidos na linha)");
+  await pagina.click(`${janelaItem} button.item-fechar`);
+  await pagina.waitForTimeout(50);
+  const foco1 = (await focado()) ?? await pagina.evaluate(() => document.activeElement?.outerHTML.slice(0, 120));
+  verificar(!(await pagina.isVisible(janelaItem)) && foco1.startsWith("Detalhes de"), `× fecha a janela e o foco volta ao item (${foco1})`);
   await pagina.click(`${segunda} input[aria-label="Qtd (g)"]`);
-  verificar(!(await pagina.isVisible(`${segunda} .ing-detalhes`)), "clicar na quantidade não abre os detalhes");
+  verificar(!(await pagina.isVisible(janelaItem)), "clicar na quantidade da linha não abre a janela");
   await pagina.click(`${segunda} button.ing-nome`);
-  verificar(await pagina.getAttribute(`${segunda} button.ing-nome`, "aria-expanded") === "true" && await pagina.isVisible(`${segunda} .ing-detalhes input[aria-label="Alfa (%)"]`), "clicar no nome do item abre os detalhes (alfa, forma, nome)");
-  verificar((await pagina.textContent(`${segunda} .ing-detalhes .fonte-dados`)).includes("Cadastrado por você"), "detalhes do lúpulo na receita mostram a fonte dos dados");
+  verificar(await pagina.isVisible(`${janelaItem} input[aria-label="Alfa (%)"]`) && await pagina.isVisible(`${janelaItem} input[aria-label="Qtd (g)"]`),
+    "clicar no nome do item abre a janela com a quantidade e os dados (alfa, forma, nome)");
+  verificar((await pagina.textContent(`${janelaItem} .fonte-dados`)).includes("Cadastrado por você"), "janela do lúpulo na receita mostra a fonte dos dados");
+  const glJanela = await pagina.textContent(`${janelaItem} .ing-dado.d2 .ing-dado-val`);
+  await pagina.fill(`${janelaItem} input[aria-label="Qtd (g)"]`, "40");
+  await pagina.waitForTimeout(50);
+  const glJanela2 = await pagina.textContent(`${janelaItem} .ing-dado.d2 .ing-dado-val`);
+  verificar(glJanela2 !== glJanela && (await pagina.textContent(`${janelaItem} .item-receita`)).includes("IBU"),
+    `quantidade na janela: o g/L do lúpulo muda ao vivo e a janela mostra o resumo da receita (${glJanela} → ${glJanela2} g/L)`);
   await pagina.screenshot({ path: `${SAIDA}/p3f-detalhes.png` });
-  await pagina.click(`${segunda} .ing-detalhes >> text=Remover`);
-  verificar(await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pelos detalhes");
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForTimeout(50);
+  verificar(!(await pagina.isVisible(janelaItem)) && await pagina.inputValue(`${segunda} input[aria-label="Qtd (g)"]`) === "40,0", "Esc fecha a janela e a linha mostra a quantidade nova");
+  await pagina.keyboard.press("Control+z");
+  verificar(await pagina.inputValue(`${segunda} input[aria-label="Qtd (g)"]`) !== "40,0", "Ctrl+Z desfaz a quantidade mudada na janela");
+  await pagina.click(`${segunda} button.ing-nome`);
+  await pagina.click(`${janelaItem} >> text=Remover`);
+  verificar(!(await pagina.isVisible(janelaItem)) && await pagina.locator(linhaL).count() === 1 && await pagina.inputValue('input[aria-label="Qtd (g)"]') === "60,0", "remover pela janela do item");
 
   // ---- E3: desfazer/refazer ----
   await pagina.keyboard.press("Control+z");
@@ -1068,16 +1085,68 @@ const erros = [];
   await cel.waitForTimeout(300);
   verificar(await qtd2.evaluate((n) => n.readOnly), "roleta: ao sair do campo, o próximo toque volta a abrir a roleta");
 
-  // Detalhes do ingrediente: tocar no nome abre e fecha (sem o botão ⋯).
+  // Janela do item (24/11/2026): tocar no nome abre; quantidade no topo; roleta dentro da janela.
   const nomeMalte = '[data-secao="fermentaveis"] li.ing:first-of-type button.ing-nome';
+  const janItem = "dialog.item-janela";
   await cel.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), nomeMalte);
   const tamNome = await cel.locator(nomeMalte).boundingBox();
   await tocar(nomeMalte);
-  verificar(tamNome.height >= 44 && await cel.getAttribute(nomeMalte, "aria-expanded") === "true" && await cel.isVisible('[data-secao="fermentaveis"] li.ing:first-of-type .ing-detalhes'),
-    `toque: tocar no nome do malte abre os detalhes (alvo de ${Math.round(tamNome.height)} px)`);
+  await cel.waitForTimeout(150);
+  const geo = await cel.evaluate((j) => {
+    const d = document.querySelector(j);
+    const q = d?.querySelector('input[aria-label="Qtd (kg)"]')?.getBoundingClientRect();
+    const b = d?.getBoundingClientRect();
+    const passa = [...d.querySelectorAll("*")].filter((n) => n.getBoundingClientRect().right > innerWidth + 0.5).map((n) => (n.className || n.tagName) + ":" + Math.round(n.getBoundingClientRect().right)).slice(0, 8);
+    return { passa, aberta: Boolean(d?.open), larg: b?.width, topo: b?.top, qTopo: q?.top, qFundo: q?.bottom, qAlt: q?.height, vw: innerWidth, rolagem: d ? d.scrollWidth - d.clientWidth : 0 };
+  }, janItem);
+  verificar(tamNome.height >= 44 && geo.aberta && Math.abs(geo.larg - geo.vw) <= 1 && geo.topo <= 1 && geo.rolagem <= 0,
+    `toque: tocar no nome do malte abre a janela do item na largura toda, presa no topo (alvo de ${Math.round(tamNome.height)} px; ${JSON.stringify(geo)})`);
+  verificar(geo.qFundo < 260 && geo.qAlt >= 40, `toque: a quantidade fica no alto da janela (${Math.round(geo.qTopo)}–${Math.round(geo.qFundo)} px, ${Math.round(geo.qAlt)} px de altura)`);
   await cel.screenshot({ path: `${SAIDA}/p6i-celular-detalhes-toque.png` });
+  const qJan = `${janItem} input[aria-label="Qtd (kg)"]`;
+  const qLinha = '[data-secao="fermentaveis"] li.ing:first-of-type input[aria-label="Qtd (kg)"]';
+  const qAntesJan = await cel.inputValue(qJan);
+  await tocar(qJan);
+  await cel.waitForSelector(`${janItem} > .roleta`);
+  await cel.waitForTimeout(350);                                // fim da animação de subida
+  const rj = await cel.evaluate((j) => {
+    const f = document.querySelector(`${j} > .roleta`).getBoundingClientRect();
+    const q = document.querySelector(`${j} input[aria-label="Qtd (kg)"]`).getBoundingClientRect();
+    const x = f.left + f.width / 2;
+    const y = document.querySelector(`${j} .roleta-ok`).getBoundingClientRect();
+    const alvo = document.elementFromPoint(y.left + y.width / 2, y.top + y.height / 2);
+    return { qFundo: q.bottom, rTopo: f.top, okTocavel: Boolean(alvo?.closest(".roleta-ok")), x };
+  }, janItem);
+  verificar(rj.okTocavel && rj.qFundo <= rj.rTopo, `roleta: dentro da janela do item ela recebe o toque e a quantidade fica acima dela (${Math.round(rj.rTopo - rj.qFundo)} px de folga; ${JSON.stringify(rj)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6u-janela-item-roleta.png` });
+  await cel.keyboard.press("ArrowUp");                        // roda dos decimais um passo acima
+  await cel.waitForTimeout(250);
+  const qGiro = await cel.inputValue(qJan);
+  await tocar(`${janItem} .roleta-ok`);
+  await cel.waitForTimeout(150);
+  verificar(qGiro !== qAntesJan && await cel.locator(`${janItem} > .roleta`).count() === 0 && await cel.evaluate((j) => document.querySelector(j)?.open, janItem),
+    `roleta: OK grava a quantidade e a janela continua aberta (${qAntesJan} → ${qGiro} kg)`);
+  await tocar(`${janItem} .item-pronto`);
+  await cel.waitForTimeout(150);
+  verificar(await cel.locator(janItem).count() === 0 && await cel.inputValue(qLinha) === qGiro, "toque: Pronto fecha a janela e a linha mostra a quantidade nova");
+  await tocar(".barra-app button.app-desfazer");
+  verificar(await cel.inputValue(qLinha) === qAntesJan, "toque: ↶ desfaz a quantidade escolhida na janela");
+  // 320 px: tudo cabe na janela, sem rolagem para o lado.
+  await cel.setViewportSize({ width: 320, height: 568 });
+  await cel.waitForTimeout(200);
+  await cel.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), nomeMalte);
   await tocar(nomeMalte);
-  verificar(await cel.getAttribute(nomeMalte, "aria-expanded") === "false", "toque: tocar de novo no nome fecha os detalhes");
+  await cel.waitForTimeout(150);
+  const g320 = await cel.evaluate((j) => {
+    const d = document.querySelector(j);
+    const passa = [...d.querySelectorAll("*")].filter((n) => n.getBoundingClientRect().right > innerWidth + 0.5 && n.getClientRects().length).map((n) => n.className || n.tagName);
+    return { passa, q: d.querySelector('input[aria-label="Qtd (kg)"]').getBoundingClientRect().bottom };
+  }, janItem);
+  verificar(!g320.passa.length && g320.q < 240, `toque: em 320 px a janela do item cabe na largura e a quantidade fica no alto${g320.passa.length ? " (passam: " + g320.passa.slice(0, 5).join(", ") + ")" : ""}`);
+  await cel.screenshot({ path: `${SAIDA}/p6v-janela-item-320.png` });
+  await tocar(`${janItem} .item-fechar`);
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(200);
 
   // Tabelas viram cartões, sem rolagem para o lado.
   const rolagemTabelas = await cel.evaluate(() => [...document.querySelectorAll(".tabela-rolagem")].map((t) => t.scrollWidth - t.clientWidth));
@@ -1116,6 +1185,15 @@ const erros = [];
   verificar(await cel.textContent(".roleta-valor") === `${gLup},0 g` && await cel.inputValue('[data-secao="lupulos"] li.ing:last-child input[aria-label="Qtd (g)"]') === `${gLup},0`,
     `roleta: lúpulo novo abre a roleta já na quantidade mais provável (${gLup} g para o lote)`);
   await tocar(".roleta-ok");
+  // Janela do lúpulo: etapa e tempo junto da quantidade.
+  await cel.evaluate(() => document.querySelector('[data-secao="lupulos"] li.ing:last-child button.ing-nome').scrollIntoView({ block: "center" }));
+  await tocar('[data-secao="lupulos"] li.ing:last-child button.ing-nome');
+  await cel.waitForSelector("dialog.item-janela");
+  verificar(await cel.isVisible('dialog.item-janela select[aria-label="Etapa"]') && await cel.inputValue('dialog.item-janela input[aria-label="Qtd (g)"]') === `${gLup},0`,
+    "toque: janela do lúpulo com etapa, tempo e quantidade");
+  await cel.screenshot({ path: `${SAIDA}/p6w-janela-lupulo.png` });
+  await tocar("dialog.item-janela .item-fechar");
+  await cel.waitForSelector("dialog.item-janela", { state: "detached" });
   const linhaLCel = '[data-secao="lupulos"] li.ing';
   const [ax, ay] = await centro(`${linhaLCel}:nth-child(2) .ing-alca`);
   const l1 = await cel.locator(`${linhaLCel}:nth-child(1)`).boundingBox();

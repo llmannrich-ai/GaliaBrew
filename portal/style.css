@@ -395,17 +395,50 @@ button.ing-nome:hover, button.ing-nome:active { background: transparent; border:
 @media (hover: hover) { button.ing-nome:hover .ing-nome-txt { text-decoration: underline; text-underline-offset: 3px; } }
 .ing-nome-linha { display: flex; align-items: baseline; gap: .35rem; min-width: 0; max-width: 100%; }
 .ing-seta { flex: none; color: var(--suave); font-weight: 700; line-height: 1; transition: transform .15s; }
-button.ing-nome[aria-expanded="true"] .ing-seta { transform: rotate(90deg); }
 .ing-cor, .ing-dado { cursor: pointer; }
 .ing-nome-txt { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ing-sub { font-size: .8rem; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ing-dado { display: grid; justify-items: end; line-height: 1.15; }
 .ing-dado-rot { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); }
 .ing-dado-val { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.ing-detalhes { grid-column: 1 / -1; background: var(--painel); border-radius: var(--raio-p); padding: .8rem .9rem; margin: .2rem 0 .1rem; }
-.ing-detalhes .grade-form { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-.ing-detalhes input, .ing-detalhes select { background: var(--cartao); }
-.acoes-detalhes { display: flex; gap: .5rem; align-items: center; margin-top: .8rem; flex-wrap: wrap; }
+/* Janela do item (24/11/2026, pedido do responsável: substitui os detalhes que abriam embutidos na linha).
+   Topo fixo com o nome e ×; quantidade em destaque logo abaixo (com os números do item e da receita ao vivo, porque a
+   barra de números fica atrás da janela); dados do cadastro; Subir/Descer/Remover e Pronto no pé. No celular fica presa
+   no TOPO da tela: a roleta sobe do rodapé e a quantidade continua à vista. */
+dialog.item-janela { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
+dialog.item-janela[open] { display: flex; flex-direction: column; }
+.item-topo {
+  position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: .6rem;
+  padding: .45rem .45rem .45rem 1rem; background: var(--painel); border-bottom: 1px solid var(--linha);
+}
+.item-topo .ing-cor { flex: none; width: 1.5rem; height: 1.5rem; }
+.item-titulo { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
+.item-nome { font-size: var(--t-m); font-weight: 750; overflow-wrap: anywhere; }
+.item-sub { font-size: var(--t-p); color: var(--suave); }
+.item-sub:empty { display: none; }
+button.item-fechar {
+  flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: transparent; color: var(--tinta);
+  font-size: 1.9rem; font-weight: 400; line-height: 1; touch-action: manipulation;
+}
+button.item-fechar:hover { background: color-mix(in srgb, var(--tinta) 8%, transparent); border: none; color: var(--tinta); }
+.item-corpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .9rem; padding: .9rem 1rem 1rem; }
+.item-principal { display: grid; grid-template-columns: minmax(0, 1fr); gap: .7rem; }
+.item-bloco { display: grid; grid-template-columns: minmax(0, 1fr); gap: .3rem; }
+.item-rotulo { font-size: var(--t-rotulo); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); }
+.item-principal .ing-quando select.etapa { min-width: 9rem; }
+.item-principal .campo-qtd input.qtd { width: 6.5rem; font-size: 1.25rem; font-weight: 700; text-align: center; }
+.item-bloco > .ing-qtd, .item-bloco > .ing-quando { grid-area: auto; }        /* as linhas do celular dão área de grade (qtd, quando) a estes blocos */
+.item-principal button.passo { width: 2.75rem; height: 2.75rem; font-size: 1.3rem; }
+.item-dados { display: flex; gap: 1.4rem; }
+.item-dados .ing-dado { justify-items: start; cursor: default; }
+.item-dados .ing-dado-val { font-size: var(--t-m); }
+.item-receita { margin: 0; padding: .45rem .65rem; border-radius: var(--raio-p); background: var(--painel); font-size: var(--t-p); font-variant-numeric: tabular-nums; }
+.item-corpo .grade-form { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.item-acoes {
+  position: sticky; bottom: 0; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
+  padding: .6rem 1rem; background: var(--cartao); border-top: 1px solid var(--linha);
+}
+button.item-pronto { min-height: 2.75rem; min-width: 6rem; margin-left: auto; }
 .ing-quando { display: flex; align-items: center; gap: .35rem; }
 .ing-quando select.etapa { width: auto; min-width: 7.5rem; padding: .2rem .35rem; }
 .ing-tempo { display: inline-flex; align-items: center; gap: .3rem; }
@@ -839,11 +872,11 @@ dialog form { display: grid; gap: .9rem; }
   .ing { gap: .4rem .5rem; }
   .linhas-ing.ferm .ing {
     grid-template-columns: 1.8rem 1.2rem minmax(0, 1fr) 3.4rem 2.8rem;
-    grid-template-areas: "alca cor nome nome nome" "qtd qtd qtd d1 d2" "det det det det det";
+    grid-template-areas: "alca cor nome nome nome" "qtd qtd qtd d1 d2";
   }
   .linhas-ing.lup .ing {
     grid-template-columns: 1.8rem minmax(0, 1fr) 3.4rem 2.8rem;
-    grid-template-areas: "alca nome nome nome" "quando quando quando quando" "qtd qtd d1 d2" "det det det det";
+    grid-template-areas: "alca nome nome nome" "quando quando quando quando" "qtd qtd d1 d2";
   }
   .ing-alca { grid-area: alca; height: 2.75rem; }
   .ing-cor { grid-area: cor; }
@@ -852,11 +885,18 @@ dialog form { display: grid; gap: .9rem; }
   .ing-dado.d1 { grid-area: d1; }
   .ing-dado.d2 { grid-area: d2; }
   .ing-quando { grid-area: quando; }
-  .ing-detalhes { grid-area: det; }
   .campo-qtd input.qtd { width: 4.3rem; }
   button.passo { width: 2.25rem; height: 2.25rem; }
 
   dialog.busca { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
+  /* Janela do item no celular: largura toda, presa no topo (abaixo do entalhe), cantos de baixo arredondados. */
+  dialog.item-janela { width: 100vw; max-width: 100vw; max-height: 100dvh; margin: 0 0 auto; border: none; border-radius: 0 0 16px 16px; }
+  .item-topo { padding-top: max(.45rem, env(safe-area-inset-top)); }
+  .item-corpo { padding: .8rem var(--lado, .55rem) 1rem; }
+  .item-acoes { padding: .55rem var(--lado, .55rem) max(.55rem, env(safe-area-inset-bottom)); }
+  .item-principal .ing-quando { flex-wrap: wrap; }
+  .item-principal .campo-qtd { width: 100%; }
+  .item-principal .campo-qtd input.qtd { flex: 1; width: 0; min-width: 0; height: 2.75rem; }
   dialog.relatorio { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
   .rel-topo { padding-top: max(.5rem, env(safe-area-inset-top)); }
   .rel-pe { padding-bottom: max(.4rem, env(safe-area-inset-bottom)); }
@@ -1118,3 +1158,6 @@ input[readonly][data-roleta] { cursor: pointer; caret-color: transparent; }
 input.em-roleta { outline: 2px solid var(--destaque); outline-offset: -1px; border-color: transparent; background: color-mix(in srgb, var(--destaque) 9%, var(--cartao)); }
 /* Espaço para os últimos campos da página subirem acima da roleta (fora do editor; no editor vale o do teclado). */
 html.roleta-aberta .conteudo { padding-bottom: calc(var(--roleta-h, 0px) + 4rem); }
+/* Roleta dentro de uma janela (detalhes do item, cadastros): a janela ganha espaço embaixo para o campo subir acima dela. */
+dialog[open]:has(> .roleta) { padding-bottom: calc(var(--roleta-h, 0px) + 1rem); }
+dialog.item-janela:has(> .roleta) .item-acoes { position: static; }

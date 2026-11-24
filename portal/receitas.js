@@ -1,6 +1,6 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
 import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124a";
-import { roletaAberta } from "./roleta.js?v=20261124a";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124a";
 import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124a";
 import { sb, sessao, preferencias } from "./estado.js?v=20261124a";
 import { calcularReceita, platoDeSg, corHexDeSrm, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124a";
@@ -228,6 +228,7 @@ function aplicarEquipamento(r, eq) {
 
 function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem = null } = {}) {
   const calculados = new Map();      // item → função que escreve os valores calculados da linha (% do grist, IBU...)
+  let janelaItem = null;             // janela de detalhes aberta: { chave, item, aoCalcular, receita }
   const totais = [];                 // funções que escrevem o total no cabeçalho de cada seção
   const estiloAtual = () => cat.estilos.find((e) => e.id === r.estilo_id);
   /** Título de seção com ícone. */
@@ -369,6 +370,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     for (const f of aoRecalcular) f(res);
     res.fermentaveis.forEach((x, i) => calculados.get(r.fermentaveis[i])?.(x));
     res.lupulos.forEach((x, i) => calculados.get(r.lupulos[i])?.(x));
+    if (janelaItem) {
+      const x = res[janelaItem.chave]?.[r[janelaItem.chave].indexOf(janelaItem.item)];
+      if (x) janelaItem.aoCalcular(x);
+      janelaItem.receita(res);
+    }
     for (const t of totais) t(res);
     const estilo = estiloAtual();
     vital.atualizar(res, estilo, { mudanca: montado && !leitura, campo: campo ?? document.activeElement });
@@ -595,7 +601,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   desenharParametros();
 
   // ---------- linhas de ingrediente (fermentáveis e lúpulos): a quantidade é o campo principal ----------
-  const abertos = new Set();         // itens com "detalhes" aberto (sobrevive aos redesenhos)
   const rotular = (texto, campo) => el("label", {}, el("span", { text: texto }), campo);
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
@@ -627,39 +632,14 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         partes.refrescar?.();
       }
       /** focar = true no teclado (o foco acompanha o item); com dedo/mouse não mexe no foco. */
-      const mover = (para, focar = true) => {
-        if (para < 0 || para >= r[chave].length || para === i) return;
-        acao(() => {
-          const [x] = r[chave].splice(i, 1);
-          r[chave].splice(para, 0, x);
-          desenhar();
-          mudou();
-        });
-        if (focar) lista.querySelectorAll(".ing-alca")[para]?.focus();
-      };
-      const remover = () => acao(() => { abertos.delete(item); r[chave].splice(i, 1); desenhar(); mudou(); });
+      const mover = (para, focar = true) => moverItem(i, para, focar);
       const nomeItem = String(item.nome ?? "").trim() || "item sem nome";
-      const idDet = `det-${chave}-${i}`;
-      const aberto = abertos.has(item);
-      const det = el("div", { class: "ing-detalhes", id: idDet, hidden: !aberto },
-        el("div", { class: "grade-form" }, partes.detalhes),
-        leitura ? null : el("div", { class: "acoes-detalhes" },
-          el("button", { type: "button", class: "secundario pequeno", text: "↑ Subir", disabled: i === 0, on: { click: () => mover(i - 1) } }),
-          el("button", { type: "button", class: "secundario pequeno", text: "↓ Descer", disabled: i === r[chave].length - 1, on: { click: () => mover(i + 1) } }),
-          el("span", { class: "espaco" }),
-          el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: remover } })));
-      // Detalhes abrem tocando no item (nome, cor ou números); o botão ⋯ foi retirado em 23/11/2026 (pedido do responsável).
-      const alternar = () => {
-        const abrir = det.hidden;
-        det.hidden = !abrir;
-        botaoNome.setAttribute("aria-expanded", String(abrir));
-        li.classList.toggle("aberto", abrir);
-        if (abrir) abertos.add(item); else abertos.delete(item);
-      };
+      // Detalhes numa janela (24/11/2026, pedido do responsável; antes abriam embutidos na linha): tocar no item
+      // (nome, cor ou números; não nos campos) abre a janela com a quantidade em cima e os dados do item.
       const botaoNome = el("button", {
-        type: "button", class: "ing-nome", title: "Toque para ver os detalhes", "aria-expanded": String(aberto), "aria-controls": idDet,
+        type: "button", class: "ing-nome", title: "Toque para ver os detalhes", "aria-haspopup": "dialog",
         "aria-label": `Detalhes de ${nomeItem}`,
-        on: { click: alternar },
+        on: { click: () => abrirItem(item) },
       }, el("span", { class: "ing-nome-linha" }, nome, el("span", { class: "ing-seta", "aria-hidden": "true", text: "›" })), sub ?? null);
       const alca = leitura ? el("span", { class: "ing-alca", "aria-hidden": "true" }) : el("button", {
         type: "button", class: "ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
@@ -669,15 +649,110 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           pointerdown: (e) => arrastar(e, i, mover),
         },
       });
-      const li = el("li", { class: aberto ? "ing aberto" : "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas, det);
-      // Tocar fora dos campos (amostra de cor, números calculados) também abre/fecha os detalhes.
+      const li = el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, partes.colunas);
+      // Tocar fora dos campos (amostra de cor, números calculados) também abre os detalhes.
       li.addEventListener("click", (e) => {
-        if (e.target.closest("input, select, textarea, button, a, label, .ing-detalhes, .ing-qtd, .ing-quando")) return;
-        alternar();
+        if (e.target.closest("input, select, textarea, button, a, label, .ing-qtd, .ing-quando")) return;
+        abrirItem(item);
       });
       refrescar();
       calculados.set(item, partes.aoCalcular);
       return li;
+    }
+
+    /** Muda o item de posição (um passo do desfazer). */
+    function moverItem(de, para, focar) {
+      if (de < 0 || para < 0 || para >= r[chave].length || para === de) return;
+      acao(() => {
+        const [x] = r[chave].splice(de, 1);
+        r[chave].splice(para, 0, x);
+        desenhar();
+        mudou();
+      });
+      if (focar) lista.querySelectorAll(".ing-alca")[para]?.focus();
+    }
+
+    /**
+     * Janela do item: nome e dados no topo, QUANTIDADE em destaque (lúpulo: etapa e tempo junto), os números do item e
+     * da receita ao vivo (a barra de números fica atrás da janela), os dados copiados do cadastro e subir/descer/remover.
+     * Os campos são os mesmos da linha (montarLinha), ligados ao mesmo item; ao fechar, a seção é redesenhada.
+     */
+    function abrirItem(item, { focarNome = false } = {}) {
+      if (!r[chave].includes(item) || document.querySelector("dialog.item-janela")) return;
+      const nome = el("strong", { class: "item-nome" });
+      const ctx = { mudou: (campo) => { refrescar(); mudou(campo); } };
+      const partes = montarLinha(item, ctx);
+      const sub = el("span", { class: "item-sub" });
+      const receitaTxt = el("p", { class: "item-receita", "aria-live": "polite" });
+      function refrescar() {
+        nome.textContent = String(item.nome ?? "").trim() || "(sem nome)";
+        sub.textContent = (partes.sub?.() ?? []).filter(Boolean).join(" · ");
+        partes.refrescar?.();
+      }
+      const pega = (classe) => partes.colunas.find((n) => n.classList.contains(classe)) ?? null;
+      const rotuloBloco = (texto, n) => (n ? el("div", { class: "item-bloco" }, el("span", { class: "item-rotulo", text: texto }), n) : null);
+      const bSubir = el("button", { type: "button", class: "secundario pequeno", text: "↑ Subir", on: { click: () => deslocar(-1) } });
+      const bDescer = el("button", { type: "button", class: "secundario pequeno", text: "↓ Descer", on: { click: () => deslocar(1) } });
+      const posicao = () => r[chave].indexOf(item);
+      const botoesPosicao = () => { bSubir.disabled = posicao() <= 0; bDescer.disabled = posicao() >= r[chave].length - 1; };
+      const deslocar = (n) => { moverItem(posicao(), posicao() + n, false); botoesPosicao(); };
+      const fechar = () => { if (d.open) d.close(); };
+      const titulo = String(item.nome ?? "").trim() || "item sem nome";
+      const d = el("dialog", { class: `item-janela ${classe}`, "aria-label": `Detalhes de ${titulo}` },
+        el("div", { class: "item-topo" },
+          partes.visual ?? null,
+          el("div", { class: "item-titulo" }, nome, sub),
+          el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
+        el("div", { class: "item-corpo" },
+          el("div", { class: "item-principal" },
+            rotuloBloco("Quando", pega("ing-quando")),
+            rotuloBloco("Quantidade", pega("ing-qtd")),
+            el("div", { class: "item-dados" }, partes.colunas.filter((n) => n.classList.contains("ing-dado")))),
+          receitaTxt,
+          el("div", { class: "grade-form" }, partes.detalhes())),
+        el("div", { class: "item-acoes" },
+          leitura ? null : [bSubir, bDescer, el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: () => {
+            acao(() => { r[chave].splice(posicao(), 1); desenhar(); mudou(); });
+            fechar();
+          } } })],
+          el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
+
+      // Tocar no fundo escuro fecha; se a roleta estava aberta, o toque só fecha a roleta.
+      let roletaNoToque = false;
+      d.addEventListener("pointerdown", () => { roletaNoToque = roletaAberta(); }, true);
+      d.addEventListener("click", (e) => {
+        if (e.target !== d || roletaNoToque) return;
+        const b = d.getBoundingClientRect();
+        if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
+      });
+      // Esc com a roleta aberta fecha só a roleta.
+      d.addEventListener("cancel", (e) => { if (roletaAberta()) { e.preventDefault(); fecharRoleta(false); } });
+      window.addEventListener("hashchange", fechar);
+      d.addEventListener("close", () => {
+        window.removeEventListener("hashchange", fechar);
+        if (roletaAberta()) fecharRoleta(true);
+        janelaItem = null;
+        d.remove();
+        desenhar();                  // a linha mostra o que mudou na janela (quantidade, nome, cor...)
+        // O foco volta ao item (a linha foi refeita); item removido ou outra tela: fica onde estiver.
+        const k = posicao();
+        if (k >= 0 && lista.isConnected) lista.querySelectorAll(":scope > li.ing button.ing-nome")[k]?.focus({ preventScroll: true });
+      });
+
+      janelaItem = { chave, item, aoCalcular: partes.aoCalcular, receita: (res) => {
+        receitaTxt.textContent = `Na receita: OG ${numeroBR(res.og, 3)} · IBU ${numeroBR(res.ibu, 0)} · ABV ${numeroBR(res.abv_pct, 1)}% · cor ${numeroBR(O.corParaTela(res.cor_srm), 0)} ${O.unidadeCor()}`;
+      } };
+      refrescar();
+      botoesPosicao();
+      document.body.append(d);
+      d.showModal();
+      const res = calcularReceita(r);
+      const x = res[chave]?.[posicao()];
+      if (x) partes.aoCalcular(x);
+      janelaItem.receita(res);
+      // Item livre (sem cadastro): o foco vai ao nome; senão o foco fica na janela (no celular não abre teclado nem roleta).
+      if (focarNome && !leitura) d.querySelector('.grade-form input[aria-label="Nome"]')?.focus();
+      else d.querySelector(".item-fechar").focus({ preventScroll: true });
     }
 
     /** Arrastar pela alça (mouse e toque): a linha segue o ponteiro; ao soltar, vai para a posição. */
@@ -722,11 +797,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       atualizarResultados();
     }
     secoes[chave] = desenhar;
-    /** Depois de adicionar: item do cadastro → foco na quantidade; item livre → detalhes abertos e foco no nome. */
+    /** Depois de adicionar: item do cadastro → foco na quantidade; item livre → janela do item com o foco no nome. */
     focos[chave] = (livre) => {
+      if (livre) { abrirItem(r[chave].at(-1), { focarNome: true }); return; }
       const ultima = lista.querySelector(":scope > li.ing:last-of-type");
-      if (livre) ultima?.querySelector(".ing-detalhes input")?.focus();
-      else editarCampo(ultima?.querySelector("input.qtd"));      // celular: abre a roleta já na quantidade mais provável
+      editarCampo(ultima?.querySelector("input.qtd"));      // celular: abre a roleta já na quantidade mais provável
     };
     desenhar();
     return sec;
@@ -735,7 +810,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const adicionarItem = (chave, item, livre) => {
     acao(() => {
       r[chave].push(item);
-      if (livre) abertos.add(item);
       secoes[chave]();
       mudou();
     });
@@ -769,7 +843,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         colunas: [
           el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_kg", { casas: 3, passo: passoG / 1000, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "kg", rotulo: "Qtd (kg)", desabilitado: des, aoMudar: (c) => mudou(c), roleta: { inicial: () => presetFermentavel(item, r) } })),
           dado("grist", pct, "d1"), dado("OG", pts, "d2")],
-        detalhes: [
+        detalhes: () => [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
           rotular("Tipo", campoSelect(item, "tipo", O.TIPO_FERMENTAVEL, { ...campo, rotulo: "Tipo" })),
           rotular("Etapa", campoSelect(item, "etapa", O.ETAPA_FERMENTAVEL, { ...campo, rotulo: "Etapa" })),
@@ -826,7 +900,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("div", { class: "ing-quando" }, etapa, tempo),
           el("div", { class: "ing-qtd" }, campoQuantidade(item, "quantidade_g", { casas: 1, passo: passoG, passoTxt: `${numeroBR(passoG, 0)} g`, unidade: "g", rotulo: "Qtd (g)", desabilitado: des, aoMudar: (c) => mudou(c), roleta: { inicial: () => presetLupulo(item, r) } })),
           dado("IBU", ibu, "d1"), dado("g/L", gl, "d2")],
-        detalhes: [
+        detalhes: () => [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
           rotular("Forma", campoSelect(item, "forma", O.FORMA_LUPULO, { ...campo, rotulo: "Forma" })),
           rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" })),
