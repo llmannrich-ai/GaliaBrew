@@ -136,7 +136,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  263 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  272 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
