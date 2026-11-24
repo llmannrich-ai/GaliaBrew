@@ -20,13 +20,12 @@ concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: true
 
+# Dois jobs (montar → publicar), como no modelo do GitHub: com tudo num job só, o "deploy-pages" às vezes não achava o
+# pacote recém-enviado ("No artifacts named github-pages", 23-24/11/2026, 5 falhas seguidas).
 jobs:
-  publicar:
+  montar:
     if: github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.publicacao.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,5 +48,12 @@ jobs:
         with:
           path: _site
 
+  publicar:
+    needs: montar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    steps:
       - id: publicacao
         uses: actions/deploy-pages@v4

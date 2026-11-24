@@ -204,6 +204,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   `_headers` e publica. Só publica da branch PADRÃO do repositório (a `main`). Pré-requisito único (manual, o proxy daqui não
   mexe em configuração do repositório): Settings → Pages → Source = GitHub Actions. O Pages não lê `_headers`: a CSP
   está também numa `<meta>` no index.html (frame-ancestors só vale no _headers, para um dia ir ao Cloudflare).
+  Workflow em dois jobs (montar → publicar, 24/11/2026: num job só o deploy-pages falhava sem achar o pacote).
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
