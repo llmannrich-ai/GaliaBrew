@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124m";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124m";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124m";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124m";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124m";
-import { abrirBusca } from "./busca.js?v=20261124m";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124m";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124m";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124m";
-import * as O from "./opcoes.js?v=20261124m";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124m";
-import { icone } from "./icones.js?v=20261124m";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124m";
-import { abrirRelatorio } from "./relatorio.js?v=20261124m";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124m";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124n";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124n";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124n";
+import { sb, sessao, preferencias } from "./estado.js?v=20261124n";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124n";
+import { abrirBusca } from "./busca.js?v=20261124n";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124n";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124n";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124n";
+import * as O from "./opcoes.js?v=20261124n";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124n";
+import { icone } from "./icones.js?v=20261124n";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261124n";
+import { abrirRelatorio } from "./relatorio.js?v=20261124n";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124n";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -328,7 +328,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     r, estilo: estiloAtual(),
     aoAplicar: (a) => acao(() => { r.lupulos[a.indice].quantidade_g = a.gramas; secoes.lupulos(); mudou("ajuste-ibu"); avisar("Lúpulo ajustado. Ctrl+Z desfaz."); }),
   });
-  const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU }, ferramentas });
+  // Clean no celular: números num cartão no topo; ao rolar, linha fina no rodapé (vital.js, "noTopo").
+  const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU }, ferramentas,
+    noTopo: ficha && window.matchMedia("(max-width: 640px)").matches });
   const grist = barraGrist();
   const tempo = linhaFervura({
     aoTocar: (i) => {          // leva à linha do lúpulo e a destaca (sem abrir o teclado)
@@ -1262,7 +1264,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     });
   }
   document.body.classList.add("no-editor");
-  preencher(conteudo, barraApp, topo, msg, vital.elemento, corpo);
+  preencher(conteudo, barraApp, topo, msg, vital.lugar, corpo);
   marcarPendente();
   vital.definirReferencia(t.ref?.res ?? null);
   if (resAnterior) vital.atualizar(resAnterior, estiloAtual());     // desfazer/refazer: a barra mostra a diferença

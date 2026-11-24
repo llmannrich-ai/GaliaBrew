@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124m");
+    const m = await import("./fontes.js?v=20261124n");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -414,7 +414,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -478,7 +478,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -500,7 +500,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -610,7 +610,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124m");
+    const m = await import("./calculos.js?v=20261124n");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1727,6 +1727,28 @@ const erros = [];
   verificar(decoracao.fundo === "none" && decoracao.espuma === "none" && decoracao.icone === false, "clean: seções sem papel de parede, sem espuma e sem ícone em círculo");
   const subLup = await cel.textContent('[data-secao="lupulos"] li.ing.ficha .ing-sub');
   verificar(/^Fervura \d+ min/.test(subLup), `clean: o lúpulo diz quando entra na própria linha (“${subLup}”)`);
+  // K2: números num cartão no topo (no fluxo, com o copo); ao rolar, linha fina no rodapé; de volta ao topo, cartão.
+  const estadoVital = () => cel.evaluate(() => {
+    const v = document.querySelector(".vital"); const b = v.getBoundingClientRect();
+    return { pos: getComputedStyle(v).position, flut: v.classList.contains("flutuante"), copo: v.querySelector(".vital-copo").checkVisibility(),
+      topo: Math.round(b.top), fundo: Math.round(innerHeight - b.bottom), altura: Math.round(b.height),
+      vaga: Math.round(document.querySelector(".vital-vaga").getBoundingClientRect().height) };
+  });
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(200);
+  const noTopo = await estadoVital();
+  verificar(noTopo.pos === "static" && !noTopo.flut && noTopo.copo && noTopo.topo < 420,
+    `clean K2: números num cartão no topo da receita, com o copo (topo em ${noTopo.topo} px, ${noTopo.altura} px de altura)`);
+  await cel.screenshot({ path: `${SAIDA}/p7e-clean-numeros-topo.png` });
+  await cel.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await cel.waitForTimeout(300);
+  const rolado = await estadoVital();
+  verificar(rolado.pos === "fixed" && rolado.flut && rolado.fundo === 0 && rolado.altura <= 64 && !rolado.copo && rolado.vaga === noTopo.altura,
+    `clean K2: ao rolar, linha fina presa no rodapé (${rolado.altura} px) e a página não pula (vaga de ${rolado.vaga} px)`);
+  await cel.screenshot({ path: `${SAIDA}/p7f-clean-rolado.png` });
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(300);
+  verificar((await estadoVital()).pos === "static", "clean K2: de volta ao topo, a linha fina volta a ser o cartão");
   await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
   // Tocar na quantidade = roleta direto (sem abrir a janela); a OG acompanha e Cancelar volta.
   const qtdFicha = '[data-secao="fermentaveis"] li.ing.ficha input.qtd';

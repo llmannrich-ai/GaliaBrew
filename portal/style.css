@@ -1424,6 +1424,29 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
   .linhas-ing.ferm .ing.ficha, .linhas-ing.lup .ing.ficha { grid-template-columns: 1rem minmax(0, 1fr) auto; grid-template-areas: "cor nome num"; gap: 0 .65rem; }
   .ing.ficha .ing-sub { white-space: nowrap; }
   .ficha-num .campo-qtd input.qtd { width: 4.4rem; height: 2rem; }
+
+  /* K2: números num cartão no topo da receita (no fluxo da página, com o copo na cor da cerveja). Quando o cartão sai
+     da tela, o vital.js põe "flutuante" + "com-teclado" e ele vira a linha fina presa no rodapé (a mesma do teclado). */
+  :root[data-layout="clean"] .vital { background: var(--k-cartao); }
+  :root[data-layout="clean"] .grist-copo { display: none; }      /* o copo já está no cartão dos números */
+  :root[data-layout="clean"] .vital .vital-item .regua-marca { border-color: var(--k-cartao); }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) {
+    position: static; max-height: none; overflow: visible; box-shadow: none; border-radius: 0;
+    margin: 0 calc(-1 * var(--lado)) .6rem; padding: .75rem var(--lado) .2rem;
+    grid-template-columns: 2.75rem minmax(0, 1fr); column-gap: .8rem; align-items: center;
+  }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-copo { display: block; align-self: start; padding-top: .2rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-copo .copo { width: 2.75rem; height: 3.85rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .9rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.35rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-mais, .vital-aviso, .vital-ferramentas) { grid-column: 1 / -1; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais { order: 0; margin-top: .3rem; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais span::before { content: "detalhes ▾"; }
+  :root[data-layout="clean"] .vital.no-topo.aberta:not(.com-teclado) .vital-mais span::before { content: "fechar ▴"; }
+  :root[data-layout="clean"] .vital.no-topo.aberta:not(.com-teclado) .vital-copo { align-self: start; }
+  /* Linha fina por rolagem (sem teclado): fica no rodapé, acima da área do gesto do iPhone. */
+  :root[data-layout="clean"] .vital.flutuante { padding-bottom: calc(.3rem + env(safe-area-inset-bottom)); }
+  :root[data-layout="clean"].teclado-aberto .vital.flutuante { padding-bottom: .3rem; }
 }
 /* Perfil → Aparência: escolha do layout da receita, com miniatura (3 linhas de ingrediente). */
 .temas.layouts { margin-top: 1rem; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
