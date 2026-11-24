@@ -136,7 +136,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  283 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  295 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -215,7 +215,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124i.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124j.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -398,6 +398,20 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Portal: página `#/ferramentas` (`ferramentas.js`: calculadoras avulsas, valores ficam enquanto o portal está aberto;
   tabela de CO₂ típico por estilo, porque o catálogo BJCP não tem CO₂); card Lote com CO₂ desejado e açúcar; painel
   com a temperatura da água da mostura e o priming.
+
+## Menu de Ferramentas (24/11/2026, pedido do responsável; sem migração)
+- `#/ferramentas` é um MENU de botões (`ul.ferramentas-menu` > `button.ferramenta-botao`), um por ferramenta: ícone num
+  quadrado, grupo (Brassagem / Envase / Medição), nome e o resultado da última conta (ex.: "15,0 L a 72,3 °C"). No
+  celular, um abaixo do outro na largura toda (≥ 5 rem de altura); no computador, grade de colunas.
+- Tocar abre a ferramenta numa janela (`dialog.ferramenta-janela`, `abrirFerramenta`): cabeça PRESA no topo com ícone,
+  nome, × e o RESULTADO em blocos (número grande, rótulo embaixo), para ficar à vista enquanto a roleta/teclado mudam os
+  campos; campos e notas; "Pronto" no pé. Fecha por ×, Pronto, Esc, toque no fundo ou troca de rota (com a roleta aberta,
+  Esc/toque no fundo fecham só a roleta); ao fechar o botão atualiza o resumo e recebe o foco. Celular: cartão no meio
+  da tela (como a janela do item); a roleta entra na janela.
+- Ferramenta nova = uma linha no `FERRAMENTAS` do ferramentas.js: `contas()` (sem DOM: { metricas: [[rótulo, valor]],
+  avisos }), `campos(calcular)`, `resumo(c)` (linha do botão), ícone do `icones.js` (novos: garrafa, refratometro,
+  densimetro, abrir) e `cor` = par de papel de parede (`mostura`, `ferm`, `lavagem`, `agua` → `--pp-*`; contraste já
+  conferido em todos os temas). Capturas `p6y` (menu 390 px), `p6y2` (priming 390 px), `p6z` (roleta na janela, 320 px).
 
 ## Refratômetro e densímetro (22/11/2026, sem migração)
 - `calculos.js`: `sgDeBrix` (°Brix ÷ fator → °P → SG; fator padrão 1,04), `refratometro` (FG com álcool pela cúbica

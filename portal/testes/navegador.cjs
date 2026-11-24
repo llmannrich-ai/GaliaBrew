@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261124i");
+    const m = await import("./fontes.js?v=20261124j");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -399,7 +399,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124i");
+    const m = await import("./calculos.js?v=20261124j");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -463,7 +463,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124i");
+    const m = await import("./calculos.js?v=20261124j");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -482,7 +482,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124i");
+    const m = await import("./calculos.js?v=20261124j");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -592,7 +592,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261124i");
+    const m = await import("./calculos.js?v=20261124j");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -680,20 +680,42 @@ const erros = [];
   verificar(await pagina.isVisible("td >> text=5D German Pils"), "lista mostra a receita com o estilo");
   verificar(await pagina.isVisible("td >> text=20/04/2026"), "lista mostra a data da brassagem sem erro de fuso");
 
-  // Ferramentas: valores padrão (5 kg, 3 L/kg, grão 20 °C, parada 66 °C; 20 L, 2,4 vol, 20 °C, sacarose).
+  // Ferramentas (24/11/2026): menu de botões; cada ferramenta abre numa janela. Valores padrão (5 kg, 3 L/kg, grão 20 °C,
+  // parada 66 °C; 20 L, 2,4 vol, 20 °C, sacarose).
   await pagina.click(".lateral nav >> text=Ferramentas");
-  await pagina.waitForSelector("h3:text('Priming')");
-  const ferr = await pagina.textContent(".ferramentas");
-  verificar(ferr.includes("Água da mostura15,0 L") && ferr.includes("Temperatura da água72,3 °C"), "água da mostura: 15,0 L a 72,3 °C");
-  verificar(ferr.includes("112 g"), "priming: 112 g de açúcar comum para 20 L a 2,4 vol");
+  await pagina.waitForSelector(".ferramentas-menu");
+  verificar(await pagina.locator("button.ferramenta-botao").count() === 4, "Ferramentas: menu com 4 botões");
+  const botaoFerr = (id) => `button.ferramenta-botao[data-ferramenta="${id}"]`;
+  verificar((await pagina.textContent(botaoFerr("agua"))).includes("15,0 L a 72,3 °C"), "botão da água da mostura mostra o resultado (15,0 L a 72,3 °C)");
+  const janelaFerr = () => pagina.textContent("dialog.ferramenta-janela[open]");
+  const abrirFerr = async (id) => { await pagina.click(botaoFerr(id)); await pagina.waitForSelector(`dialog.ferramenta-janela[open][data-ferramenta="${id}"]`); };
+  const fecharFerr = async () => { await pagina.click("dialog.ferramenta-janela .item-pronto"); await pagina.waitForSelector("dialog.ferramenta-janela", { state: "detached" }); };
+  await abrirFerr("agua");
+  const ferr = await pagina.textContent(".fj-resultado");
+  verificar(ferr.includes("Água da mostura15,0 L") && ferr.includes("Temperatura da água72,3 °C"), "água da mostura: 15,0 L a 72,3 °C (resultado no topo da janela)");
+  verificar(await pagina.evaluate(() => document.activeElement?.classList.contains("item-fechar")), "janela da ferramenta abre com o foco no ×");
+  await pagina.keyboard.press("Escape");
+  await pagina.waitForSelector("dialog.ferramenta-janela", { state: "detached" });
+  verificar(await pagina.evaluate(() => document.activeElement?.dataset.ferramenta === "agua"), "Esc fecha a janela e o foco volta ao botão");
+  await abrirFerr("priming");
+  verificar((await janelaFerr()).includes("112 g"), "priming: 112 g de açúcar comum para 20 L a 2,4 vol");
   await pagina.selectOption('select[aria-label="Açúcar"]', "DEXTROSE");
   await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "0,5");
-  verificar((await pagina.textContent(".ferramentas")).includes("não precisa de priming"), "CO₂ abaixo do que a cerveja já tem: avisa que não precisa");
+  verificar((await janelaFerr()).includes("não precisa de priming"), "CO₂ abaixo do que a cerveja já tem: avisa que não precisa");
+  await pagina.fill('input[aria-label="CO₂ desejado (vol)"]', "2,4");
+  await pagina.click("dialog.ferramenta-janela h2");
+  await fecharFerr();
+  verificar((await pagina.textContent(botaoFerr("priming"))).includes("de dextrose para 20 L"), "Pronto fecha e o botão do priming mostra a conta nova (dextrose)");
+  await abrirFerr("priming");
+  verificar(await pagina.inputValue('input[aria-label="CO₂ desejado (vol)"]') === "2,4", "valores ficam ao fechar e abrir de novo");
+  await pagina.mouse.click(5, 5);              // toque no fundo escuro fecha
+  await pagina.waitForSelector("dialog.ferramenta-janela", { state: "detached" });
+  verificar(true, "toque fora da janela fecha");
   // Refratômetro (12 °Brix, fator 1,04) e densímetro (1,050 a 25 °C, calibrado a 20 °C).
-  const refr = () => pagina.textContent("section:has(h3:text('Refratômetro'))");
-  verificar((await refr()).includes("Densidade do mosto (OG)1,046"), "refratômetro: 12 °Brix → OG 1,046");
+  await abrirFerr("refratometro");
+  verificar((await janelaFerr()).includes("OG (densidade do mosto)1,046"), "refratômetro: 12 °Brix → OG 1,046");
   await pagina.fill('input[aria-label="°Brix atual (fermentando)"]', "6");
-  verificar(/FG \(densidade atual\)1,011/.test(await refr()), "refratômetro fermentando (Terrill): FG 1,011");
+  verificar(/FG \(densidade atual\)1,011/.test(await janelaFerr()), "refratômetro fermentando (Terrill): FG 1,011");
   await pagina.click("summary:text('Descobrir o fator')");
   await pagina.fill('input[aria-label="Densímetro (mosto)"]', "1048");
   await pagina.fill('input[aria-label="Refratômetro (°Brix)"]', "12,5");
@@ -702,8 +724,14 @@ const erros = [];
   await pagina.click("button:has-text('Usar este fator')");
   verificar(await pagina.inputValue('input[aria-label="Fator do refratômetro"]') === "1,049", "descobre o fator (1,049) e passa a usar");
   verificar(await pagina.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).fator_refratometro) === 1.049, "fator fica salvo no navegador");
-  verificar((await pagina.textContent("section:has(h3:text('Densímetro'))")).includes("Densidade corrigida1,051"), "densímetro: 1,050 a 25 °C (calibrado a 20 °C) → 1,051");
+  await pagina.click("dialog.ferramenta-janela .item-fechar");
+  await pagina.waitForSelector("dialog.ferramenta-janela", { state: "detached" });
+  verificar(/OG 1,0\d\d · FG 1,0\d\d/.test(await pagina.textContent(botaoFerr("refratometro"))), "× fecha e o botão do refratômetro mostra OG · FG");
+  await abrirFerr("densimetro");
+  verificar((await pagina.textContent(".fj-resultado")).includes("Densidade corrigida1,051"), "densímetro: 1,050 a 25 °C (calibrado a 20 °C) → 1,051");
   await pagina.screenshot({ path: `${SAIDA}/p6-ferramentas.png`, fullPage: true });
+  await pagina.evaluate(() => { location.hash = "#/receitas"; });   // trocar de rota fecha a janela
+  await pagina.waitForSelector("dialog.ferramenta-janela", { state: "detached" });
   await pagina.click(".lateral nav >> text=Receitas");
   await pagina.waitForSelector("td >> text=Pils da Galia");
   await pagina.screenshot({ path: `${SAIDA}/p4-lista.png` });
@@ -719,7 +747,7 @@ const erros = [];
   await pagina.waitForSelector("td >> text=Pils da Galia");
   verificar(await pagina.evaluate(() => document.querySelector(".casca").classList.contains("recolhido")), "menu recolhido continua recolhido ao recarregar");
   await pagina.click('.lateral nav a[data-rota="ferramentas"]');
-  await pagina.waitForSelector("h3:text('Priming')");
+  await pagina.waitForSelector(".ferramentas-menu");
   verificar(true, "menu recolhido navega pelos ícones");
   await pagina.click("button.recolher");
   await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().width > 200);
@@ -1561,21 +1589,48 @@ const erros = [];
   await cel.setViewportSize({ width: 320, height: 568 });
   const aceitar = (d) => d.accept();          // sair do editor com alteração pendente pede confirmação
   cel.on("dialog", aceitar);
-  for (const [rota, espera] of [["#/ferramentas", ".cartao"], ["#/cadastros/fermentaveis", "table.lista-cad"], ["#/cadastros/estilos", "table.lista-cad"], ["#/cadastros/equipamentos", ".abas"], ["#/perfil", "form, .cartao"]]) {
+  for (const [rota, espera] of [["#/ferramentas", ".ferramentas-menu"], ["#/cadastros/fermentaveis", "table.lista-cad"], ["#/cadastros/estilos", "table.lista-cad"], ["#/cadastros/equipamentos", ".abas"], ["#/perfil", "form, .cartao"]]) {
     await cel.evaluate((r) => { location.hash = r; }, rota);
     await cel.waitForFunction((r) => location.hash === r, rota);
     await cel.waitForSelector(espera);
     await conferirLateral(`320 px, ${rota}`);
     await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-${rota.split("/").pop()}.png` });
     if (rota === "#/ferramentas") {
-      // Roleta fora do editor: leitura do densímetro vazia começa em 1,050 (o placeholder); OK grava.
+      // Capturas em 390 px (o que se mostra ao responsável): menu e a janela do priming.
+      await cel.setViewportSize({ width: 390, height: 844 });
+      await cel.waitForTimeout(200);
+      await cel.screenshot({ path: `${SAIDA}/p6y-celular-ferramentas.png` });
+      await tocar('button.ferramenta-botao[data-ferramenta="priming"]');
+      await cel.waitForSelector("dialog.ferramenta-janela[open]");
+      await cel.waitForTimeout(250);
+      const jan = await cel.evaluate(() => { const r = document.querySelector("dialog.ferramenta-janela").getBoundingClientRect(); return { cima: r.top, baixo: innerHeight - r.bottom, esq: r.left, dir: innerWidth - r.right }; });
+      verificar(Math.abs(jan.cima - jan.baixo) <= 2 && jan.esq >= 6 && jan.dir >= 6, `390 px: janela da ferramenta no meio da tela (${Math.round(jan.cima)}/${Math.round(jan.baixo)} px)`);
+      await cel.screenshot({ path: `${SAIDA}/p6y2-celular-ferramenta-priming.png` });
+      await tocar("dialog.ferramenta-janela .item-fechar");
+      await cel.waitForSelector("dialog.ferramenta-janela", { state: "detached" });
+      await cel.setViewportSize({ width: 320, height: 568 });
+      await cel.waitForTimeout(200);
+      // Menu de ferramentas no celular: botões na largura toda, um abaixo do outro, com 44 px ou mais de toque.
+      const caixas = await cel.$$eval("button.ferramenta-botao", (bs) => bs.map((b) => b.getBoundingClientRect().toJSON()));
+      verificar(caixas.length === 4 && caixas.every((c, k) => c.height >= 44 && c.right <= 320 && (k === 0 || c.top >= caixas[k - 1].bottom)),
+        "320 px: 4 botões de ferramenta empilhados, dentro da largura e com toque ≥ 44 px");
+      await tocar('button.ferramenta-botao[data-ferramenta="densimetro"]');
+      await cel.waitForSelector("dialog.ferramenta-janela[open]");
+      await conferirLateral("320 px, janela do densímetro");
+      // Roleta dentro da janela: leitura do densímetro vazia começa em 1,050 (o placeholder); OK grava.
+      await cel.evaluate(() => { const i = document.querySelector('input[aria-label="Leitura"]'); i.value = ""; i.dispatchEvent(new Event("input", { bubbles: true })); i.dispatchEvent(new Event("change", { bubbles: true })); });
       await tocar('input[aria-label="Leitura"]');
-      await cel.waitForSelector(".roleta");
+      await cel.waitForSelector("dialog.ferramenta-janela .roleta");
       await cel.waitForTimeout(250);
       const campoVisivel = await cel.evaluate(() => document.querySelector("input.em-roleta").getBoundingClientRect().bottom <= document.querySelector(".roleta").getBoundingClientRect().top);
-      verificar(await cel.textContent(".roleta-valor") === "1,050" && campoVisivel, "roleta (Ferramentas): densidade vazia começa em 1,050 e o campo fica acima da roleta");
+      verificar(await cel.textContent(".roleta-valor") === "1,050" && campoVisivel, "roleta (Ferramentas): densidade vazia começa em 1,050, dentro da janela, e o campo fica acima da roleta");
+      const resVisivel = await cel.evaluate(() => { const r = document.querySelector(".fj-resultado").getBoundingClientRect(); return r.top >= 0 && r.bottom <= document.querySelector(".roleta").getBoundingClientRect().top; });
+      verificar(resVisivel, "roleta (Ferramentas): o resultado fica à vista, acima da roleta");
+      await cel.screenshot({ path: `${SAIDA}/p6z-celular-320-ferramenta-roleta.png` });
       await tocar(".roleta-ok");
-      verificar(await cel.inputValue('input[aria-label="Leitura"]') === "1,050" && (await cel.textContent(".ferramentas")).includes("1,05"), "roleta (Ferramentas): OK grava a leitura e a conta sai");
+      verificar(await cel.inputValue('input[aria-label="Leitura"]') === "1,050" && (await cel.textContent(".fj-resultado")).includes("1,05"), "roleta (Ferramentas): OK grava a leitura e a conta sai");
+      await tocar("dialog.ferramenta-janela .item-pronto");
+      await cel.waitForSelector("dialog.ferramenta-janela", { state: "detached" });
     }
   }
   cel.off("dialog", aceitar);

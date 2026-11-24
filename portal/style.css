@@ -1088,12 +1088,86 @@ button.info:hover, button.info[aria-expanded="true"] { border-color: var(--desta
 .grade-form > label { align-content: start; }
 
 /* ---------- ferramentas ---------- */
-/* colunas que se encaixam (sem buraco quando um cartão é mais alto que o vizinho) */
-.ferramentas { columns: 320px 4; column-gap: 1.6rem; }
-.ferramentas > .cartao { break-inside: avoid; display: flow-root; }
-.resultado-ferramenta { margin-top: .9rem; }
-.ferramentas details { margin-top: .8rem; font-size: .88rem; }
-.ferramentas summary { cursor: pointer; color: var(--suave); font-weight: 600; }
+/* 24/11/2026 (pedido do responsável): menu de botões, um por ferramenta; cada uma abre numa janela (ferramentas.js).
+   Cor de cada ferramenta = par fundo/traço dos papéis de parede (--pp-*), conferido em todos os temas. */
+[data-cor="mostura"] { --fc: var(--pp-mostura); --fc-cor: var(--pp-mostura-cor); }
+[data-cor="ferm"] { --fc: var(--pp-ferm); --fc-cor: var(--pp-ferm-cor); }
+[data-cor="lavagem"] { --fc: var(--pp-lavagem); --fc-cor: var(--pp-lavagem-cor); }
+[data-cor="agua"] { --fc: var(--pp-agua); --fc-cor: var(--pp-agua-cor); }
+.ferramentas-intro { margin: -.2rem 0 1rem; }
+.ferramentas-menu {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: .65rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+}
+button.ferramenta-botao {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .85rem;
+  width: 100%; min-height: 5rem; padding: .85rem .8rem .85rem .9rem; border: none; border-radius: 16px;
+  background: var(--fc, var(--painel)); color: var(--tinta); text-align: left; white-space: normal; font-weight: 400;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .12s ease-out, box-shadow .15s;
+}
+button.ferramenta-botao:hover { background: var(--fc, var(--painel)); box-shadow: 0 0 0 2px var(--fc-cor) inset; }
+button.ferramenta-botao:active { transform: scale(.985); }
+.fb-icone {
+  display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; flex: none;
+  border-radius: 14px; background: var(--cartao); color: var(--fc-cor, var(--destaque-escuro));
+}
+.fb-icone .ico { width: 1.7rem; height: 1.7rem; margin: 0; stroke-width: 1.6; }
+.fb-texto { display: grid; gap: .1rem; min-width: 0; line-height: 1.25; }
+.fb-grupo { font-size: var(--t-rotulo); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--fc-cor, var(--suave)); }
+.fb-nome { font-size: 1.125rem; font-weight: 750; }
+.fb-resumo { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; }
+.fb-seta { color: var(--fc-cor); display: inline-flex; }
+.fb-seta .ico { width: 1.3rem; height: 1.3rem; margin: 0; }
+
+/* Janela da ferramenta: cabeça presa no topo (ícone, nome, × e o RESULTADO, que fica à vista enquanto a roleta ou o
+   teclado mudam os números); campos; "Pronto" no pé. No celular é um cartão no meio da tela (como a janela do item);
+   com a roleta aberta o roleta.js prende a janela onde está e ela rola por dentro. */
+dialog.ferramenta-janela { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
+dialog.ferramenta-janela[open] { display: flex; flex-direction: column; }
+.fj-cabeca { position: sticky; top: 0; z-index: 1; background: var(--fc, var(--painel)); }
+.fj-topo { display: flex; align-items: center; gap: .7rem; padding: .5rem .4rem .35rem .9rem; }
+.fj-topo .fb-icone { width: 2.5rem; height: 2.5rem; border-radius: 12px; }
+.fj-topo .fb-icone .ico { width: 1.45rem; height: 1.45rem; }
+.fj-titulo { flex: 1; min-width: 0; display: grid; line-height: 1.2; }
+.fj-titulo h2 { margin: 0; font-size: var(--t-m); font-weight: 750; }
+.fj-resultado { padding: 0 .9rem .7rem; }
+.fj-resultado:empty { display: none; }
+.fj-metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.8rem, 1fr)); gap: .4rem; }
+.fj-metricas .metrica {
+  display: flex; flex-direction: column-reverse; justify-content: flex-end; gap: .1rem; padding: .45rem .55rem;
+  border: none; border-radius: 10px; background: var(--cartao);
+}
+.fj-metricas .metrica .rot { font-size: var(--t-rotulo); font-weight: 600; line-height: 1.2; }
+.fj-metricas .metrica .val { font-size: var(--t-m); line-height: 1.15; }
+.fj-metricas .metrica:first-child .val { color: var(--fc-cor, var(--destaque-escuro)); }
+.fj-resultado > .nota { margin: .45rem 0 0; }
+.fj-resultado > .nota:first-child { margin-top: 0; }
+.fj-corpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; padding: .8rem .9rem 1rem; }
+.fj-corpo > .nota { margin: 0; }
+.fj-corpo .grade-form { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .6rem .8rem; }
+.fj-corpo details { font-size: var(--t-p); }
+.fj-corpo summary { cursor: pointer; color: var(--suave); font-weight: 600; padding: .3rem 0; }
+.fj-corpo details[open] > summary { margin-bottom: .5rem; }
+.fj-corpo details .grade-form { font-size: var(--t-corpo); }
+.resultado-ferramenta { margin-top: .6rem; }
+.fj-pe {
+  position: sticky; bottom: 0; display: flex; justify-content: flex-end; padding: .55rem .9rem;
+  background: var(--cartao); border-top: 1px solid var(--linha);
+}
+dialog.ferramenta-janela:has(> .roleta) .fj-pe { position: static; }
+@media (max-width: 640px) {
+  .ferramentas-menu { gap: .55rem; }
+  dialog.ferramenta-janela {
+    width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto; border: none; border-radius: 16px;
+    max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+  .fj-corpo .grade-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .fj-corpo .grade-form > label { min-width: 0; }
+}
+@media (max-width: 360px) {
+  .fj-metricas { grid-template-columns: repeat(auto-fit, minmax(5.2rem, 1fr)); }
+  .fj-metricas .metrica .val { font-size: 1.125rem; }
+}
 
 /* ---------- água ---------- */
 .perfil-agua .ion-curto { display: none; text-decoration: none; }
