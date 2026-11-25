@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  389 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  393 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124w.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125a.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -734,3 +734,18 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - A coluna "Panela" da tabela do perfil (tela e PDF) passou a se chamar "Total" (as duas águas juntas com todos os
   sais, o que chega à fervura). Pé da tabela: "mostura X · total Y"; PDF: "Sulfato/cloreto no total". No código o
   perfil continua `res.agua.panela`.
+
+## Logo na página principal e barra de status do iPhone (25/11/2026, pedido do responsável; sem migração)
+- Logo nova "Galia" (arte enviada pelo responsável) no topo da tela de Receitas (`.logo-inicio` no `telaReceitas`),
+  centrada, 8,5rem de altura no celular (11rem no computador). Dois arquivos em `portal/icones/`, recortados da arte com
+  fundo transparente e 256 cores (~31 kB cada): `logo-galia.png` (letras verdes, temas claros) e `logo-galia-escuro.png`
+  (letras "Galia" em creme #f1e8da: o verde-escuro sumia no fundo escuro); o CSS mostra uma pelo `data-modo`. O ícone do
+  app (Tela de Início) e o login NÃO mudaram.
+- Tarja de cima cinza e falhada no app da Tela de Início (print do iPhone): `apple-mobile-web-app-status-bar-style` passou
+  de `default` para `black-translucent` (a página passa por baixo do relógio, texto branco) + `body::before` fixo na cor
+  `--menu-fundo` com a altura de `env(safe-area-inset-top)` (z-index 60; 0 de altura no navegador comum e no computador).
+  Janelas de tela cheia no celular (busca, relatório, foto) ficam acima dela: `padding-top` do entalhe + sombra interna na
+  cor do menu. `.centro` (login) desce do entalhe. Se a tarja não mudar no iPhone, o iOS guardou o estilo da
+  instalação: remover o ícone e "Adicionar à Tela de Início" de novo. Conferido no Chromium simulando 47 px de entalhe (lista, editor, busca,
+  relatório, foto); falta conferir no iPhone real.
+
