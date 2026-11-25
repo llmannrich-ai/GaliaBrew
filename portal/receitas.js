@@ -1278,7 +1278,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     iconeSecao: "lupulo", grafico: tempo.elemento,
     classe: "lup",
     vazio: "Nenhum lúpulo. Toque em “+” para adicionar.",
+    // Total em destaque, como o kg dos fermentáveis (25/11/2026, pedido do responsável): gramas e IBU final.
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
+    destaque: true,
     // Sem botão "Chegar ao IBU" na seção (retirado em 23/11/2026, pedido do responsável): abre pelo número do IBU na barra.
     adicionar: botaoAdicionar("lupulos",
       (h) => adicionarItem("lupulos", { lupulo_id: h.id, nome: h.nome, forma: h.forma, alfa_pct: num0(h.alfa_pct), quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }),
@@ -1307,7 +1309,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         },
       });
       return {
-        sub: () => [O.rotulo(O.FORMA_LUPULO, item.forma), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
+        // Sem a forma (pellet, flor...) na receita (25/11/2026, pedido do responsável): só o alfa. A forma segue no banco.
+        sub: () => [item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
         // Clean: quando entra (o seletor fica na janela) e o alfa. Ex.: "Fervura 60 min · alfa 12,5%".
         subFicha: () => [quandoLupulo(item), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
         colunas: [
@@ -1316,7 +1319,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           dado("IBU", ibu, "d1"), dado("g/L", gl, "d2")],
         detalhes: () => [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
-          rotular("Forma", campoSelect(item, "forma", O.FORMA_LUPULO, { ...campo, rotulo: "Forma" })),
           rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" })),
           blocoFonte(fonteNaReceita(item, cat.lupulos, "lupulo_id"), { classe: "largo" })],
         aoCalcular: (x) => {

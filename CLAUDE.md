@@ -750,3 +750,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   instalação: remover o ícone e "Adicionar à Tela de Início" de novo. Conferido no Chromium simulando 47 px de entalhe (lista, editor, busca,
   relatório, foto); falta conferir no iPhone real.
 
+## Lúpulos: total em destaque e sem a forma (25/11/2026, pedido do responsável; sem migração)
+- O título da seção Lúpulos mostra "N g · N IBU" em destaque (`destaque: true` no `secaoLinhas`, a mesma letra grande
+  do kg dos fermentáveis); no celular quebra linha abaixo do título em 320 px.
+- A forma do lúpulo (pellet, flor...) saiu da receita na tela: a linha mostra só o alfa e a janela do item não tem mais
+  o campo Forma. A coluna `forma` segue no banco (copiada do cadastro; item livre = PELLET) e no relatório em PDF.
+

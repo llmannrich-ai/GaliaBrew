@@ -566,6 +566,9 @@ const erros = [];
     && await pagina.locator('[data-secao="lupulos"] .total-extra').count() === 0
     && await pagina.$eval('[data-secao="fermentaveis"] .total-secao', (n) => parseFloat(getComputedStyle(n).fontSize)) >= 24,
     "fermentáveis: total em destaque e água/malte ao lado (usa a água da mostura informada)");
+  verificar(await pagina.$eval('[data-secao="lupulos"] .total-secao', (n) => n.classList.contains("destaque") && parseFloat(getComputedStyle(n).fontSize) >= 24 && Number(getComputedStyle(n).fontWeight) >= 700)
+    && !/pellet|flor|plug|crio|extrato/i.test(await pagina.textContent('[data-secao="lupulos"] .ing-sub')),
+    "lúpulos: gramas e IBU final em destaque no título; linha sem a forma do lúpulo");
   verificar(await pagina.$$eval('[data-secao="parametros"] .param-resumo input', (ns) => ns.map((n) => n.value).join(" ")) === "23,0 72 60"
     && await pagina.textContent('[data-secao="parametros"] .total-extra') === "Panela 50 L", "parâmetros: lote, eficiência, fervura e equipamento à vista");
   verificar((await pagina.textContent(".painel-lote")).includes("Eficiência real"), "OG medida mostra a eficiência real (bloco Medido no lote)");
