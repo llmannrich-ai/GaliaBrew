@@ -52,10 +52,11 @@
     raiz.setAttribute("data-modo", modo);
     raiz.setAttribute("data-tema-escolhido", tema.id);
     atual = tema.id;
-    // Cor da barra do sistema (Android e navegadores que leem theme-color) = fundo do menu do tema.
+    // Cor da barra do sistema (Android e navegadores que leem theme-color) = fundo da página do tema (decisão do
+    // responsável em 25/11/2026; o iOS 26 ignora a theme-color e usa o próprio fundo da página).
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta && document.body) {
-      var cor = getComputedStyle(raiz).getPropertyValue("--menu-fundo").trim();
+      var cor = getComputedStyle(raiz).getPropertyValue("--fundo").trim();
       if (cor) meta.setAttribute("content", cor);
     }
   }

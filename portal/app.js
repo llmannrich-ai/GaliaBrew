@@ -187,6 +187,7 @@ async function rotear() {
   rotaAtual = location.hash;
   conteudo.className = "conteudo";      // o editor acrescenta "com-vital"; as outras telas não
   document.body.classList.remove("no-editor");
+  document.body.classList.toggle("na-inicio", rota === "receitas");
   try {
     if (rota === "receitas") await telaReceitas(conteudo);
     else if (rota === "receita") await telaEditor(conteudo, param, origem);

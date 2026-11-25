@@ -873,8 +873,8 @@ const erros = [];
   // Celular
   await pagina.setViewportSize({ width: 390, height: 844 });
   await pagina.waitForTimeout(400); // fim da animação da gaveta
-  verificar(!(await pagina.isVisible(".lateral nav >> text=Receitas")) && await pagina.isVisible("button.abrir-menu"), "celular: menu escondido, botão de abrir na barra do topo");
-  await pagina.click("button.abrir-menu");
+  verificar(!(await pagina.isVisible(".lateral nav >> text=Receitas")) && await pagina.isVisible("button.abrir-menu >> visible=true"), "celular: menu escondido, botão de abrir no topo");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().left >= 0);
   verificar(await pagina.isVisible(".lateral nav >> text=Cadastros") && await pagina.evaluate(() => document.body.classList.contains("travado")), "celular: botão abre a gaveta com os nomes e trava a rolagem da página");
   await pagina.screenshot({ path: `${SAIDA}/p5f-celular-menu.png` });
@@ -882,15 +882,15 @@ const erros = [];
   await pagina.waitForSelector("text=Pilsen (sistema)");
   await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
   verificar(!(await pagina.evaluate(() => document.body.classList.contains("travado"))), "celular: escolher um item fecha a gaveta");
-  await pagina.click("button.abrir-menu");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.keyboard.press("Escape");
   await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
   verificar(true, "celular: Esc fecha a gaveta");
-  await pagina.click("button.abrir-menu");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.click(".veu", { position: { x: 370, y: 400 } });
   await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
   verificar(true, "celular: tocar fora fecha a gaveta");
-  await pagina.click("button.abrir-menu");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.click(".lateral nav >> text=Receitas");
   await pagina.click(".receita-cartao >> text=Pils da Galia");
   await pagina.waitForSelector(".titulo-receita");
@@ -1103,25 +1103,39 @@ const erros = [];
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
-  // Logo "Gália" na barra do topo, no lugar do copinho + "GaliaBrew" (25/11/2026): carregada, à vista e dentro da tela.
-  // A barra fica presa no topo ao rolar: o iOS 26 pinta a barra de status com a cor do elemento preso no topo.
+  // Topo da tela de Receitas (25/11/2026): logo "Gália" grande e centrada sobre o fundo do tema, sem a barra escura;
+  // o ≡ no canto abre o menu. Nenhum elemento preso no topo (o iOS 26 pinta a faixa do relógio com o fundo da página).
   const logoVisivel = () => cel.evaluate(() => {
-    const img = [...document.querySelectorAll(".barra-movel .logo-marca")].find((n) => n.checkVisibility());
+    const img = [...document.querySelectorAll(".inicio-logo img")].find((n) => n.checkVisibility());
     if (!img) return null;
-    const r = img.getBoundingClientRect(), b = document.querySelector(".barra-movel").getBoundingClientRect();
-    return { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, dentro: r.left >= 0 && r.right <= window.innerWidth && r.top >= b.top && r.bottom <= b.bottom, altura: Math.round(r.height),
-      antiga: document.querySelector(".barra-movel").textContent.includes("GaliaBrew"), noCorpo: document.querySelectorAll("#conteudo img").length };
+    const r = img.getBoundingClientRect();
+    return { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, centro: Math.round(Math.abs(r.left + r.width / 2 - window.innerWidth / 2)),
+      dentro: r.left >= 0 && r.right <= window.innerWidth, topo: Math.round(r.top), altura: Math.round(r.height),
+      barra: document.querySelector(".barra-movel").checkVisibility(),
+      // o que o iOS 26 usaria: preso/fixo, visível (opacidade ≥ 0,1), cobrindo o meio da tela a 4 px do topo
+      presos: [...document.querySelectorAll("body *")].filter((n) => {
+        const c = getComputedStyle(n), r = n.getBoundingClientRect(), x = window.innerWidth / 2;
+        return ["sticky", "fixed"].includes(c.position) && c.visibility === "visible" && Number(c.opacity) >= 0.1 && r.top <= 4 && r.bottom > 4 && r.left <= x && r.right >= x;
+      }).map((n) => n.className) };
   });
+  await cel.waitForFunction(() => [...document.querySelectorAll(".inicio-logo img")].some((n) => n.checkVisibility() && n.complete && n.naturalWidth > 0), null, { timeout: 3000 }).catch(() => {});
   let lg = await logoVisivel();
-  verificar(lg && lg.src === "icones/logo-galia.png" && lg.carregada && lg.dentro && lg.altura >= 38 && lg.altura <= 46 && !lg.antiga && lg.noCorpo === 0,
-    `toque: logo "Gália" na barra do topo, no lugar da antiga (${JSON.stringify(lg)})`);
-  verificar(await cel.evaluate(() => { const c = getComputedStyle(document.querySelector(".barra-movel")); return c.position === "sticky" && c.top === "0px"; })
-    && await cel.getAttribute('meta[name="apple-mobile-web-app-status-bar-style"]', "content") === "default",
-    "iPhone: barra do topo presa (a barra de status do iOS 26 copia a cor dela) e status bar padrão");
+  verificar(lg && lg.src === "icones/logo-galia.png" && lg.carregada && lg.centro <= 2 && lg.dentro && lg.topo < 30 && lg.altura >= 110 && lg.altura <= 130 && !lg.barra && lg.presos.length === 0,
+    `toque: logo "Gália" grande e centrada no topo da tela de Receitas, sem a barra escura nem nada preso no topo (${JSON.stringify(lg)})`);
+  verificar(await cel.getAttribute('meta[name="apple-mobile-web-app-status-bar-style"]', "content") === "default"
+    && await cel.evaluate(() => document.querySelector('meta[name="theme-color"]').content.toLowerCase() === getComputedStyle(document.documentElement).getPropertyValue("--fundo").trim().toLowerCase()),
+    "iPhone: barra de status padrão e theme-color = fundo da página do tema");
+  await cel.tap(".inicio-menu");
+  await cel.waitForTimeout(350);
+  verificar(await cel.evaluate(() => document.querySelector(".casca").classList.contains("menu-aberto") && document.querySelector(".inicio-menu").getAttribute("aria-expanded") === "true"),
+    "toque: o ≡ do topo da tela de Receitas abre o menu");
+  await cel.keyboard.press("Escape");
+  await cel.waitForTimeout(350);
   await cel.emulateMedia({ colorScheme: "dark" });
   await cel.waitForFunction(() => document.documentElement.dataset.modo === "escuro", null, { timeout: 2000 }).catch(() => {});
+  await cel.waitForFunction(() => [...document.querySelectorAll(".inicio-logo img")].some((n) => n.checkVisibility() && n.complete && n.naturalWidth > 0 && n.src.includes("escuro")), null, { timeout: 3000 }).catch(() => {});
   lg = await logoVisivel();
-  verificar(lg && lg.carregada, "toque: tema escuro mantém a logo na barra");
+  verificar(lg && lg.src === "icones/logo-galia-escuro.png" && lg.carregada, "toque: tema escuro mostra a logo com as letras em creme");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista-escuro.png` });
   await cel.emulateMedia({ colorScheme: "light" });
   await cel.waitForFunction(() => document.documentElement.dataset.modo === "claro", null, { timeout: 2000 }).catch(() => {});
@@ -1929,7 +1943,7 @@ const erros = [];
   verificar(await cel.evaluate(() => document.documentElement.dataset.tema + "/" + document.documentElement.dataset.modo) === "stout/escuro"
     && await corFundo() === "rgb(12, 10, 9)" && fundoAntes === "rgb(255, 255, 255)", "toque no tema Stout troca as cores na hora (fundo preto)");
   verificar(await cel.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).tema) === "stout"
-    && await cel.getAttribute('meta[name="theme-color"]', "content") === "#050404", "tema fica salvo no aparelho e pinta a barra do sistema");
+    && await cel.getAttribute('meta[name="theme-color"]', "content") === "#0c0a09", "tema fica salvo no aparelho e pinta a barra do sistema com o fundo da página");
   await cel.locator(".temas").first().evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p6h-celular-temas-stout.png` });
   await cel.reload();

@@ -92,12 +92,14 @@ a { color: var(--destaque-escuro); }
 }
 .marca { display: inline-flex; align-items: center; gap: .45rem; font-weight: 800; font-size: var(--t-m); letter-spacing: -.01em; color: var(--destaque); text-decoration: none; }
 .marca .copo { width: 1.25rem; height: 1.75rem; flex: none; }
-/* Logo "Gália" (25/11/2026) no lugar do copinho + "GaliaBrew": barra do celular e menu lateral (sempre escuros). O copinho
-   fica só para o menu recolhido do computador, onde a logo não cabe. */
-.logo-marca { display: block; width: auto; height: 3.4rem; flex: none; }
-.lateral .marca .copo { display: none; }
-.casca:is(.recolhido, .compacto) .lateral .marca .copo { display: block; }
-.casca:is(.recolhido, .compacto) .lateral .logo-marca { display: none; }
+/* Topo da tela de Receitas (25/11/2026, pedido do responsável): logo "Gália" grande e centrada sobre o fundo do tema. No
+   celular a barra escura some nesta tela (body.na-inicio) e o ≡ do menu fica no canto; no computador o ≡ não aparece. */
+.inicio-topo { position: relative; display: flex; justify-content: center; align-items: center; margin: 0 0 1rem; }
+.inicio-logo { display: block; line-height: 0; border-radius: var(--raio-p); }
+.inicio-logo img { display: block; height: 7.5rem; width: auto; }
+.inicio-logo .logo-escuro, [data-modo="escuro"] .inicio-logo .logo-claro { display: none; }
+[data-modo="escuro"] .inicio-logo .logo-escuro { display: block; }
+button.inicio-menu { display: none; }
 
 .casca { display: grid; grid-template-columns: var(--menu-largura) minmax(0, 1fr); min-height: 100vh; transition: grid-template-columns .22s ease; }
 .casca:is(.recolhido, .compacto) { grid-template-columns: var(--menu-recolhido) minmax(0, 1fr); }
@@ -182,9 +184,13 @@ a { color: var(--destaque-escuro); }
     background: var(--menu-fundo); color: var(--menu-tinta); box-shadow: 0 1px 6px rgba(0, 0, 0, .25);
   }
   .barra-movel .marca { color: var(--menu-tinta); font-size: 1.1rem; }
-  .barra-movel .logo-marca { height: 2.6rem; }
-  .casca.recolhido .lateral .marca .copo { display: none; }
-  .casca.recolhido .lateral .logo-marca { display: block; }
+  body.na-inicio .barra-movel { display: none; }
+  button.inicio-menu {
+    display: inline-flex; align-items: center; justify-content: center; position: absolute; left: -.35rem; top: 0;
+    width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: none; color: var(--tinta);
+  }
+  button.inicio-menu .ico { width: 24px; height: 24px; margin: 0; }
+  .inicio-topo { padding-top: .25rem; }
   .barra-movel button.abrir-menu { color: var(--menu-tinta); width: 2.75rem; height: 2.75rem; padding: 0; }
   .barra-movel .abrir-menu .ico { width: 24px; height: 24px; margin: 0; }
 
@@ -838,8 +844,10 @@ dialog form { display: grid; gap: .9rem; }
 :where(.casca.estreito) .painel-lote { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 1rem; align-items: start; }
 :where(.casca.estreito) .notas-painel { grid-column: 1 / -1; }
 @media (max-width: 640px) {
-  /* A barra do topo fica presa ao rolar (25/11/2026): o iOS 26 pinta a barra de status do app da Tela de Início com a
-     cor do elemento fixo/preso no topo da página; com a barra rolando junto, pintava com o fundo branco da página. */
+  /* A barra do topo rola com a página: o iOS 26 pinta a barra de status do app da Tela de Início com a cor do elemento
+     preso/fixo no topo; sem nenhum, com o fundo da página (decisão do responsável em 25/11/2026: a faixa do relógio na
+     cor de fundo do tema). Não prender a barra-movel no celular. */
+  .barra-movel { position: static; }
   :root { --lado: .55rem; }
   .conteudo.com-vital { padding-bottom: calc(var(--vital-h, 5rem) + 1rem); }
   input[type="text"], input[type="email"], input[type="password"], input[type="search"], select, textarea { font-size: 16px; }

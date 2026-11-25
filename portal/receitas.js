@@ -11,6 +11,7 @@ import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125e";
 import * as O from "./opcoes.js?v=20261125e";
 import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125e";
 import { icone } from "./icones.js?v=20261125e";
+import { abrirMenu } from "./menu.js?v=20261125e";
 import { barraGrist, linhaFervura } from "./graficos.js?v=20261125e";
 import { abrirRelatorio } from "./relatorio.js?v=20261125e";
 import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125e";
@@ -27,7 +28,14 @@ export async function telaReceitas(conteudo) {
   editor.sujo = false;
   const filtro = { quais: "minhas", texto: "" };
   const corpo = el("div", { class: "tabela-rolagem" }, el("p", { class: "nota", text: "Carregando…" }));
+  // Topo da página principal (25/11/2026, pedido do responsável): logo "Gália" grande, centrada, sobre o fundo do tema,
+  // no lugar da barra escura (que some nesta tela no celular; o ≡ do menu fica no canto). Duas versões da logo: letras
+  // verdes nos temas claros, creme nos escuros (o CSS mostra uma pelo data-modo).
+  const logo = (versao) => el("img", { class: `logo-${versao}`, src: `icones/logo-galia${versao === "escuro" ? "-escuro" : ""}.png`, alt: "Gália", width: 538, height: 300, decoding: "async", loading: "lazy" });
   preencher(conteudo,
+    el("header", { class: "inicio-topo" },
+      el("button", { type: "button", class: "abrir-menu inicio-menu", "aria-label": "Abrir menu", "aria-controls": "menu-lateral", "aria-expanded": "false", on: { click: abrirMenu } }, icone("menu")),
+      el("a", { href: "#/receitas", class: "inicio-logo" }, logo("claro"), logo("escuro"))),
     el("div", { class: "titulo-linha" },
       el("h2", { text: "Receitas" }),
       el("a", { href: "#/receita/nova", class: "botao", text: "Nova receita" })),

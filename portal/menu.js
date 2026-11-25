@@ -17,12 +17,7 @@ const LINKS = [
   ["#/perfil", "Perfil", "perfil", "perfil"],
 ];
 
-/** Logo "Gália" (arte do responsável, 25/11/2026) com as letras em creme para o fundo escuro do menu. */
-function logoMarca() {
-  return el("img", { class: "logo-marca", src: "icones/logo-galia.png", alt: "Gália", width: 323, height: 180, decoding: "async" });
-}
-
-/** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar): só no menu recolhido do computador. */
+/** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar). */
 function marcaCopo() {
   const c = copo();
   c.cerveja.setAttribute("fill", "#d08a2a");
@@ -63,7 +58,7 @@ export function abrirMenu() {
   if (!c) return;
   c.classList.add("menu-aberto");
   document.body.classList.add("travado");
-  c.querySelector(".abrir-menu")?.setAttribute("aria-expanded", "true");
+  for (const b of document.querySelectorAll(".abrir-menu")) b.setAttribute("aria-expanded", "true");
   c.querySelector(".lateral nav a.ativo, .lateral nav a")?.focus({ preventScroll: true });
 }
 
@@ -72,7 +67,7 @@ export function fecharMenu() {
   const c = casca();
   if (!c || !c.classList.contains("menu-aberto")) return;
   c.classList.remove("menu-aberto");
-  c.querySelector(".abrir-menu")?.setAttribute("aria-expanded", "false");
+  for (const b of document.querySelectorAll(".abrir-menu")) b.setAttribute("aria-expanded", "false");
 }
 
 function rotuloRecolher(b, recolhido) {
@@ -112,7 +107,7 @@ export function montarCasca({ sair }) {
 
   const lateral = el("aside", { class: "lateral", id: "menu-lateral" },
     el("div", { class: "lateral-topo" },
-      el("a", { href: "#/receitas", class: "marca", title: "Gália" }, marcaCopo(), logoMarca()),
+      el("a", { href: "#/receitas", class: "marca", title: "GaliaBrew" }, marcaCopo(), el("span", { class: "rotulo", text: "GaliaBrew" })),
       el("button", { type: "button", class: "fechar-menu", "aria-label": "Fechar menu", title: "Fechar menu", on: { click: fecharMenu } }, icone("fechar"))),
     el("nav", { "aria-label": "Menu principal" },
       LINKS.map(([h, t, r, ic]) => el("a", { href: h, title: t, dataset: { rota: r } }, icone(ic), el("span", { class: "rotulo", text: t })))),
@@ -130,7 +125,7 @@ export function montarCasca({ sair }) {
 
   const barra = el("header", { class: "barra-movel" },
     el("button", { type: "button", class: "abrir-menu", "aria-label": "Abrir menu", "aria-controls": "menu-lateral", "aria-expanded": "false", on: { click: abrirMenu } }, icone("menu")),
-    el("a", { href: "#/receitas", class: "marca", title: "Gália" }, logoMarca()));
+    el("a", { href: "#/receitas", class: "marca" }, marcaCopo(), "GaliaBrew"));
 
   const raiz = el("div", { class: `casca${recolhido ? " recolhido" : ""}${window.matchMedia(LARGURA_COMPACTA).matches ? " compacto" : ""}` },
     lateral,
