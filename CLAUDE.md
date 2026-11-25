@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124v.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261124w.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -551,6 +551,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   de Sean Terrill, leituras ÷ fator; devolve OG, FG, ABV, atenuação) e `corrigirDensimetro` (polinômio usual da
   densidade da água em °F; calibração padrão 20 °C).
 - Ferramentas: cartões Refratômetro (com "Descobrir o fator": °Brix ÷ °P do densímetro no mesmo mosto) e Densímetro.
+  Mosto pré-fermentação entra em DENSIDADE (SG, 24/11/2026, pedido do responsável), não em °Brix: a conta de Terrill usa
+  °Brix = °P(SG) × fator; sem o °Brix atual mostra o °Brix esperado no refratômetro.
   Fator do refratômetro e calibração do densímetro ficam em `preferencias` (localStorage), por serem do aparelho.
 - `campoNumero` (ui.js): ao sair do campo mostra o valor guardado (densidade digitada 1048 aparece 1,048).
 
