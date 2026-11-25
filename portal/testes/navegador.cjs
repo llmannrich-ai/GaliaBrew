@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261125c");
+    const m = await import("./fontes.js?v=20261125d");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -507,7 +507,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -575,7 +575,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -597,7 +597,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -707,7 +707,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -2029,9 +2029,18 @@ const erros = [];
   verificar(fichas.alturas.every((h) => h <= 64), `clean: cada linha da ficha com até 64 px (${fichas.alturas.join(", ")} px)`);
   const decoracao = await cel.evaluate(() => {
     const sec = document.querySelector('[data-secao="fermentaveis"]');
-    return { fundo: getComputedStyle(sec).backgroundImage, espuma: getComputedStyle(sec, "::after").content, icone: document.querySelector(".editor-corpo .titulo-icone")?.checkVisibility() };
+    return { fundo: getComputedStyle(sec).backgroundImage, espuma: getComputedStyle(sec, "::after").content, icone: document.querySelector(".editor-corpo .titulo-icone")?.checkVisibility() ?? false };
   });
   verificar(decoracao.fundo === "none" && decoracao.espuma === "none" && decoracao.icone === false, "clean: seções sem papel de parede, sem espuma e sem ícone em círculo");
+  // Ícone mínimo no título de cada seção, no lugar do traço (25/11/2026, pedido do responsável); nome em 14 px.
+  const titulosClean = await cel.evaluate(() => [...document.querySelectorAll(".editor-corpo > .cartao > .titulo-linha > h3.titulo-secao")].map((h) => {
+    const i = h.querySelector(".titulo-icone-min svg"); const b = i?.getBoundingClientRect();
+    return { secao: h.closest(".cartao").dataset.secao, visivel: !!i?.checkVisibility(), lado: b ? Math.round(b.width) : 0,
+      traco: getComputedStyle(h, "::before").content, fonte: parseFloat(getComputedStyle(h).fontSize) };
+  }));
+  const titulosRuins = titulosClean.filter((t) => !t.visivel || t.lado < 16 || t.lado > 20 || t.traco !== "none" || t.fonte !== 14);
+  verificar(titulosClean.length >= 9 && titulosRuins.length === 0,
+    `clean: ícone mínimo (16-20 px) no título das ${titulosClean.length} seções, sem o traço, nome em 14 px${titulosRuins.length ? ": " + JSON.stringify(titulosRuins) : ""}`);
   const subLup = await cel.textContent('[data-secao="lupulos"] li.ing.ficha .ing-sub');
   verificar(/^Fervura \d+ min/.test(subLup), `clean: o lúpulo diz quando entra na própria linha (“${subLup}”)`);
   // K2: números num cartão no topo (no fluxo, com o copo); ao rolar, linha fina no rodapé; de volta ao topo, cartão.
@@ -2332,7 +2341,7 @@ const erros = [];
   await cel.evaluate(() => window.scrollTo(0, 900));
   await cel.waitForTimeout(250);
   await cel.screenshot({ path: `${SAIDA}/p7l-clean-escuro-rolado.png` });
-  // K6: contraste do Clean em todos os temas (WCAG): texto ≥ 7, secundário/estados/"+" ≥ 4,5, traço do título ≥ 3.
+  // K6: contraste do Clean em todos os temas (WCAG): texto ≥ 7, secundário/estados/"+" ≥ 4,5, ícone do título ≥ 3.
   const temasClean = await cel.evaluate(() => window.GaliaTema.lista.map((t) => t.id).filter((id) => id !== "auto"));
   const ruins = [];
   for (const t of temasClean) {
@@ -2355,19 +2364,20 @@ const erros = [];
       const cartao = parse(getComputedStyle(sec).backgroundColor);
       const pagina = sobre(parse(getComputedStyle(document.body).backgroundColor), [255, 255, 255, 1]);
       const mais = getComputedStyle(sec.querySelector("button.adicionar"));
+      const icone = parse(getComputedStyle(sec.querySelector(".titulo-icone-min")).color);
       const r = {
         texto: razao(cor("--tinta"), cartao), suave: razao(cor("--suave"), cartao), suave_pagina: razao(cor("--suave"), pagina),
         lupulo: razao(cor("--lupulo"), cartao), ambar: razao(cor("--ambar"), cartao), fora: razao(cor("--fora"), cartao),
-        mais: razao(parse(mais.color), sobre(parse(mais.backgroundColor), cartao)), traco: razao(cor("--destaque"), cartao),
+        mais: razao(parse(mais.color), sobre(parse(mais.backgroundColor), cartao)), icone: razao(icone, cartao),
       };
       sonda.remove();
       return r;
     });
-    const minimo = { texto: 7, traco: 3 };
+    const minimo = { texto: 7, icone: 3 };
     for (const [k, v] of Object.entries(c)) if (!(v >= (minimo[k] ?? 4.5))) ruins.push(`${t} ${k} ${v}`);
   }
   await cel.evaluate(() => window.GaliaTema.aplicar("auto"));
-  verificar(ruins.length === 0, `clean K6: contraste nos ${temasClean.length} temas (texto ≥ 7; secundário, estados e “+” ≥ 4,5; traço ≥ 3)${ruins.length ? ": " + ruins.join("; ") : ""}`);
+  verificar(ruins.length === 0, `clean K6: contraste nos ${temasClean.length} temas (texto ≥ 7; secundário, estados e “+” ≥ 4,5; ícone ≥ 3)${ruins.length ? ": " + ruins.join("; ") : ""}`);
   // Volta ao Completo para o resto do teste.
   await cel.evaluate(() => {
     window.GaliaTema.aplicar("auto"); window.GaliaTema.aplicarLayout("completo");

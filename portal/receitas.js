@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125c";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125c";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125c";
-import { sb, sessao, preferencias } from "./estado.js?v=20261125c";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125c";
-import { abrirBusca } from "./busca.js?v=20261125c";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125c";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125c";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125c";
-import * as O from "./opcoes.js?v=20261125c";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125c";
-import { icone } from "./icones.js?v=20261125c";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261125c";
-import { abrirRelatorio } from "./relatorio.js?v=20261125c";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125c";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125d";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125d";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125d";
+import { sb, sessao, preferencias } from "./estado.js?v=20261125d";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125d";
+import { abrirBusca } from "./busca.js?v=20261125d";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125d";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125d";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125d";
+import * as O from "./opcoes.js?v=20261125d";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125d";
+import { icone } from "./icones.js?v=20261125d";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261125d";
+import { abrirRelatorio } from "./relatorio.js?v=20261125d";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125d";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -237,8 +237,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const estiloAtual = () => cat.estilos.find((e) => e.id === r.estilo_id);
   // Layout Clean (perfil → Aparência; docs/PLANO-CLEAN.md): malte e lúpulo viram ficha de uma linha.
   const ficha = document.documentElement.dataset.layout === "clean";
-  /** Título de seção com ícone. */
-  const tituloSecao = (nomeIcone, titulo, ...resto) => el("h3", { class: "titulo-secao" }, el("span", { class: "titulo-icone" }, icone(nomeIcone)), titulo, ...resto);
+  /** Título de seção com ícone. No Clean, o ícone mínimo da seção (`<nome>_min`, 25/11/2026) no lugar do círculo. */
+  const tituloSecao = (nomeIcone, titulo, ...resto) => el("h3", { class: "titulo-secao" },
+    ficha ? el("span", { class: "titulo-icone-min" }, icone(`${nomeIcone}_min`)) : el("span", { class: "titulo-icone" }, icone(nomeIcone)),
+    titulo, ...resto);
 
   // ---------- tentativas: desfazer/refazer e referência ----------
   const HISTORICO_MAX = 50;
@@ -463,7 +465,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   // (como nos maltes e lúpulos) e o × no fim; no celular a unidade (`u`) vai depois do número, sem rótulo em cima.
   // No layout Clean vale a ficha (`resumo`).
   function secaoLista(chave, titulo, { colunas, adicionar, vazio, iconeSecao, resumo, linhaUnica = false }) {
-    if (ficha && resumo) return secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo });
+    if (ficha && resumo) return secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo, iconeSecao });
     const corpo = el("tbody");
     const alcaNaFrente = linhaUnica && !leitura;
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
@@ -512,10 +514,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
    * MESMOS campos das colunas da tabela; ordem e remover ficam no pé da janela.
    */
   const abrirPassoDe = {};
-  function secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo }) {
+  function secaoListaFicha(chave, titulo, { colunas, adicionar, vazio, resumo, iconeSecao = "geral" }) {
     const lista = el("ol", { class: "linhas-ing passos" });
     const sec = el("section", { class: "cartao", dataset: { secao: chave } },
-      el("div", { class: "titulo-linha" }, tituloSecao("geral", titulo), leitura ? null : adicionar()),
+      el("div", { class: "titulo-linha" }, tituloSecao(iconeSecao, titulo), leitura ? null : adicionar()),
       lista);
     const desenhar = () => {
       limpar(lista);
@@ -604,10 +606,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
    * Clean (K5): Água, Lote e Notas viram um cartão de resumo (linhas(res) → [{ nome, sub, valor, valor2, estado }]);
    * tocar abre a seção inteira de sempre (conteudo, os mesmos nós e campos) numa janela. Ao fechar, o resumo é refeito.
    */
+  const ICONE_RESUMO = { agua: "agua", notas: "notas", lote: "brassagem" };
   function secaoResumida(chave, titulo, conteudo, linhas) {
     const lista = el("ol", { class: "linhas-ing passos resumo" });
     const sec = el("section", { class: "cartao resumida", dataset: { secao: chave } },
-      el("div", { class: "titulo-linha" }, tituloSecao("geral", titulo), el("span", { class: "resumo-seta", "aria-hidden": "true", text: "›" })),
+      el("div", { class: "titulo-linha" }, tituloSecao(chave in ICONE_RESUMO ? ICONE_RESUMO[chave] : "geral", titulo), el("span", { class: "resumo-seta", "aria-hidden": "true", text: "›" })),
       lista);
     const desenhar = (res) => preencher(lista, linhas(res).map((x) => el("li", { class: "ing ficha passo" },
       el("button", { type: "button", class: "ing-nome", "aria-haspopup": "dialog", "aria-label": `${titulo}: ${x.nome}. Abrir`, on: { click: abrir } },
