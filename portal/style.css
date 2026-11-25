@@ -230,10 +230,10 @@ a { color: var(--destaque-escuro); }
 .cartao .titulo-icone { background: var(--cartao); border-color: transparent; }
 /* Logo do app no topo da tela de Receitas (25/11/2026). Fundo transparente; nos temas escuros, a versão com letras creme. */
 .logo-inicio { display: flex; justify-content: center; margin: .25rem 0 1rem; }
-.logo-inicio img { display: block; height: 11rem; width: auto; }
+.logo-inicio img { display: block; height: 7rem; width: auto; }
 .logo-inicio .logo-escuro, [data-modo="escuro"] .logo-inicio .logo-claro { display: none; }
 [data-modo="escuro"] .logo-inicio .logo-escuro { display: block; }
-@media (max-width: 640px) { .logo-inicio { margin: 0 0 .75rem; } .logo-inicio img { height: 8.5rem; } }
+@media (max-width: 640px) { .logo-inicio { margin: .1rem 0 .6rem; } .logo-inicio img { height: 5.5rem; } }
 .login { width: min(380px, 100%); display: grid; gap: .8rem; }
 .cartao.login { background: var(--painel); border-radius: var(--raio); padding: 1.4rem 1.2rem; }
 .login h1 { color: var(--destaque); margin: 0; }

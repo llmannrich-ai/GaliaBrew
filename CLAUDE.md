@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125a.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125b.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -737,8 +737,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 
 ## Logo na página principal e barra de status do iPhone (25/11/2026, pedido do responsável; sem migração)
 - Logo nova "Galia" (arte enviada pelo responsável) no topo da tela de Receitas (`.logo-inicio` no `telaReceitas`),
-  centrada, 8,5rem de altura no celular (11rem no computador). Dois arquivos em `portal/icones/`, recortados da arte com
-  fundo transparente e 256 cores (~31 kB cada): `logo-galia.png` (letras verdes, temas claros) e `logo-galia-escuro.png`
+  centrada, 5,5rem de altura no celular (7rem no computador). SÓ o nome "Galia" e o livro: o desenho da panela com
+  lúpulo, sol e trigo foi retirado a pedido (25/11/2026). Dois arquivos em `portal/icones/` (600 × 291), recortados da
+  arte com fundo transparente e 256 cores (~20 kB cada): `logo-galia.png` (letras verdes, temas claros) e `logo-galia-escuro.png`
   (letras "Galia" em creme #f1e8da: o verde-escuro sumia no fundo escuro); o CSS mostra uma pelo `data-modo`. O ícone do
   app (Tela de Início) e o login NÃO mudaram.
 - Tarja de cima cinza e falhada no app da Tela de Início (print do iPhone): `apple-mobile-web-app-status-bar-style` passou

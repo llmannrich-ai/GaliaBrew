@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125a";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125a";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125a";
-import { sb, sessao, preferencias } from "./estado.js?v=20261125a";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125a";
-import { abrirBusca } from "./busca.js?v=20261125a";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125a";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125a";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125a";
-import * as O from "./opcoes.js?v=20261125a";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125a";
-import { icone } from "./icones.js?v=20261125a";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261125a";
-import { abrirRelatorio } from "./relatorio.js?v=20261125a";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125a";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125b";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125b";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125b";
+import { sb, sessao, preferencias } from "./estado.js?v=20261125b";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125b";
+import { abrirBusca } from "./busca.js?v=20261125b";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125b";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125b";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125b";
+import * as O from "./opcoes.js?v=20261125b";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125b";
+import { icone } from "./icones.js?v=20261125b";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261125b";
+import { abrirRelatorio } from "./relatorio.js?v=20261125b";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125b";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -29,7 +29,7 @@ export async function telaReceitas(conteudo) {
   const corpo = el("div", { class: "tabela-rolagem" }, el("p", { class: "nota", text: "Carregando…" }));
   // Logo do app no topo da página principal (25/11/2026, pedido do responsável). Duas versões: letras verdes nos temas
   // claros e creme nos escuros (o CSS mostra uma pelo data-modo).
-  const logo = (versao) => el("img", { class: `logo-${versao}`, src: `icones/logo-galia${versao === "escuro" ? "-escuro" : ""}.png`, alt: "Galia", width: 377, height: 480, decoding: "async" });
+  const logo = (versao) => el("img", { class: `logo-${versao}`, src: `icones/logo-galia${versao === "escuro" ? "-escuro" : ""}.png`, alt: "Galia", width: 600, height: 291, decoding: "async" });
   preencher(conteudo,
     el("div", { class: "logo-inicio" }, logo("claro"), logo("escuro")),
     el("div", { class: "titulo-linha" },
