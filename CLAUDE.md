@@ -206,7 +206,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   fervura / whirlpool / dry hop; tocar leva à linha do lúpulo e a destaca). Copo ao lado da barra do grist (24/11/2026, pedido do
   responsável) na cor FINAL da cerveja (`corHexDeSrm`, igual ao copo da barra vital; `aria-label` "Cor da cerveja: N EBC");
   a barra mostra a cor de cada grão (`corHexDeMalte`). Captura `p6u` (390 e 320 px). Lista de receitas em cartões no celular
-  (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app mantido.
+  (copo na cor da cerveja, nº, nome, estilo, data, OG/ABV/IBU/cor), tabela no computador. Ícone do app = o livro da logo Galia (25/11/2026, ver "Logo na página principal").
 - Publicação: GitHub Pages (decisão de 22/11/2026), https://llmannrich-ai.github.io/GaliaBrew/, pelo workflow
   `.github/workflows/pages.yml` (push em portal/ ou à mão): roda os testes do cálculo, monta o site sem `testes/` e
   `_headers` e publica. Só publica da branch PADRÃO do repositório (a `main`). Pré-requisito único (manual, o proxy daqui não
@@ -740,8 +740,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   centrada, 5,5rem de altura no celular (7rem no computador). SÓ o nome "Galia" e o livro: o desenho da panela com
   lúpulo, sol e trigo foi retirado a pedido (25/11/2026). Dois arquivos em `portal/icones/` (600 × 291), recortados da
   arte com fundo transparente e 256 cores (~20 kB cada): `logo-galia.png` (letras verdes, temas claros) e `logo-galia-escuro.png`
-  (letras "Galia" em creme #f1e8da: o verde-escuro sumia no fundo escuro); o CSS mostra uma pelo `data-modo`. O ícone do
-  app (Tela de Início) e o login NÃO mudaram.
+  (letras "Galia" em creme #f1e8da: o verde-escuro sumia no fundo escuro); o CSS mostra uma pelo `data-modo`. O login
+  NÃO mudou.
+- Ícone do app (Tela de Início, favicon e manifest; 25/11/2026, pedido do responsável: "troque o ícone pelo livro"):
+  `icones/icone-180.png` e `icone-512.png` = o livro da logo (contorno verde, frasco e linhas), recortado da arte e
+  centrado a 80% da largura num quadrado creme #fdf7ef (o fundo da arte; em âmbar o recorte deixava contorno branco).
+  Mesmos nomes de arquivo: o iPhone só troca o ícone ao remover e "Adicionar à Tela de Início" de novo.
 - Tarja de cima cinza e falhada no app da Tela de Início (print do iPhone): `apple-mobile-web-app-status-bar-style` passou
   de `default` para `black-translucent` (a página passa por baixo do relógio, texto branco) + `body::before` fixo na cor
   `--menu-fundo` com a altura de `env(safe-area-inset-top)` (z-index 60; 0 de altura no navegador comum e no computador).
