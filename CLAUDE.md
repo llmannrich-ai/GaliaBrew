@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  394 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  410 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125b.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125c.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -347,10 +347,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Leveduras NÃO: usam o `secaoLinhas` (ver "Leveduras com valores fixos"). Tocar abre `dialog.item-janela.passo-janela` com os MESMOS campos das
   colunas (roleta por cima, em popover), ↑ ↓ Remover e Pronto; "+" cria e já abre a janela do item novo
   (`abrirPassoDe`). Sem tabela, sem alça e sem × na linha. Auxiliares de texto `n0` e `juntar`.
-- K5 (feito): Água e Notas em RESUMO (o Lote também, até 24/11/2026: hoje usa o cartão da Brassagem, ver abaixo) (`secaoResumida(chave, titulo, conteudo, linhas)` no receitas.js; as linhas
-  são refeitas a cada cálculo pelo `aoRecalcular`). Água: "Mostura X L · Lavagem Y L" + sais/ácidos curtos (`SAL_CURTO`,
-  `ACIDO_CURTO`) | pH com estado (`estadoPh`: ideal 5,3–5,5 / aceitável 5,2–5,6), e "Água necessária" quando falta/sobra
-  ≥ 0,5 L. Lote: OG/FG medidas (com o planejado), eficiência real (+ ABV real), priming. Notas: começo da nota. Tocar
+- K5 (feito): Notas em RESUMO (a Água também até 25/11/2026: hoje tem seção própria, ver "Água no Clean"; o Lote até
+  24/11/2026: hoje usa o cartão da Brassagem) (`secaoResumida(chave, titulo, conteudo, linhas)` no receitas.js; as linhas
+  são refeitas a cada cálculo pelo `aoRecalcular`). Notas: começo da nota. Tocar
   abre `dialog.item-janela.resumo-janela` com a seção de sempre (os mesmos nós; Lote leva também Medido e Priming) e
   Pronto. Ordem no Clean: parâmetros, fermentáveis, lúpulos, leveduras, mostura, fermentação, água, outros, brassagem, notas.
   Sem painel lateral: Mais números, Volumes e Água (do painel) ficam na janela "Todos ›" dos Parâmetros, abaixo dos
@@ -368,7 +367,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
   escuro, K2 topo/rolado); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro),
   `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (menu ⋯), `p7h` (passo com roleta), `p7i` (levedura em linha),
-  `p7j` (resumos de Água/Lote/Notas), `p7k` (janela da Água).
+  `p7j`/`p7j2` (Água: blocos e concentração final), `p7k` (+ da lavagem), `p7k2` (sal novo na roleta), `p7k3` (Água 320 px).
 
 ## Parâmetros da receita (24/11/2026, pedido do responsável; sem migração)
 - Saiu o `<details>` "Parâmetros" que abria na página. Agora: seção `section.cartao.parametros` (`data-secao="parametros"`)
@@ -734,6 +733,29 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - A coluna "Panela" da tabela do perfil (tela e PDF) passou a se chamar "Total" (as duas águas juntas com todos os
   sais, o que chega à fervura). Pé da tabela: "mostura X · total Y"; PDF: "Sulfato/cloreto no total". No código o
   perfil continua `res.agua.panela`.
+
+## Água no Clean no molde dos fermentáveis (25/11/2026, pedido do responsável; sem migração)
+- No layout Clean a seção Água deixou de ser resumo + janela: `secaoAguaClean()` no receitas.js (o Completo segue com o
+  `secaoAgua()`, sem mudança). De cima para baixo: total de água no título ("32,0 L"); linha "Base: X / Alvo: Y" (tocar
+  abre os dois seletores numa janela); DOIS blocos separados (`.agua-bloco.mostura` cobre, `.lavagem` água-marinha: faixa
+  de 3 px à esquerda, fundo 6% da cor, título em versalete na cor do bloco; ≤ 360 px o título vira só "MOSTURA" /
+  "LAVAGEM"), cada um com os litros no topo (campo; tocar = roleta; vazio mostra a sugestão; mostura mostra L/kg) e "+".
+- Uma FICHA por sal/ácido (como o malte): ponto na cor do bloco (ácido = gota) · nome + o que põe NESTA água ("+78 Ca ·
+  +186 SO₄ ppm"; ácido: "pH −0,25", com os outros ácidos mantidos) │ quantidade (o `campoQuantidade`; toque = roleta
+  direto) + g/L. Tocar no nome abre a janela do item (quantidade com ± e roleta, troca do sal/ácido, efeito ao vivo,
+  Remover, Pronto). "+" abre a escolha (`dialog.agua-escolha`): mostura = 6 sais + 3 ácidos; lavagem = só os 6 sais;
+  escolher já abre a janela na roleta. Lavagem tem "Igual à mostura" (só com sal na mostura). Adicionar/remover/igual =
+  1 passo do desfazer (`acao`).
+- pH da mostura com a escala (a mesma `caixaPhMostura`, com o botão do lático) DENTRO do bloco da mostura.
+- Abaixo da lavagem: aviso de água necessária (≥ 0,5 L) e a tabela curta "Concentração final" (`.agua-total`): ppm |
+  Ca Mg Na SO₄ Cl HCO₃, linha Total (água toda do dia com todos os sais = `res.agua.panela`; longe do alvo = sublinhado
+  pontilhado) e linha Alvo; embaixo SO₄/Cl com a leitura (e o do alvo) e alcalinidade residual. "Perfil completo ›" abre
+  a tabela de sempre (Base, Mostura, Lavagem, Total, Alvo) numa janela. Cabe em 320 px.
+- Partes comuns aos dois layouts viraram funções do `montarEditor`: `escolhaPerfilAgua`, `copiarSaisParaLavagem`,
+  `caixaPhMostura(aoAcido)`, `tabelaPerfilAgua(res)`. Janela simples da água: `abrirJanelaAgua`.
+- Teste do navegador (bloco "clean água:"): seção própria, base/alvo, fichas por água com ppm/g/L/pH, blocos separados e
+  de cor própria, pH só na mostura, tabela (6 íons, Total = coluna Total do perfil completo), roleta na quantidade, + da
+  lavagem (só sais) e da mostura (9 opções), Remover e ↶, 390 e 320 px sem rolagem lateral. Falta conferir no iPhone real.
 
 ## Logo na página principal e barra de status do iPhone (25/11/2026, pedido do responsável; sem migração)
 - Logo nova "Galia" (arte enviada pelo responsável) no topo da tela de Receitas (`.logo-inicio` no `telaReceitas`),
