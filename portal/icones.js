@@ -1,6 +1,6 @@
 // icones.js — ícones do GaliaBrew, desenho próprio (grade 24 × 24, traço 1,75, pontas arredondadas, cor = texto).
 // Em JS (e não num arquivo .svg): saem pelo svg() do ui.js, sem requisição extra e dentro da CSP.
-import { svg } from "./ui.js?v=20261125b";
+import { svg } from "./ui.js?v=20261125c";
 
 // Cada ícone = lista de elementos [tag, atributos]. "c" = círculo, "p" = caminho, "e" = elipse.
 export const DESENHOS = {
@@ -79,6 +79,30 @@ export const DESENHOS = {
     ["p", { d: "M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3-8.7 8.7z" }],
     ["c", { cx: 8, cy: 8, r: 1.4 }],
   ],
+  // ---------- mínimos (layout Clean, 25/11/2026, pedido do responsável: no lugar do traço do título da seção) ----------
+  // Um a três traços cada, para ler bem em 18 px sem círculo em volta. Mesmo nome da seção + "_min".
+  // grão de cevada
+  malte_min: [["p", { d: "M12 3c3.3 2.6 5 5.6 5 9s-1.7 6.4-5 9c-3.3-2.6-5-5.6-5-9s1.7-6.4 5-9z" }], ["p", { d: "M12 7.5v9" }]],
+  // cone de lúpulo
+  lupulo_min: [["p", { d: "M12 4.5c3.2 1.8 5 4.6 5 8 0 3.6-2.2 6.3-5 7.5-2.8-1.2-5-3.9-5-7.5 0-3.4 1.8-6.2 5-8z" }], ["p", { d: "M7.6 12c2.9 1.6 5.9 1.6 8.8 0" }], ["p", { d: "M12 4.5V2.5" }]],
+  // célula brotando
+  levedura_min: [["c", { cx: 10.5, cy: 13.5, r: 6.5 }], ["p", { d: "M13.5 7.7A3 3 0 1 1 16.3 10.5" }]],
+  // folha
+  outros_min: [["p", { d: "M5 19C5 11 11 5 19 5c0 8-6 14-14 14z" }], ["p", { d: "M5 19l7-7" }]],
+  // termômetro
+  mostura_min: [["p", { d: "M10 14V5a2 2 0 1 1 4 0v9a3.6 3.6 0 1 1-4 0z" }]],
+  // bolhas subindo
+  fermentacao_min: [["c", { cx: 9, cy: 15.5, r: 4 }], ["c", { cx: 16, cy: 9, r: 2.5 }], ["c", { cx: 11, cy: 5, r: 1.5 }]],
+  // panela
+  brassagem_min: [["p", { d: "M4 9.5h16M2.5 12.5H6M18 12.5h3.5" }], ["p", { d: "M6 9.5V17a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9.5" }]],
+  // gota
+  agua_min: [["p", { d: "M12 3.5c3.3 4 5.5 7.2 5.5 10.3a5.5 5.5 0 0 1-11 0c0-3.1 2.2-6.3 5.5-10.3z" }]],
+  // dois controles deslizantes
+  parametros_min: [["p", { d: "M4 8h3M11 8h9M4 16h9M17 16h3" }], ["c", { cx: 9, cy: 8, r: 2 }], ["c", { cx: 15, cy: 16, r: 2 }]],
+  // linhas de texto
+  notas_min: [["p", { d: "M5 7h14M5 12h14M5 17h8" }]],
+  // etiqueta
+  geral_min: [["p", { d: "M4 12V4h8l8 8-8 8z" }]],
   desfazer: [["p", { d: "M9 13.5L4.5 9 9 4.5" }], ["p", { d: "M4.5 9H14a5.5 5.5 0 0 1 0 11h-3" }]],
   refazer: [["p", { d: "M15 13.5L19.5 9 15 4.5" }], ["p", { d: "M19.5 9H10a5.5 5.5 0 0 0 0 11h3" }]],
   voltar: [["p", { d: "M15 18.5L8.5 12 15 5.5" }]],
