@@ -1,19 +1,19 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261124w";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261124w";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261124w";
-import { sb, sessao, preferencias } from "./estado.js?v=20261124w";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261124w";
-import { abrirBusca } from "./busca.js?v=20261124w";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261124w";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261124w";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261124w";
-import * as O from "./opcoes.js?v=20261124w";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261124w";
-import { icone } from "./icones.js?v=20261124w";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261124w";
-import { abrirRelatorio } from "./relatorio.js?v=20261124w";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261124w";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125a";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125a";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261125a";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125a";
+import { abrirBusca } from "./busca.js?v=20261125a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125a";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125a";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125a";
+import * as O from "./opcoes.js?v=20261125a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125a";
+import { icone } from "./icones.js?v=20261125a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261125a";
+import { abrirRelatorio } from "./relatorio.js?v=20261125a";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -1274,7 +1274,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     iconeSecao: "lupulo", grafico: tempo.elemento,
     classe: "lup",
     vazio: "Nenhum lúpulo. Toque em “+” para adicionar.",
+    // Total em destaque, como o kg dos fermentáveis (25/11/2026, pedido do responsável): gramas e IBU final.
     total: (res) => `${numeroBR(r.lupulos.reduce((s, h) => s + (Number(h.quantidade_g) || 0), 0), 0)} g · ${numeroBR(res.ibu, 0)} IBU`,
+    destaque: true,
     // Sem botão "Chegar ao IBU" na seção (retirado em 23/11/2026, pedido do responsável): abre pelo número do IBU na barra.
     adicionar: botaoAdicionar("lupulos",
       (h) => adicionarItem("lupulos", { lupulo_id: h.id, nome: h.nome, forma: h.forma, alfa_pct: num0(h.alfa_pct), quantidade_g: null, etapa: "FERVURA", tempo_min: 60, dia: null }),
@@ -1303,7 +1305,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         },
       });
       return {
-        sub: () => [O.rotulo(O.FORMA_LUPULO, item.forma), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
+        // Sem a forma (pellet, flor...) na receita (25/11/2026, pedido do responsável): só o alfa. A forma segue no banco.
+        sub: () => [item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
         // Clean: quando entra (o seletor fica na janela) e o alfa. Ex.: "Fervura 60 min · alfa 12,5%".
         subFicha: () => [quandoLupulo(item), item.alfa_pct != null ? `alfa ${numeroBR(item.alfa_pct, 1)}%` : null],
         colunas: [
@@ -1312,7 +1315,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           dado("IBU", ibu, "d1"), dado("g/L", gl, "d2")],
         detalhes: () => [
           rotular("Nome", campoTexto(item, "nome", { ...campo, rotulo: "Nome", max: 120 })),
-          rotular("Forma", campoSelect(item, "forma", O.FORMA_LUPULO, { ...campo, rotulo: "Forma" })),
           rotular("Alfa ácido (%)", campoNumero(item, "alfa_pct", { ...campo, casas: 1, rotulo: "Alfa (%)" })),
           blocoFonte(fonteNaReceita(item, cat.lupulos, "lupulo_id"), { classe: "largo" })],
         aoCalcular: (x) => {
