@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261125c");
+    const m = await import("./fontes.js?v=20261125d");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -507,7 +507,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -575,7 +575,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -597,7 +597,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -707,7 +707,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125c");
+    const m = await import("./calculos.js?v=20261125d");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -2141,35 +2141,140 @@ const erros = [];
   await cel.evaluate(() => window.scrollBy(0, -60));
   await cel.waitForTimeout(200);
   await cel.screenshot({ path: `${SAIDA}/p7i-clean-passos.png` });
-  // K5: Água, Lote e Notas em resumo; tocar abre a seção inteira numa janela; o painel lateral vai para os Parâmetros.
-  const resumosK5 = await cel.evaluate(() => Object.fromEntries(["agua", "notas"].map((k) => {
+  // K5: Notas em resumo; tocar abre a seção inteira numa janela; o painel lateral vai para os Parâmetros.
+  const resumosK5 = await cel.evaluate(() => Object.fromEntries(["notas"].map((k) => {
     const sec = document.querySelector(`.editor-corpo > [data-secao="${k}"]`);
     const linhas = [...(sec?.querySelectorAll("li.ing") ?? [])].map((l) => Math.round(l.getBoundingClientRect().height));
     return [k, { resumida: sec?.classList.contains("resumida"), linhas, texto: sec?.textContent ?? "", campos: sec?.querySelectorAll("input, select, textarea").length }];
   })));
   verificar(Object.values(resumosK5).every((x) => x.resumida && x.campos === 0 && x.linhas.length >= 1 && x.linhas.length <= 3 && x.linhas.every((h) => h <= 80)),
-    `clean K5: Água e Notas em resumo, sem campos (${Object.entries(resumosK5).map(([k, x]) => `${k}: ${x.linhas.join("+")} px`).join("; ")})`);
-  verificar(/Mostura \d+,\d L · Lavagem/.test(resumosK5.agua.texto) && /pH 5,\d\d/.test(resumosK5.agua.texto) && /Gesso 6 g/.test(resumosK5.agua.texto),
-    "clean K5: resumo da água com litros, sais e pH");
+    `clean K5: Notas em resumo, sem campos (${Object.entries(resumosK5).map(([k, x]) => `${k}: ${x.linhas.join("+")} px`).join("; ")})`);
+  // Água no molde dos fermentáveis (25/11/2026): base/alvo numa linha, dois blocos separados (mostura com o pH,
+  // lavagem), uma ficha por sal/ácido e, abaixo da lavagem, a tabela curta da concentração final.
+  const aguaClean = () => cel.evaluate(() => {
+    const sec = document.querySelector('.editor-corpo > [data-secao="agua"]');
+    const bloco = (k) => sec.querySelector(`.agua-bloco.${k}`);
+    const caixa = (n) => { const b = n.getBoundingClientRect(); return { top: Math.round(b.top), bottom: Math.round(b.bottom) }; };
+    const linhas = (k) => [...bloco(k).querySelectorAll("li.ing.ficha")].map((l) => ({
+      nome: l.querySelector(".ing-nome-txt").textContent, sub: l.querySelector(".ing-sub").textContent,
+      qtd: l.querySelector("input.qtd").value, extra: l.querySelector(".ficha-valor2")?.textContent ?? "", h: Math.round(l.getBoundingClientRect().height) }));
+    const total = sec.querySelector(".agua-total");
+    return {
+      resumida: sec.classList.contains("resumida"),
+      perfis: sec.querySelector(".agua-perfis-linha").textContent,
+      mostura: linhas("mostura"), lavagem: linhas("lavagem"),
+      cxMostura: caixa(bloco("mostura")), cxLavagem: caixa(bloco("lavagem")), cxTotal: caixa(total),
+      cores: [getComputedStyle(bloco("mostura")).borderLeftColor, getComputedStyle(bloco("lavagem")).borderLeftColor],
+      litros: [bloco("mostura").querySelector(".agua-bloco-litros input").placeholder || bloco("mostura").querySelector(".agua-bloco-litros input").value,
+        bloco("lavagem").querySelector(".agua-bloco-litros input").placeholder || bloco("lavagem").querySelector(".agua-bloco-litros input").value],
+      ph: bloco("mostura").querySelector(".ph-cartao:not([hidden]) .ph-escala") ? bloco("mostura").querySelector(".ph-valor").textContent : null,
+      phNaLavagem: !!bloco("lavagem").querySelector(".ph-cartao"),
+      colunas: [...total.querySelectorAll("thead th")].map((th) => th.textContent),
+      linhasTotal: [...total.querySelectorAll("tbody tr")].map((tr) => [...tr.children].map((c) => c.textContent)),
+      indices: total.querySelector(".agua-total-indices")?.textContent ?? "",
+      cabe: total.querySelector("table").scrollWidth <= total.querySelector("table").clientWidth + 1,
+      tituloTotal: sec.querySelector(".titulo-linha .total-secao").textContent,
+    };
+  });
+  const ag = await aguaClean();
+  verificar(!ag.resumida && /^Base: .+Alvo: Alvo IPA/.test(ag.perfis), `clean água: seção própria (não é resumo), base e alvo numa linha (“${ag.perfis}”)`);
+  verificar(ag.mostura.length === 2 && ag.mostura[0].nome === "Gesso" && ag.mostura[1].nome === "Ácido lático 88%" && /^pH −?-?0,\d\d$/.test(ag.mostura[1].sub) && ag.mostura[0].qtd === "6,0" && /^\+\d+ Ca · \+\d+ SO₄ ppm$/.test(ag.mostura[0].sub) && /g\/L$/.test(ag.mostura[0].extra)
+    && ag.lavagem.length === 1 && ag.lavagem[0].nome === "Cloreto de cálcio" && /Ca · \+\d+ Cl ppm/.test(ag.lavagem[0].sub),
+    `clean água: uma ficha por sal e ácido, cada um na sua água, com o que põe na água (sal: ppm e g/L; ácido: pH) (${JSON.stringify([...ag.mostura, ...ag.lavagem].map((x) => [x.nome, x.qtd, x.sub, x.extra]))})`);
+  verificar([...ag.mostura, ...ag.lavagem].every((x) => x.h <= 64), `clean água: linhas com até 64 px (${[...ag.mostura, ...ag.lavagem].map((x) => x.h).join(", ")} px)`);
+  verificar(ag.cxLavagem.top > ag.cxMostura.bottom && ag.cxTotal.top > ag.cxLavagem.bottom && ag.cores[0] !== ag.cores[1] && ag.litros.every((x) => /^\d+,\d$/.test(x)),
+    `clean água: mostura e lavagem em blocos separados, de cor própria e com os litros no topo; total abaixo da lavagem (${JSON.stringify(ag.cores)})`);
+  verificar(/^5,\d\d$/.test(ag.ph ?? "") && !ag.phNaLavagem, `clean água: pH com a escala dentro do bloco da mostura (${ag.ph})`);
+  verificar(ag.colunas.join(" ") === "ppm Ca Mg Na SO₄ Cl HCO₃" && ag.linhasTotal.length === 2 && ag.linhasTotal[0][0] === "Total" && ag.linhasTotal[1][0] === "Alvo"
+    && ag.linhasTotal.every((l) => l.length === 7 && l.slice(1).every((x) => /^\d+$/.test(x))) && /SO₄\/Cl \d+,\d\d/.test(ag.indices) && /Alc\. residual -?−?\d+ ppm/.test(ag.indices),
+    `clean água: tabela da concentração final com os 6 íons do total e o alvo, SO₄/Cl e alcalinidade residual (${JSON.stringify(ag.linhasTotal)}; ${ag.indices})`);
+  verificar(/^\d+,\d L$/.test(ag.tituloTotal), `clean água: total de água no título (${ag.tituloTotal})`);
+  await cel.locator('.editor-corpo > [data-secao="agua"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.evaluate(() => window.scrollBy(0, -60));
+  await cel.waitForTimeout(200);
+  await cel.screenshot({ path: `${SAIDA}/p7j-clean-agua.png` });
+  await cel.locator('.editor-corpo > [data-secao="agua"] .agua-total').evaluate((n) => n.scrollIntoView({ block: "end" }));
+  await cel.evaluate(() => window.scrollBy(0, 60));
+  await cel.waitForTimeout(150);
+  await cel.screenshot({ path: `${SAIDA}/p7j2-clean-agua-total.png` });
+  await conferirLateral("clean, água 390 px");
+  // Perfil completo: a tabela de sempre numa janela; a coluna Total bate com a tabela curta.
+  await tocar('.editor-corpo > [data-secao="agua"] .agua-total button.agua-link');
+  await cel.waitForSelector("dialog.agua-perfil-janela[open] table.perfil-agua");
+  const totalCompleto = await cel.$$eval("dialog.agua-perfil-janela table.perfil-agua > tbody:first-of-type tr", (trs) => trs.map((tr) => tr.children[4].textContent));
+  verificar(JSON.stringify(totalCompleto) === JSON.stringify(ag.linhasTotal[0].slice(1)), `clean água: "Perfil completo" abre a tabela de sempre e o Total bate (${totalCompleto.join(" ")})`);
+  await tocar("dialog.agua-perfil-janela .item-pronto");
+  await cel.waitForSelector("dialog.agua-perfil-janela", { state: "detached" });
+  // Tocar na quantidade do gesso = roleta direto (sem janela); Cancelar volta.
+  await tocar('.agua-bloco.mostura li.ing.ficha input.qtd');
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(350);
+  const rolSal = { janela: await cel.locator("dialog.item-janela").count(), valor: await cel.textContent(".roleta-valor") };
+  verificar(rolSal.janela === 0 && /^6,0/.test(rolSal.valor),
+    `clean água: tocar na quantidade do sal abre a roleta direto, no valor atual (${JSON.stringify(rolSal)})`);
+  await tocar(".roleta-cancelar");
+  await cel.waitForSelector(".roleta", { state: "detached" });
+  // "+" da lavagem: só sais (a lavagem não leva ácido); escolher abre a janela já na roleta; OK + Pronto = ficha nova.
+  await tocar('.agua-bloco.lavagem button.adicionar');
+  await cel.waitForSelector("dialog.agua-escolha[open]");
+  const opcoesLavagem = await cel.$$eval("dialog.agua-escolha button.agua-opcao strong", (ns) => ns.map((n) => n.textContent));
+  verificar(opcoesLavagem.length === 6 && !opcoesLavagem.some((x) => /Ácido/.test(x)), `clean água: + da lavagem oferece só os 6 sais (${opcoesLavagem.join(", ")})`);
+  await cel.screenshot({ path: `${SAIDA}/p7k-clean-agua-adicionar.png` });
+  await tocar("dialog.agua-escolha button.agua-opcao:has-text('Sal amargo')");
+  await cel.waitForSelector("dialog.agua-item-janela[open] .roleta");
+  await cel.waitForTimeout(350);
+  await cel.screenshot({ path: `${SAIDA}/p7k2-clean-agua-sal-roleta.png` });
+  await tocar(".roleta-ok");
+  await cel.waitForSelector(".roleta", { state: "detached" });
+  const efeitoSal = await cel.textContent("dialog.agua-item-janela .agua-efeito");
+  verificar(/Nesta água \(\d+,\d L\): \+\d+ Mg · \+\d+ SO₄ ppm/.test(efeitoSal), `clean água: a janela do sal mostra o que ele põe na água (“${efeitoSal}”)`);
+  await tocar("dialog.agua-item-janela .item-pronto");
+  await cel.waitForSelector("dialog.agua-item-janela", { state: "detached" });
+  const depoisAdd = await aguaClean();
+  verificar(depoisAdd.lavagem.length === 2 && depoisAdd.lavagem[1].nome === "Sal amargo" && /^\d+,\d$/.test(depoisAdd.lavagem[1].qtd) && depoisAdd.mostura.length === ag.mostura.length
+    && depoisAdd.linhasTotal[0][2] !== ag.linhasTotal[0][2],
+    `clean água: o sal novo entra na lavagem e o Mg do total muda (${ag.linhasTotal[0][2]} → ${depoisAdd.linhasTotal[0][2]})`);
+  // "+" da mostura: sais e ácidos; o ácido entra na mostura com o efeito no pH.
+  await tocar('.agua-bloco.mostura button.adicionar');
+  await cel.waitForSelector("dialog.agua-escolha[open]");
+  verificar(await cel.locator("dialog.agua-escolha button.agua-opcao").count() === 9, "clean água: + da mostura oferece os 6 sais e os 3 ácidos");
+  await tocar("dialog.agua-escolha button.agua-opcao:has-text('Ácido lático 88%')");
+  await cel.waitForSelector(".roleta");
+  await cel.waitForTimeout(350);
+  await tocar(".roleta-ok");
+  await cel.waitForSelector(".roleta", { state: "detached" });
+  await tocar("dialog.agua-item-janela .item-pronto");
+  await cel.waitForSelector("dialog.agua-item-janela", { state: "detached" });
+  const comAcido = await aguaClean();
+  const acido = comAcido.mostura.at(-1);
+  verificar(comAcido.mostura.length === ag.mostura.length + 1 && acido.nome === "Ácido lático 88%" && /^pH −?-?0,\d\d$/.test(acido.sub) && comAcido.ph !== ag.ph, `clean água: ácido na mostura com o efeito no pH (“${acido?.sub}”; pH ${ag.ph} → ${comAcido.ph})`);
+  // Remover pela janela do item (tocar no nome).
+  await tocar(".agua-bloco.lavagem li.ing.ficha:has-text('Sal amargo') button.ing-nome");
+  await cel.waitForSelector("dialog.agua-item-janela[open]");
+  await tocar("dialog.agua-item-janela button.perigo");
+  await cel.waitForSelector("dialog.agua-item-janela", { state: "detached" });
+  verificar((await aguaClean()).lavagem.length === 1, "clean água: Remover na janela tira o sal");
+  await tocar(".barra-app .app-desfazer");
+  await cel.waitForTimeout(250);
+  verificar((await aguaClean()).lavagem.length === 2, "clean água: ↶ volta o sal removido");
+  // 320 px: tabela do total cabe, nada passa da borda.
+  await cel.setViewportSize({ width: 320, height: 640 });
+  await cel.waitForTimeout(250);
+  const ag320 = await aguaClean();
+  verificar(ag320.cabe && [...ag320.mostura, ...ag320.lavagem].every((x) => x.h <= 80), `clean água 320 px: tabela do total cabe e linhas de até 2 linhas de texto (${[...ag320.mostura, ...ag320.lavagem].map((x) => x.h).join(", ")} px)`);
+  await cel.locator('.editor-corpo > [data-secao="agua"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
+  await cel.evaluate(() => window.scrollBy(0, -60));
+  await cel.waitForTimeout(200);
+  await cel.screenshot({ path: `${SAIDA}/p7k3-clean-agua-320.png` });
+  await conferirLateral("clean, água 320 px");
+  await cel.setViewportSize({ width: 390, height: 844 });
+  await cel.waitForTimeout(250);
   const loteClean = await cel.evaluate(() => {
     const sec = document.querySelector('.editor-corpo > [data-secao="brassagem"]');
     return { cartao: sec?.classList.contains("parametros"), numeros: [...sec.querySelectorAll(".param-resumo input")].map((n) => n.value), texto: sec.textContent };
   });
   verificar(loteClean.cartao && loteClean.numeros[0] === "1,048" && /Priming \d+ g/.test(loteClean.texto),
     `clean: Brassagem no cartão dos Parâmetros, com a OG medida e o priming (${JSON.stringify(loteClean.numeros)})`);
-  await cel.locator('.editor-corpo > [data-secao="agua"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
-  await cel.evaluate(() => window.scrollBy(0, -60));
-  await cel.waitForTimeout(200);
-  await cel.screenshot({ path: `${SAIDA}/p7j-clean-resumos.png` });
-  await tocar('.editor-corpo > [data-secao="agua"] button.ing-nome');
-  await cel.waitForSelector('dialog.resumo-janela[data-secao="agua"][open]');
-  verificar(await cel.locator("dialog.resumo-janela .bloco-agua").count() === 2 && await cel.isVisible("dialog.resumo-janela .ph-cartao"),
-    "clean K5: tocar na Água abre a seção inteira (blocos da mostura e da lavagem, pH) numa janela");
-  await cel.waitForTimeout(150);
-  await cel.screenshot({ path: `${SAIDA}/p7k-clean-agua-janela.png` });
-  await conferirLateral("clean, janela da água");
-  await tocar("dialog.resumo-janela .item-pronto");
-  await cel.waitForSelector("dialog.resumo-janela", { state: "detached" });
   await tocar('.editor-corpo > [data-secao="brassagem"] button.param-todos');
   await cel.waitForSelector("dialog.lote-janela[open]");
   verificar(await cel.isVisible('dialog.lote-janela input[aria-label="OG medida"]') && /Eficiência real/.test(await cel.textContent("dialog.lote-janela .parametros-numeros")),

@@ -1718,3 +1718,85 @@ button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, t
   /* vazio ("Nenhum.") mais discreto */
   :root[data-layout="clean"] .editor-corpo .ing-vazio { padding: .7rem 0; font-size: .875rem; }
 }
+
+/* ---------- Água no Clean (25/11/2026, pedido do responsável: "algo similar aos fermentáveis") ----------
+   Base e alvo numa linha; DOIS blocos separados com cor própria (mostura cobre, lavagem água-marinha: faixa à esquerda,
+   fundo levemente tingido, título em versalete na cor do bloco, litros e "+" no topo), uma ficha por sal/ácido (nome ·
+   o que põe na água │ quantidade · g/L), pH da mostura com a escala dentro do bloco da mostura; abaixo da lavagem, a
+   tabela curta da concentração final (íons do total em ppm e o alvo). */
+.agua-clean .agua-perfis-linha { margin: .15rem 0 .1rem; }
+.agua-clean .agua-seta { grid-area: num; align-self: center; font-size: 1.5rem; color: var(--suave); padding: 0 .35rem; }
+.agua-bloco {
+  --bloco-cor: var(--pp-mostura-cor);
+  margin: .5rem 0; padding: .15rem .65rem .45rem .7rem; border-radius: 10px;
+  border-left: 3px solid var(--bloco-cor); background: color-mix(in srgb, var(--bloco-cor) 6%, transparent);
+}
+.agua-bloco.lavagem { --bloco-cor: var(--pp-lavagem-cor); }
+.agua-bloco-topo { display: flex; align-items: center; gap: .45rem; min-height: 2.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--bloco-cor) 25%, transparent); }
+.agua-bloco-titulo {
+  flex: 1 1 auto; min-width: 0; margin: 0; display: grid; gap: 0;
+  font-size: .8125rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; color: var(--bloco-cor);
+}
+.agua-bloco-sub { font-size: .75rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--suave); }
+.agua-bloco-sub:empty { display: none; }
+.agua-bloco-litros { display: inline-flex; align-items: baseline; gap: .2rem; flex: none; }
+.agua-bloco-litros input.num {
+  width: 4.4rem; height: 2rem; padding: .15rem .3rem; text-align: right; font-size: .96875rem; font-weight: 700;
+  border: 1px solid transparent; border-radius: var(--raio-p); background: color-mix(in srgb, var(--tinta) 6%, transparent);
+}
+.agua-bloco-litros input.num:focus { border-color: var(--destaque); background: var(--cartao); }
+.agua-bloco-litros .sufixo { font-size: var(--t-p); color: var(--suave); }
+.agua-bloco .ing.ficha .ficha-ponto { background: var(--bloco-cor); }
+.agua-bloco .ing.ficha.acido .ficha-ponto { border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }   /* gota */
+.agua-bloco .ing.ficha .ing-sub { white-space: normal; }
+.agua-bloco .ph-cartao { margin-top: .35rem; border-top-color: color-mix(in srgb, var(--bloco-cor) 25%, transparent); }
+.agua-bloco .ing-vazio { margin: 0; }
+button.agua-link {
+  min-height: 2.75rem; padding: 0 .1rem; border: none; background: none; color: var(--destaque-escuro);
+  font-size: var(--t-p); font-weight: 650; cursor: pointer;
+}
+.agua-bloco button.agua-igual { display: block; margin-left: auto; }
+.agua-bloco button.agua-igual[hidden] { display: none; }
+.agua-aviso { margin: .3rem 0; }
+.agua-aviso[hidden] { display: none; }
+.agua-total { margin: .7rem 0 .3rem; }
+.agua-total-topo { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.agua-total-titulo { margin: 0; font-size: .8125rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; color: var(--tinta); }
+table.agua-total-tabela { width: 100%; table-layout: fixed; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.agua-total-tabela :is(th, td) { padding: .3rem .1rem; text-align: right; white-space: nowrap; }
+.agua-total-tabela :is(th, td):first-child { width: 2.9rem; text-align: left; }
+.agua-total-tabela thead th { font-size: .75rem; font-weight: 650; color: var(--suave); border-bottom: 1px solid var(--linha); }
+.agua-total-tabela thead abbr { text-decoration: none; }
+.agua-total-tabela tbody th { font-size: .8125rem; font-weight: 650; color: var(--suave); }
+.agua-total-tabela tr.total td { font-size: .96875rem; font-weight: 750; color: var(--tinta); }
+.agua-total-tabela tr.total td.longe { color: var(--destaque-escuro); text-decoration: underline dotted; text-underline-offset: 3px; }
+.agua-total-tabela tr.alvo td { font-size: .875rem; color: var(--suave); }
+.agua-total-tabela tr.alvo :is(th, td) { border-top: 1px solid var(--linha); }
+.agua-total-indices { display: flex; flex-wrap: wrap; gap: .1rem 1rem; margin: .35rem 0 0; font-size: .8125rem; color: var(--suave); }
+.agua-total-indices b { color: var(--tinta); }
+/* janelas da água: opções de sal/ácido em botões de linha inteira; o efeito ao vivo embaixo */
+.agua-opcoes { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; }
+button.agua-opcao {
+  width: 100%; min-height: 3rem; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: .05rem; padding: .45rem .5rem; text-align: left;
+  border: none; border-bottom: 1px solid var(--linha); border-radius: 0; background: none; color: var(--tinta); cursor: pointer;
+}
+button.agua-opcao strong { font-size: .96875rem; font-weight: 600; }
+button.agua-opcao span { font-size: .8125rem; color: var(--suave); }
+button.agua-opcao:active, button.agua-opcao:hover { background: color-mix(in srgb, var(--destaque) 8%, transparent); }
+.agua-efeito { margin: .6rem 0 0; font-size: var(--t-p); color: var(--suave); }
+.agua-efeito:empty { display: none; }
+.agua-perfil-janela .tabela-rolagem { overflow-x: auto; }
+.agua-item-janela .grade-form select { width: 100%; }
+.agua-bloco .ph-rot { white-space: nowrap; }
+/* telas estreitas (iPhone SE, 320 px): título do bloco curto ("MOSTURA"/"LAVAGEM"; a seção já se chama Água), litros e
+   quantidade mais estreitos para o nome do sal caber */
+@media (max-width: 360px) {
+  .agua-bloco { padding-left: .55rem; padding-right: .5rem; }
+  .agua-bloco .agua-longo { display: none; }
+  .agua-bloco-litros input.num { width: 3.7rem; }
+  .agua-bloco .ficha-num .campo-qtd input.qtd { width: 3.6rem; }
+  .agua-bloco .ing.ficha { gap: 0 .5rem; }
+}
+button.agua-link:hover { background: none; border-color: transparent; color: var(--destaque-escuro); text-decoration: underline; }
