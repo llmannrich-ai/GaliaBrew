@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261125a");
+    const m = await import("./fontes.js?v=20261125b");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -507,7 +507,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125a");
+    const m = await import("./calculos.js?v=20261125b");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -575,7 +575,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125a");
+    const m = await import("./calculos.js?v=20261125b");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -597,7 +597,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125a");
+    const m = await import("./calculos.js?v=20261125b");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -707,7 +707,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125a");
+    const m = await import("./calculos.js?v=20261125b");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1103,6 +1103,26 @@ const erros = [];
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
+  // Logo na página principal (25/11/2026): carregada, centrada, cabe na tela; tema escuro troca para as letras creme.
+  const logoVisivel = () => cel.evaluate(() => {
+    const img = [...document.querySelectorAll(".logo-inicio img")].find((n) => n.checkVisibility());
+    if (!img) return null;
+    const r = img.getBoundingClientRect();
+    return { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, centro: Math.abs(r.left + r.width / 2 - window.innerWidth / 2), dentro: r.left >= 0 && r.right <= window.innerWidth, altura: r.height };
+  });
+  let lg = await logoVisivel();
+  verificar(lg && lg.src === "icones/logo-galia.png" && lg.carregada && lg.centro < 2 && lg.dentro && lg.altura >= 80 && lg.altura <= 100,
+    `toque: logo da Galia no topo da lista, centrada (${JSON.stringify(lg)})`);
+  await cel.emulateMedia({ colorScheme: "dark" });
+  await cel.waitForFunction(() => document.documentElement.dataset.modo === "escuro", null, { timeout: 2000 }).catch(() => {});
+  await cel.waitForFunction(() => [...document.querySelectorAll(".logo-inicio img")].some((n) => n.checkVisibility() && n.complete && n.naturalWidth > 0 && n.src.includes("escuro")), null, { timeout: 3000 }).catch(() => {});
+  lg = await logoVisivel();
+  verificar(lg && lg.src === "icones/logo-galia-escuro.png" && lg.carregada, "toque: tema escuro mostra a logo com letras creme");
+  await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista-escuro.png` });
+  await cel.emulateMedia({ colorScheme: "light" });
+  await cel.waitForFunction(() => document.documentElement.dataset.modo === "claro", null, { timeout: 2000 }).catch(() => {});
+  verificar(await cel.evaluate(() => getComputedStyle(document.body, "::before").position) === "fixed" && await cel.getAttribute('meta[name="apple-mobile-web-app-status-bar-style"]', "content") === "black-translucent",
+    "iPhone: barra de status translúcida com faixa fixa na cor do menu (altura do entalhe)");
   await tocar(".receita-cartao >> text=Pils da Galia");
   await cel.waitForSelector(".barra-app");
   verificar(!(await cel.isVisible("header.barra-movel")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
