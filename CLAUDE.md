@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125e.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -762,23 +762,23 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   lavagem (só sais) e da mostura (9 opções), Remover e ↶, 390 e 320 px sem rolagem lateral. Falta conferir no iPhone real.
 
 ## Logo na página principal e barra de status do iPhone (25/11/2026, pedido do responsável; sem migração)
-- Logo nova "Galia" (arte enviada pelo responsável) no topo da tela de Receitas (`.logo-inicio` no `telaReceitas`),
-  centrada, 5,5rem de altura no celular (7rem no computador). SÓ o nome "Galia" e o livro: o desenho da panela com
-  lúpulo, sol e trigo foi retirado a pedido (25/11/2026). Dois arquivos em `portal/icones/` (600 × 291), recortados da
-  arte com fundo transparente e 256 cores (~20 kB cada): `logo-galia.png` (letras verdes, temas claros) e `logo-galia-escuro.png`
-  (letras "Galia" em creme #f1e8da: o verde-escuro sumia no fundo escuro); o CSS mostra uma pelo `data-modo`. O login
-  NÃO mudou.
+- Logo "Gália" (arte do responsável JÁ SEM FUNDO, com acento; 2ª versão em 25/11/2026) NO LUGAR do copinho + "GaliaBrew":
+  na `barra-movel` (2,6rem de altura) e no topo do menu lateral/gaveta (3,4rem), via `logoMarca()` do menu.js. A 1ª
+  versão (logo abaixo da barra, no corpo da tela de Receitas) saiu a pedido: ficava "abaixo da logo antiga" e, nos temas
+  escuros, a versão recortada de uma arte com fundo mostrava serrilhado. Arquivo único `icones/logo-galia.png` (323 × 180,
+  RGBA sem paleta para não sujar a borda), com o verde-escuro trocado por creme #f1e8da mantendo a transparência: a barra e
+  o menu são sempre escuros, em todos os temas. O copinho ficou só no menu recolhido do computador (onde a logo não cabe).
 - Ícone do app (Tela de Início, favicon e manifest; 25/11/2026, pedido do responsável: "troque o ícone pelo livro"):
   `icones/icone-180.png` e `icone-512.png` = o livro da logo (contorno verde, frasco e linhas), recortado da arte e
   centrado a 80% da largura num quadrado creme #fdf7ef (o fundo da arte; em âmbar o recorte deixava contorno branco).
   Mesmos nomes de arquivo: o iPhone só troca o ícone ao remover e "Adicionar à Tela de Início" de novo.
-- Tarja de cima cinza e falhada no app da Tela de Início (print do iPhone): `apple-mobile-web-app-status-bar-style` passou
-  de `default` para `black-translucent` (a página passa por baixo do relógio, texto branco) + `body::before` fixo na cor
-  `--menu-fundo` com a altura de `env(safe-area-inset-top)` (z-index 60; 0 de altura no navegador comum e no computador).
-  Janelas de tela cheia no celular (busca, relatório, foto) ficam acima dela: `padding-top` do entalhe + sombra interna na
-  cor do menu. `.centro` (login) desce do entalhe. Se a tarja não mudar no iPhone, o iOS guardou o estilo da
-  instalação: remover o ícone e "Adicionar à Tela de Início" de novo. Conferido no Chromium simulando 47 px de entalhe (lista, editor, busca,
-  relatório, foto); falta conferir no iPhone real.
+- Tarja de cima (barra de status do app da Tela de Início): cinza/branca, fora da cor do tema. O iOS 26 IGNORA a
+  `theme-color` e copia a cor do elemento `position: fixed/sticky` de largura total no topo da página; sem ele, usa o
+  fundo do body (branco). A 1ª tentativa (25/11/2026: `black-translucent` + faixa fixa na altura do entalhe) foi
+  desfeita: relatos de iOS 26 com névoa/blur em `black-translucent`. Agora: `apple-mobile-web-app-status-bar-style` =
+  `default` e a `barra-movel` PRESA no topo também no celular (antes `position: static` até 640 px); no editor a
+  `barra-app` já era presa. Assim a barra de status pega a cor da barra de cima (menu escuro do tema; no editor, o
+  cartão). O iOS só relê ao abrir: remover o ícone e "Adicionar à Tela de Início" de novo. Falta conferir no iPhone real.
 
 ## Lúpulos: total em destaque e sem a forma (25/11/2026, pedido do responsável; sem migração)
 - O título da seção Lúpulos mostra "N g · N IBU" em destaque (`destaque: true` no `secaoLinhas`, a mesma letra grande
