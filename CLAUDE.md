@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126a.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126b.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -788,6 +788,10 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   do kg dos fermentáveis); no celular quebra linha abaixo do título em 320 px.
 - A forma do lúpulo (pellet, flor...) saiu da receita na tela: a linha mostra só o alfa e a janela do item não tem mais
   o campo Forma. A coluna `forma` segue no banco (copiada do cadastro; item livre = PELLET) e no relatório em PDF.
+
+## "Sulfato de cálcio" no lugar de "Gesso" (26/11/2026, pedido do responsável; só texto)
+- Na tela (seletor dos sais, fichas da água no Clean) e no relatório em PDF o sal se chama "Sulfato de cálcio". O código
+  gravado no banco continua `GESSO` (jsonb `sais`; receitas antigas não mudam).
 
 ## Ações ao lado do nome e lote com a data no Clean (26/11/2026, pedido do responsável; sem migração)
 - O menu ⋯ (barra do app no celular / ao lado do nome no computador) SAIU. Relatório (PDF), Nova a partir desta,
