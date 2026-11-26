@@ -1553,11 +1553,24 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
 .layout-mini.clean { background: color-mix(in srgb, var(--tinta) 5%, var(--cartao)); }
 .layout-mini.clean .lm-linha { background: var(--cartao); padding: 2px 4px; }
 
-/* Clean K1: cabeçalho enxuto (meta do lote, nome como título, estilo como link, Parâmetros numa linha) e menu ⋯. */
-.topo-meta { font-size: var(--t-p); color: var(--suave); font-variant-numeric: tabular-nums; }
-.topo-meta:empty { display: none; }
+/* Clean K1: cabeçalho enxuto (lote e data, nome como título com as ações ao lado, estilo como link). */
+button.topo-meta {
+  justify-self: start; display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 .45rem; min-height: 2.25rem;
+  padding: .15rem 0; border: none; background: transparent; color: var(--tinta); font-size: 1.0625rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; text-align: left;
+}
+button.topo-meta:hover { background: transparent; border: none; color: var(--tinta); }
+button.topo-meta .meta-sep, button.topo-meta .meta-data { color: var(--suave); font-weight: 600; }
 :root[data-layout="clean"] .topo-clean { display: grid; grid-template-columns: minmax(0, 1fr); gap: .1rem; align-items: start; margin-bottom: .6rem; }
-:root[data-layout="clean"] .topo-clean .nome-linha { flex: none; align-items: center; }
+:root[data-layout="clean"] .topo-clean .nome-linha { flex: none; align-items: flex-start; gap: .25rem; }
+:root[data-layout="clean"] .topo-clean textarea.titulo-receita { display: block; resize: none; overflow: hidden; min-height: 0; line-height: 1.15; }
+.nome-acoes { display: flex; flex: none; align-items: center; margin: -.3rem -.35rem 0 0; }
+.nome-acoes button.acao-nome { width: 2.5rem; height: 2.75rem; padding: 0; justify-content: center; border: none; color: var(--destaque-escuro); }
+.nome-acoes button.acao-nome .ico { width: 1.4rem; height: 1.4rem; }
+.nome-acoes button.acao-nome:hover { background: color-mix(in srgb, var(--tinta) 6%, transparent); border: none; color: var(--destaque-escuro); }
+.nome-acoes button.acao-nome.perigo, .nome-acoes button.acao-nome.perigo:hover { color: var(--erro); }
+/* os ícones ao lado do nome fazem o papel destes dois botões */
+:root[data-layout="clean"] .topo-clean .acoes-receita :is(.nova-a-partir, .excluir-receita) { display: none; }
 :root[data-layout="clean"] .topo-clean .titulo-receita {
   font-size: 1.45rem !important; font-weight: 750; letter-spacing: -.01em; padding: .1rem .3rem !important; margin-left: -.3rem;
   border-color: transparent; background: transparent; box-shadow: none;
@@ -1584,27 +1597,7 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
 :root[data-layout="clean"] .topo-clean details.lote[open] .resumo-acao::after { transform: rotate(90deg); }
 :root[data-layout="clean"] .topo-clean details.lote[open] > summary { margin-bottom: .5rem; }
 :root[data-layout="clean"] .topo-clean .acoes-receita { margin-top: .4rem; }
-button.topo-menu { flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: none; color: var(--tinta); }
-button.topo-menu .ico, .barra-app button.app-menu .ico { width: 1.5rem; height: 1.5rem; }
-.barra-app button.app-menu { flex: none; width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: transparent; color: var(--tinta); }
 .barra-app.sem-titulo .app-titulo { visibility: hidden; }
-
-dialog.menu-receita { padding: 0; width: min(380px, 94vw); border: none; border-radius: 14px; }
-.menu-receita-topo {
-  display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .3rem .3rem .3rem 1rem;
-  border-bottom: 1px solid var(--linha);
-}
-.menu-receita-topo strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.menu-receita-lista { display: grid; padding: .3rem 0 .5rem; }
-button.menu-item {
-  display: flex; align-items: center; justify-content: flex-start; gap: .85rem; width: 100%; min-height: 3rem;
-  padding: .5rem 1rem; border: none; border-radius: 0; background: transparent; color: var(--tinta);
-  font-size: var(--t-corpo); font-weight: 500; text-align: left;
-}
-button.menu-item:hover { background: color-mix(in srgb, var(--tinta) 6%, transparent); border: none; color: var(--tinta); }
-button.menu-item .ico { width: 1.35rem; height: 1.35rem; margin: 0; color: var(--suave); }
-button.menu-item.perigo, button.menu-item.perigo .ico { color: var(--erro); background: transparent; }
-button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, transparent); color: var(--erro); }
 
 @media (max-width: 640px) {
   /* Cabeçalho e cartão dos números formam um bloco liso logo abaixo da barra do app. */
@@ -1614,8 +1607,6 @@ button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, t
   }
   :root[data-layout="clean"] .topo-clean .acoes-receita { display: none; }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) { border-top: 1px solid var(--linha); }
-  /* menu ⋯ = folha no rodapé */
-  dialog.menu-receita { width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto auto calc(.5rem + env(safe-area-inset-bottom)); }
 }
 
 /* Clean K4: leveduras, outros, mostura e fermentação em ficha (nome e um dado | número principal e o segundo). */
@@ -1673,8 +1664,10 @@ button.menu-item.perigo:hover { background: color-mix(in srgb, var(--erro) 8%, t
 
   /* cabeçalho da receita: na página, sem cartão */
   :root[data-layout="clean"] .topo-clean { background: transparent; padding: .85rem calc(var(--lado) + .35rem) .55rem; }
-  :root[data-layout="clean"] .topo-meta { font-size: .75rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
-  :root[data-layout="clean"] .topo-clean .titulo-receita { font-size: 1.625rem !important; font-weight: 780; letter-spacing: -.02em; line-height: 1.15; }
+  :root[data-layout="clean"] button.topo-meta { font-size: 1.0625rem; }
+  /* 22 px (era 26 até 26/11/2026): o nome divide a linha com os 4 ícones de ação; nome mediano (24 letras) em até 2 linhas */
+  :root[data-layout="clean"] .topo-clean .titulo-receita { font-size: 1.375rem !important; font-weight: 780; letter-spacing: -.02em; line-height: 1.15; }
+  .nome-acoes button.acao-nome { width: 2.25rem; }
   :root[data-layout="clean"] .topo-clean button.escolha { font-size: .9375rem; }
 
   /* cartões: números, parâmetros e todas as seções */
@@ -1809,3 +1802,9 @@ button.agua-opcao:active, button.agua-opcao:hover { background: color-mix(in srg
   .agua-bloco .ing.ficha { gap: 0 .5rem; }
 }
 button.agua-link:hover { background: none; border-color: transparent; color: var(--destaque-escuro); text-decoration: underline; }
+
+/* Clean (26/11/2026): em ≤ 360 px o nome (20 px) divide a linha com os 4 ícones de ação; letra menor para quebrar menos. */
+@media (max-width: 360px) {
+  :root[data-layout="clean"] .topo-clean .titulo-receita { font-size: 1.25rem !important; }
+  .nome-acoes button.acao-nome { width: 2.15rem; }
+}

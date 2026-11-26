@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  412 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  415 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -334,11 +334,11 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   no rodapé (42 px); voltou → cartão. A vaga guarda a altura do cartão (`min-height`) para a página não pular quando a
   barra fica fixa (rolagem, teclado ou roleta). No Clean o copinho do grist some (o copo está no cartão).
   K0 + K3 PUBLICADAS em 24/11/2026 (PR #50).
-- K1 (feito): topo `.topo-clean` = meta "Lote nº N · brassagem dd/mm/aaaa" (`metaTopo`, some sem dados), nome como
+- K1 (feito): topo `.topo-clean` = meta do lote (`metaTopo`; desde 26/11/2026 ver "Ações ao lado do nome"), nome como
   título (o mesmo campo, sem moldura), estilo como link. Parâmetros = o cartão da PR #53 (3 números tocáveis + "Todos ›"
   que abre `dialog.parametros-janela`), 1º cartão do corpo, logo abaixo dos números; no Clean os 3 números ficam sem
-  moldura e o "Todos ›" vira link (a linha curta dos Parâmetros no topo, de antes da PR #53, saiu). Menu ⋯ (`abrirMenuReceita`: `app-menu` na barra do app; `topo-menu`
-  ao lado do nome no computador): Relatório (PDF), Nova a partir desta, Informações (tipo, autor, pública: os campos da
+  moldura e o "Todos ›" vira link (a linha curta dos Parâmetros no topo, de antes da PR #53, saiu). Ações (menu ⋯ até 26/11/2026; hoje
+  ícones ao lado do nome, ver "Ações ao lado do nome"): Relatório (PDF), Nova a partir desta, Informações (tipo, autor, pública: os campos da
   seção Dados gerais numa janela, `abrirInformacoes`; a seção sai da página) e Excluir receita (chamam os botões de
   sempre). No celular `.acoes-receita` some; o nome só aparece na barra do app depois de rolar (`sem-titulo`). Números a
   171 px do topo em 390 px (eram 250). Ícones novos: reticencias, copiar, lixeira.
@@ -370,7 +370,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   resumos usam o ícone da própria seção (antes "geral"). Teste "clean: ícone mínimo..." e contraste do ícone ≥ 3.
 - Teste do navegador: bloco "clean:" (perfil, ficha, roleta, janela, 390/320/1366 px,
   escuro, K2 topo/rolado); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro),
-  `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (menu ⋯), `p7h` (passo com roleta), `p7i` (levedura em linha),
+  `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (ações ao lado do nome), `p7h` (passo com roleta), `p7i` (levedura em linha),
   `p7j`/`p7j2` (Água: blocos e concentração final), `p7k` (+ da lavagem), `p7k2` (sal novo na roleta), `p7k3` (Água 320 px).
 
 ## Parâmetros da receita (24/11/2026, pedido do responsável; sem migração)
@@ -792,7 +792,22 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - A forma do lúpulo (pellet, flor...) saiu da receita na tela: a linha mostra só o alfa e a janela do item não tem mais
   o campo Forma. A coluna `forma` segue no banco (copiada do cadastro; item livre = PELLET) e no relatório em PDF.
 
-
 ## "Sulfato de cálcio" no lugar de "Gesso" (26/11/2026, pedido do responsável; só texto)
 - Na tela (seletor dos sais, fichas da água no Clean) e no relatório em PDF o sal se chama "Sulfato de cálcio". O código
   gravado no banco continua `GESSO` (jsonb `sais`; receitas antigas não mudam).
+
+## Ações ao lado do nome e lote com a data no Clean (26/11/2026, pedido do responsável; sem migração)
+- O menu ⋯ (barra do app no celular / ao lado do nome no computador) SAIU. Relatório (PDF), Nova a partir desta,
+  Informações (tipo, autor, pública) e Excluir receita viraram 4 ícones ao lado do nome (`.nome-acoes`, `acaoNome` no
+  receitas.js; ícones relatorio, copiar, info (novo), lixeira em vermelho; 36 × 44 px de toque, 34 px em ≤ 360 px). Chamam
+  os mesmos botões de sempre (Excluir confirma com o nome). Receita nova: só Relatório e Informações; de outro usuário:
+  sem Excluir. No Clean os botões de texto "Nova a partir desta"/"Excluir receita" das `.acoes-receita` ficam escondidos.
+- Nome no Clean = `textarea` de 1 linha que cresce (`campoNomeQuebra`: Enter não cria linha, quebra de linha colada vira
+  espaço, altura pelo texto e refeita quando a largura muda). Letra 22 px no celular (era 26) e 20 px em ≤ 360 px: com os
+  ícones ao lado, o nome mediano das receitas (24 letras) fica em 1-2 linhas em 390 px; 36 letras (90% das receitas têm
+  menos) = 3 linhas em 320 px. Completo não mudou (input + botão do relatório).
+- Meta do lote = botão (`button.topo-meta`) "Lote nº 104 · 20/04/2026", 17 px negrito (era 12 px em versalete), data
+  sempre ao lado ("sem data"; "Lote novo"/"Lote sem nº" sem número). Tocar abre a janela da Brassagem (`abrirLote`).
+- Teste do navegador: ícones na ordem, ao lado do nome, ≥ 44 px, sem menu ⋯; lote com data e letra ≥ 16 px; tocar no lote
+  abre a janela; Informações e Relatório pelos ícones; nome longo em 320 px. Capturas `p7g-clean-acoes-nome` (390) e
+  `p7c2-clean-320-nome-longo`.

@@ -159,6 +159,8 @@ export const DESENHOS = {
   reticencias: [["c", { cx: 5.5, cy: 12, r: 1.1 }], ["c", { cx: 12, cy: 12, r: 1.1 }], ["c", { cx: 18.5, cy: 12, r: 1.1 }]],
   // nova a partir desta: duas folhas
   copiar: [["p", { d: "M8.5 8.5h10v12h-10z" }], ["p", { d: "M15.5 8.5V3.5h-10v12h3" }]],
+  // informações: círculo com "i"
+  info: [["c", { cx: 12, cy: 12, r: 8.75 }], ["p", { d: "M12 11v5.5" }], ["c", { cx: 12, cy: 7.9, r: .6 }]],
   // excluir: lixeira
   lixeira: [["p", { d: "M4.5 6.5h15" }], ["p", { d: "M9.5 6.5V4h5v2.5" }], ["p", { d: "M6.5 6.5l1 14h9l1-14" }], ["p", { d: "M10.2 10.5v6.5M13.8 10.5v6.5" }]],
 };

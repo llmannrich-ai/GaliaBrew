@@ -2106,7 +2106,7 @@ const erros = [];
     parametros: document.querySelector(".editor-corpo > .cartao")?.dataset.secao,
   }));
   verificar(!cab.acoes && cab.relatorio === 0 && cab.geral === 0 && cab.semTitulo && noTopo.topo <= 250 && cab.parametros === "parametros",
-    `clean K1: topo sem botões, Dados gerais fora da página, nome só no título, Parâmetros 1º cartão e números a ${noTopo.topo} px do topo`);
+    `clean K1: sem botões de texto no topo, Dados gerais fora da página, nome só no título, Parâmetros 1º cartão e números a ${noTopo.topo} px do topo`);
   await tocar('[data-secao="parametros"] button.param-todos');
   await cel.waitForSelector("dialog.parametros-janela[open]");
   verificar(/Pré-fervura/.test(await cel.textContent("dialog.parametros-janela .parametros-numeros")) && await cel.locator(".painel-lote").count() === 0,
@@ -2118,24 +2118,39 @@ const erros = [];
   verificar(!(await cel.evaluate(() => document.querySelector(".barra-app").classList.contains("sem-titulo"))), "clean K1: ao rolar, o nome aparece na barra do app");
   await cel.evaluate(() => window.scrollTo(0, 0));
   await cel.waitForTimeout(250);
-  await tocar(".barra-app .app-menu");
-  await cel.waitForSelector("dialog.menu-receita[open]");
-  const itensMenu = await cel.$$eval("dialog.menu-receita .menu-item", (bs) => bs.map((b) => b.textContent));
-  verificar(itensMenu.join("|") === "Relatório (PDF)|Nova a partir desta|Informações (tipo, autor, pública)|Excluir receita",
-    `clean K1: menu ⋯ com ${itensMenu.join(", ")}`);
-  await cel.waitForTimeout(150);
-  await cel.screenshot({ path: `${SAIDA}/p7g-clean-menu.png` });
-  await tocar("dialog.menu-receita .menu-item:has-text('Informações')");
+  // Ações ao lado do nome (o menu ⋯ saiu, 26/11/2026) e lote com a data ao lado, em letra maior.
+  const acoesTopo = await cel.evaluate(() => {
+    const nome = document.querySelector(".topo-clean .titulo-receita").getBoundingClientRect();
+    const bs = [...document.querySelectorAll(".topo-clean .nome-acoes button")];
+    const meta = document.querySelector(".topo-clean button.topo-meta");
+    return {
+      rotulos: bs.map((b) => b.getAttribute("aria-label")),
+      aoLado: bs.every((b) => { const x = b.getBoundingClientRect(); return x.left >= nome.right - 1 && x.top < nome.bottom && x.bottom > nome.top && x.right <= innerWidth; }),
+      toque: bs.every((b) => b.getBoundingClientRect().height >= 44),
+      menu: document.querySelectorAll(".barra-app .app-menu, dialog.menu-receita").length,
+      meta: meta.textContent, metaFonte: parseFloat(getComputedStyle(meta).fontSize),
+    };
+  });
+  verificar(acoesTopo.rotulos.join("|") === "Relatório (PDF)|Nova a partir desta|Informações (tipo, autor, pública)|Excluir receita"
+    && acoesTopo.aoLado && acoesTopo.toque && acoesTopo.menu === 0,
+    `clean: Relatório, Nova, Informações e Excluir ao lado do nome, sem menu ⋯ (${acoesTopo.rotulos.join(", ")})`);
+  verificar(/^Lote nº \d+·(\d\d\/\d\d\/\d{4}|sem data)$/.test(acoesTopo.meta) && acoesTopo.metaFonte >= 16,
+    `clean: lote com a data da brassagem ao lado, letra de ${acoesTopo.metaFonte} px (“${acoesTopo.meta}”)`);
+  await cel.screenshot({ path: `${SAIDA}/p7g-clean-acoes-nome.png` });
+  await tocar(".topo-clean button.topo-meta");
+  await cel.waitForSelector("dialog.lote-janela[open]");
+  verificar(await cel.isVisible('dialog.lote-janela input[aria-label="Data da brassagem"]'), "clean: tocar no lote abre a janela da brassagem (com a data)");
+  await tocar("dialog.lote-janela .item-pronto");
+  await cel.waitForSelector("dialog.lote-janela", { state: "detached" });
+  await tocar('.nome-acoes button[aria-label^="Informações"]');
   await cel.waitForSelector("dialog.informacoes[open]");
   verificar(await cel.isVisible('dialog.informacoes select[aria-label="Tipo"]') && await cel.isVisible('dialog.informacoes input[aria-label="Autor"]'),
     "clean K1: Informações abre tipo, autor e pública numa janela");
   await tocar("dialog.informacoes .item-pronto");
   await cel.waitForSelector("dialog.informacoes", { state: "detached" });
-  await tocar(".barra-app .app-menu");
-  await cel.waitForSelector("dialog.menu-receita[open]");
-  await tocar("dialog.menu-receita .menu-item:has-text('Relatório')");
+  await tocar('.nome-acoes button[aria-label="Relatório (PDF)"]');
   await cel.waitForSelector("dialog.relatorio[open]");
-  verificar(await cel.locator("dialog.menu-receita").count() === 0, "clean K1: Relatório (PDF) pelo menu abre o relatório");
+  verificar(true, "clean: o ícone do relatório ao lado do nome abre o relatório");
   await cel.keyboard.press("Escape");
   await cel.waitForSelector("dialog.relatorio", { state: "detached" });
   // K4: leveduras, outros, mostura e fermentação em ficha; tocar abre a janela com os campos; + abre o passo novo.
@@ -2358,6 +2373,21 @@ const erros = [];
   })), "clean, 320 px: rótulos do cartão dos números cabem no espaço de cada número");
   await cel.locator('[data-secao="fermentaveis"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p7c-clean-320.png` });
+  // Nome longo em 320 px (36 letras, mais que 90% das receitas): até 3 linhas ao lado dos 4 ícones, sem cortar.
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  const nomeAntes = await cel.inputValue(".topo-clean .titulo-receita");
+  await cel.fill(".topo-clean .titulo-receita", "American IPA com Citra e Mosaic 2026");
+  await cel.waitForTimeout(150);
+  const nomeLongo = await cel.evaluate(() => {
+    const t = document.querySelector(".topo-clean .titulo-receita"), b = t.getBoundingClientRect();
+    const ic = [...document.querySelectorAll(".nome-acoes button")].map((x) => x.getBoundingClientRect());
+    return { linhas: Math.round(b.height / parseFloat(getComputedStyle(t).lineHeight)), cabe: t.scrollHeight <= t.clientHeight + 1,
+      separado: ic.every((x) => x.left >= b.right - 1 && x.right <= innerWidth) };
+  });
+  await cel.screenshot({ path: `${SAIDA}/p7c2-clean-320-nome-longo.png` });
+  verificar(nomeLongo.linhas >= 2 && nomeLongo.linhas <= 3 && nomeLongo.cabe && nomeLongo.separado,
+    `clean, 320 px: nome longo quebra em ${nomeLongo.linhas} linhas ao lado dos ícones, sem cortar`);
+  await cel.fill(".topo-clean .titulo-receita", nomeAntes);
   await cel.setViewportSize({ width: 1366, height: 900 });
   await cel.waitForTimeout(200);
   const computador = await cel.evaluate(() => ({ sobra: document.documentElement.scrollWidth - innerWidth,
