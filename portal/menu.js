@@ -1,9 +1,9 @@
 // menu.js — menu lateral do portal: recolhível no computador, gaveta no celular.
 // Ícones do icones.js; marca = copo do vital.js; arte do pé (lúpulo e cevada) desenhada aqui, em traço fino.
-import { el, svg } from "./ui.js?v=20261125d";
-import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261125d";
-import { icone } from "./icones.js?v=20261125d";
-import { copo } from "./vital.js?v=20261125d";
+import { el, svg } from "./ui.js?v=20261125e";
+import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261125e";
+import { icone } from "./icones.js?v=20261125e";
+import { copo } from "./vital.js?v=20261125e";
 
 const LARGURA_CELULAR = "(max-width: 959px)";
 const LARGURA_EDITOR_ESTREITO = 1180;
@@ -58,7 +58,7 @@ export function abrirMenu() {
   if (!c) return;
   c.classList.add("menu-aberto");
   document.body.classList.add("travado");
-  c.querySelector(".abrir-menu")?.setAttribute("aria-expanded", "true");
+  for (const b of document.querySelectorAll(".abrir-menu")) b.setAttribute("aria-expanded", "true");
   c.querySelector(".lateral nav a.ativo, .lateral nav a")?.focus({ preventScroll: true });
 }
 
@@ -67,7 +67,7 @@ export function fecharMenu() {
   const c = casca();
   if (!c || !c.classList.contains("menu-aberto")) return;
   c.classList.remove("menu-aberto");
-  c.querySelector(".abrir-menu")?.setAttribute("aria-expanded", "false");
+  for (const b of document.querySelectorAll(".abrir-menu")) b.setAttribute("aria-expanded", "false");
 }
 
 function rotuloRecolher(b, recolhido) {

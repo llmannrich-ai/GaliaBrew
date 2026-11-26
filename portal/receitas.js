@@ -1,19 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125d";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125d";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125d";
-import { sb, sessao, preferencias } from "./estado.js?v=20261125d";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125d";
-import { abrirBusca } from "./busca.js?v=20261125d";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125d";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125d";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125d";
-import * as O from "./opcoes.js?v=20261125d";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125d";
-import { icone } from "./icones.js?v=20261125d";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261125d";
-import { abrirRelatorio } from "./relatorio.js?v=20261125d";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125e";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125e";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125e";
+import { sb, sessao, preferencias } from "./estado.js?v=20261125e";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125e";
+import { abrirBusca } from "./busca.js?v=20261125e";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125e";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125e";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125e";
+import * as O from "./opcoes.js?v=20261125e";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125e";
+import { icone } from "./icones.js?v=20261125e";
+import { abrirMenu } from "./menu.js?v=20261125e";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261125e";
+import { abrirRelatorio } from "./relatorio.js?v=20261125e";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125e";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -27,11 +28,14 @@ export async function telaReceitas(conteudo) {
   editor.sujo = false;
   const filtro = { quais: "minhas", texto: "" };
   const corpo = el("div", { class: "tabela-rolagem" }, el("p", { class: "nota", text: "Carregando…" }));
-  // Logo do app no topo da página principal (25/11/2026, pedido do responsável). Duas versões: letras verdes nos temas
-  // claros e creme nos escuros (o CSS mostra uma pelo data-modo).
-  const logo = (versao) => el("img", { class: `logo-${versao}`, src: `icones/logo-galia${versao === "escuro" ? "-escuro" : ""}.png`, alt: "Galia", width: 600, height: 291, decoding: "async" });
+  // Topo da página principal (25/11/2026, pedido do responsável): logo "Gália" grande, centrada, sobre o fundo do tema,
+  // no lugar da barra escura (que some nesta tela no celular; o ≡ do menu fica no canto). Duas versões da logo: letras
+  // verdes nos temas claros, creme nos escuros (o CSS mostra uma pelo data-modo).
+  const logo = (versao) => el("img", { class: `logo-${versao}`, src: `icones/logo-galia${versao === "escuro" ? "-escuro" : ""}.png`, alt: "Gália", width: 538, height: 300, decoding: "async", loading: "lazy" });
   preencher(conteudo,
-    el("div", { class: "logo-inicio" }, logo("claro"), logo("escuro")),
+    el("header", { class: "inicio-topo" },
+      el("button", { type: "button", class: "abrir-menu inicio-menu", "aria-label": "Abrir menu", "aria-controls": "menu-lateral", "aria-expanded": "false", on: { click: abrirMenu } }, icone("menu")),
+      el("a", { href: "#/receitas", class: "inicio-logo" }, logo("claro"), logo("escuro"))),
     el("div", { class: "titulo-linha" },
       el("h2", { text: "Receitas" }),
       el("a", { href: "#/receita/nova", class: "botao", text: "Nova receita" })),

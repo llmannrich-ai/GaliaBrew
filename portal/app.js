@@ -1,11 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261125d";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261125d";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261125d";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261125d";
-import { telaFerramentas } from "./ferramentas.js?v=20261125d";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261125d";
-import { icone } from "./icones.js?v=20261125d";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261125e";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261125e";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261125e";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261125e";
+import { telaFerramentas } from "./ferramentas.js?v=20261125e";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261125e";
+import { icone } from "./icones.js?v=20261125e";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -187,6 +187,7 @@ async function rotear() {
   rotaAtual = location.hash;
   conteudo.className = "conteudo";      // o editor acrescenta "com-vital"; as outras telas não
   document.body.classList.remove("no-editor");
+  document.body.classList.toggle("na-inicio", rota === "receitas");
   try {
     if (rota === "receitas") await telaReceitas(conteudo);
     else if (rota === "receita") await telaEditor(conteudo, param, origem);

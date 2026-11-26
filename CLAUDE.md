@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  411 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  412 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261125e.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -762,23 +762,26 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   lavagem (só sais) e da mostura (9 opções), Remover e ↶, 390 e 320 px sem rolagem lateral. Falta conferir no iPhone real.
 
 ## Logo na página principal e barra de status do iPhone (25/11/2026, pedido do responsável; sem migração)
-- Logo nova "Galia" (arte enviada pelo responsável) no topo da tela de Receitas (`.logo-inicio` no `telaReceitas`),
-  centrada, 5,5rem de altura no celular (7rem no computador). SÓ o nome "Galia" e o livro: o desenho da panela com
-  lúpulo, sol e trigo foi retirado a pedido (25/11/2026). Dois arquivos em `portal/icones/` (600 × 291), recortados da
-  arte com fundo transparente e 256 cores (~20 kB cada): `logo-galia.png` (letras verdes, temas claros) e `logo-galia-escuro.png`
-  (letras "Galia" em creme #f1e8da: o verde-escuro sumia no fundo escuro); o CSS mostra uma pelo `data-modo`. O login
-  NÃO mudou.
+- Logo "Gália" (arte do responsável JÁ SEM FUNDO, com acento; versão final em 25/11/2026, escolhida pelo responsável entre
+  3 opções): GRANDE e centrada no topo da tela de Receitas (`header.inicio-topo` no `telaReceitas`; 7,5rem de altura),
+  sobre o fundo do tema. No celular (≤ 959 px) a `barra-movel` escura SOME nessa tela (`body.na-inicio`, posto pelo app.js)
+  e o ≡ (`button.abrir-menu.inicio-menu`, chama `abrirMenu` do menu.js) fica no canto esquerdo; no computador só a logo.
+  As outras telas e a gaveta do menu seguem com o copinho + "GaliaBrew". Dois arquivos em `icones/` (538 × 300, RGBA,
+  recortados da arte): `logo-galia.png` (cores da arte, temas claros) e `logo-galia-escuro.png` (verde-escuro trocado
+  por creme #f1e8da mantendo a transparência, temas escuros); o CSS mostra uma pelo `data-modo`. Tentativas descartadas
+  no mesmo dia: logo abaixo da barra escura (ficava "abaixo da logo antiga") e logo pequena dentro da barra.
 - Ícone do app (Tela de Início, favicon e manifest; 25/11/2026, pedido do responsável: "troque o ícone pelo livro"):
   `icones/icone-180.png` e `icone-512.png` = o livro da logo (contorno verde, frasco e linhas), recortado da arte e
   centrado a 80% da largura num quadrado creme #fdf7ef (o fundo da arte; em âmbar o recorte deixava contorno branco).
   Mesmos nomes de arquivo: o iPhone só troca o ícone ao remover e "Adicionar à Tela de Início" de novo.
-- Tarja de cima cinza e falhada no app da Tela de Início (print do iPhone): `apple-mobile-web-app-status-bar-style` passou
-  de `default` para `black-translucent` (a página passa por baixo do relógio, texto branco) + `body::before` fixo na cor
-  `--menu-fundo` com a altura de `env(safe-area-inset-top)` (z-index 60; 0 de altura no navegador comum e no computador).
-  Janelas de tela cheia no celular (busca, relatório, foto) ficam acima dela: `padding-top` do entalhe + sombra interna na
-  cor do menu. `.centro` (login) desce do entalhe. Se a tarja não mudar no iPhone, o iOS guardou o estilo da
-  instalação: remover o ícone e "Adicionar à Tela de Início" de novo. Conferido no Chromium simulando 47 px de entalhe (lista, editor, busca,
-  relatório, foto); falta conferir no iPhone real.
+- Tarja de cima (barra de status do app da Tela de Início): DECISÃO do responsável (25/11/2026) = cor de FUNDO DA PÁGINA
+  do tema. O iOS 26 IGNORA a `theme-color` e pinta essa faixa com o elemento `position: fixed/sticky` de largura total no
+  topo da página (opacidade ≥ 0,1); sem nenhum, com o fundo do body. Por isso: `apple-mobile-web-app-status-bar-style` =
+  `default` (o `black-translucent` + faixa fixa da 1ª tentativa saiu: relatos de névoa no iOS 26) e NADA preso no topo
+  da tela de Receitas no celular (`barra-movel` com `position: static` até 640 px e escondida nessa tela). No editor a
+  `barra-app` é presa (cor `--cartao`). `theme-color` (Android/outros) = `--fundo` do tema (tema.js; padrão #ffffff no
+  index.html e no manifest). Teste "toque: logo..." confere que nada preso cobre o meio do topo. O iOS só relê ao abrir:
+  remover o ícone e "Adicionar à Tela de Início" de novo. Falta conferir no iPhone real.
 
 ## Lúpulos: total em destaque e sem a forma (25/11/2026, pedido do responsável; sem migração)
 - O título da seção Lúpulos mostra "N g · N IBU" em destaque (`destaque: true` no `secaoLinhas`, a mesma letra grande

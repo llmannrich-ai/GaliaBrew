@@ -65,15 +65,6 @@ html, body { margin: 0; }
 html { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; }
 body { overflow-x: clip; }
 body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
-/* Faixa da barra de status do iPhone (25/11/2026, pedido do responsável: a tarja de cima saía cinza e falhada). O app
-   aberto pela Tela de Início usa status bar "black-translucent": a página passa por baixo do relógio e da bateria (texto
-   branco). Esta faixa fixa na cor do menu, da altura do entalhe, deixa esse texto legível em qualquer tema e com a página
-   rolada. No navegador comum e no computador a altura é 0. Janelas de tela cheia (busca, relatório, foto) ficam na
-   camada do topo, acima dela: cada uma pinta a própria faixa (bloco de 640 px). */
-body::before {
-  content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); z-index: 60;
-  background: var(--menu-fundo); pointer-events: none;
-}
 body {
   font: var(--t-corpo)/1.45 var(--fonte);
   background: var(--fundo); color: var(--tinta);
@@ -101,6 +92,14 @@ a { color: var(--destaque-escuro); }
 }
 .marca { display: inline-flex; align-items: center; gap: .45rem; font-weight: 800; font-size: var(--t-m); letter-spacing: -.01em; color: var(--destaque); text-decoration: none; }
 .marca .copo { width: 1.25rem; height: 1.75rem; flex: none; }
+/* Topo da tela de Receitas (25/11/2026, pedido do responsável): logo "Gália" grande e centrada sobre o fundo do tema. No
+   celular a barra escura some nesta tela (body.na-inicio) e o ≡ do menu fica no canto; no computador o ≡ não aparece. */
+.inicio-topo { position: relative; display: flex; justify-content: center; align-items: center; margin: 0 0 1rem; }
+.inicio-logo { display: block; line-height: 0; border-radius: var(--raio-p); }
+.inicio-logo img { display: block; height: 7.5rem; width: auto; }
+.inicio-logo .logo-escuro, [data-modo="escuro"] .inicio-logo .logo-claro { display: none; }
+[data-modo="escuro"] .inicio-logo .logo-escuro { display: block; }
+button.inicio-menu { display: none; }
 
 .casca { display: grid; grid-template-columns: var(--menu-largura) minmax(0, 1fr); min-height: 100vh; transition: grid-template-columns .22s ease; }
 .casca:is(.recolhido, .compacto) { grid-template-columns: var(--menu-recolhido) minmax(0, 1fr); }
@@ -185,6 +184,13 @@ a { color: var(--destaque-escuro); }
     background: var(--menu-fundo); color: var(--menu-tinta); box-shadow: 0 1px 6px rgba(0, 0, 0, .25);
   }
   .barra-movel .marca { color: var(--menu-tinta); font-size: 1.1rem; }
+  body.na-inicio .barra-movel { display: none; }
+  button.inicio-menu {
+    display: inline-flex; align-items: center; justify-content: center; position: absolute; left: -.35rem; top: 0;
+    width: 2.75rem; height: 2.75rem; padding: 0; border: none; background: none; color: var(--tinta);
+  }
+  button.inicio-menu .ico { width: 24px; height: 24px; margin: 0; }
+  .inicio-topo { padding-top: .25rem; }
   .barra-movel button.abrir-menu { color: var(--menu-tinta); width: 2.75rem; height: 2.75rem; padding: 0; }
   .barra-movel .abrir-menu .ico { width: 24px; height: 24px; margin: 0; }
 
@@ -228,12 +234,6 @@ a { color: var(--destaque-escuro); }
 .cartao > .titulo-linha { flex-wrap: wrap; row-gap: .4rem; }
 .cartao > label, .cartao > button { margin-bottom: .7rem; }
 .cartao .titulo-icone { background: var(--cartao); border-color: transparent; }
-/* Logo do app no topo da tela de Receitas (25/11/2026). Fundo transparente; nos temas escuros, a versão com letras creme. */
-.logo-inicio { display: flex; justify-content: center; margin: .25rem 0 1rem; }
-.logo-inicio img { display: block; height: 7rem; width: auto; }
-.logo-inicio .logo-escuro, [data-modo="escuro"] .logo-inicio .logo-claro { display: none; }
-[data-modo="escuro"] .logo-inicio .logo-escuro { display: block; }
-@media (max-width: 640px) { .logo-inicio { margin: .1rem 0 .6rem; } .logo-inicio img { height: 5.5rem; } }
 .login { width: min(380px, 100%); display: grid; gap: .8rem; }
 .cartao.login { background: var(--painel); border-radius: var(--raio); padding: 1.4rem 1.2rem; }
 .login h1 { color: var(--destaque); margin: 0; }
@@ -844,6 +844,9 @@ dialog form { display: grid; gap: .9rem; }
 :where(.casca.estreito) .painel-lote { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 1rem; align-items: start; }
 :where(.casca.estreito) .notas-painel { grid-column: 1 / -1; }
 @media (max-width: 640px) {
+  /* A barra do topo rola com a página: o iOS 26 pinta a barra de status do app da Tela de Início com a cor do elemento
+     preso/fixo no topo; sem nenhum, com o fundo da página (decisão do responsável em 25/11/2026: a faixa do relógio na
+     cor de fundo do tema). Não prender a barra-movel no celular. */
   .barra-movel { position: static; }
   :root { --lado: .55rem; }
   .conteudo.com-vital { padding-bottom: calc(var(--vital-h, 5rem) + 1rem); }
@@ -1369,8 +1372,6 @@ dialog.foto-janela[open] { display: flex; flex-direction: column; }
   .fotos-grade { grid-template-columns: repeat(3, 1fr); }
   .fotos-adicionar { width: 100%; }
   dialog.foto-janela { width: 100vw; max-width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: none; border-radius: 0; }
-  /* Busca, relatório e foto em tela cheia no celular: começa abaixo do entalhe, com a faixa escura da barra de status (ver body::before). */
-  dialog:is(.busca, .relatorio, .foto-janela) { padding-top: env(safe-area-inset-top, 0px); box-shadow: inset 0 env(safe-area-inset-top, 0px) 0 0 var(--menu-fundo); }
   .foto-pe { padding-bottom: max(.4rem, env(safe-area-inset-bottom)); }
 }
 

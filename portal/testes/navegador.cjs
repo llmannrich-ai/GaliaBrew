@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261125d");
+    const m = await import("./fontes.js?v=20261125e");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -507,7 +507,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125d");
+    const m = await import("./calculos.js?v=20261125e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -575,7 +575,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125d");
+    const m = await import("./calculos.js?v=20261125e");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -597,7 +597,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125d");
+    const m = await import("./calculos.js?v=20261125e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -707,7 +707,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261125d");
+    const m = await import("./calculos.js?v=20261125e");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -873,8 +873,8 @@ const erros = [];
   // Celular
   await pagina.setViewportSize({ width: 390, height: 844 });
   await pagina.waitForTimeout(400); // fim da animação da gaveta
-  verificar(!(await pagina.isVisible(".lateral nav >> text=Receitas")) && await pagina.isVisible("button.abrir-menu"), "celular: menu escondido, botão de abrir na barra do topo");
-  await pagina.click("button.abrir-menu");
+  verificar(!(await pagina.isVisible(".lateral nav >> text=Receitas")) && await pagina.isVisible("button.abrir-menu >> visible=true"), "celular: menu escondido, botão de abrir no topo");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.waitForFunction(() => document.querySelector(".lateral").getBoundingClientRect().left >= 0);
   verificar(await pagina.isVisible(".lateral nav >> text=Cadastros") && await pagina.evaluate(() => document.body.classList.contains("travado")), "celular: botão abre a gaveta com os nomes e trava a rolagem da página");
   await pagina.screenshot({ path: `${SAIDA}/p5f-celular-menu.png` });
@@ -882,15 +882,15 @@ const erros = [];
   await pagina.waitForSelector("text=Pilsen (sistema)");
   await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
   verificar(!(await pagina.evaluate(() => document.body.classList.contains("travado"))), "celular: escolher um item fecha a gaveta");
-  await pagina.click("button.abrir-menu");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.keyboard.press("Escape");
   await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
   verificar(true, "celular: Esc fecha a gaveta");
-  await pagina.click("button.abrir-menu");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.click(".veu", { position: { x: 370, y: 400 } });
   await pagina.waitForFunction(() => getComputedStyle(document.querySelector(".lateral")).visibility === "hidden");
   verificar(true, "celular: tocar fora fecha a gaveta");
-  await pagina.click("button.abrir-menu");
+  await pagina.click("button.abrir-menu >> visible=true");
   await pagina.click(".lateral nav >> text=Receitas");
   await pagina.click(".receita-cartao >> text=Pils da Galia");
   await pagina.waitForSelector(".titulo-receita");
@@ -1103,26 +1103,42 @@ const erros = [];
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
-  // Logo na página principal (25/11/2026): carregada, centrada, cabe na tela; tema escuro troca para as letras creme.
+  // Topo da tela de Receitas (25/11/2026): logo "Gália" grande e centrada sobre o fundo do tema, sem a barra escura;
+  // o ≡ no canto abre o menu. Nenhum elemento preso no topo (o iOS 26 pinta a faixa do relógio com o fundo da página).
   const logoVisivel = () => cel.evaluate(() => {
-    const img = [...document.querySelectorAll(".logo-inicio img")].find((n) => n.checkVisibility());
+    const img = [...document.querySelectorAll(".inicio-logo img")].find((n) => n.checkVisibility());
     if (!img) return null;
     const r = img.getBoundingClientRect();
-    return { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, centro: Math.abs(r.left + r.width / 2 - window.innerWidth / 2), dentro: r.left >= 0 && r.right <= window.innerWidth, altura: r.height };
+    return { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, centro: Math.round(Math.abs(r.left + r.width / 2 - window.innerWidth / 2)),
+      dentro: r.left >= 0 && r.right <= window.innerWidth, topo: Math.round(r.top), altura: Math.round(r.height),
+      barra: document.querySelector(".barra-movel").checkVisibility(),
+      // o que o iOS 26 usaria: preso/fixo, visível (opacidade ≥ 0,1), cobrindo o meio da tela a 4 px do topo
+      presos: [...document.querySelectorAll("body *")].filter((n) => {
+        const c = getComputedStyle(n), r = n.getBoundingClientRect(), x = window.innerWidth / 2;
+        return ["sticky", "fixed"].includes(c.position) && c.visibility === "visible" && Number(c.opacity) >= 0.1 && r.top <= 4 && r.bottom > 4 && r.left <= x && r.right >= x;
+      }).map((n) => n.className) };
   });
+  await cel.waitForFunction(() => [...document.querySelectorAll(".inicio-logo img")].some((n) => n.checkVisibility() && n.complete && n.naturalWidth > 0), null, { timeout: 3000 }).catch(() => {});
   let lg = await logoVisivel();
-  verificar(lg && lg.src === "icones/logo-galia.png" && lg.carregada && lg.centro < 2 && lg.dentro && lg.altura >= 80 && lg.altura <= 100,
-    `toque: logo da Galia no topo da lista, centrada (${JSON.stringify(lg)})`);
+  verificar(lg && lg.src === "icones/logo-galia.png" && lg.carregada && lg.centro <= 2 && lg.dentro && lg.topo < 30 && lg.altura >= 110 && lg.altura <= 130 && !lg.barra && lg.presos.length === 0,
+    `toque: logo "Gália" grande e centrada no topo da tela de Receitas, sem a barra escura nem nada preso no topo (${JSON.stringify(lg)})`);
+  verificar(await cel.getAttribute('meta[name="apple-mobile-web-app-status-bar-style"]', "content") === "default"
+    && await cel.evaluate(() => document.querySelector('meta[name="theme-color"]').content.toLowerCase() === getComputedStyle(document.documentElement).getPropertyValue("--fundo").trim().toLowerCase()),
+    "iPhone: barra de status padrão e theme-color = fundo da página do tema");
+  await cel.tap(".inicio-menu");
+  await cel.waitForTimeout(350);
+  verificar(await cel.evaluate(() => document.querySelector(".casca").classList.contains("menu-aberto") && document.querySelector(".inicio-menu").getAttribute("aria-expanded") === "true"),
+    "toque: o ≡ do topo da tela de Receitas abre o menu");
+  await cel.keyboard.press("Escape");
+  await cel.waitForTimeout(350);
   await cel.emulateMedia({ colorScheme: "dark" });
   await cel.waitForFunction(() => document.documentElement.dataset.modo === "escuro", null, { timeout: 2000 }).catch(() => {});
-  await cel.waitForFunction(() => [...document.querySelectorAll(".logo-inicio img")].some((n) => n.checkVisibility() && n.complete && n.naturalWidth > 0 && n.src.includes("escuro")), null, { timeout: 3000 }).catch(() => {});
+  await cel.waitForFunction(() => [...document.querySelectorAll(".inicio-logo img")].some((n) => n.checkVisibility() && n.complete && n.naturalWidth > 0 && n.src.includes("escuro")), null, { timeout: 3000 }).catch(() => {});
   lg = await logoVisivel();
-  verificar(lg && lg.src === "icones/logo-galia-escuro.png" && lg.carregada, "toque: tema escuro mostra a logo com letras creme");
+  verificar(lg && lg.src === "icones/logo-galia-escuro.png" && lg.carregada, "toque: tema escuro mostra a logo com as letras em creme");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista-escuro.png` });
   await cel.emulateMedia({ colorScheme: "light" });
   await cel.waitForFunction(() => document.documentElement.dataset.modo === "claro", null, { timeout: 2000 }).catch(() => {});
-  verificar(await cel.evaluate(() => getComputedStyle(document.body, "::before").position) === "fixed" && await cel.getAttribute('meta[name="apple-mobile-web-app-status-bar-style"]', "content") === "black-translucent",
-    "iPhone: barra de status translúcida com faixa fixa na cor do menu (altura do entalhe)");
   await tocar(".receita-cartao >> text=Pils da Galia");
   await cel.waitForSelector(".barra-app");
   verificar(!(await cel.isVisible("header.barra-movel")) && await cel.textContent(".app-titulo") === "Pils da Galia" && await cel.isVisible(".barra-app .app-salvar"),
@@ -1927,7 +1943,7 @@ const erros = [];
   verificar(await cel.evaluate(() => document.documentElement.dataset.tema + "/" + document.documentElement.dataset.modo) === "stout/escuro"
     && await corFundo() === "rgb(12, 10, 9)" && fundoAntes === "rgb(255, 255, 255)", "toque no tema Stout troca as cores na hora (fundo preto)");
   verificar(await cel.evaluate(() => JSON.parse(localStorage.getItem("galiabrew.preferencias")).tema) === "stout"
-    && await cel.getAttribute('meta[name="theme-color"]', "content") === "#050404", "tema fica salvo no aparelho e pinta a barra do sistema");
+    && await cel.getAttribute('meta[name="theme-color"]', "content") === "#0c0a09", "tema fica salvo no aparelho e pinta a barra do sistema com o fundo da página");
   await cel.locator(".temas").first().evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p6h-celular-temas-stout.png` });
   await cel.reload();
