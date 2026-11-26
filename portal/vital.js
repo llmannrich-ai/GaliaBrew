@@ -2,9 +2,9 @@
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH); no cartão do Clean e em
 // "detalhes", um número abaixo do outro com a régua larga e os limites do estilo (26/11/2026).
-import { el, svg, numeroBR } from "./ui.js?v=20261126b";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261126b";
-import * as O from "./opcoes.js?v=20261126b";
+import { el, svg, numeroBR } from "./ui.js?v=20261126c";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261126c";
+import * as O from "./opcoes.js?v=20261126c";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {

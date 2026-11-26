@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261126b";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261126b";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261126b";
-import { sb, sessao, preferencias } from "./estado.js?v=20261126b";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261126b";
-import { abrirBusca } from "./busca.js?v=20261126b";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261126b";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261126b";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261126b";
-import * as O from "./opcoes.js?v=20261126b";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261126b";
-import { icone } from "./icones.js?v=20261126b";
-import { abrirMenu } from "./menu.js?v=20261126b";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261126b";
-import { abrirRelatorio } from "./relatorio.js?v=20261126b";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261126b";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261126c";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261126c";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261126c";
+import { sb, sessao, preferencias } from "./estado.js?v=20261126c";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261126c";
+import { abrirBusca } from "./busca.js?v=20261126c";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261126c";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261126c";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261126c";
+import * as O from "./opcoes.js?v=20261126c";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261126c";
+import { icone } from "./icones.js?v=20261126c";
+import { abrirMenu } from "./menu.js?v=20261126c";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261126c";
+import { abrirRelatorio } from "./relatorio.js?v=20261126c";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261126c";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -355,7 +355,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   });
   t.atalhos = { desfazer, refazer, marcador: vital.elemento };
   const painel = el("aside", { class: "painel-lote" });
-  const metaTopo = el("div", { class: "topo-meta" });
+  const metaTopo = el("button", {
+    type: "button", class: "topo-meta", "aria-haspopup": "dialog", title: "Nº, data, medidas e priming",
+    on: { click: () => abrirLote() },
+  });
   const secoes = {};
   const des = leitura;
   let montado = false;            // antes de montar, os cálculos não contam como "mudança" (sem diferença na barra)
@@ -424,9 +427,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     janelaLote?.aoCalcular(res);
     atualizarLote(res);
     tituloApp.textContent = String(r.nome ?? "").trim() || "Receita nova";
-    // Clean: "Lote nº 104 · brassagem 29/11/2026" acima do nome (some quando não há nenhum dos dois).
-    metaTopo.textContent = [r.lote_numero != null && r.lote_numero !== "" ? `Lote nº ${r.lote_numero}` : null,
-      r.data_brassagem ? `brassagem ${dataDoDia(r.data_brassagem)}` : null].filter(Boolean).join(" · ");
+    // Clean: "Lote nº 104 · 29/11/2026" acima do nome, sempre com a data da brassagem ao lado ("sem data" se vazia).
+    const nLote = r.lote_numero != null && r.lote_numero !== "" ? `Lote nº ${r.lote_numero}` : r.id ? "Lote sem nº" : "Lote novo";
+    const dataLote = r.data_brassagem ? dataDoDia(r.data_brassagem) : "sem data";
+    metaTopo.setAttribute("aria-label", `${nLote}, brassagem ${dataLote}. Dados do lote`);
+    preencher(metaTopo, el("span", { class: "meta-lote", text: nLote }), el("span", { class: "meta-sep", "aria-hidden": "true", text: "·" }),
+      el("span", { class: "meta-data", text: dataLote }));
     return res;
   }
 
@@ -670,7 +676,31 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const juntar = (...partes) => partes.filter(Boolean).join(" · ");
 
   // ---------- cabeçalho ----------
-  const nomeInput = campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
+  const nomeInput = ficha ? campoNomeQuebra()
+    : campoTexto(r, "nome", { aoMudar: mudou, desabilitado: des, classe: "titulo-receita", placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120 });
+  /** Clean: o nome quebra linha (os botões de ação ficam ao lado dele) e a altura acompanha o texto; Enter não cria linha. */
+  function campoNomeQuebra() {
+    const t = el("textarea", {
+      class: "titulo-receita", rows: 1, value: r.nome ?? "", disabled: des, placeholder: "Nome da receita", maxlength: 120,
+      "aria-label": "Nome da receita",
+      on: {
+        input: () => {
+          if (/\n/.test(t.value)) t.value = t.value.replace(/\s*\n\s*/g, " ");
+          r.nome = t.value; ajustar(); mudou();
+        },
+        keydown: (e) => { if (e.key === "Enter") { e.preventDefault(); t.blur(); } },
+      },
+    });
+    const ajustar = () => { t.style.height = "auto"; t.style.height = `${t.scrollHeight + t.offsetHeight - t.clientHeight}px`; };
+    requestAnimationFrame(ajustar);
+    document.fonts?.ready.then(ajustar);
+    let largura = 0;            // só a largura muda a quebra de linha (a altura é a própria conta)
+    if (window.ResizeObserver) new ResizeObserver(([e]) => {
+      const w = Math.round(e.contentRect.width);
+      if (w !== largura) { largura = w; ajustar(); }
+    }).observe(t);
+    return t;
+  }
   // Relatório em PDF (ao lado do nome): mostra a receita como está na tela, salva ou não; também na só leitura.
   const botaoRelatorio = el("button", {
     type: "button", class: "secundario botao-relatorio", title: "Relatório da receita (PDF)", "aria-label": "Relatório da receita em PDF", "aria-haspopup": "dialog",
@@ -720,40 +750,16 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     } } }) : null,
     el("a", { href: "#/receitas", class: "botao secundario so-largo", text: "Voltar" }));
 
-  // Clean (K1): Relatório, Nova a partir desta, Informações e Excluir num menu ⋯ (barra do app no celular; ao lado do
-  // nome no computador). Os itens chamam os mesmos botões/funções de sempre.
-  const botaoMenu = (classe) => el("button", {
-    type: "button", class: `icone ${classe}`, title: "Mais ações", "aria-label": "Mais ações da receita", "aria-haspopup": "dialog",
-    on: { click: () => abrirMenuReceita() },
-  }, icone("reticencias"));
-  function abrirMenuReceita() {
-    if (document.querySelector("dialog.menu-receita")) return;
-    const fechar = () => { if (d.open) d.close(); };
-    const item = (texto, nomeIcone, acao, classe = "") => el("button", {
-      type: "button", class: `menu-item ${classe}`.trim(), on: { click: () => { fechar(); acao(); } },
-    }, icone(nomeIcone), el("span", { text: texto }));
-    const nova = acoes.querySelector("button.nova-a-partir");
-    const excluir = acoes.querySelector("button.excluir-receita");
-    const d = el("dialog", { class: "menu-receita", "aria-label": "Ações da receita" },
-      el("div", { class: "menu-receita-topo" },
-        el("strong", { text: String(r.nome ?? "").trim() || "Receita nova" }),
-        el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
-      el("div", { class: "menu-receita-lista" },
-        item("Relatório (PDF)", "relatorio", () => botaoRelatorio.click()),
-        nova ? item("Nova a partir desta", "copiar", () => nova.click()) : null,
-        item("Informações (tipo, autor, pública)", "geral", abrirInformacoes),
-        excluir ? item("Excluir receita", "lixeira", () => excluir.click(), "perigo") : null));
-    d.addEventListener("click", (e) => {
-      if (e.target !== d) return;
-      const b = d.getBoundingClientRect();
-      if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) fechar();
-    });
-    window.addEventListener("hashchange", fechar);
-    d.addEventListener("close", () => { window.removeEventListener("hashchange", fechar); d.remove(); });
-    document.body.append(d);
-    d.showModal();
-    d.querySelector(".menu-item").focus({ preventScroll: true });
-  }
+  // Clean: Relatório, Nova a partir desta, Informações e Excluir em ícones AO LADO DO NOME (26/11/2026, pedido do
+  // responsável: o menu ⋯ da barra do app saiu). Chamam os mesmos botões/funções de sempre.
+  const acaoNome = (texto, nomeIcone, acao, classe = "") => el("button", {
+    type: "button", class: `icone acao-nome ${classe}`.trim(), title: texto, "aria-label": texto, on: { click: acao },
+  }, icone(nomeIcone));
+  const acoesNome = ficha ? el("div", { class: "nome-acoes" },
+    acaoNome("Relatório (PDF)", "relatorio", () => botaoRelatorio.click()),
+    r.id ? acaoNome("Nova a partir desta", "copiar", () => acoes.querySelector("button.nova-a-partir").click()) : null,
+    acaoNome("Informações (tipo, autor, pública)", "info", () => abrirInformacoes()),
+    r.id && !leitura ? acaoNome("Excluir receita", "lixeira", () => acoes.querySelector("button.excluir-receita").click(), "perigo") : null) : null;
   /** Informações (Dados gerais) numa janela: os MESMOS campos da seção, que no Clean não fica na página. */
   function abrirInformacoes() {
     const campos = geral.querySelector(".grade-form");
@@ -776,8 +782,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     el("a", { href: "#/receitas", class: "app-voltar", "aria-label": "Voltar às receitas" }, icone("voltar")),
     tituloApp,
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
-    leitura ? null : botaoSalvarApp,
-    ficha ? botaoMenu("app-menu") : null);
+    leitura ? null : botaoSalvarApp);
 
   // Estilo: botão que abre a busca (código, nome, termos em português, filtros, "Mais perto da receita").
   const nomeEstilo = el("span", { class: "escolha-texto" });
@@ -1996,12 +2001,12 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
 
   conteudo.classList.add("com-vital");
-  // Clean (K1): meta do lote em cima, nome como título (o campo sem moldura), estilo como link; Relatório/Nova a partir
-  // desta/Informações/Excluir no menu ⋯; Dados gerais saem da página. Parâmetros = o cartão de sempre (3 números e
+  // Clean (K1): meta do lote em cima (tocar = janela da Brassagem), nome como título (o campo sem moldura), estilo como
+  // link; Relatório/Nova a partir desta/Informações/Excluir em ícones ao lado do nome; Dados gerais saem da página. Parâmetros = o cartão de sempre (3 números e
   // "Todos ›"), 1º do corpo, logo abaixo dos números.
   const topo = ficha
     ? el("div", { class: "editor-topo topo-clean" }, metaTopo,
-      el("div", { class: "nome-linha" }, nomeInput, botaoMenu("so-largo topo-menu")), estiloCampo, acoes)
+      el("div", { class: "nome-linha" }, nomeInput, acoesNome), estiloCampo, acoes)
     : el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
