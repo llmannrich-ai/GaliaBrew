@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126a.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126b.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -763,10 +763,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 
 ## Logo na página principal e barra de status do iPhone (25/11/2026, pedido do responsável; sem migração)
 - Logo "Gália" (arte do responsável JÁ SEM FUNDO, com acento; versão final em 25/11/2026, escolhida pelo responsável entre
-  3 opções): GRANDE e centrada no topo da tela de Receitas (`header.inicio-topo` no `telaReceitas`; 7,5rem de altura),
+  3 opções): GRANDE e centrada no topo da tela de Receitas (`header.inicio-topo` no `telaReceitas`; 5rem de altura desde 26/11/2026, era 7,5rem),
   sobre o fundo do tema. No celular (≤ 959 px) a `barra-movel` escura SOME nessa tela (`body.na-inicio`, posto pelo app.js)
-  e o ≡ (`button.abrir-menu.inicio-menu`, chama `abrirMenu` do menu.js) fica no canto esquerdo; no computador só a logo.
-  As outras telas e a gaveta do menu seguem com o copinho + "GaliaBrew". Dois arquivos em `icones/` (538 × 300, RGBA,
+  e o ≡ (`button.abrir-menu.inicio-menu`, chama `abrirMenu` do menu.js) fica no canto esquerdo, no meio da altura da logo
+  (26/11/2026: 56 px de toque, ícone de 34 px); no computador só a logo. Menu lateral/gaveta (26/11/2026, pedido do
+  responsável): a marca é a logo em creme (`img.marca-logo` = `logo-galia-escuro.png`, 4rem; o menu é sempre escuro); só no
+  menu de ícones (recolhido/960–1180 px) volta o copinho. A `barra-movel` das outras telas segue com copinho + "GaliaBrew".
+  Testes "toque: ≡ do topo maior..." e "toque: menu com a logo..."; captura `p6f-celular-menu-logo`. Dois arquivos em `icones/` (538 × 300, RGBA,
   recortados da arte): `logo-galia.png` (cores da arte, temas claros) e `logo-galia-escuro.png` (verde-escuro trocado
   por creme #f1e8da mantendo a transparência, temas escuros); o CSS mostra uma pelo `data-modo`. Tentativas descartadas
   no mesmo dia: logo abaixo da barra escura (ficava "abaixo da logo antiga") e logo pequena dentro da barra.
