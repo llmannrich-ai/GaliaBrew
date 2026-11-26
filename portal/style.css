@@ -557,6 +557,7 @@ dialog.busca[open] { display: flex; flex-direction: column; }
   background: var(--tinta); border: 2px solid var(--cartao); box-shadow: 0 0 0 1px var(--tinta); transition: left .18s ease-out;
 }
 .regua-marca.alem { border-radius: 3px; }
+.regua-lim { display: none; }
 .vital-item[data-metrica="ph"] .vital-rot { text-transform: none; }
 .vital-item[data-metrica="cor"] .regua-faixa { background: transparent; box-shadow: inset 0 0 0 2px var(--tinta), inset 0 0 0 3px var(--cartao); }
 
@@ -1512,7 +1513,6 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
   /* K2: números num cartão no topo da receita (no fluxo da página, com o copo na cor da cerveja). Quando o cartão sai
      da tela, o vital.js põe "flutuante" + "com-teclado" e ele vira a linha fina presa no rodapé (a mesma do teclado). */
   :root[data-layout="clean"] .vital { background: var(--k-cartao); }
-  :root[data-layout="clean"] .grist-copo { display: none; }      /* o copo já está no cartão dos números */
   :root[data-layout="clean"] .vital .vital-item .regua-marca { border-color: var(--k-cartao); }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) {
     position: static; max-height: none; overflow: visible; box-shadow: none; border-radius: 0;
@@ -1801,3 +1801,51 @@ button.agua-opcao:active, button.agua-opcao:hover { background: color-mix(in srg
   .agua-bloco .ing.ficha { gap: 0 .5rem; }
 }
 button.agua-link:hover { background: none; border-color: transparent; color: var(--destaque-escuro); text-decoration: underline; }
+
+/* ---------- Números em LISTA no celular (26/11/2026, pedido do responsável: "muito resumidos, difíceis de ver os
+   limites do estilo; um abaixo do outro, semelhante ao Brewfather"). Vale no cartão dos números do Clean (sempre) e
+   no "detalhes" aberto do Completo (a barra fechada do rodapé continua em 2 × 3, para não cobrir a tela). Cada linha:
+   ponto do estado + rótulo | régua larga com a faixa do estilo e os limites embaixo das pontas | número.
+   A linha fina (teclado, roleta, cartão rolado) não muda. Copo: sai do cartão (a cor tem a amostra na própria linha)
+   e volta ao lado da barra do grist. ---------- */
+@media (max-width: 640px) {
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) { grid-template-columns: minmax(0, 1fr); }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-copo { display: none; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-grade { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item:not(.secundario) {
+    grid-template-columns: 5.2rem minmax(0, 1fr) 4.9rem; grid-template-areas: "cab regua linha" "ref ref ref";
+    align-items: start; column-gap: .75rem; padding: .5rem 0 .3rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--tinta) 8%, transparent);
+  }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item[data-metrica="ph"] { border-bottom: none; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-cab {
+    grid-area: cab; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: .1rem; padding-top: .2rem;
+  }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-rot {
+    font-size: .8125rem; white-space: normal; line-height: 1.15; align-items: baseline;
+  }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item .vital-rot::before { align-self: center; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-estado { font-size: .75rem; white-space: normal; line-height: 1.2; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-linha { grid-area: linha; justify-content: flex-end; align-items: center; }
+  /* régua com o centro na altura do centro do número (número de ~23 px; régua de 8 px) */
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.3rem; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-pe { display: none; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-ref { grid-area: ref; text-align: right; }
+  /* régua: 8 px, marcador de 14 px recortado no papel, limites do estilo embaixo das pontas da faixa */
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .regua { grid-area: regua; height: 8px; margin: .45rem 0 1.15rem; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item .regua-marca { width: 14px; height: 14px; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .regua-lim {
+    display: block; position: absolute; top: calc(100% + .3rem); transform: translateX(-50%);
+    font-size: .75rem; line-height: 1; color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item[data-metrica="cor"] .regua-faixa { top: -4px; bottom: -4px; }
+  /* diferença da última mudança: embaixo do número, à direita */
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-delta { top: auto; bottom: .05rem; right: 0; font-size: .75rem; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item.secundario { padding-top: .45rem; }
+  .vital.aberta:not(.com-teclado) .vital-grade { gap: 0; }
+}
+@media (max-width: 360px) {
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item:not(.secundario) { grid-template-columns: 3.9rem minmax(0, 1fr) 4.4rem; column-gap: .6rem; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.15rem; }
+  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .rot-longo { display: none; }
+}

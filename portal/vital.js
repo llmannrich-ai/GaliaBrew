@@ -1,9 +1,10 @@
 // vital.js — barra vital do editor de receita: OG, FG, ABV, IBU e cor sempre à vista, com a régua da faixa do
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
-// do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH).
-import { el, svg, numeroBR } from "./ui.js?v=20261126a";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261126a";
-import * as O from "./opcoes.js?v=20261126a";
+// do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH); no cartão do Clean e em
+// "detalhes", um número abaixo do outro com a régua larga e os limites do estilo (26/11/2026).
+import { el, svg, numeroBR } from "./ui.js?v=20261126b";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261126b";
+import * as O from "./opcoes.js?v=20261126b";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -168,10 +169,13 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = f
       faixa: el("span", { class: "regua-faixa" }),
       marca: el("span", { class: "regua-marca" }),
       faixaTxt: el("span", { class: "vital-faixa" }),
+      // Limites do estilo embaixo das pontas da faixa (lista do celular, como no Brewfather).
+      limMin: el("span", { class: "regua-lim min" }),
+      limMax: el("span", { class: "regua-lim max" }),
       amostra: d.chave === "cor" ? el("span", { class: "vital-amostra", "aria-hidden": "true" }) : null,
       ultimo: undefined, base: null, timer: null,
     };
-    n.regua = el("div", { class: "regua", "aria-hidden": "true" }, n.faixa, n.marca);
+    n.regua = el("div", { class: "regua", "aria-hidden": "true" }, n.faixa, n.marca, n.limMin, n.limMax);
     n.raiz = el("div", { class: "vital-item", dataset: { metrica: d.chave } },
       el("div", { class: "vital-cab" }, n.rot, n.estado),
       // Cor: ponto com a cor da cerveja antes do número (no celular, onde o copo não aparece).
@@ -259,6 +263,10 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = f
         n.faixa.style.left = `${regua.ini * 100}%`;
         n.faixa.style.width = `${(regua.fim - regua.ini) * 100}%`;
         n.marca.style.left = `${regua.pos * 100}%`;
+        n.limMin.style.left = `${regua.ini * 100}%`;
+        n.limMax.style.left = `${regua.fim * 100}%`;
+        n.limMin.textContent = fmt(Math.min(min, max));
+        n.limMax.textContent = fmt(Math.max(min, max));
         n.marca.classList.toggle("alem", regua.foraDoEixo);
         if (d.chave === "cor") {
           // Fundo da régua da cor = a própria escala de cor da cerveja ao longo do eixo.

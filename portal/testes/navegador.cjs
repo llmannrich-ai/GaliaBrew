@@ -182,6 +182,32 @@ async function storageSimulado(rota, req, url, metodo) {
 }
 
 const TIPOS = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".webmanifest": "application/manifest+json" };
+// Números em lista no celular (26/11/2026): um abaixo do outro, régua larga e os limites do estilo embaixo das pontas
+// da faixa, sem sobrepor e sem passar da barra. Devolve um texto com o problema ou "" quando está tudo certo.
+async function conferirListaVital(pg) {
+  return pg.evaluate(() => {
+    const barra = document.querySelector(".vital").getBoundingClientRect();
+    const itens = [...document.querySelectorAll(".vital .vital-item:not(.secundario)")].map((it) => {
+      const b = it.getBoundingClientRect(); const r = it.querySelector(".regua").getBoundingClientRect();
+      const v = it.querySelector(".vital-val").getBoundingClientRect();
+      const lim = [...it.querySelectorAll(".regua-lim")].map((l) => ({ t: l.textContent, b: l.getBoundingClientRect(), vis: l.checkVisibility() }));
+      return { m: it.dataset.metrica, top: b.top, bottom: b.bottom, esq: b.left, regua: r, val: v, lim };
+    });
+    const erros = [];
+    if (itens.length !== 6) erros.push(`${itens.length} itens`);
+    itens.forEach((it, i) => {
+      if (i && it.top < itens[i - 1].bottom - 1) erros.push(`${it.m} não fica abaixo de ${itens[i - 1].m}`);
+      if (Math.abs(it.esq - itens[0].esq) > 1) erros.push(`${it.m} fora da coluna`);
+      if (it.regua.width < 70) erros.push(`${it.m}: régua de ${Math.round(it.regua.width)} px`);
+      if (it.val.right > barra.right + 1 || it.val.left < it.regua.right) erros.push(`${it.m}: número fora do lugar`);
+      const [a, b] = it.lim;
+      if (!a.vis || !b.vis || !/\d/.test(a.t) || !/\d/.test(b.t)) erros.push(`${it.m}: limites "${a.t}"/"${b.t}" não aparecem`);
+      else if (a.b.right > b.b.left - 2 || a.b.left < barra.left || b.b.right > it.val.left) erros.push(`${it.m}: limites se sobrepõem ou passam da régua`);
+    });
+    return erros.join("; ");
+  });
+}
+
 async function site(rota) {
   const url = new URL(rota.request().url());
   let arq = decodeURIComponent(url.pathname);
@@ -229,7 +255,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261126a");
+    const m = await import("./fontes.js?v=20261126b");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -507,7 +533,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -575,7 +601,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -597,7 +623,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -707,7 +733,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -983,6 +1009,8 @@ const erros = [];
   verificar(await pagina.getAttribute(".vital-mais", "aria-expanded") === "true" && await pagina.isVisible('.vital [data-metrica="og"] .vital-estado'), "celular: 'detalhes' abre estado e faixas");
   verificar(await pagina.isVisible('.vital-ferramentas button:has-text("Desfazer")'), "celular: desfazer e referência ficam nos detalhes da barra");
   await pagina.screenshot({ path: `${SAIDA}/p5c-celular-detalhes.png` });
+  const listaDetalhes = await conferirListaVital(pagina);
+  verificar(listaDetalhes === "", `celular: 'detalhes' mostra os números um abaixo do outro, com os limites do estilo${listaDetalhes ? ": " + listaDetalhes : ""}`);
   await pagina.click(".vital-mais");
   await pagina.evaluate(() => window.scrollTo(0, 0));
   await adicionar("fermentaveis");
@@ -2069,8 +2097,13 @@ const erros = [];
   await cel.evaluate(() => window.scrollTo(0, 0));
   await cel.waitForTimeout(200);
   const noTopo = await estadoVital();
-  verificar(noTopo.pos === "static" && !noTopo.flut && noTopo.copo && noTopo.topo < 420,
-    `clean K2: números num cartão no topo da receita, com o copo (topo em ${noTopo.topo} px, ${noTopo.altura} px de altura)`);
+  // Desde 26/11/2026 o cartão é uma lista (um número abaixo do outro, como no Brewfather): o copo sai do cartão e volta
+  // ao lado da barra do grist.
+  verificar(noTopo.pos === "static" && !noTopo.flut && !noTopo.copo && noTopo.topo < 420,
+    `clean K2: números num cartão no topo da receita (topo em ${noTopo.topo} px, ${noTopo.altura} px de altura)`);
+  const listaClean = await conferirListaVital(cel);
+  const gristCopo = await cel.evaluate(() => document.querySelector(".grist-copo")?.checkVisibility() ?? false);
+  verificar(listaClean === "" && gristCopo, `clean: números um abaixo do outro, com os limites do estilo, e o copo ao lado do grist${listaClean ? ": " + listaClean : ""}`);
   await cel.screenshot({ path: `${SAIDA}/p7e-clean-numeros-topo.png` });
   await cel.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await cel.waitForTimeout(300);
@@ -2340,6 +2373,11 @@ const erros = [];
   verificar(await cel.evaluate(() => [...document.querySelectorAll(".vital .vital-item")].every((n) => {
     const b = n.getBoundingClientRect(); return [...n.querySelectorAll(".vital-rot")].every((x) => x.getBoundingClientRect().right <= b.right + 1);
   })), "clean, 320 px: rótulos do cartão dos números cabem no espaço de cada número");
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  await cel.waitForTimeout(300);
+  const lista320 = await conferirListaVital(cel);
+  verificar(lista320 === "", `clean, 320 px: números um abaixo do outro, limites do estilo sem sobrepor${lista320 ? ": " + lista320 : ""}`);
+  await cel.screenshot({ path: `${SAIDA}/p7e2-clean-numeros-320.png` });
   await cel.locator('[data-secao="fermentaveis"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p7c-clean-320.png` });
   await cel.setViewportSize({ width: 1366, height: 900 });
