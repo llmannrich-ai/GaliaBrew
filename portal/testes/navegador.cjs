@@ -229,7 +229,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261126a");
+    const m = await import("./fontes.js?v=20261126b");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -507,7 +507,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -575,7 +575,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -597,7 +597,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -707,7 +707,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126a");
+    const m = await import("./calculos.js?v=20261126b");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1120,15 +1120,31 @@ const erros = [];
   });
   await cel.waitForFunction(() => [...document.querySelectorAll(".inicio-logo img")].some((n) => n.checkVisibility() && n.complete && n.naturalWidth > 0), null, { timeout: 3000 }).catch(() => {});
   let lg = await logoVisivel();
-  verificar(lg && lg.src === "icones/logo-galia.png" && lg.carregada && lg.centro <= 2 && lg.dentro && lg.topo < 30 && lg.altura >= 110 && lg.altura <= 130 && !lg.barra && lg.presos.length === 0,
-    `toque: logo "Gália" grande e centrada no topo da tela de Receitas, sem a barra escura nem nada preso no topo (${JSON.stringify(lg)})`);
+  verificar(lg && lg.src === "icones/logo-galia.png" && lg.carregada && lg.centro <= 2 && lg.dentro && lg.topo < 30 && lg.altura >= 72 && lg.altura <= 88 && !lg.barra && lg.presos.length === 0,
+    `toque: logo "Gália" (5rem) centrada no topo da tela de Receitas, sem a barra escura nem nada preso no topo (${JSON.stringify(lg)})`);
   verificar(await cel.getAttribute('meta[name="apple-mobile-web-app-status-bar-style"]', "content") === "default"
     && await cel.evaluate(() => document.querySelector('meta[name="theme-color"]').content.toLowerCase() === getComputedStyle(document.documentElement).getPropertyValue("--fundo").trim().toLowerCase()),
     "iPhone: barra de status padrão e theme-color = fundo da página do tema");
+  // ≡ maior (26/11/2026, pedido do responsável): 56 px de toque, ícone de 34 px, no meio da altura da logo, sem sair da tela.
+  const bm = await cel.evaluate(() => {
+    const b = document.querySelector(".inicio-menu").getBoundingClientRect(), i = document.querySelector(".inicio-menu .ico").getBoundingClientRect();
+    const l = [...document.querySelectorAll(".inicio-logo img")].find((n) => n.checkVisibility()).getBoundingClientRect();
+    return { lado: Math.round(b.width), ico: Math.round(i.width), meio: Math.round(Math.abs((b.top + b.bottom) / 2 - (l.top + l.bottom) / 2)), esq: Math.round(i.left), separado: b.right <= l.left };
+  });
+  verificar(bm.lado >= 54 && bm.ico >= 32 && bm.meio <= 2 && bm.esq >= 0 && bm.separado, `toque: ≡ do topo maior, no meio da logo e sem encostar nela (${JSON.stringify(bm)})`);
   await cel.tap(".inicio-menu");
   await cel.waitForTimeout(350);
   verificar(await cel.evaluate(() => document.querySelector(".casca").classList.contains("menu-aberto") && document.querySelector(".inicio-menu").getAttribute("aria-expanded") === "true"),
     "toque: o ≡ do topo da tela de Receitas abre o menu");
+  // Menu com a logo nova (26/11/2026): "Gália" em creme no lugar do copinho + "GaliaBrew".
+  const ml = await cel.evaluate(() => {
+    const img = document.querySelector(".lateral .marca .marca-logo"), r = img?.getBoundingClientRect(), f = document.querySelector(".lateral .fechar-menu").getBoundingClientRect();
+    return img && { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, visivel: img.checkVisibility(), altura: Math.round(r.height),
+      copo: document.querySelector(".lateral .marca .copo").checkVisibility(), separado: r.right <= f.left };
+  });
+  verificar(ml && ml.src === "icones/logo-galia-escuro.png" && ml.visivel && ml.altura >= 60 && !ml.copo && ml.separado,
+    `toque: menu com a logo "Gália" em creme, sem o copinho (${JSON.stringify(ml)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6f-celular-menu-logo.png` });
   await cel.keyboard.press("Escape");
   await cel.waitForTimeout(350);
   await cel.emulateMedia({ colorScheme: "dark" });
