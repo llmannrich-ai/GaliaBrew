@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261126c";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261126c";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261126c";
-import { sb, sessao, preferencias } from "./estado.js?v=20261126c";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261126c";
-import { abrirBusca } from "./busca.js?v=20261126c";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261126c";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261126c";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261126c";
-import * as O from "./opcoes.js?v=20261126c";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261126c";
-import { icone } from "./icones.js?v=20261126c";
-import { abrirMenu } from "./menu.js?v=20261126c";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261126c";
-import { abrirRelatorio } from "./relatorio.js?v=20261126c";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261126c";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261126d";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261126d";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261126d";
+import { sb, sessao, preferencias } from "./estado.js?v=20261126d";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261126d";
+import { abrirBusca } from "./busca.js?v=20261126d";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261126d";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261126d";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261126d";
+import * as O from "./opcoes.js?v=20261126d";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261126d";
+import { icone } from "./icones.js?v=20261126d";
+import { abrirMenu } from "./menu.js?v=20261126d";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261126d";
+import { abrirRelatorio } from "./relatorio.js?v=20261126d";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261126d";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -178,9 +178,9 @@ export async function telaEditor(conteudo, id, origemId) {
     if (!rec && cat.equipamentos.length === 1) aplicarEquipamento(r, cat.equipamentos[0]);
   }
   const leitura = !nova && rec.dono !== sessao.usuario.id;
-  // Tentativas: histórico para desfazer/refazer e a referência fixada. Vive enquanto a receita está aberta
+  // Tentativas: histórico para desfazer/refazer. Vive enquanto a receita está aberta
   // (inclusive depois de salvar uma receita que já existia); não vai para o banco.
-  const t = { passado: [], futuro: [], base: structuredClone(r), timer: null, ref: null, atalhos: null };
+  const t = { passado: [], futuro: [], base: structuredClone(r), timer: null, atalhos: null };
   montarEditor(conteudo, r, cat, leitura, t, { origem: nova ? rec : null });
   if (!leitura) instalarAtalhos(t);
 }
@@ -246,7 +246,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     ficha ? el("span", { class: "titulo-icone-min" }, icone(`${nomeIcone}_min`)) : el("span", { class: "titulo-icone" }, icone(nomeIcone)),
     titulo, ...resto);
 
-  // ---------- tentativas: desfazer/refazer e referência ----------
+  // ---------- tentativas: desfazer/refazer (Ctrl+Z / Ctrl+Shift+Z; ↶ na barra do app do celular) ----------
   const HISTORICO_MAX = 50;
   const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   /** Fecha o passo atual do histórico (se a receita mudou desde o último). */
@@ -266,7 +266,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   function agendarRegistro() {
     clearTimeout(t.timer);
     t.timer = setTimeout(registrarQuandoLivre, 800);
-    bDesfazer.disabled = false;
     bDesfazerApp.disabled = false;
   }
   /** Ação inteira (adicionar, remover, mover, ajuste automático) = um passo próprio. */
@@ -293,42 +292,10 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     t.passado.push(structuredClone(r));
     irPara(t.futuro.pop());
   }
-  function fixarReferencia() {
-    registrar();
-    t.ref = { receita: structuredClone(r), res: calcularReceita(r), hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) };
-    vital.definirReferencia(t.ref.res);
-    atualizarResultados();
-    atualizarFerramentas();
-  }
-  function voltarReferencia() {
-    registrar();
-    if (igual(r, t.ref.receita)) return;
-    t.passado.push(structuredClone(r));
-    t.futuro = [];
-    irPara(t.ref.receita);
-  }
-  function soltarReferencia() {
-    t.ref = null;
-    vital.definirReferencia(null);
-    atualizarResultados();
-    atualizarFerramentas();
-  }
-  const bDesfazer = el("button", { type: "button", class: "secundario pequeno", title: "Desfazer (Ctrl+Z)", on: { click: desfazer } }, icone("desfazer"), "Desfazer");
   const bDesfazerApp = el("button", { type: "button", class: "icone app-desfazer", title: "Desfazer", "aria-label": "Desfazer", on: { click: desfazer } }, icone("desfazer"));
-  const bRefazer = el("button", { type: "button", class: "secundario pequeno", title: "Refazer (Ctrl+Shift+Z)", on: { click: refazer } }, icone("refazer"), "Refazer");
-  const bFixar = el("button", { type: "button", class: "secundario pequeno", text: "Fixar referência", title: "Guarda os números de agora para comparar com as próximas tentativas", on: { click: fixarReferencia } });
-  const refInfo = el("span", { class: "ref-info" });
-  const bVoltarRef = el("button", { type: "button", class: "secundario pequeno", text: "Voltar à referência", on: { click: voltarReferencia } });
-  const bSoltar = el("button", { type: "button", class: "link", text: "Soltar", title: "Parar de comparar", on: { click: soltarReferencia } });
-  const ferramentas = leitura ? null : el("div", { class: "vital-ferramentas" },
-    bDesfazer, bRefazer, el("span", { class: "separador", "aria-hidden": "true" }), bFixar, refInfo, bVoltarRef, bSoltar);
+  // Os botões Desfazer/Refazer e a referência fixada saíram da barra de números (26/11/2026, pedido do responsável).
   function atualizarFerramentas() {
-    bDesfazer.disabled = !t.passado.length && !t.timer;
-    bDesfazerApp.disabled = bDesfazer.disabled;
-    bRefazer.disabled = !t.futuro.length;
-    bFixar.hidden = Boolean(t.ref);
-    bVoltarRef.hidden = bSoltar.hidden = !t.ref;
-    refInfo.textContent = t.ref ? `Comparando com a referência das ${t.ref.hora}` : "";
+    bDesfazerApp.disabled = !t.passado.length && !t.timer;
   }
 
   const ajustarOG = () => abrirAlvoOG({
@@ -340,7 +307,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     aoAplicar: (a) => acao(() => { r.lupulos[a.indice].quantidade_g = a.gramas; secoes.lupulos(); mudou("ajuste-ibu"); avisar("Lúpulo ajustado. Ctrl+Z desfaz."); }),
   });
   // Clean no celular: números num cartão no topo; ao rolar, linha fina no rodapé (vital.js, "noTopo").
-  const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU }, ferramentas,
+  const vital = criarBarraVital({ aoAjustar: leitura ? {} : { og: ajustarOG, ibu: ajustarIBU },
     noTopo: ficha && window.matchMedia("(max-width: 640px)").matches });
   const grist = barraGrist();
   const tempo = linhaFervura({
@@ -2036,7 +2003,6 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     });
   }
   marcarPendente();
-  vital.definirReferencia(t.ref?.res ?? null);
   if (resAnterior) vital.atualizar(resAnterior, estiloAtual());     // desfazer/refazer: a barra mostra a diferença
   else atualizarResultados();
   montado = true;
