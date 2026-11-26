@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261125e";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261125e";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261125e";
-import { sb, sessao, preferencias } from "./estado.js?v=20261125e";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261125e";
-import { abrirBusca } from "./busca.js?v=20261125e";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261125e";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261125e";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261125e";
-import * as O from "./opcoes.js?v=20261125e";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261125e";
-import { icone } from "./icones.js?v=20261125e";
-import { abrirMenu } from "./menu.js?v=20261125e";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261125e";
-import { abrirRelatorio } from "./relatorio.js?v=20261125e";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261125e";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261126a";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261126a";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261126a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261126a";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261126a";
+import { abrirBusca } from "./busca.js?v=20261126a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261126a";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261126a";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261126a";
+import * as O from "./opcoes.js?v=20261126a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261126a";
+import { icone } from "./icones.js?v=20261126a";
+import { abrirMenu } from "./menu.js?v=20261126a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261126a";
+import { abrirRelatorio } from "./relatorio.js?v=20261126a";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261126a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -1620,7 +1620,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   // na quantidade = roleta; no nome = janela do item) com a escala do pH embaixo; Água de lavagem (fichas dos sais).
   // Abaixo da lavagem, a tabela curta da concentração final na água toda (íons em ppm, alvo, SO₄/Cl e alcalinidade
   // residual) e "Perfil completo ›" (a tabela de sempre, numa janela).
-  const NOME_SAL = { GESSO: "Gesso", CLORETO_CALCIO: "Cloreto de cálcio", SULFATO_MAGNESIO: "Sal amargo", CLORETO_MAGNESIO: "Cloreto de magnésio", CLORETO_SODIO: "Sal de cozinha", BICARBONATO_SODIO: "Bicarbonato de sódio" };
+  const NOME_SAL = { GESSO: "Sulfato de cálcio", CLORETO_CALCIO: "Cloreto de cálcio", SULFATO_MAGNESIO: "Sal amargo", CLORETO_MAGNESIO: "Cloreto de magnésio", CLORETO_SODIO: "Sal de cozinha", BICARBONATO_SODIO: "Bicarbonato de sódio" };
   const NOME_ACIDO = { LATICO_88: "Ácido lático 88%", FOSFORICO_10: "Ácido fosfórico 10%", FOSFORICO_85: "Ácido fosfórico 85%" };
 
   /** Janela simples no molde da janela do item (topo com ×, corpo, pé com ações e Pronto). Devolve { fechar }. */
