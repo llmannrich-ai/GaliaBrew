@@ -81,7 +81,7 @@ export const AJUDA_VOLUME = {
 };
 
 export const SAL_AGUA = [
-  ["GESSO", "Gesso (sulfato de cálcio)"], ["CLORETO_CALCIO", "Cloreto de cálcio"], ["SULFATO_MAGNESIO", "Sal amargo (sulfato de magnésio)"],
+  ["GESSO", "Sulfato de cálcio"], ["CLORETO_CALCIO", "Cloreto de cálcio"], ["SULFATO_MAGNESIO", "Sal amargo (sulfato de magnésio)"],
   ["CLORETO_MAGNESIO", "Cloreto de magnésio"], ["CLORETO_SODIO", "Sal de cozinha (cloreto de sódio)"], ["BICARBONATO_SODIO", "Bicarbonato de sódio"],
 ];
 export const NOME_ION = { calcio_ppm: "Cálcio (Ca)", magnesio_ppm: "Magnésio (Mg)", sodio_ppm: "Sódio (Na)", sulfato_ppm: "Sulfato (SO₄)", cloreto_ppm: "Cloreto (Cl)", bicarbonato_ppm: "Bicarbonato (HCO₃)" };

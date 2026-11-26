@@ -2210,7 +2210,7 @@ const erros = [];
   });
   const ag = await aguaClean();
   verificar(!ag.resumida && /^Base: .+Alvo: Alvo IPA/.test(ag.perfis), `clean água: seção própria (não é resumo), base e alvo numa linha (“${ag.perfis}”)`);
-  verificar(ag.mostura.length === 2 && ag.mostura[0].nome === "Gesso" && ag.mostura[1].nome === "Ácido lático 88%" && /^pH −?-?0,\d\d$/.test(ag.mostura[1].sub) && ag.mostura[0].qtd === "6,0" && /^\+\d+ Ca · \+\d+ SO₄ ppm$/.test(ag.mostura[0].sub) && /g\/L$/.test(ag.mostura[0].extra)
+  verificar(ag.mostura.length === 2 && ag.mostura[0].nome === "Sulfato de cálcio" && ag.mostura[1].nome === "Ácido lático 88%" && /^pH −?-?0,\d\d$/.test(ag.mostura[1].sub) && ag.mostura[0].qtd === "6,0" && /^\+\d+ Ca · \+\d+ SO₄ ppm$/.test(ag.mostura[0].sub) && /g\/L$/.test(ag.mostura[0].extra)
     && ag.lavagem.length === 1 && ag.lavagem[0].nome === "Cloreto de cálcio" && /Ca · \+\d+ Cl ppm/.test(ag.lavagem[0].sub),
     `clean água: uma ficha por sal e ácido, cada um na sua água, com o que põe na água (sal: ppm e g/L; ácido: pH) (${JSON.stringify([...ag.mostura, ...ag.lavagem].map((x) => [x.nome, x.qtd, x.sub, x.extra]))})`);
   verificar([...ag.mostura, ...ag.lavagem].every((x) => x.h <= 64), `clean água: linhas com até 64 px (${[...ag.mostura, ...ag.lavagem].map((x) => x.h).join(", ")} px)`);

@@ -1620,7 +1620,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   // na quantidade = roleta; no nome = janela do item) com a escala do pH embaixo; Água de lavagem (fichas dos sais).
   // Abaixo da lavagem, a tabela curta da concentração final na água toda (íons em ppm, alvo, SO₄/Cl e alcalinidade
   // residual) e "Perfil completo ›" (a tabela de sempre, numa janela).
-  const NOME_SAL = { GESSO: "Gesso", CLORETO_CALCIO: "Cloreto de cálcio", SULFATO_MAGNESIO: "Sal amargo", CLORETO_MAGNESIO: "Cloreto de magnésio", CLORETO_SODIO: "Sal de cozinha", BICARBONATO_SODIO: "Bicarbonato de sódio" };
+  const NOME_SAL = { GESSO: "Sulfato de cálcio", CLORETO_CALCIO: "Cloreto de cálcio", SULFATO_MAGNESIO: "Sal amargo", CLORETO_MAGNESIO: "Cloreto de magnésio", CLORETO_SODIO: "Sal de cozinha", BICARBONATO_SODIO: "Bicarbonato de sódio" };
   const NOME_ACIDO = { LATICO_88: "Ácido lático 88%", FOSFORICO_10: "Ácido fosfórico 10%", FOSFORICO_85: "Ácido fosfórico 85%" };
 
   /** Janela simples no molde da janela do item (topo com ×, corpo, pé com ações e Pronto). Devolve { fechar }. */
