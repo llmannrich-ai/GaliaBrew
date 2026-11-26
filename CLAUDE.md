@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126b.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126c.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -312,6 +312,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   faixa do estilo são dois traços [ ] sobre a escala de cor. Ponto com a cor da cerveja antes do número da cor
   (`.vital-amostra`, só no celular; some na linha fina do teclado). Diferença da última mudança = texto solto no canto,
   sem pílula. Computador não mudou. Capturas `p5`, `p5c`, `p6d`, `p6g`.
+
+## Números em lista no celular (26/11/2026, pedido do responsável: "muito resumidos, difíceis de ver os limites do estilo; um abaixo do outro, semelhante ao Brewfather"; só style.css + vital.js)
+- No cartão dos números do Clean (sempre) e no "detalhes" aberto do Completo: uma LINHA por número (OG, FG, ABV, IBU,
+  Cor, pH): ponto do estado + rótulo | régua larga (8 px, marcador de 14 px) com os LIMITES do estilo escritos embaixo das
+  pontas da faixa (`.regua-lim`, posição = `regua.ini`/`regua.fim`) | número. "Detalhes" acrescenta o estado em texto,
+  a referência, BU:GU/atenuação e as ferramentas. A barra fechada do rodapé no Completo segue em 2 × 3 (6 linhas
+  fixas cobririam ~1/3 da tela) e a linha fina (teclado, roleta, cartão rolado) não mudou. Computador não mudou.
+- Copo: sai do cartão do Clean (a cor tem a amostra na própria linha) e volta ao lado da barra do grist.
+- Teste do navegador (`conferirListaVital`): 6 linhas uma abaixo da outra, régua ≥ 70 px, limites visíveis sem sobrepor
+  e sem passar do número, no "detalhes" (390 px) e no Clean (390 e 320 px). Capturas `p5c`, `p7e`, `p7e2` (320 px), `p7d`.
 
 ## Layout Clean da receita (24/11/2026, pedido do responsável; plano `docs/PLANO-CLEAN.md`; sem migração)
 - Opcional: Meu perfil → Aparência → "Layout da receita: Completo | Clean" (`preferencias.layout`, localStorage). O
