@@ -281,7 +281,12 @@ export function mensagemErro(e) {
   const m = String(e?.message ?? e ?? "Erro desconhecido");
   if (/Invalid login credentials/i.test(m)) return "E-mail ou senha incorretos.";
   if (/Email not confirmed/i.test(m)) return "E-mail ainda não confirmado. Veja a mensagem enviada para você.";
-  if (/Password should be at least/i.test(m)) return "Senha curta demais.";
+  if (/Password should be at least/i.test(m)) return "Senha curta demais (mínimo 10 caracteres).";
+  if (/already registered|already been registered|user_already_exists/i.test(m)) return "Este e-mail já tem conta. Entre com a senha ou use \"Esqueci a senha\".";
+  if (/Signups not allowed|signup.*disabled/i.test(m)) return "Cadastro de contas novas desligado no momento.";
+  if (/Unable to validate email|invalid format|email.*invalid/i.test(m)) return "E-mail inválido. Confira o endereço.";
+  if (/weak password|pwned|known to be weak/i.test(m)) return "Senha fraca demais. Escolha outra, mais longa.";
+  if (/sending recovery email|sending.*email|not authorized/i.test(m)) return "Não foi possível enviar o e-mail de recuperação agora. Tente mais tarde ou fale com o administrador.";
   if (/rate limit|too many/i.test(m)) return "Muitas tentativas. Espere alguns minutos.";
   if (/JWT expired|invalid JWT|session/i.test(m)) return "Sua sessão expirou. Entre de novo.";
   if (/row-level security|permission denied/i.test(m)) return "Sem permissão para esta ação.";
