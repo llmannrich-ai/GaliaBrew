@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127d";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127d";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127d";
-import { sb, sessao, preferencias } from "./estado.js?v=20261127d";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127d";
-import { abrirBusca } from "./busca.js?v=20261127d";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127d";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127d";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127d";
-import * as O from "./opcoes.js?v=20261127d";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127d";
-import { icone } from "./icones.js?v=20261127d";
-import { abrirMenu } from "./menu.js?v=20261127d";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261127d";
-import { abrirRelatorio } from "./relatorio.js?v=20261127d";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127e";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127e";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127e";
+import { sb, sessao, preferencias } from "./estado.js?v=20261127e";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127e";
+import { abrirBusca } from "./busca.js?v=20261127e";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127e";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127e";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127e";
+import * as O from "./opcoes.js?v=20261127e";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127e";
+import { icone } from "./icones.js?v=20261127e";
+import { abrirMenu } from "./menu.js?v=20261127e";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261127e";
+import { abrirRelatorio } from "./relatorio.js?v=20261127e";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127e";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -1680,8 +1680,22 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     },
     el("option", { value: "", text: vazio, selected: !atual }),
     atual ? el("option", { value: "__atual", text: atual.nome ?? "Perfil", selected: true }) : null,
-    cat.aguas.length ? el("optgroup", { label: "Cadastro" }, cat.aguas.map((x) => el("option", { value: x.id, text: `${x.nome}${x.dono ? " (minha)" : ""}` }))) : null);
-    return el("label", {}, el("span", {}, rot, info(ajuda)), s);
+    ...gruposPerfilAgua(chave));
+    const semBase = chave === "agua_origem" && !des && !cat.aguas.some((x) => x.dono);
+    return el("label", {}, el("span", {}, rot, info(ajuda)), s,
+      semBase ? el("span", { class: "nota agua-sem-base", text: "Nenhuma água sua. Cadastre em Cadastros → Águas." }) : null);
+  }
+
+  /** Base = só as águas que a pessoa cadastrou (a dela). Alvo = só os perfis do catálogo; a água de torneira de cidades
+   *  estrangeiras do catálogo ("Torneira — …") não aparece em nenhum dos dois (não é a água de ninguém aqui nem um alvo). */
+  function gruposPerfilAgua(chave) {
+    const grupo = (rotulo, lista, prefixo) => (lista.length
+      ? el("optgroup", { label: rotulo }, lista.map((x) => el("option", { value: x.id, text: prefixo ? x.nome.replace(prefixo, "") : x.nome })))
+      : null);
+    if (chave === "agua_origem") return [grupo("Minhas águas", cat.aguas.filter((x) => x.dono))];
+    const catalogo = cat.aguas.filter((x) => !x.dono && !/^Torneira — /.test(x.nome));
+    const porTipo = catalogo.filter((x) => /^Alvo — /.test(x.nome));
+    return [grupo("Por tipo de cerveja", porTipo, /^Alvo — /), grupo("Catálogo", catalogo.filter((x) => !porTipo.includes(x)))];
   }
 
   /** Lavagem com a mesma concentração da mostura: cada sal da mostura × (água de lavagem ÷ água da mostura). */

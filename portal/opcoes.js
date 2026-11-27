@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261127d";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261127d";
+import { preferencias } from "./estado.js?v=20261127e";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261127e";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -69,8 +69,8 @@ export const AJUDA_VOLUME = {
   temperatura_agua_mostura_c: "Temperatura da água para o grão + água chegar ao 1º passo da mostura, com o grão na temperatura dos parâmetros. Não conta o calor que a tina absorve.",
   co2_alvo_vol: "Carbonatação desejada em volumes de CO₂ (litros de gás por litro de cerveja). Ex.: ales inglesas 1,5-2,0; maioria das ales e lagers 2,2-2,7; belgas e trigo 3,0-4,0.",
   priming_acucar: "Açúcar usado no priming. Os gramas usam o volume real (ou o planejado) e a maior temperatura da fermentação.",
-  agua_origem: "A água que você usa (cadastre a sua em Cadastros → Águas, com os números da análise ou da companhia de água). Fica copiada na receita.",
-  agua_alvo: "Perfil que você quer atingir, só para comparar. Os 'Alvo — …' do catálogo são pontos de partida por tipo de cerveja.",
+  agua_origem: "A água que você usa. Aparecem só as águas que você cadastrou (Cadastros → Águas, com os números da análise, da companhia de água ou do rótulo da mineral). Fica copiada na receita.",
+  agua_alvo: "Perfil que você quer atingir, só para comparar: perfis do catálogo por tipo de cerveja.",
   agua_diluicao_pct: "Parte da água trocada por destilada ou de osmose (sem íons). 50% corta pela metade todos os íons da origem.",
   sais_agua: "Gramas de cada sal, separados por água: os da mostura dissolvem na água da mostura (e entram no pH), os da lavagem na água de lavagem. Cada perfil é calculado no próprio volume; Total = as duas águas juntas, o que chega à fervura.",
   sulfato_cloreto: "Sulfato realça o amargor e seca; cloreto arredonda e dá corpo. Abaixo de 0,8: maltada; 0,8 a 1,3: equilibrada; acima de 2: seca e amarga.",

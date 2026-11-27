@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127e.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -848,6 +848,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: "clean, 320/390 px: estilo em cartão só com faixa de cor e nome" (≥ 44 px, cabe, abaixo do nome,
   texto = só o nome, sem `.estilo-codigo`/`.estilo-encaixe`) e contraste do cartão no "clean K6" (nome ≥ 7, seta ≥ 3)
   nos 8 temas. Seletor do teste: `button.estilo-botao`. Capturas `p7m-clean-estilo-320/390`.
+
+## Água de base só do usuário (27/11/2026, pedido do responsável; sem migração)
+- Seletor "Água de base" (Completo e Clean, `escolhaPerfilAgua` + `gruposPerfilAgua` no receitas.js) lista SÓ as águas
+  que a pessoa cadastrou (`dono` preenchido, grupo "Minhas águas"); sem nenhuma, aviso "Nenhuma água sua. Cadastre em
+  Cadastros → Águas." (`.agua-sem-base`). "Perfil alvo" lista SÓ o catálogo: os "Alvo — …" no grupo "Por tipo de
+  cerveja" (sem o prefixo na opção; a cópia na receita guarda o nome inteiro).
+- Os 11 "Torneira — <cidade> (ano)" do catálogo (Amsterdam, Berlin, Denver, NYC, Paris...: água de torneira de cidades
+  estrangeiras, nenhuma receita usava) NÃO aparecem em nenhum dos dois seletores; seguem no banco e em Cadastros → Águas.
+- Receita antiga com base do catálogo continua com a cópia (opção "__atual"). Teste "água: base só com as águas
+  cadastradas pela pessoa...".
 
 ## Inoculação e starter na seção Leveduras (27/11/2026, pedido do responsável; sem migração)
 - `calculos.js`: `inoculacao({ leveduras, og, litros, cfg })` (testes em calculos.test.mjs). Células em BILHÕES; necessárias
