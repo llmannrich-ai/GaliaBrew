@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127e.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127f.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -837,11 +837,24 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   espaço, altura pelo texto e refeita quando a largura muda). Letra 22 px no celular (era 26) e 20 px em ≤ 360 px: com os
   ícones ao lado, o nome mediano das receitas (24 letras) fica em 1-2 linhas em 390 px; 36 letras (90% das receitas têm
   menos) = 3 linhas em 320 px. Completo não mudou (input + botão do relatório).
+- (27/11/2026: os ícones foram para a linha do lote e o nome para a barra do app; ver "Nome na barra do app".)
 - Meta do lote = botão (`button.topo-meta`) "Lote nº 104 · 20/04/2026", 17 px negrito (era 12 px em versalete), data
   sempre ao lado ("sem data"; "Lote novo"/"Lote sem nº" sem número). Tocar abre a janela da Brassagem (`abrirLote`).
 - Teste do navegador: ícones na ordem, ao lado do nome, ≥ 44 px, sem menu ⋯; lote com data e letra ≥ 16 px; tocar no lote
   abre a janela; Informações e Relatório pelos ícones; nome longo em 320 px. Capturas `p7g-clean-acoes-nome` (390) e
   `p7c2-clean-320-nome-longo`.
+
+## Nome na barra do app com o copo; ícones na linha do lote (27/11/2026, pedido do responsável; sem migração)
+- Barra do app (celular, nos dois layouts): ‹ | copo na cor da cerveja (`copo()` do vital.js, `corHexDeSrm(res.cor_srm)` a
+  cada cálculo) + nome (até 2 linhas, depois reticências; 18 px, 16 px em ≤ 360 px) | ↶ | Salvar. O nome fica SEMPRE
+  à vista (saiu o `sem-titulo`, que só mostrava o nome depois de rolar).
+- Clean: o cabeçalho encolheu. 1ª linha = "Lote nº · data" (`.topo-linha`) com os 4 ícones (Relatório, Nova a partir
+  desta, Informações, Excluir) À DIREITA, na mesma linha; abaixo o estilo. O campo do nome (`textarea.titulo-receita`)
+  some no celular (≤ 640 px; no computador continua abaixo da linha do lote). Editar o nome no celular: tocar no nome da
+  barra (`button.app-nome`) abre Informações com o campo "Nome" no topo e o foco nele (o campo do topo acompanha).
+  Salvar sem nome no celular abre essa janela. Números a ~181 px do topo em 390 px (eram ~250).
+- Teste do navegador: nome só na barra, copo antes do nome, ícones na linha do lote, tocar no nome abre Informações e a
+  barra acompanha, nome longo em 320 px em até 2 linhas sem empurrar ↶/Salvar. Capturas `p7g` (390) e `p7c2` (320).
 
 ## Estilo em destaque no cabeçalho da receita (27/11/2026, pedido do responsável; sem migração)
 - O estilo deixou de ser link pequeno (Clean) / seletor com rótulo "Estilo" (Completo): nos DOIS layouts é um cartão

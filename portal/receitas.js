@@ -395,7 +395,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     janelaParam?.aoCalcular(res);
     janelaLote?.aoCalcular(res);
     atualizarLote(res);
-    tituloApp.textContent = String(r.nome ?? "").trim() || "Receita nova";
+    const nomeTxt = String(r.nome ?? "").trim();
+    tituloApp.textContent = nomeTxt || (r.id ? "Sem nome" : "Receita nova");
+    nomeApp.classList.toggle("sem-nome", !nomeTxt);
+    copoApp.cerveja.setAttribute("fill", corHexDeSrm(res.cor_srm ?? 0));
+    if (ficha) nomeApp.setAttribute("aria-label", `${nomeTxt || "Receita sem nome"}. Nome, tipo, autor e pública`);
     // Clean: "Lote nº 104 · 29/11/2026" acima do nome, sempre com a data da brassagem ao lado ("sem data" se vazia).
     const nLote = r.lote_numero != null && r.lote_numero !== "" ? `Lote nº ${r.lote_numero}` : r.id ? "Lote sem nº" : "Lote novo";
     const dataLote = r.data_brassagem ? dataDoDia(r.data_brassagem) : "sem data";
@@ -661,6 +665,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       },
     });
     const ajustar = () => { t.style.height = "auto"; t.style.height = `${t.scrollHeight + t.offsetHeight - t.clientHeight}px`; };
+    t.ajustar = ajustar;
     requestAnimationFrame(ajustar);
     document.fonts?.ready.then(ajustar);
     let largura = 0;            // só a largura muda a quebra de linha (a altura é a própria conta)
@@ -686,7 +691,11 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   async function salvar() {
     msg.textContent = "";
     const problemas = validar(r);
-    if (problemas.length) { msg.textContent = problemas.join(" "); return; }
+    if (problemas.length) {
+      msg.textContent = problemas.join(" ");
+      if (ficha && !String(r.nome ?? "").trim() && !nomeInput.checkVisibility()) abrirInformacoes({ focoNome: true });
+      return;
+    }
     const res = calcularReceita(r);
     const p = montarPayload(r, res);
     botaoSalvar.disabled = botaoSalvarApp.disabled = true;
@@ -730,26 +739,39 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     acaoNome("Informações (tipo, autor, pública)", "info", () => abrirInformacoes()),
     r.id && !leitura ? acaoNome("Excluir receita", "lixeira", () => acoes.querySelector("button.excluir-receita").click(), "perigo") : null) : null;
   /** Informações (Dados gerais) numa janela: os MESMOS campos da seção, que no Clean não fica na página. */
-  function abrirInformacoes() {
+  function abrirInformacoes({ focoNome = false } = {}) {
     const campos = geral.querySelector(".grade-form");
     const fechar = () => { if (d.open) d.close(); };
+    // Nome (27/11/2026): no celular o nome fica na barra do app e é editado aqui; o campo do topo acompanha.
+    const nome = campoTexto(r, "nome", {
+      aoMudar: () => { nomeInput.value = r.nome ?? ""; nomeInput.ajustar?.(); mudou(); },
+      desabilitado: des, placeholder: "Nome da receita", rotulo: "Nome da receita", max: 120, classe: "info-nome",
+    });
+    nome.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); fechar(); } });
     const d = el("dialog", { class: "item-janela informacoes", "aria-label": "Informações da receita" },
       el("div", { class: "item-topo" }, el("div", { class: "item-titulo" }, el("strong", { class: "item-nome", text: "Informações" })),
         el("button", { type: "button", class: "item-fechar", "aria-label": "Fechar", title: "Fechar", text: "×", on: { click: fechar } })),
-      el("div", { class: "item-corpo" }, campos),
+      el("div", { class: "item-corpo" }, el("label", { class: "info-nome-rot" }, el("span", { text: "Nome" }), nome), campos),
       el("div", { class: "item-acoes" }, el("button", { type: "button", class: "item-pronto", text: "Pronto", on: { click: fechar } })));
     window.addEventListener("hashchange", fechar);
     d.addEventListener("close", () => { window.removeEventListener("hashchange", fechar); geral.append(campos); d.remove(); });
     document.body.append(d);
     d.showModal();
-    d.querySelector(".item-fechar").focus({ preventScroll: true });
+    (focoNome && !des ? nome : d.querySelector(".item-fechar")).focus({ preventScroll: true });
   }
 
   // Celular: barra do app no topo (voltar, nome, desfazer, salvar), sempre à vista; o menu geral some no editor.
-  const tituloApp = el("span", { class: "app-titulo" });
+  // Nome da cerveja com o copo na cor dela (27/11/2026, pedido do responsável). No Clean o nome sai do cabeçalho no
+  // celular e fica só aqui: tocar abre Informações, onde está o campo do nome.
+  const tituloApp = el("span", { class: "app-titulo-texto" });
+  const copoApp = copo();
+  const nomeApp = ficha
+    ? el("button", { type: "button", class: "app-titulo app-nome", "aria-haspopup": "dialog", on: { click: () => abrirInformacoes({ focoNome: true }) } },
+      el("span", { class: "app-copo" }, copoApp), tituloApp)
+    : el("span", { class: "app-titulo" }, el("span", { class: "app-copo" }, copoApp), tituloApp);
   const barraApp = el("div", { class: "barra-app" },
     el("a", { href: "#/receitas", class: "app-voltar", "aria-label": "Voltar às receitas" }, icone("voltar")),
-    tituloApp,
+    nomeApp,
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
     leitura ? null : botaoSalvarApp);
 
@@ -2158,12 +2180,13 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
 
   conteudo.classList.add("com-vital");
-  // Clean (K1): meta do lote em cima (tocar = janela da Brassagem), nome como título (o campo sem moldura), estilo como
-  // link; Relatório/Nova a partir desta/Informações/Excluir em ícones ao lado do nome; Dados gerais saem da página. Parâmetros = o cartão de sempre (3 números e
+  // Clean (K1): lote e data em cima (tocar = janela da Brassagem) com Relatório/Nova a partir desta/Informações/Excluir
+  // em ícones NA MESMA LINHA (27/11/2026); o nome (campo sem moldura) abaixo só no computador: no celular ele fica na
+  // barra do app, com o copo; estilo em cartão; Dados gerais saem da página. Parâmetros = o cartão de sempre (3 números e
   // "Todos ›"), 1º do corpo, logo abaixo dos números.
   const topo = ficha
-    ? el("div", { class: "editor-topo topo-clean" }, metaTopo,
-      el("div", { class: "nome-linha" }, nomeInput, acoesNome), estiloCampo, acoes)
+    ? el("div", { class: "editor-topo topo-clean" }, el("div", { class: "topo-linha" }, metaTopo, acoesNome),
+      nomeInput, estiloCampo, acoes)
     : el("div", { class: "editor-topo" }, el("div", { class: "nome-linha" }, nomeInput, botaoRelatorio), estiloCampo, acoes);
   const corpo = el("div", { class: "editor" },
     el("div", { class: "editor-corpo" },
@@ -2183,22 +2206,13 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   }
   document.body.classList.add("no-editor");
   preencher(conteudo, barraApp, topo, msg, vital.lugar, corpo);
-  // Clean: o nome não se repete na barra do app enquanto o título da página está à vista (aparece ao rolar).
-  if (ficha && window.IntersectionObserver) {
-    barraApp.classList.add("sem-titulo");
-    requestAnimationFrame(() => {
-      const cima = Math.round(barraApp.getBoundingClientRect().height);
-      new IntersectionObserver(([e]) => barraApp.classList.toggle("sem-titulo", e.isIntersecting),
-        { rootMargin: `-${cima}px 0px 0px 0px` }).observe(nomeInput);
-    });
-  }
   marcarPendente();
   if (resAnterior) vital.atualizar(resAnterior, estiloAtual());     // desfazer/refazer: a barra mostra a diferença
   else atualizarResultados();
   montado = true;
   if (resAnterior) atualizarResultados("historico");
   atualizarFerramentas();
-  if (!r.id && !leitura && !resAnterior) nomeInput.focus();
+  if (!r.id && !leitura && !resAnterior && nomeInput.checkVisibility()) nomeInput.focus();
 }
 
 /** Quando o lúpulo entra, em texto (ficha do layout Clean): "Fervura 60 min", "Whirlpool 20 min a 80 °C", "Dry hop · dia 3". */
