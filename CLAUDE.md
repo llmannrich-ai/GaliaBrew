@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127c.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -785,7 +785,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   e o ≡ (`button.abrir-menu.inicio-menu`, chama `abrirMenu` do menu.js) fica no canto esquerdo, no meio da altura da logo
   (26/11/2026: 56 px de toque, ícone de 34 px); no computador só a logo. Menu lateral/gaveta (26/11/2026, pedido do
   responsável): a marca é a logo em creme (`img.marca-logo` = `logo-galia-escuro.png`, 4rem; o menu é sempre escuro); só no
-  menu de ícones (recolhido/960–1180 px) volta o copinho. A `barra-movel` das outras telas segue com copinho + "GaliaBrew".
+  menu de ícones (recolhido/960–1180 px) volta o copinho. A `barra-movel` (barra escura das outras telas no
+  celular) também mostra a logo em creme (`.barra-movel .marca-logo`, 2,5rem; 27/11/2026, pedido do responsável; teste
+  "320 px: barra escura do perfil com a logo...", captura `p6g-celular-320-barra-logo`).
   Testes "toque: ≡ do topo maior..." e "toque: menu com a logo..."; captura `p6f-celular-menu-logo`. Dois arquivos em `icones/` (538 × 300, RGBA,
   recortados da arte): `logo-galia.png` (cores da arte, temas claros) e `logo-galia-escuro.png` (verde-escuro trocado
   por creme #f1e8da mantendo a transparência, temas escuros); o CSS mostra uma pelo `data-modo`. Tentativas descartadas
@@ -828,6 +830,18 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: ícones na ordem, ao lado do nome, ≥ 44 px, sem menu ⋯; lote com data e letra ≥ 16 px; tocar no lote
   abre a janela; Informações e Relatório pelos ícones; nome longo em 320 px. Capturas `p7g-clean-acoes-nome` (390) e
   `p7c2-clean-320-nome-longo`.
+
+## Estilo em destaque no cabeçalho da receita (27/11/2026, pedido do responsável; sem migração)
+- O estilo deixou de ser link pequeno (Clean) / seletor com rótulo "Estilo" (Completo): nos DOIS layouts é um cartão
+  (`button.escolha.estilo-botao`, em `.estilo-topo`, ~48 px) que abre a mesma busca de estilo. Dentro: faixa vertical
+  com a cor da cerveja do estilo (`corHexDeSrm` do mínimo ao máximo; some sem faixa de cor), o NOME em 18 px peso 750
+  (menor que o nome da receita) e "›". Sem estilo: borda tracejada e "Escolher estilo"; só leitura: "Sem estilo".
+  `aria-label` = "Estilo: German Pils". Fundo = 9% do destaque sobre o cartão.
+- NO MESMO DIA, a pedido do responsável, SAÍRAM do cartão o código BJCP ("5D", que era um selo) e a linha "N de 5
+  números no estilo" (a barra de números já mostra cada faixa). Não recolocar. A busca e a lista seguem com o código.
+- Teste do navegador: "clean, 320/390 px: estilo em cartão só com faixa de cor e nome" (≥ 44 px, cabe, abaixo do nome,
+  texto = só o nome, sem `.estilo-codigo`/`.estilo-encaixe`) e contraste do cartão no "clean K6" (nome ≥ 7, seta ≥ 3)
+  nos 8 temas. Seletor do teste: `button.estilo-botao`. Capturas `p7m-clean-estilo-320/390`.
 
 ## Inoculação e starter na seção Leveduras (27/11/2026, pedido do responsável; sem migração)
 - `calculos.js`: `inoculacao({ leveduras, og, litros, cfg })` (testes em calculos.test.mjs). Células em BILHÕES; necessárias

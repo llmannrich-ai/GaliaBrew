@@ -1,9 +1,9 @@
 // menu.js — menu lateral do portal: recolhível no computador, gaveta no celular.
 // Ícones do icones.js; marca = copo do vital.js; arte do pé (lúpulo e cevada) desenhada aqui, em traço fino.
-import { el, svg } from "./ui.js?v=20261127a";
-import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261127a";
-import { icone } from "./icones.js?v=20261127a";
-import { copo } from "./vital.js?v=20261127a";
+import { el, svg } from "./ui.js?v=20261127c";
+import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261127c";
+import { icone } from "./icones.js?v=20261127c";
+import { copo } from "./vital.js?v=20261127c";
 
 const LARGURA_CELULAR = "(max-width: 959px)";
 const LARGURA_EDITOR_ESTREITO = 1180;
@@ -126,7 +126,8 @@ export function montarCasca({ sair }) {
 
   const barra = el("header", { class: "barra-movel" },
     el("button", { type: "button", class: "abrir-menu", "aria-label": "Abrir menu", "aria-controls": "menu-lateral", "aria-expanded": "false", on: { click: abrirMenu } }, icone("menu")),
-    el("a", { href: "#/receitas", class: "marca" }, marcaCopo(), "GaliaBrew"));
+    el("a", { href: "#/receitas", class: "marca", "aria-label": "Gália: receitas" },
+      el("img", { class: "marca-logo", src: "icones/logo-galia-escuro.png", alt: "", width: 538, height: 300, decoding: "async" })));
 
   const raiz = el("div", { class: `casca${recolhido ? " recolhido" : ""}${window.matchMedia(LARGURA_COMPACTA).matches ? " compacto" : ""}` },
     lateral,
