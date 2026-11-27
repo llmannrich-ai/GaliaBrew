@@ -1129,6 +1129,11 @@ dialog form { display: grid; gap: .9rem; }
   .vital.com-teclado .vital-grade { gap: .25rem; grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .vital.com-teclado .vital-item[data-metrica="ph"] { display: none; }
   .vital.com-teclado .vital-val, .vital.com-teclado button.vital-val.ajustavel { font-size: .875rem; letter-spacing: -.02em; }
+  /* Passo da fermentação em lista (27/11/2026): em 320 px "dias" vira "d" e a coluna encolhe, para "Secundária" caber
+     no seletor fechado ("Pausa diacetil" ainda corta no fim; a lista aberta mostra o nome inteiro). */
+  [data-secao="fermentacao"] .tabela.editavel.passos-linha tr { grid-template-columns: 1.3rem minmax(0, 1fr) 4rem 3.5rem 2.75rem; gap: .1rem; }
+  [data-secao="fermentacao"] .tabela.editavel.passos-linha td[data-unidade="dias"]::after { content: "d"; }
+  [data-secao="fermentacao"] .tabela.editavel.passos-linha select { padding-right: .9rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

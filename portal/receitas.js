@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127c";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127c";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127c";
-import { sb, sessao, preferencias } from "./estado.js?v=20261127c";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127c";
-import { abrirBusca } from "./busca.js?v=20261127c";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127c";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127c";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127c";
-import * as O from "./opcoes.js?v=20261127c";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127c";
-import { icone } from "./icones.js?v=20261127c";
-import { abrirMenu } from "./menu.js?v=20261127c";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261127c";
-import { abrirRelatorio } from "./relatorio.js?v=20261127c";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127c";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127d";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127d";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127d";
+import { sb, sessao, preferencias } from "./estado.js?v=20261127d";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127d";
+import { abrirBusca } from "./busca.js?v=20261127d";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127d";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127d";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127d";
+import * as O from "./opcoes.js?v=20261127d";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127d";
+import { icone } from "./icones.js?v=20261127d";
+import { abrirMenu } from "./menu.js?v=20261127d";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261127d";
+import { abrirRelatorio } from "./relatorio.js?v=20261127d";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127d";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -1934,7 +1934,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     iconeSecao: "fermentacao",
     vazio: "Sem passos.",
     colunas: [
-      { r: "Passo", campo: txt("nome", { placeholder: "Passo" }) },
+      // Passo da lista controlada (O.PASSOS_FERMENTACAO); o nome gravado é o próprio rótulo.
+      { r: "Passo", campo: (item) => campoSelect(item, "nome", O.opcoesPassoFermentacao(item.nome), { desabilitado: des,
+        rotulo: "Passo da fermentação", vazio: String(item.nome ?? "").trim() ? undefined : "Escolher", aoMudar: mudou }) },
       { r: "Temp. (°C)", u: "°C", num: true, campo: num("temperatura_c", 1, { roleta: FAIXAS_LUGAR.temp_fermentacao }) },
       { r: "Dias", u: "dias", num: true, campo: num("dias", 0) },
     ],
@@ -1944,7 +1946,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       valor: n0(p.temperatura_c) != null ? `${n0(p.temperatura_c)} °C` : "—",
       valor2: n0(p.dias, 0) != null ? `${n0(p.dias, 0)} ${Number(p.dias) === 1 ? "dia" : "dias"}` : null,
     }),
-    adicionar: botaoPasso("fermentacao", () => ({ nome: "", temperatura_c: 2, dias: 3 })),
+    adicionar: botaoPasso("fermentacao", () => (r.fermentacao.length
+      ? { nome: "Secundária", temperatura_c: 2, dias: 3 } : { nome: "Primária", temperatura_c: 19, dias: 14 })),
   });
 
   const notas = el("section", { class: "cartao", dataset: { secao: "notas" } }, tituloSecao("notas", "Notas"),
@@ -2092,7 +2095,7 @@ function validar(r) {
   if (falta(r.leveduras, (y) => String(y.nome ?? "").trim() && (y.quantidade == null || y.quantidade > 0))) p.push("Leveduras: preencha o nome.");
   if (falta(r.outros, (o) => String(o.nome ?? "").trim() && o.quantidade > 0)) p.push("Outros: preencha nome e quantidade (> 0).");
   if (falta(r.mostura, (m) => m.temperatura_c != null && m.tempo_min != null)) p.push("Mostura: preencha temperatura e tempo de cada passo.");
-  if (falta(r.fermentacao, (f) => String(f.nome ?? "").trim() && f.temperatura_c != null && f.dias != null)) p.push("Fermentação: preencha nome, temperatura e dias.");
+  if (falta(r.fermentacao, (f) => String(f.nome ?? "").trim() && f.temperatura_c != null && f.dias != null)) p.push("Fermentação: escolha o passo e preencha temperatura e dias.");
   return p;
 }
 

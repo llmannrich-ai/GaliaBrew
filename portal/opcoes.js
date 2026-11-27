@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261127c";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261127c";
+import { preferencias } from "./estado.js?v=20261127d";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261127d";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
@@ -46,6 +46,15 @@ export const numerosRampa = (passos) => { let n = 0; return passos.map((m) => (t
 export const rotuloPasso = (passos, i) => {
   const n = numerosRampa(passos)[i];
   return n ? `Rampa ${n}` : rotulo(TIPO_MOSTURA, tipoPasso(passos[i].tipo));
+};
+
+// Passo da fermentação (27/11/2026, pedido do responsável): lista controlada. Não há coluna de tipo: o rótulo escolhido
+// é gravado em `nome` (sem migração). Nome antigo fora da lista (ex.: "Terciária" de 5 receitas importadas) aparece como
+// opção a mais nesse passo, para abrir e salvar sem mudar nada; trocado por um da lista, some.
+export const PASSOS_FERMENTACAO = ["Primária", "Secundária", "Pausa diacetil", "Free rise"];
+export const opcoesPassoFermentacao = (nome) => {
+  const n = String(nome ?? "").trim(), lista = PASSOS_FERMENTACAO.map((p) => [p, p]);
+  return n && !PASSOS_FERMENTACAO.includes(n) ? [...lista, [n, n]] : lista;
 };
 
 // Explicação de cada volume (ícone ⓘ ao lado do campo). Mesmas regras de calculos.js.

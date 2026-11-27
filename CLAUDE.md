@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127c.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127d.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -285,6 +285,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   "toque 320/390 px: cada passo da mostura/fermentação numa linha" (ordem, mesma altura, sem sobrepor, sem cortar texto);
   capturas `p6m-celular-mostura-320/390` (mostram as duas seções). Vale no layout Completo; no Clean (K4) a mostura e a
   fermentação usam a ficha (`resumo` no `secaoLista` → `secaoListaFicha`).
+- Passo da FERMENTAÇÃO em lista controlada (27/11/2026, pedido do responsável; sem migração): seletor
+  `aria-label` "Passo da fermentação" com Primária, Secundária, Pausa diacetil, Free rise (`PASSOS_FERMENTACAO` e
+  `opcoesPassoFermentacao` no opcoes.js). Não há coluna de tipo: o rótulo escolhido é gravado em `nome`. Nome antigo fora
+  da lista (5 passos "Terciária" das importadas) aparece como 5ª opção só naquele passo e fica como está até ser
+  trocado. "+" cria Primária 19 °C 14 dias (1º passo) ou Secundária 2 °C 3 dias. Em ≤ 360 px "dias" vira "d" e a coluna
+  encolhe para "Secundária" caber; "Pausa diacetil" corta no fim só em 320 px ("Pausa dia…"). Testes "fermentação: ..."
+  e "toque 320/390 px: passo da fermentação escolhido na lista"; capturas `p6n-celular-fermentacao-320/390`.
 - Rolagem só na vertical (23/11/2026, pedido do responsável: a tela podia ser arrastada para o lado): `html`/`body` com
   `overflow-x: clip` (o que passar da largura é cortado, sem criar área de rolagem; não atrapalha o `sticky`). A causa
   era a lista dos Cadastros, tabela larga demais no celular: até 640 px virou cartões (`.tabela.lista-cad`, nome em cima

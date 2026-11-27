@@ -255,7 +255,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127c");
+    const m = await import("./fontes.js?v=20261127d");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -533,7 +533,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127c");
+    const m = await import("./calculos.js?v=20261127d");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -601,7 +601,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127c");
+    const m = await import("./calculos.js?v=20261127d");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -623,7 +623,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127c");
+    const m = await import("./calculos.js?v=20261127d");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -733,7 +733,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127c");
+    const m = await import("./calculos.js?v=20261127d");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1019,6 +1019,7 @@ const erros = [];
   const outro = "22222222-2222-2222-2222-222222222222";
   db.receitas.push({ id: "r-outro", dono: outro, nome: "IPA do Vizinho", tipo: "ALL_GRAIN", publica: true, volume_lote_l: 20, eficiencia_pct: 70, fervura_min: 60, evaporacao_l_h: 3, perda_panela_l: 1, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0, temp_grao_c: 20, og_calc: 1.06, estilo_id: null, equipamento_id: "eq-do-vizinho", atualizado_em: new Date().toISOString() });
   db.receita_fermentaveis.push({ id: "x1", receita_id: "r-outro", fermentavel_id: "malte-particular-do-vizinho", ordem: 0, nome: "Malte do vizinho", tipo: "GRAO", rendimento_pct: 80, umidade_pct: 4, cor_srm: 3, fermentavel_pct: 100, quantidade_kg: 6, etapa: "MOSTURA" });
+  db.receita_fermentacao_passos.push({ id: "xf1", receita_id: "r-outro", ordem: 0, nome: "Terciária", temperatura_c: 16, dias: 30 });   // nome antigo, fora da lista
   await pagina.setViewportSize({ width: 1366, height: 900 });
   await pagina.goto(`${ORIGEM}/#/receitas`);
   await pagina.waitForSelector("td >> text=Pils da Galia");
@@ -1033,11 +1034,22 @@ const erros = [];
   verificar((await pagina.evaluate(() => location.hash)) === "#/receita/nova/r-outro", "abre a receita nova a partir da de outro");
   verificar(!(await pagina.isDisabled('input[aria-label="Qtd (kg)"]')) && await pagina.inputValue(".titulo-receita") === "IPA do Vizinho", "receita nova vem editável, com os dados da anterior");
   verificar(await pagina.inputValue('input[aria-label="OG medida"]') === "", "dados do lote começam em branco");
+  // Passo da fermentação: nome antigo fora da lista ("Terciária") fica como está; o + cria o passo seguinte já escolhido.
+  const selFerm = '[data-secao="fermentacao"] select[aria-label="Passo da fermentação"]';
+  verificar(await pagina.inputValue(selFerm) === "Terciária"
+    && (await pagina.$$eval(`${selFerm} option`, (os) => os.map((o) => o.value).join("|"))) === "Primária|Secundária|Pausa diacetil|Free rise|Terciária",
+    "fermentação: passo antigo fora da lista (Terciária) continua escolhido, com a lista controlada ao lado");
+  await pagina.click('[data-secao="fermentacao"] .titulo-linha button.adicionar');
+  verificar(await pagina.locator(selFerm).nth(1).inputValue() === "Secundária"
+    && (await pagina.locator(selFerm).nth(1).locator("option").allTextContents()).join("|") === "Primária|Secundária|Pausa diacetil|Free rise",
+    "fermentação: + cria o passo já como Secundária, só com os 4 da lista");
+  await pagina.locator(selFerm).nth(1).selectOption("Pausa diacetil");
   await pagina.click(".acoes-receita button:has-text('Salvar')");
   await pagina.waitForFunction(() => /#\/receita\/[0-9a-f-]{36}$/.test(location.hash));
   const copia = chamadas.filter((c) => c.caminho.startsWith("/rest/v1/rpc/salvar_receita")).pop().corpo.p;
   verificar(copia.id === null && copia.publica === false && copia.og_medida === null && copia.lote_numero === null, "salva como receita nova, privada, sem dados do lote");
   verificar(copia.fermentaveis[0].fermentavel_id === null && copia.equipamento_id === null && copia.fermentaveis[0].quantidade_kg === 6, "não leva ligação com cadastro que não enxergo, mas leva os dados");
+  verificar(copia.fermentacao.map((f) => f.nome).join("|") === "Terciária|Pausa diacetil", `fermentação grava o passo escolhido no nome (${copia.fermentacao.map((f) => f.nome).join("|")})`);
   await pagina.waitForSelector('[data-secao="brassagem"] .total-extra:text("nº 2")');
   verificar(await pagina.textContent('[data-secao="brassagem"] .total-extra') === "nº 2", "receita nova recebe o próximo nº (2)");
   verificar(db.receitas.find((x) => x.id === "r-outro").nome === "IPA do Vizinho", "a receita anterior não muda");
@@ -1604,7 +1616,7 @@ const erros = [];
   // Fermentação no mesmo padrão (24/11/2026): ⠿ | nome do passo | °C | dias | ×.
   const passosLinha = (secao) => cel.evaluate((secao) => [...document.querySelectorAll(`[data-secao="${secao}"] tbody tr`)].map((tr) => {
     const q = (s) => tr.querySelector(s)?.getBoundingClientRect();
-    const alca = q(".ing-alca"), passo = q('select[aria-label="Passo da mostura"], input[aria-label="Passo"]'), temp = q('input[aria-label="Temp. (°C)"]'),
+    const alca = q(".ing-alca"), passo = q('select[aria-label="Passo da mostura"], select[aria-label="Passo da fermentação"]'), temp = q('input[aria-label="Temp. (°C)"]'),
       tempo = q('input[aria-label="Tempo (min)"], input[aria-label="Dias"]'), rem = q('button[aria-label="Remover"]');
     const todos = [alca, passo, temp, tempo, rem];
     if (todos.some((b) => !b)) return { falta: true };
@@ -1642,6 +1654,25 @@ const erros = [];
     await cel.evaluate(() => { const n = document.querySelector('[data-secao="fermentacao"] input[aria-label="Dias"]'); n.value = "14"; });
     verificar(ferm.length >= 1 && ferm.every((p) => !p.falta && p.ordem && p.linha && !p.sobrepoe && p.cabe && p.toque && p.altura <= 56 && p.passo >= 72 && !p.corta && p.unidades === '"°C"'),
       `toque ${w} px: cada passo da fermentação numa linha (⠿ à esquerda, nome, °C, dias, ×) sem cobrir campo (${JSON.stringify(ferm)})`);
+    // Passo da fermentação = lista controlada (27/11/2026, pedido do responsável); cada nome cabe no seletor fechado.
+    const nomesFerm = await cel.evaluate(() => {
+      const s = document.querySelector('[data-secao="fermentacao"] select[aria-label="Passo da fermentação"]');
+      const cs = getComputedStyle(s), ctx = document.createElement("canvas").getContext("2d");
+      ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const livre = s.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) + 0.5;
+      return [...s.options].map((o) => ({ t: o.text, cabe: ctx.measureText(o.text).width <= livre, w: Math.round(ctx.measureText(o.text).width), livre: Math.round(livre) }));
+    });
+    // Em 320 px só "Pausa diacetil" corta no fim (o seletor fechado mostra ao menos "Pausa dia…"; a lista aberta, inteiro).
+    verificar(nomesFerm.map((o) => o.t).join("|") === "Primária|Secundária|Pausa diacetil|Free rise"
+      && nomesFerm.every((o) => o.cabe || (w === 320 && o.t === "Pausa diacetil" && o.livre >= 0.7 * o.w)),
+      `toque ${w} px: passo da fermentação escolhido na lista (Primária, Secundária, Pausa diacetil, Free rise), ${w === 320 ? "só Pausa diacetil corta no fim" : "todos cabem"} (${JSON.stringify(nomesFerm)})`);
+    if (w === 320) {   // "dias" vira "d" em 320 px; 120 dias ainda cabe (o passosLinha acima mede com 3 dígitos)
+      verificar(await cel.evaluate(() => getComputedStyle(document.querySelector('[data-secao="fermentacao"] td[data-unidade="dias"]'), "::after").content) === '"d"',
+        "toque 320 px: unidade dos dias da fermentação vira “d”");
+    }
+    await cel.locator('[data-secao="fermentacao"] select[aria-label="Passo da fermentação"]').first().selectOption("Pausa diacetil");
+    await cel.locator('[data-secao="fermentacao"]').screenshot({ path: `${SAIDA}/p6n-celular-fermentacao-${w}.png` });
+    await cel.locator('[data-secao="fermentacao"] select[aria-label="Passo da fermentação"]').first().selectOption("Primária");
   }
   // Alça ⠿ no lugar do ↑ (24/11/2026, pedido do responsável): arrastar com o dedo e mover pelas setas.
   const linhaM = '[data-secao="mostura"] tbody tr';
