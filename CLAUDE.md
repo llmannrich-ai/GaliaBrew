@@ -785,7 +785,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   e o ≡ (`button.abrir-menu.inicio-menu`, chama `abrirMenu` do menu.js) fica no canto esquerdo, no meio da altura da logo
   (26/11/2026: 56 px de toque, ícone de 34 px); no computador só a logo. Menu lateral/gaveta (26/11/2026, pedido do
   responsável): a marca é a logo em creme (`img.marca-logo` = `logo-galia-escuro.png`, 4rem; o menu é sempre escuro); só no
-  menu de ícones (recolhido/960–1180 px) volta o copinho. A `barra-movel` das outras telas segue com copinho + "GaliaBrew".
+  menu de ícones (recolhido/960–1180 px) volta o copinho. A `barra-movel` (barra escura das outras telas no
+  celular) também mostra a logo em creme (`.barra-movel .marca-logo`, 2,5rem; 27/11/2026, pedido do responsável; teste
+  "320 px: barra escura do perfil com a logo...", captura `p6g-celular-320-barra-logo`).
   Testes "toque: ≡ do topo maior..." e "toque: menu com a logo..."; captura `p6f-celular-menu-logo`. Dois arquivos em `icones/` (538 × 300, RGBA,
   recortados da arte): `logo-galia.png` (cores da arte, temas claros) e `logo-galia-escuro.png` (verde-escuro trocado
   por creme #f1e8da mantendo a transparência, temas escuros); o CSS mostra uma pelo `data-modo`. Tentativas descartadas

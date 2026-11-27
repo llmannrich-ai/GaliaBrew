@@ -3,7 +3,7 @@ import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campo
 import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127a";
 import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127a";
 import { sb, sessao, preferencias } from "./estado.js?v=20261127a";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, encaixeEstilo, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127a";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127a";
 import { abrirBusca } from "./busca.js?v=20261127a";
 import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127a";
 import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127a";

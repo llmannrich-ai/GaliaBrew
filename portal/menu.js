@@ -126,7 +126,8 @@ export function montarCasca({ sair }) {
 
   const barra = el("header", { class: "barra-movel" },
     el("button", { type: "button", class: "abrir-menu", "aria-label": "Abrir menu", "aria-controls": "menu-lateral", "aria-expanded": "false", on: { click: abrirMenu } }, icone("menu")),
-    el("a", { href: "#/receitas", class: "marca" }, marcaCopo(), "GaliaBrew"));
+    el("a", { href: "#/receitas", class: "marca", "aria-label": "Gália: receitas" },
+      el("img", { class: "marca-logo", src: "icones/logo-galia-escuro.png", alt: "", width: 538, height: 300, decoding: "async" })));
 
   const raiz = el("div", { class: `casca${recolhido ? " recolhido" : ""}${window.matchMedia(LARGURA_COMPACTA).matches ? " compacto" : ""}` },
     lateral,

@@ -1973,6 +1973,17 @@ const erros = [];
   verificar(temasIds.length === 9 && temasIds[0] === "auto" && await cel.isChecked('.tema-opcao[data-opcao="auto"] input'),
     "perfil: 9 temas, Automático marcado por padrão");
   verificar(await larguraSobra() <= 1, "320 px: temas do perfil sem rolagem para o lado");
+  // Barra escura das outras telas (27/11/2026): logo "Gália" em creme no lugar do copinho + "GaliaBrew".
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  const bl = await cel.evaluate(() => {
+    const b = document.querySelector(".barra-movel"), img = b.querySelector(".marca .marca-logo"), r = img?.getBoundingClientRect();
+    const m = b.querySelector(".abrir-menu").getBoundingClientRect(), rb = b.getBoundingClientRect();
+    return img && { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, visivel: img.checkVisibility(), altura: Math.round(r.height),
+      dentro: r.top >= rb.top && r.bottom <= rb.bottom, separado: m.right <= r.left, texto: b.querySelector(".marca").textContent.trim(), copo: !!b.querySelector(".copo") };
+  });
+  verificar(bl && bl.src === "icones/logo-galia-escuro.png" && bl.visivel && bl.altura >= 36 && bl.altura <= 44 && bl.dentro && bl.separado && !bl.texto && !bl.copo,
+    `320 px: barra escura do perfil com a logo "Gália" em creme, sem copinho nem "GaliaBrew" (${JSON.stringify(bl)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-barra-logo.png`, clip: { x: 0, y: 0, width: 320, height: 140 } });
   await cel.locator(".temas").first().evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-temas.png` });
   await cel.setViewportSize({ width: 390, height: 844 });
