@@ -11,9 +11,17 @@ import { icone } from "./icones.js?v=20261127g";
 const raiz = () => $("#app");
 
 // ---------- login ----------
-function telaEntrar(mensagem) {
-  const dados = { email: "", senha: "" };
+// Cadastro ABERTO e SEM confirmação de e-mail (decisão de 22/11/2026, reforçada em 27/11/2026): a conta nasce já
+// entrando. O e-mail não é validado, então "Esqueci a senha" só funciona para quem cadastrou um e-mail real.
+const campoEmail = (dados, autocomplete) => el("label", {}, "E-mail", el("input", {
+  type: "email", autocomplete, inputmode: "email", autocapitalize: "none", spellcheck: "false", required: true, value: dados.email,
+  on: { input: (e) => { dados.email = e.target.value; } },
+}));
+
+function telaEntrar(mensagem, email = "") {
+  const dados = { email, senha: "" };
   const msg = el("p", { class: "erro-form", role: "alert", text: mensagem || "" });
+  const info = el("p", { class: "ok-form", role: "status" });
   const botao = el("button", { type: "submit", text: "Entrar" });
   const form = el("form", {
     class: "cartao login",
@@ -21,7 +29,7 @@ function telaEntrar(mensagem) {
       submit: async (e) => {
         e.preventDefault();
         botao.disabled = true;
-        msg.textContent = "";
+        msg.textContent = ""; info.textContent = "";
         const { error } = await sb.auth.signInWithPassword({ email: dados.email.trim(), password: dados.senha });
         botao.disabled = false;
         if (error) msg.textContent = mensagemErro(error);
@@ -30,21 +38,76 @@ function telaEntrar(mensagem) {
   },
   el("h1", { text: "GaliaBrew" }),
   el("p", { class: "sub", text: "Receitas de cerveja" }),
-  el("label", {}, "E-mail", el("input", { type: "email", autocomplete: "username", required: true, on: { input: (e) => { dados.email = e.target.value; } } })),
+  campoEmail(dados, "username"),
   el("label", {}, "Senha", el("input", { type: "password", autocomplete: "current-password", required: true, on: { input: (e) => { dados.senha = e.target.value; } } })),
   msg,
+  info,
   botao,
   el("button", {
-    type: "button", class: "link", text: "Esqueci a senha",
+    type: "button", class: "link esqueci", text: "Esqueci a senha",
     on: {
-      click: async () => {
-        if (!dados.email.trim()) { msg.textContent = "Digite o e-mail acima."; return; }
-        const { error } = await sb.auth.resetPasswordForEmail(dados.email.trim(), { redirectTo: location.origin + location.pathname });
-        msg.textContent = error ? mensagemErro(error) : "Se o e-mail tiver cadastro, chegará um link para criar a nova senha.";
+      click: async (e) => {
+        const esqueci = e.currentTarget;
+        msg.textContent = ""; info.textContent = "";
+        const email = dados.email.trim();
+        if (!email) { msg.textContent = "Digite acima o e-mail da sua conta."; return; }
+        esqueci.disabled = true;
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+        esqueci.disabled = false;
+        if (error) { msg.textContent = mensagemErro(error); return; }
+        // Mesma resposta exista ou não a conta (não revela quem tem cadastro).
+        info.textContent = "Se este e-mail tiver conta, chegará nele um link para criar a nova senha. "
+          + "Só chega se o e-mail cadastrado for real; veja também o spam.";
       },
     },
   }),
-  el("p", { class: "nota", text: "Acesso só por convite. Peça ao administrador." }));
+  el("div", { class: "login-conta" },
+    el("span", { text: "Ainda não tem conta?" }),
+    el("button", { type: "button", class: "secundario criar-conta", text: "Criar conta", on: { click: () => telaCriarConta(dados.email) } })));
+  preencher(raiz(), el("main", { class: "centro" }, form));
+}
+
+/** Criar conta: nome, e-mail e senha. Sem confirmação de e-mail, a conta já entra (o onAuthStateChange abre o app). */
+function telaCriarConta(email = "") {
+  const dados = { nome: "", email, senha: "", repetir: "" };
+  const msg = el("p", { class: "erro-form", role: "alert" });
+  const info = el("p", { class: "ok-form", role: "status" });
+  const botao = el("button", { type: "submit", text: "Criar conta" });
+  const form = el("form", {
+    class: "cartao login conta",
+    on: {
+      submit: async (e) => {
+        e.preventDefault();
+        msg.textContent = ""; info.textContent = "";
+        const nome = dados.nome.trim();
+        if (!nome) { msg.textContent = "Digite o seu nome."; return; }
+        if (dados.senha.length < 10) { msg.textContent = "A senha precisa de pelo menos 10 caracteres."; return; }
+        if (dados.senha !== dados.repetir) { msg.textContent = "As duas senhas não conferem."; return; }
+        botao.disabled = true;
+        const { data, error } = await sb.auth.signUp({
+          email: dados.email.trim(), password: dados.senha,
+          options: { data: { nome }, emailRedirectTo: location.origin + location.pathname },
+        });
+        botao.disabled = false;
+        if (error) { msg.textContent = mensagemErro(error); return; }
+        // Com a confirmação de e-mail ligada no painel (não é o caso hoje), o Supabase não devolve sessão.
+        if (!data?.session) info.textContent = "Conta criada. Abra o link que chegou no seu e-mail para ativar e depois entre.";
+      },
+    },
+  },
+  el("h1", { text: "Criar conta" }),
+  el("p", { class: "sub", text: "GaliaBrew · receitas de cerveja" }),
+  el("label", {}, "Nome", el("input", { type: "text", autocomplete: "name", autocapitalize: "words", maxlength: 80, required: true, on: { input: (e) => { dados.nome = e.target.value; } } })),
+  campoEmail(dados, "email"),
+  el("p", { class: "nota login-aviso", text: "Não enviamos e-mail de confirmação: a conta já entra. Use um e-mail real que você lê: é só por ele que dá para recuperar a senha." }),
+  el("label", {}, "Senha (mínimo 10 caracteres)", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.senha = e.target.value; } } })),
+  el("label", {}, "Repita a senha", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.repetir = e.target.value; } } })),
+  msg,
+  info,
+  botao,
+  el("div", { class: "login-conta" },
+    el("span", { text: "Já tem conta?" }),
+    el("button", { type: "button", class: "secundario voltar-entrar", text: "Entrar", on: { click: () => telaEntrar("", dados.email) } })));
   preencher(raiz(), el("main", { class: "centro" }, form));
 }
 
