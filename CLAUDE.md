@@ -848,3 +848,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: "clean, 320/390 px: estilo em cartão só com faixa de cor e nome" (≥ 44 px, cabe, abaixo do nome,
   texto = só o nome, sem `.estilo-codigo`/`.estilo-encaixe`) e contraste do cartão no "clean K6" (nome ≥ 7, seta ≥ 3)
   nos 8 temas. Seletor do teste: `button.estilo-botao`. Capturas `p7m-clean-estilo-320/390`.
+
+## Água de base só do usuário (27/11/2026, pedido do responsável; sem migração)
+- Seletor "Água de base" (Completo e Clean, `escolhaPerfilAgua` + `gruposPerfilAgua` no receitas.js) lista SÓ as águas
+  que a pessoa cadastrou (`dono` preenchido, grupo "Minhas águas"); sem nenhuma, aviso "Nenhuma água sua. Cadastre em
+  Cadastros → Águas." (`.agua-sem-base`). "Perfil alvo" lista SÓ o catálogo: os "Alvo — …" no grupo "Por tipo de
+  cerveja" (sem o prefixo na opção; a cópia na receita guarda o nome inteiro).
+- Os 11 "Torneira — <cidade> (ano)" do catálogo (Amsterdam, Berlin, Denver, NYC, Paris...: água de torneira de cidades
+  estrangeiras, nenhuma receita usava) NÃO aparecem em nenhum dos dois seletores; seguem no banco e em Cadastros → Águas.
+- Receita antiga com base do catálogo continua com a cópia (opção "__atual"). Teste "água: base só com as águas
+  cadastradas pela pessoa...".
