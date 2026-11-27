@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127a.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127b.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -830,3 +830,15 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: ícones na ordem, ao lado do nome, ≥ 44 px, sem menu ⋯; lote com data e letra ≥ 16 px; tocar no lote
   abre a janela; Informações e Relatório pelos ícones; nome longo em 320 px. Capturas `p7g-clean-acoes-nome` (390) e
   `p7c2-clean-320-nome-longo`.
+
+## Estilo em destaque no cabeçalho da receita (27/11/2026, pedido do responsável; sem migração)
+- O estilo deixou de ser link pequeno (Clean) / seletor com rótulo "Estilo" (Completo): nos DOIS layouts é um cartão
+  (`button.escolha.estilo-botao`, em `.estilo-topo`, ~48 px) que abre a mesma busca de estilo. Dentro: faixa vertical
+  com a cor da cerveja do estilo (`corHexDeSrm` do mínimo ao máximo; some sem faixa de cor), o NOME em 18 px peso 750
+  (menor que o nome da receita) e "›". Sem estilo: borda tracejada e "Escolher estilo"; só leitura: "Sem estilo".
+  `aria-label` = "Estilo: German Pils". Fundo = 9% do destaque sobre o cartão.
+- NO MESMO DIA, a pedido do responsável, SAÍRAM do cartão o código BJCP ("5D", que era um selo) e a linha "N de 5
+  números no estilo" (a barra de números já mostra cada faixa). Não recolocar. A busca e a lista seguem com o código.
+- Teste do navegador: "clean, 320/390 px: estilo em cartão só com faixa de cor e nome" (≥ 44 px, cabe, abaixo do nome,
+  texto = só o nome, sem `.estilo-codigo`/`.estilo-encaixe`) e contraste do cartão no "clean K6" (nome ≥ 7, seta ≥ 3)
+  nos 8 temas. Seletor do teste: `button.estilo-botao`. Capturas `p7m-clean-estilo-320/390`.

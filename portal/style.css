@@ -350,6 +350,24 @@ button.botao-relatorio .ico { width: 1.45rem; height: 1.45rem; }
 button.escolha { width: 100%; justify-content: space-between; gap: .5rem; padding: .25rem .45rem; border: 1px solid var(--linha);
   background: var(--cartao); color: var(--tinta); font-weight: 400; text-align: left; }
 button.escolha:hover { background: var(--cartao); border-color: var(--destaque); }
+/* Estilo em destaque (27/11/2026, pedido do responsável): cartão com a faixa de cor do estilo e o nome grande (sem o
+   código BJCP e sem a contagem de números no estilo, retirados no mesmo dia). Vale nos dois layouts. */
+button.escolha.estilo-botao {
+  display: flex; align-items: center; gap: .7rem; min-height: 3rem; padding: .5rem .6rem .5rem .65rem;
+  border: 1px solid color-mix(in srgb, var(--destaque) 30%, transparent); border-radius: 12px;
+  background: color-mix(in srgb, var(--destaque) 9%, var(--cartao)); color: var(--tinta); font-weight: 400;
+}
+button.escolha.estilo-botao:hover { background: color-mix(in srgb, var(--destaque) 14%, var(--cartao)); border-color: var(--destaque); }
+button.escolha.estilo-botao:disabled { opacity: 1; cursor: default; }
+.estilo-cor { flex: none; align-self: stretch; width: .5rem; border-radius: 99px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tinta) 18%, transparent); }
+.estilo-corpo { flex: 1 1 auto; min-width: 0; }
+.estilo-nome { display: block; font-size: 1.125rem; font-weight: 750; line-height: 1.2; letter-spacing: -.01em; overflow-wrap: anywhere; }
+button.estilo-botao .escolha-seta { flex: none; font-size: 1.6rem; line-height: 1; font-weight: 400; color: var(--destaque-escuro); }
+button.estilo-botao:disabled .escolha-seta { display: none; }
+/* sem estilo: convite para escolher, com borda tracejada */
+button.escolha.estilo-botao.vazio { border-style: dashed; border-color: color-mix(in srgb, var(--destaque) 55%, transparent); background: transparent; }
+button.escolha.estilo-botao.vazio .estilo-nome { color: var(--destaque-escuro); font-size: 1.0625rem; }
+button.escolha.estilo-botao.vazio .escolha-seta { font-size: 1.5rem; font-weight: 700; }
 button.escolha:disabled { background: var(--fundo); color: var(--suave); opacity: 1; }
 .escolha-texto { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .escolha-seta { color: var(--suave); flex: none; }
@@ -1564,13 +1582,7 @@ button.topo-meta .meta-sep, button.topo-meta .meta-data { color: var(--suave); f
   border-color: transparent; background: transparent; box-shadow: none;
 }
 :root[data-layout="clean"] .topo-clean .titulo-receita:focus { border-color: var(--borda-campo); background: var(--cartao); }
-:root[data-layout="clean"] .topo-clean .estilo-topo { flex: none; min-width: 0; }
-:root[data-layout="clean"] .topo-clean .estilo-topo > .rotulo-campo { display: none; }
-:root[data-layout="clean"] .topo-clean button.escolha {
-  width: auto; max-width: 100%; justify-self: start; min-height: 2.25rem; padding: .1rem 0; border: none; background: transparent;
-  color: var(--destaque-escuro); font-size: var(--t-corpo); font-weight: 600;
-}
-:root[data-layout="clean"] .topo-clean button.escolha .escolha-seta { color: var(--destaque-escuro); }
+:root[data-layout="clean"] .topo-clean .estilo-topo { flex: none; min-width: 0; margin-top: .5rem; }
 :root[data-layout="clean"] .topo-clean details.lote { margin: 0; padding: 0; background: none; }
 :root[data-layout="clean"] .topo-clean details.lote > summary {
   background: none; box-shadow: none; border-radius: 0; padding: .2rem 0; margin: 0; min-height: 2.75rem;
@@ -1655,7 +1667,6 @@ button.topo-meta .meta-sep, button.topo-meta .meta-data { color: var(--suave); f
   /* 22 px (era 26 até 26/11/2026): o nome divide a linha com os 4 ícones de ação; nome mediano (24 letras) em até 2 linhas */
   :root[data-layout="clean"] .topo-clean .titulo-receita { font-size: 1.375rem !important; font-weight: 780; letter-spacing: -.02em; line-height: 1.15; }
   .nome-acoes button.acao-nome { width: 2.25rem; }
-  :root[data-layout="clean"] .topo-clean button.escolha { font-size: .9375rem; }
 
   /* cartões: números, parâmetros e todas as seções */
   :root[data-layout="clean"] .editor-corpo > .cartao,
