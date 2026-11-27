@@ -1,6 +1,6 @@
 // ui.js — utilidades de tela. Texto do usuário entra SEMPRE como texto (textContent), nunca como HTML.
-import { abrirRoleta } from "./roleta.js?v=20261127f";
-import { FAIXAS } from "./faixas.js?v=20261127f";
+import { abrirRoleta } from "./roleta.js?v=20261127g";
+import { FAIXAS } from "./faixas.js?v=20261127g";
 
 /** Cria um elemento. attrs: class, text, on: {evento: fn}, dataset, e demais atributos. Filhos: nós ou textos. */
 export function el(tag, attrs = {}, ...filhos) {

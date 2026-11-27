@@ -406,7 +406,8 @@ details > summary::-webkit-details-marker { display: none; }
   background: var(--cartao);
 }
 .ing:first-child { border-top: none; }
-.linhas-ing.ferm .ing { grid-template-columns: 1.6rem 1.2rem minmax(9rem, 1fr) auto 4.4rem 3.6rem; }
+/* Fermentáveis sem alça (27/11/2026): a ordem é automática, do maior para o menor em quantidade. */
+.linhas-ing.ferm .ing { grid-template-columns: 1.2rem minmax(9rem, 1fr) auto 4.4rem 3.6rem; }
 .linhas-ing.lup .ing { grid-template-columns: 1.6rem minmax(8rem, 1fr) auto auto 3.6rem 3.2rem; }
 /* Leveduras (24/11/2026, pedido do responsável): a linha só mostra os valores (sem campo); editar = janela do item. */
 .linhas-ing.lev .ing { grid-template-columns: 1.6rem minmax(9rem, 1fr) auto; }
@@ -934,8 +935,8 @@ dialog form { display: grid; gap: .9rem; }
      Campos e ± ~20% menores em 23/11/2026 (duas rodadas) (pedido do responsável: estavam maiores que o necessário). */
   .ing { gap: .4rem .5rem; }
   .linhas-ing.ferm .ing {
-    grid-template-columns: 1.8rem 1.2rem minmax(0, 1fr) 3.4rem 2.8rem;
-    grid-template-areas: "alca cor nome nome nome" "qtd qtd qtd d1 d2";
+    grid-template-columns: 1.2rem minmax(0, 1fr) 3.4rem 2.8rem;
+    grid-template-areas: "cor nome nome nome" "qtd qtd d1 d2";
   }
   /* Lúpulo em 2 linhas (24/11/2026, pedido do responsável): etapa e tempo à direita do nome; quantidade e números embaixo.
      Seletor e tempo mais estreitos só na linha (o nome longo quebra em vez de cortar); whirlpool: a temperatura desce. */
