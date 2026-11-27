@@ -255,7 +255,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127e");
+    const m = await import("./fontes.js?v=20261127f");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -539,7 +539,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127e");
+    const m = await import("./calculos.js?v=20261127f");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -607,7 +607,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127e");
+    const m = await import("./calculos.js?v=20261127f");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -629,7 +629,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127e");
+    const m = await import("./calculos.js?v=20261127f");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -739,7 +739,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127e");
+    const m = await import("./calculos.js?v=20261127f");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -2209,11 +2209,12 @@ const erros = [];
     acoes: document.querySelector(".acoes-receita").checkVisibility(),
     relatorio: document.querySelectorAll(".editor-topo .botao-relatorio").length,
     geral: document.querySelectorAll('.editor-corpo [data-secao="geral"]').length,
-    semTitulo: document.querySelector(".barra-app").classList.contains("sem-titulo"),
+    nomeBarra: document.querySelector(".barra-app .app-titulo-texto")?.textContent,
+    nomeTopo: document.querySelector(".topo-clean .titulo-receita").checkVisibility(),
     parametros: document.querySelector(".editor-corpo > .cartao")?.dataset.secao,
   }));
-  verificar(!cab.acoes && cab.relatorio === 0 && cab.geral === 0 && cab.semTitulo && noTopo.topo <= 250 && cab.parametros === "parametros",
-    `clean K1: sem botões de texto no topo, Dados gerais fora da página, nome só no título, Parâmetros 1º cartão e números a ${noTopo.topo} px do topo`);
+  verificar(!cab.acoes && cab.relatorio === 0 && cab.geral === 0 && cab.nomeBarra === "Pils da Galia" && !cab.nomeTopo && noTopo.topo <= 220 && cab.parametros === "parametros",
+    `clean K1: sem botões de texto no topo, Dados gerais fora da página, nome só na barra do app, Parâmetros 1º cartão e números a ${noTopo.topo} px do topo`);
   await tocar('[data-secao="parametros"] button.param-todos');
   await cel.waitForSelector("dialog.parametros-janela[open]");
   verificar(/Pré-fervura/.test(await cel.textContent("dialog.parametros-janela .parametros-numeros")) && await cel.locator(".painel-lote").count() === 0,
@@ -2222,17 +2223,22 @@ const erros = [];
   await cel.waitForSelector("dialog.parametros-janela", { state: "detached" });
   await cel.evaluate(() => window.scrollTo(0, 600));
   await cel.waitForTimeout(250);
-  verificar(!(await cel.evaluate(() => document.querySelector(".barra-app").classList.contains("sem-titulo"))), "clean K1: ao rolar, o nome aparece na barra do app");
+  verificar(await cel.evaluate(() => document.querySelector(".barra-app .app-nome").checkVisibility()), "clean K1: rolado, o nome continua na barra do app");
   await cel.evaluate(() => window.scrollTo(0, 0));
   await cel.waitForTimeout(250);
-  // Ações ao lado do nome (o menu ⋯ saiu, 26/11/2026) e lote com a data ao lado, em letra maior.
+  // Ações na linha do lote (o menu ⋯ saiu em 26/11/2026; o nome foi para a barra do app em 27/11/2026), lote com a data
+  // ao lado em letra maior, e o copo na cor da cerveja ao lado do nome na barra.
   const acoesTopo = await cel.evaluate(() => {
-    const nome = document.querySelector(".topo-clean .titulo-receita").getBoundingClientRect();
     const bs = [...document.querySelectorAll(".topo-clean .nome-acoes button")];
     const meta = document.querySelector(".topo-clean button.topo-meta");
+    const m = meta.getBoundingClientRect();
+    const barra = document.querySelector(".barra-app"), cp = barra.querySelector(".app-copo .copo"), tx = barra.querySelector(".app-titulo-texto");
     return {
       rotulos: bs.map((b) => b.getAttribute("aria-label")),
-      aoLado: bs.every((b) => { const x = b.getBoundingClientRect(); return x.left >= nome.right - 1 && x.top < nome.bottom && x.bottom > nome.top && x.right <= innerWidth; }),
+      aoLado: bs.every((b) => { const x = b.getBoundingClientRect(); return x.left >= m.right - 1 && x.top < m.bottom && x.bottom > m.top && x.right <= innerWidth; }),
+      copo: !!cp && cp.checkVisibility() && /^#[0-9a-f]{6}$/i.test(cp.querySelector(".copo-cerveja").getAttribute("fill") ?? "")
+        && cp.getBoundingClientRect().right <= tx.getBoundingClientRect().left,
+      barraAlt: Math.round(barra.getBoundingClientRect().height),
       toque: bs.every((b) => b.getBoundingClientRect().height >= 44),
       menu: document.querySelectorAll(".barra-app .app-menu, dialog.menu-receita").length,
       meta: meta.textContent, metaFonte: parseFloat(getComputedStyle(meta).fontSize),
@@ -2240,7 +2246,8 @@ const erros = [];
   });
   verificar(acoesTopo.rotulos.join("|") === "Relatório (PDF)|Nova a partir desta|Informações (tipo, autor, pública)|Excluir receita"
     && acoesTopo.aoLado && acoesTopo.toque && acoesTopo.menu === 0,
-    `clean: Relatório, Nova, Informações e Excluir ao lado do nome, sem menu ⋯ (${acoesTopo.rotulos.join(", ")})`);
+    `clean: Relatório, Nova, Informações e Excluir na linha do lote, sem menu ⋯ (${acoesTopo.rotulos.join(", ")})`);
+  verificar(acoesTopo.copo && acoesTopo.barraAlt <= 64, `clean: barra do app com o copo na cor da cerveja antes do nome (${acoesTopo.barraAlt} px)`);
   verificar(/^Lote nº \d+·(\d\d\/\d\d\/\d{4}|sem data)$/.test(acoesTopo.meta) && acoesTopo.metaFonte >= 16,
     `clean: lote com a data da brassagem ao lado, letra de ${acoesTopo.metaFonte} px (“${acoesTopo.meta}”)`);
   await cel.screenshot({ path: `${SAIDA}/p7g-clean-acoes-nome.png` });
@@ -2251,10 +2258,21 @@ const erros = [];
   await cel.waitForSelector("dialog.lote-janela", { state: "detached" });
   await tocar('.nome-acoes button[aria-label^="Informações"]');
   await cel.waitForSelector("dialog.informacoes[open]");
-  verificar(await cel.isVisible('dialog.informacoes select[aria-label="Tipo"]') && await cel.isVisible('dialog.informacoes input[aria-label="Autor"]'),
-    "clean K1: Informações abre tipo, autor e pública numa janela");
+  verificar(await cel.isVisible('dialog.informacoes select[aria-label="Tipo"]') && await cel.isVisible('dialog.informacoes input[aria-label="Autor"]')
+    && await cel.inputValue('dialog.informacoes input[aria-label="Nome da receita"]') === "Pils da Galia",
+    "clean K1: Informações abre nome, tipo, autor e pública numa janela");
   await tocar("dialog.informacoes .item-pronto");
   await cel.waitForSelector("dialog.informacoes", { state: "detached" });
+  // Tocar no nome da barra abre Informações com o foco no nome; mudar o nome muda a barra.
+  await tocar(".barra-app .app-nome");
+  await cel.waitForSelector("dialog.informacoes[open]");
+  const focoNome = await cel.evaluate(() => document.activeElement?.getAttribute("aria-label"));
+  await cel.fill('dialog.informacoes input[aria-label="Nome da receita"]', "Pils da Galia 2");
+  const barraNova = await cel.textContent(".barra-app .app-titulo-texto");
+  await cel.fill('dialog.informacoes input[aria-label="Nome da receita"]', "Pils da Galia");
+  await tocar("dialog.informacoes .item-pronto");
+  await cel.waitForSelector("dialog.informacoes", { state: "detached" });
+  verificar(focoNome === "Nome da receita" && barraNova === "Pils da Galia 2", `clean: tocar no nome da barra abre Informações no nome e a barra acompanha (“${barraNova}”)`);
   await tocar('.nome-acoes button[aria-label="Relatório (PDF)"]');
   await cel.waitForSelector("dialog.relatorio[open]");
   verificar(true, "clean: o ícone do relatório ao lado do nome abre o relatório");
@@ -2485,21 +2503,34 @@ const erros = [];
   await cel.screenshot({ path: `${SAIDA}/p7e2-clean-numeros-320.png` });
   await cel.locator('[data-secao="fermentaveis"]').evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p7c-clean-320.png` });
-  // Nome longo em 320 px (36 letras, mais que 90% das receitas): até 3 linhas ao lado dos 4 ícones, sem cortar.
+  // Nome longo em 320 px (36 letras, mais que 90% das receitas): na barra do app em até 2 linhas, sem empurrar ↶/Salvar;
+  // lote e os 4 ícones na mesma faixa, dentro da tela.
   await cel.evaluate(() => window.scrollTo(0, 0));
-  const nomeAntes = await cel.inputValue(".topo-clean .titulo-receita");
-  await cel.fill(".topo-clean .titulo-receita", "American IPA com Citra e Mosaic 2026");
+  await tocar(".barra-app .app-nome");
+  await cel.waitForSelector("dialog.informacoes[open]");
+  const nomeAntes = await cel.inputValue('dialog.informacoes input[aria-label="Nome da receita"]');
+  await cel.fill('dialog.informacoes input[aria-label="Nome da receita"]', "American IPA com Citra e Mosaic 2026");
+  await tocar("dialog.informacoes .item-pronto");
+  await cel.waitForSelector("dialog.informacoes", { state: "detached" });
   await cel.waitForTimeout(150);
   const nomeLongo = await cel.evaluate(() => {
-    const t = document.querySelector(".topo-clean .titulo-receita"), b = t.getBoundingClientRect();
+    const t = document.querySelector(".barra-app .app-titulo-texto"), b = t.getBoundingClientRect();
+    const barra = document.querySelector(".barra-app");
+    const outros = [...barra.querySelectorAll(".app-voltar, .app-desfazer, .app-salvar")].map((x) => x.getBoundingClientRect());
     const ic = [...document.querySelectorAll(".nome-acoes button")].map((x) => x.getBoundingClientRect());
-    return { linhas: Math.round(b.height / parseFloat(getComputedStyle(t).lineHeight)), cabe: t.scrollHeight <= t.clientHeight + 1,
-      separado: ic.every((x) => x.left >= b.right - 1 && x.right <= innerWidth) };
+    const meta = document.querySelector(".topo-clean button.topo-meta").getBoundingClientRect();
+    return { linhas: Math.round(b.height / parseFloat(getComputedStyle(t).lineHeight)), barraAlt: Math.round(barra.getBoundingClientRect().height),
+      botoes: outros.every((x) => x.width >= 40 && x.right <= innerWidth),
+      separado: ic.every((x) => x.left >= meta.right - 1 && x.right <= innerWidth && x.top < meta.bottom) };
   });
-  await cel.screenshot({ path: `${SAIDA}/p7c2-clean-320-nome-longo.png` });
-  verificar(nomeLongo.linhas >= 2 && nomeLongo.linhas <= 3 && nomeLongo.cabe && nomeLongo.separado,
-    `clean, 320 px: nome longo quebra em ${nomeLongo.linhas} linhas ao lado dos ícones, sem cortar`);
-  await cel.fill(".topo-clean .titulo-receita", nomeAntes);
+  await cel.screenshot({ path: `${SAIDA}/p7c2-clean-320-nome-longo.png`, clip: { x: 0, y: 0, width: 320, height: 330 } });
+  verificar(nomeLongo.linhas >= 1 && nomeLongo.linhas <= 2 && nomeLongo.barraAlt <= 64 && nomeLongo.botoes && nomeLongo.separado,
+    `clean, 320 px: nome longo na barra em ${nomeLongo.linhas} linha(s) (${nomeLongo.barraAlt} px), ↶ e Salvar inteiros, ícones na linha do lote`);
+  await tocar(".barra-app .app-nome");
+  await cel.waitForSelector("dialog.informacoes[open]");
+  await cel.fill('dialog.informacoes input[aria-label="Nome da receita"]', nomeAntes);
+  await tocar("dialog.informacoes .item-pronto");
+  await cel.waitForSelector("dialog.informacoes", { state: "detached" });
   // Estilo em destaque (27/11/2026): cartão com a faixa de cor e o nome, sem código e sem contagem, em 320 e 390 px.
   for (const largura of [320, 390]) {
     await cel.setViewportSize({ width: largura, height: 844 });
@@ -2507,15 +2538,15 @@ const erros = [];
     await cel.waitForTimeout(200);
     const e = await cel.evaluate(() => {
       const b = document.querySelector(".topo-clean button.estilo-botao"), r = b.getBoundingClientRect();
-      const nm = document.querySelector(".topo-clean .titulo-receita").getBoundingClientRect();
+      const nm = document.querySelector(".topo-clean .topo-linha").getBoundingClientRect();
       return { alt: r.height, cabe: r.left >= 0 && r.right <= innerWidth, abaixoDoNome: r.top >= nm.bottom,
         texto: b.textContent.trim(), semExtra: !b.querySelector(".estilo-codigo, .estilo-encaixe"),
         letraNome: parseFloat(getComputedStyle(b.querySelector(".estilo-nome")).fontSize),
-        letraTitulo: parseFloat(getComputedStyle(document.querySelector(".topo-clean .titulo-receita")).fontSize),
+        letraTitulo: parseFloat(getComputedStyle(document.querySelector(".barra-app .app-titulo")).fontSize),
         faixaCor: getComputedStyle(b.querySelector(".estilo-cor")).backgroundImage.includes("gradient") };
     });
     verificar(e.alt >= 44 && e.cabe && e.abaixoDoNome && e.texto === "German Pils›" && e.semExtra
-      && e.letraNome >= 17 && e.letraNome < e.letraTitulo && e.faixaCor,
+      && e.letraNome >= 15 && e.letraNome <= e.letraTitulo + 2 && e.faixaCor,
       `clean, ${largura} px: estilo em cartão só com faixa de cor e nome (${Math.round(e.alt)} px, nome ${e.letraNome} px, sem código e sem contagem)`);
     await cel.screenshot({ path: `${SAIDA}/p7m-clean-estilo-${largura}.png`, clip: { x: 0, y: 0, width: largura, height: 330 } });
   }
