@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127h.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127i.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -911,3 +911,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador (celular): resumo, janela = resumo, taxa automática, starter no agitador ≥ 100%, roleta do volume
   em popover, 390/320 px sem passar da largura, Pronto/foco, ↶. Capturas `p6q2` (resumo), `p6q3` (janela 390), `p6q4`
   (janela 320), `p6q5` (resumo 320). Falta: relatório em PDF não mostra o starter; conferir no iPhone real.
+
+## Fermentáveis do maior para o menor (27/11/2026, pedido do responsável; sem migração)
+- A seção Fermentáveis fica SEMPRE ordenada pela quantidade, da maior para a menor (`ordenarFermentaveis` no receitas.js;
+  estável: empate e malte sem quantidade mantêm a ordem entre si; sem quantidade vai para o fim). Vale nos dois layouts,
+  na barra do grist e no relatório em PDF (seguem a ordem de `r.fermentaveis`); ao salvar, a `ordem` gravada já é essa.
+- Sem ordem manual nos maltes: saíram a alça ⠿ da linha (Completo; a coluna dela saiu do grid no style.css) e o ↑ ↓ da
+  janela do item (`ordenar` no `secaoLinhas`). Lúpulos, leveduras e passos seguem com ordem manual.
+- Quando reordena: ao abrir a receita (sem marcar alteração), ao redesenhar a seção (adicionar, remover, fechar a janela,
+  Chegar à OG) e quando o passo do desfazer fecha (`registrar`: ±, roleta). Digitando a quantidade no computador, espera
+  o campo perder o foco (a linha não pula no meio da digitação). A base do histórico também é ordenada: um ↶ desfaz a
+  quantidade e a ordem juntas, sem passo "só de ordem". Item novo: a janela abre pelo próprio item (`focos[chave](item)`).
+- Teste do navegador (celular 390 px, Completo): abre ordenada sem alça e sem "pendente"; + 250 g leva o Cristal para
+  cima do Munique; janela sem ↑ ↓; um ↶ desfaz. Captura `p6o-celular-ordem-maltes`.

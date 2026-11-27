@@ -298,7 +298,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127h");
+    const m = await import("./fontes.js?v=20261127i");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -582,7 +582,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -650,7 +650,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -672,7 +672,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -782,7 +782,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -2736,6 +2736,47 @@ const erros = [];
     window.GaliaTema.aplicar("auto"); window.GaliaTema.aplicarLayout("completo");
     const p = JSON.parse(localStorage.getItem("galiabrew.preferencias")); p.layout = "completo"; localStorage.setItem("galiabrew.preferencias", JSON.stringify(p));
   });
+
+  // Fermentáveis do maior para o menor em quantidade (27/11/2026, pedido do responsável), no celular (Completo, 390 px).
+  // Gravados fora de ordem: a tela já abre ordenada; o malte que passa a pesar mais sobe sozinho; um ↶ desfaz os dois.
+  db.receitas.push({ id: "r-ordem", dono: USUARIO.id, nome: "Ordem dos maltes", tipo: "ALL_GRAIN", publica: false, volume_lote_l: 20, eficiencia_pct: 72, fervura_min: 60,
+    evaporacao_l_h: 3, perda_panela_l: 1, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0, temp_grao_c: 20, estilo_id: null, equipamento_id: null,
+    sais: [], acidos: [], extras: {}, atualizado_em: new Date().toISOString() });
+  for (const [ordem, nome, kg, srm] of [[0, "Cristal", 0.9, 60], [1, "Pilsen", 4, 2], [2, "Munique", 1, 9]]) {
+    db.receita_fermentaveis.push({ id: `ord-${ordem}`, receita_id: "r-ordem", fermentavel_id: null, ordem, nome, tipo: "GRAO", rendimento_pct: 80, umidade_pct: 4,
+      cor_srm: srm, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" });
+  }
+  await cel.evaluate(() => { location.hash = "#/receitas"; });
+  await cel.waitForSelector(".receita-cartao >> text=Ordem dos maltes");
+  await tocar(".receita-cartao >> text=Ordem dos maltes");
+  await cel.waitForSelector('[data-secao="fermentaveis"] li.ing');
+  const ordemMaltes = () => cel.$$eval('[data-secao="fermentaveis"] li.ing .ing-nome-txt', (ns) => ns.map((n) => n.textContent).join(" > "));
+  verificar(await ordemMaltes() === "Pilsen > Munique > Cristal" && await cel.locator('[data-secao="fermentaveis"] .ing-alca').count() === 0
+    && !(await cel.evaluate(() => document.querySelector(".salvar-app, .app-salvar")?.classList.contains("pendente"))),
+    `celular: fermentáveis do maior para o menor ao abrir, sem alça e sem marcar alteração (${await ordemMaltes()})`);
+  await cel.evaluate(() => document.querySelector('[data-secao="fermentaveis"]').scrollIntoView({ block: "center" }));
+  await tocar('[data-secao="fermentaveis"] li.ing:last-child button.passo[aria-label="Mais 250 g"]');
+  await cel.waitForFunction(() => document.querySelector('[data-secao="fermentaveis"] li.ing:nth-child(2) .ing-nome-txt')?.textContent === "Cristal", null, { timeout: 3000 }).catch(() => {});
+  verificar(await ordemMaltes() === "Pilsen > Cristal > Munique"
+    && await cel.inputValue('[data-secao="fermentaveis"] li.ing:nth-child(2) input[aria-label="Qtd (kg)"]') === "1,150",
+    `celular: Cristal com + 250 g (0,9 → 1,15 kg) passa o Munique e sobe sozinho (${await ordemMaltes()})`);
+  await cel.screenshot({ path: `${SAIDA}/p6o-celular-ordem-maltes.png` });
+  await tocar('[data-secao="fermentaveis"] li.ing:first-child button.ing-nome');
+  await cel.waitForSelector("dialog.item-janela[open]");
+  verificar(await cel.locator('dialog.item-janela button[aria-label="Subir"], dialog.item-janela button[aria-label="Descer"]').count() === 0
+    && await cel.locator("dialog.item-janela button.perigo").count() === 1, "celular: janela do malte sem ↑ ↓ (a ordem é automática), com Remover");
+  await tocar("dialog.item-janela button.item-pronto");
+  await cel.waitForSelector("dialog.item-janela", { state: "detached" });
+  await tocar(".barra-app .app-desfazer");
+  await cel.waitForTimeout(200);
+  verificar(await ordemMaltes() === "Pilsen > Munique > Cristal"
+    && await cel.inputValue('[data-secao="fermentaveis"] li.ing:last-child input[aria-label="Qtd (kg)"]') === "0,900",
+    `celular: um ↶ desfaz a quantidade e a ordem juntas (${await ordemMaltes()})`);
+  const sairSemSalvar = (d) => d.accept();
+  cel.on("dialog", sairSemSalvar);
+  await cel.evaluate(() => { location.hash = "#/receitas"; });
+  await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  cel.off("dialog", sairSemSalvar);
 
   // Excluir a receita leva as fotos dela junto.
   await cel.evaluate(() => { window.GaliaTema.aplicar("auto"); location.hash = "#/receitas"; });
