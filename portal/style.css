@@ -350,28 +350,18 @@ button.botao-relatorio .ico { width: 1.45rem; height: 1.45rem; }
 button.escolha { width: 100%; justify-content: space-between; gap: .5rem; padding: .25rem .45rem; border: 1px solid var(--linha);
   background: var(--cartao); color: var(--tinta); font-weight: 400; text-align: left; }
 button.escolha:hover { background: var(--cartao); border-color: var(--destaque); }
-/* Estilo em destaque (27/11/2026, pedido do responsável): cartão com a faixa de cor do estilo, o código num selo, o
-   nome grande e quantos números da receita estão na faixa. Vale nos dois layouts. */
+/* Estilo em destaque (27/11/2026, pedido do responsável): cartão com a faixa de cor do estilo e o nome grande (sem o
+   código BJCP e sem a contagem de números no estilo, retirados no mesmo dia). Vale nos dois layouts. */
 button.escolha.estilo-botao {
-  display: flex; align-items: center; gap: .7rem; min-height: 3.6rem; padding: .55rem .6rem .55rem .65rem;
+  display: flex; align-items: center; gap: .7rem; min-height: 3rem; padding: .5rem .6rem .5rem .65rem;
   border: 1px solid color-mix(in srgb, var(--destaque) 30%, transparent); border-radius: 12px;
   background: color-mix(in srgb, var(--destaque) 9%, var(--cartao)); color: var(--tinta); font-weight: 400;
 }
 button.escolha.estilo-botao:hover { background: color-mix(in srgb, var(--destaque) 14%, var(--cartao)); border-color: var(--destaque); }
 button.escolha.estilo-botao:disabled { opacity: 1; cursor: default; }
 .estilo-cor { flex: none; align-self: stretch; width: .5rem; border-radius: 99px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tinta) 18%, transparent); }
-.estilo-corpo { flex: 1 1 auto; min-width: 0; display: grid; gap: .2rem; }
-.estilo-linha1 { display: flex; align-items: baseline; gap: .5rem; min-width: 0; }
-.estilo-codigo {
-  flex: none; align-self: center; padding: .12rem .45rem; border-radius: 6px; background: var(--destaque); color: var(--sobre-destaque);
-  font-size: .875rem; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; letter-spacing: .02em;
-}
-.estilo-nome { min-width: 0; font-size: 1.125rem; font-weight: 750; line-height: 1.2; letter-spacing: -.01em; overflow-wrap: anywhere; }
-.estilo-encaixe { display: flex; align-items: center; gap: .4rem; font-size: .8125rem; line-height: 1.25; color: var(--suave); }
-.estilo-encaixe[hidden] { display: none; }
-.estilo-ponto { flex: none; width: .55rem; height: .55rem; border-radius: 50%; background: var(--ok); }
-.estilo-encaixe.quase .estilo-ponto { background: var(--ambar); }
-.estilo-encaixe.longe .estilo-ponto { background: var(--fora); }
+.estilo-corpo { flex: 1 1 auto; min-width: 0; }
+.estilo-nome { display: block; font-size: 1.125rem; font-weight: 750; line-height: 1.2; letter-spacing: -.01em; overflow-wrap: anywhere; }
 button.estilo-botao .escolha-seta { flex: none; font-size: 1.6rem; line-height: 1; font-weight: 400; color: var(--destaque-escuro); }
 button.estilo-botao:disabled .escolha-seta { display: none; }
 /* sem estilo: convite para escolher, com borda tracejada */
