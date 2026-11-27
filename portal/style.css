@@ -587,15 +587,6 @@ button.vital-val.ajustavel {
   text-underline-offset: 5px; cursor: pointer;
 }
 button.vital-val.ajustavel:hover { background: var(--painel); text-decoration-color: var(--destaque); }
-.vital-ref { font-size: var(--t-rotulo); color: var(--suave); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.vital-ref:empty { display: none; }
-.vital-ref.diferente { color: var(--destaque-escuro); font-weight: 700; }
-.vital-ferramentas { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .5rem; padding-top: .5rem; border-top: 1px dashed var(--linha); }
-.vital-ferramentas .separador { width: 1px; height: 1.4rem; background: var(--linha); margin: 0 .2rem; }
-.vital-ferramentas button.pequeno { padding: .2rem .6rem; }
-.ref-info { font-size: var(--t-p); color: var(--destaque-escuro); font-weight: 600; }
-.ref-info:empty { display: none; }
-.vital.com-referencia { border-color: var(--destaque); }
 
 /* janelas "Chegar à OG / ao IBU" */
 dialog.alvo { max-width: min(560px, 96vw); }
@@ -963,7 +954,7 @@ dialog form { display: grid; gap: .9rem; }
   #avisos { left: 1rem; bottom: calc(var(--vital-h, 0px) + .8rem); }
 
   /* Barra vital no rodapé: puxador "detalhes" em cima e 2 linhas de 3 números (OG FG ABV / IBU Cor pH), cada um com
-     rótulo, número grande e régua. "Detalhes" abre estado, faixas, BU:GU e as ferramentas.
+     rótulo, número grande e régua. "Detalhes" abre estado, faixas e BU:GU.
      Layout limpo (24/11/2026, pedido do responsável: "carregada, com bordas"): sem cartões, sem bordas e sem cantos
      arredondados; os números ficam direto no papel da barra (--painel), que se separa da página só por uma sombra
      suave para cima. O estado vem de um ponto colorido antes do rótulo (verde no estilo, âmbar perto do limite,
@@ -996,7 +987,7 @@ dialog form { display: grid; gap: .9rem; }
     text-decoration-thickness: 1px; text-underline-offset: 5px;
     text-decoration-color: color-mix(in srgb, var(--suave) 50%, transparent);
   }
-  .vital-estado, .vital-pe, .vital-item.secundario, .vital-ref, .vital-ferramentas { display: none; }
+  .vital-estado, .vital-pe, .vital-item.secundario { display: none; }
   /* diferença da última mudança: texto solto no canto do número, sem pílula */
   .vital-delta {
     position: absolute; top: 0; right: 0; font-size: .68rem; padding: 0; border: none; background: transparent;
@@ -1018,15 +1009,11 @@ dialog form { display: grid; gap: .9rem; }
   .vital-mais span::before { content: "detalhes ▴"; }
   .vital.aberta .vital-mais span::before { content: "fechar ▾"; }
   .vital.aberta .vital-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem 1.4rem; }
-  .vital.aberta .vital-aviso:not(:empty), .vital.aberta .vital-ferramentas { margin-top: .4rem; }
+  .vital.aberta .vital-aviso:not(:empty) { margin-top: .4rem; }
   .vital.aberta .vital-val, .vital.aberta button.vital-val.ajustavel { font-size: 1.6rem; }
   .vital.aberta .vital-estado { display: block; }
   .vital.aberta .vital-pe { display: flex; }
-  .vital.aberta .vital-ref:not(:empty) { display: block; }
-  .vital.aberta .vital-ferramentas { display: flex; border-top: none; padding-top: .2rem; }
   .vital.aberta .vital-cab { justify-content: space-between; }
-  .vital.com-referencia .vital-mais { color: var(--destaque-escuro); }
-  .vital.com-referencia .vital-mais::before { background: var(--destaque); }
   .vital.aberta .vital-item.secundario { display: flex; grid-column: 1 / -1; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem; }
   .vital.aberta .vital-item.secundario .vital-val { font-size: var(--t-corpo); }
   /* Leitura no celular (23/11/2026, regra nº 0 do CLAUDE.md): nenhum texto abaixo de ~12 px (rótulos em maiúsculas
@@ -1106,7 +1093,6 @@ dialog form { display: grid; gap: .9rem; }
   .vital.com-teclado .vital-val, .vital.com-teclado button.vital-val.ajustavel { font-size: 1rem; line-height: 1.15; text-decoration: none; }
   .vital.com-teclado .vital-delta { top: .12rem; left: .3rem; right: auto; font-size: .75rem; line-height: 1.2; padding: 0; border: none; background: transparent; transition: none; }
   .vital.com-teclado .vital-item:has(.vital-delta.visivel) .vital-rot { visibility: hidden; }
-  .vital.com-teclado .rot-longo { display: none; }
   /* Espaço para os últimos campos da página subirem acima do teclado. */
   html.teclado-aberto .conteudo.com-vital { padding-bottom: 55vh; }
 }
@@ -1531,7 +1517,7 @@ dialog.item-janela:has(> .roleta) .item-acoes { position: static; }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-copo .copo { width: 2.75rem; height: 3.85rem; }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .9rem; }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.35rem; }
-  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-mais, .vital-aviso, .vital-ferramentas) { grid-column: 1 / -1; }
+  :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) :is(.vital-mais, .vital-aviso) { grid-column: 1 / -1; }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais { order: 0; margin-top: .3rem; }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-mais span::before { content: "detalhes ▾"; }
   :root[data-layout="clean"] .vital.no-topo.aberta:not(.com-teclado) .vital-mais span::before { content: "fechar ▴"; }
@@ -1636,7 +1622,6 @@ button.topo-meta .meta-sep, button.topo-meta .meta-data { color: var(--suave); f
 /* Clean K2 em 320–360 px: no cartão dos números, rótulos curtos ("pH", "EBC"), como na linha fina; com a fonte do
    GitHub "pH MOSTURA" passava da borda em 320 px (CI do PR #52). */
 @media (max-width: 360px) {
-  :root[data-layout="clean"] .vital.no-topo .rot-longo { display: none; }
   :root[data-layout="clean"] .vital.no-topo:not(.com-teclado) .vital-grade { gap: .5rem .6rem; }
 }
 /* Clean: Parâmetros (cartão da main, 24/11/2026) no tom da ficha: números sem moldura, "Todos ›" como link. */
@@ -1814,7 +1799,7 @@ button.agua-link:hover { background: none; border-color: transparent; color: var
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-copo { display: none; }
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-grade { grid-template-columns: minmax(0, 1fr); gap: 0; }
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item:not(.secundario) {
-    grid-template-columns: 5.2rem minmax(0, 1fr) 4.9rem; grid-template-areas: "cab regua linha" "ref ref ref";
+    grid-template-columns: 5.2rem minmax(0, 1fr) 4.9rem; grid-template-areas: "cab regua linha";
     align-items: start; column-gap: .75rem; padding: .5rem 0 .3rem;
     border-bottom: 1px solid color-mix(in srgb, var(--tinta) 8%, transparent);
   }
@@ -1831,7 +1816,6 @@ button.agua-link:hover { background: none; border-color: transparent; color: var
   /* régua com o centro na altura do centro do número (número de ~23 px; régua de 8 px) */
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.3rem; }
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-pe { display: none; }
-  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-ref { grid-area: ref; text-align: right; }
   /* régua: 8 px, marcador de 14 px recortado no papel, limites do estilo embaixo das pontas da faixa */
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .regua { grid-area: regua; height: 8px; margin: .45rem 0 1.15rem; }
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item .regua-marca { width: 14px; height: 14px; }
@@ -1848,7 +1832,6 @@ button.agua-link:hover { background: none; border-color: transparent; color: var
 @media (max-width: 360px) {
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .vital-item:not(.secundario) { grid-template-columns: 3.9rem minmax(0, 1fr) 4.4rem; column-gap: .6rem; }
   :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) :is(.vital-val, button.vital-val.ajustavel) { font-size: 1.15rem; }
-  :is(:root[data-layout="clean"] .vital.no-topo, .vital.aberta):not(.com-teclado) .rot-longo { display: none; }
 }
 /* Clean (26/11/2026): em ≤ 360 px o nome (20 px) divide a linha com os 4 ícones de ação; letra menor para quebrar menos. */
 @media (max-width: 360px) {

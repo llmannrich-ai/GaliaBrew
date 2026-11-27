@@ -178,9 +178,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   das seções Fermentáveis e Lúpulos foram retirados em 23/11/2026, pedido do responsável),
   com prévia antes de aplicar; aceitam OG em pontos (46 = 1,046). Cadeado por item RETIRADO da tela em 22/11/2026 (pedido do
   responsável); `travado` continua aceito no calculos.js, mas a tela não marca mais. Histórico em memória (50 passos; digitação vira passo após 0,8 s ou ao trocar de campo; ação inteira
-  = 1 passo); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y; desfazer remonta o editor e a barra mostra a diferença. "Fixar
-  referência" compara cada número com a tentativa fixada; "Voltar à referência" restaura (e pode ser desfeito).
-  Histórico e referência somem ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
+  = 1 passo); Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y; desfazer remonta o editor e a barra mostra a diferença. A referência
+  fixada ("Fixar/Voltar à referência") SAIU em 26/11/2026 (ver "Barra de números sem ferramentas").
+  Histórico some ao sair da receita e ao salvar uma receita NOVA (o editor recarrega com o id).
 - CELULAR PRIMEIRO (decisão de 22/11/2026: o responsável e a maioria das pessoas usam pelo celular). Toda tela nova se
   desenha e testa primeiro em 390 px e 320 px com toque (contexto `isMobile + hasTouch` no navegador.cjs).
   Etapa de celular (22/11/2026): no editor o menu geral (hoje a `barra-movel`) some e entra a `barra-app` presa no topo (‹ voltar, nome,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126c.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261126d.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -316,12 +316,19 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 ## Números em lista no celular (26/11/2026, pedido do responsável: "muito resumidos, difíceis de ver os limites do estilo; um abaixo do outro, semelhante ao Brewfather"; só style.css + vital.js)
 - No cartão dos números do Clean (sempre) e no "detalhes" aberto do Completo: uma LINHA por número (OG, FG, ABV, IBU,
   Cor, pH): ponto do estado + rótulo | régua larga (8 px, marcador de 14 px) com os LIMITES do estilo escritos embaixo das
-  pontas da faixa (`.regua-lim`, posição = `regua.ini`/`regua.fim`) | número. "Detalhes" acrescenta o estado em texto,
-  a referência, BU:GU/atenuação e as ferramentas. A barra fechada do rodapé no Completo segue em 2 × 3 (6 linhas
+  pontas da faixa (`.regua-lim`, posição = `regua.ini`/`regua.fim`) | número. "Detalhes" acrescenta o estado em texto
+  e BU:GU/atenuação. A barra fechada do rodapé no Completo segue em 2 × 3 (6 linhas
   fixas cobririam ~1/3 da tela) e a linha fina (teclado, roleta, cartão rolado) não mudou. Computador não mudou.
 - Copo: sai do cartão do Clean (a cor tem a amostra na própria linha) e volta ao lado da barra do grist.
 - Teste do navegador (`conferirListaVital`): 6 linhas uma abaixo da outra, régua ≥ 70 px, limites visíveis sem sobrepor
   e sem passar do número, no "detalhes" (390 px) e no Clean (390 e 320 px). Capturas `p5c`, `p7e`, `p7e2` (320 px), `p7d`.
+
+## Barra de números sem ferramentas e com rótulos curtos (26/11/2026, pedido do responsável; vital.js, receitas.js, style.css)
+- Saiu a linha de ferramentas da barra (`.vital-ferramentas`: Desfazer, Refazer, Fixar/Voltar à referência, Soltar) e a
+  função de referência inteira (`definirReferencia`, `t.ref`, `.vital-ref`): "não traz informação útil". Desfazer fica no
+  ↶ da barra do app (celular) e em Ctrl+Z; refazer só por Ctrl+Shift+Z / Ctrl+Y (no celular não há mais botão de refazer).
+- Rótulos: "EBC" (ou "SRM", conforme o perfil) no lugar de "Cor EBC" e "pH" no lugar de "pH mostura", em todo lugar da
+  barra (sem o `.rot-longo`). Teste "barra de números sem Desfazer/Refazer e sem referência" e "rótulos curtos".
 
 ## Layout Clean da receita (24/11/2026, pedido do responsável; plano `docs/PLANO-CLEAN.md`; sem migração)
 - Opcional: Meu perfil → Aparência → "Layout da receita: Completo | Clean" (`preferencias.layout`, localStorage). O

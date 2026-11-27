@@ -2,9 +2,9 @@
 // estilo e a diferença da última mudança; pH estimado da mostura com a faixa boa (5,2–5,6). Computador: fixa abaixo
 // do topo. Celular: fixa no rodapé, em 2 linhas de 3 números (OG FG ABV / IBU Cor pH); no cartão do Clean e em
 // "detalhes", um número abaixo do outro com a régua larga e os limites do estilo (26/11/2026).
-import { el, svg, numeroBR } from "./ui.js?v=20261126c";
-import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261126c";
-import * as O from "./opcoes.js?v=20261126c";
+import { el, svg, numeroBR } from "./ui.js?v=20261126d";
+import { platoDeSg, corHexDeSrm, reguaDoEstilo } from "./calculos.js?v=20261126d";
+import * as O from "./opcoes.js?v=20261126d";
 
 const DIFERENCA_MS = 3000;      // quanto tempo a diferença fica na tela depois da última mudança
 const ESTADOS = {
@@ -25,9 +25,10 @@ function indicadores() {
     { chave: "fg", rot: "FG", casas: 3, valor: (r) => r.fg, faixa: (e) => [e.fg_min, e.fg_max] },
     { chave: "abv", rot: "ABV", casas: 1, sufixo: "%", valor: (r) => r.abv_pct, faixa: (e) => [e.abv_min_pct, e.abv_max_pct] },
     { chave: "ibu", rot: "IBU", casas: 0, valor: (r) => r.ibu, faixa: (e) => [e.ibu_min, e.ibu_max] },
-    { chave: "cor", rot: `Cor ${O.unidadeCor()}`, casas: 1, valor: (r) => corTela(r.cor_srm), faixa: (e) => [corTela(e.cor_srm_min), corTela(e.cor_srm_max)] },
+    { chave: "cor", rot: O.unidadeCor(), casas: 1, valor: (r) => corTela(r.cor_srm), faixa: (e) => [corTela(e.cor_srm_min), corTela(e.cor_srm_max)] },
     // pH: faixa fixa (não depende do estilo). Boa 5,2–5,6; "perto" = 1/4 da largura → ideal 5,3–5,5.
-    { chave: "ph", rot: "pH mostura", casas: 2, valor: (r) => r.ph_mostura?.ph ?? null, faixaFixa: [5.2, 5.6], perto: 0.25, nomeFaixa: "boa",
+    // Rótulos curtos "EBC" (ou "SRM") e "pH" (26/11/2026, pedido do responsável: sem "Cor" e sem "mostura").
+    { chave: "ph", rot: "pH", casas: 2, valor: (r) => r.ph_mostura?.ph ?? null, faixaFixa: [5.2, 5.6], perto: 0.25, nomeFaixa: "boa",
       estados: { DENTRO: "ideal", PERTO_MIN: "um pouco baixo", PERTO_MAX: "um pouco alto", ABAIXO: "baixo", ACIMA: "alto" } },
   ];
 }
@@ -137,9 +138,8 @@ export function manterAcimaDaBarra(campo, barra) {
  * Cria a barra. atualizar(res, estilo, { mudanca, campo }) a cada cálculo; mudanca = true quando veio de uma edição
  * (aí aparece a diferença em relação ao valor de antes da edição); campo = de onde veio (a diferença acumula no mesmo campo).
  */
-export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = false } = {}) {
+export function criarBarraVital({ aoAjustar = {}, noTopo = false } = {}) {
   const defs = indicadores();
-  let referencia = null;          // números da tentativa fixada (para comparar), ou null
   const vidro = copo();
   const itens = new Map();
   const leitor = el("p", { class: "so-leitor", role: "status" });
@@ -154,16 +154,12 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = f
 
   for (const d of defs) {
     const n = {
-      // Linha fina do teclado (1/6 da tela): "Cor EBC" vira "EBC" e "pH mostura" vira "pH".
-      rot: d.chave === "ph" ? el("span", { class: "vital-rot" }, "pH", el("span", { class: "rot-longo", text: " mostura" }))
-        : d.chave === "cor" ? el("span", { class: "vital-rot" }, el("span", { class: "rot-longo", text: "Cor " }), O.unidadeCor())
-        : el("span", { class: "vital-rot", text: d.rot }),
+      rot: el("span", { class: "vital-rot", text: d.rot }),
       estado: el("span", { class: "vital-estado" }),
       // OG e IBU: o número é um botão que abre "chegar a um valor alvo".
       val: aoAjustar[d.chave]
         ? el("button", { type: "button", class: "vital-val ajustavel", title: `Clique para chegar a ${d.chave === "og" ? "uma OG" : "um IBU"} alvo`, on: { click: aoAjustar[d.chave] } })
         : el("span", { class: "vital-val" }),
-      ref: el("div", { class: "vital-ref" }),
       extra: el("span", { class: "vital-extra" }),
       delta: el("span", { class: "vital-delta", "aria-hidden": "true" }),
       faixa: el("span", { class: "regua-faixa" }),
@@ -181,8 +177,7 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = f
       // Cor: ponto com a cor da cerveja antes do número (no celular, onde o copo não aparece).
       el("div", { class: "vital-linha" }, d.chave === "cor" ? n.amostra : null, n.val, n.delta),
       n.regua,
-      el("div", { class: "vital-pe" }, n.faixaTxt, n.extra),
-      n.ref);
+      el("div", { class: "vital-pe" }, n.faixaTxt, n.extra));
     itens.set(d.chave, n);
   }
   const buGu = el("span", { class: "vital-val" });
@@ -199,7 +194,6 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = f
         el("div", { class: "vital-linha" }, atenuacao))),
     botaoMais,
     aviso,
-    ferramentas,
     leitor);
 
   // Layout Clean (K2, docs/PLANO-CLEAN.md): no celular os números ficam num CARTÃO no topo da receita, no fluxo da
@@ -277,14 +271,6 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = f
       }
       falas.push(`${d.rot} ${v === null ? "sem estimativa" : n.val.textContent}${est ? `, ${est.texto}` : ""}`);
 
-      // Comparação com a referência fixada (fica enquanto a referência existir).
-      const rv = referencia ? arred(d.valor(referencia), d.casas) : null;
-      if (referencia && (v === null || rv === null)) n.ref.textContent = "";
-      else if (referencia) {
-        const dif = arred(v - rv, d.casas);
-        n.ref.textContent = `ref. ${fmt(rv)}${d.sufixo ?? ""} · ${dif === 0 ? "igual" : `${dif > 0 ? "+" : "−"}${fmt(Math.abs(dif))}`}`;
-        n.ref.classList.toggle("diferente", dif !== 0);
-      } else n.ref.textContent = "";
 
       // Diferença: acumula enquanto a pessoa mexe no mesmo campo; some DIFERENCA_MS depois da última mudança.
       if (outroCampo) esconderDiferenca(n);
@@ -316,11 +302,6 @@ export function criarBarraVital({ aoAjustar = {}, ferramentas = null, noTopo = f
     n.delta.classList.remove("visivel");
   }
 
-  /** Fixa (res) ou solta (null) a referência; a próxima chamada de atualizar() mostra a comparação. */
-  function definirReferencia(res) {
-    referencia = res;
-    barra.classList.toggle("com-referencia", Boolean(res));
-  }
 
-  return { elemento: barra, lugar: vaga ?? barra, atualizar, definirReferencia };
+  return { elemento: barra, lugar: vaga ?? barra, atualizar };
 }
