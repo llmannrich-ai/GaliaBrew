@@ -1272,10 +1272,10 @@ dialog:is(.parametros-janela, .lote-janela, .pitch-janela) .fj-metricas { grid-t
 button.pitch-resumo {
   display: flex; align-items: center; gap: .6rem; width: 100%; min-height: 3.25rem; margin-top: .7rem; padding: .55rem .7rem;
   border: 0; border-radius: var(--raio-p); background: color-mix(in srgb, var(--destaque) 9%, transparent); color: var(--tinta);
-  font: inherit; text-align: left; cursor: pointer; touch-action: manipulation;
+  font: inherit; text-align: left; white-space: normal; cursor: pointer; touch-action: manipulation;
 }
 button.pitch-resumo[hidden] { display: none; }
-.pitch-texto { flex: 1; min-width: 0; display: grid; gap: .1rem; }
+.pitch-texto { flex: 1; min-width: 0; display: grid; gap: .1rem; overflow-wrap: anywhere; }
 .pitch-rot { font-size: var(--t-rotulo); font-weight: 750; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); }
 .pitch-linha { font-weight: 700; font-variant-numeric: tabular-nums; }
 .pitch-dica { font-size: var(--t-p); color: var(--suave); }
