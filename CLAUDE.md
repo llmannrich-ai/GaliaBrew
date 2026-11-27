@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127f.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127g.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -332,8 +332,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 
 ## Layout Clean da receita (24/11/2026, pedido do responsável; plano `docs/PLANO-CLEAN.md`; sem migração)
 - Opcional: Meu perfil → Aparência → "Layout da receita: Completo | Clean" (`preferencias.layout`, localStorage). O
-  `tema.js` põe `data-layout` no `<html>` antes da 1ª pintura (`GaliaTema.layouts/layout/aplicarLayout`). Padrão = Clean desde 27/11/2026 (ver "Padrão Pilsen + Clean"; antes Completo
-  ). Vale com QUALQUER tema (decisão do responsável: sem tema novo).
+  `tema.js` põe `data-layout` no `<html>` antes da 1ª pintura (`GaliaTema.layouts/layout/aplicarLayout`). Padrão = Clean desde 27/11/2026 (ver "Padrão Pilsen + Clean"; antes Completo).
+  Vale com QUALQUER tema (decisão do responsável: sem tema novo).
 - Decisões do responsável (24/11/2026, "Sim" às recomendações do plano): cores do tema sem decoração; números no topo +
   linha fina ao rolar (K2, a fazer); tocar na quantidade abre a roleta direto; se o Clean for aprovado em ~2 semanas,
   vira o padrão e o Completo sai (não manter dois layouts para sempre).
