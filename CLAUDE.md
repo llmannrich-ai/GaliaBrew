@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127b.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127c.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -804,6 +804,12 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   `barra-app` é presa (cor `--cartao`). `theme-color` (Android/outros) = `--fundo` do tema (tema.js; padrão #ffffff no
   index.html e no manifest). Teste "toque: logo..." confere que nada preso cobre o meio do topo. O iOS só relê ao abrir:
   remover o ícone e "Adicionar à Tela de Início" de novo. Falta conferir no iPhone real.
+
+## Ícones de fermentáveis e lúpulo redesenhados (27/11/2026, pedido do responsável: "muito ruim"; só icones.js)
+- `malte` = espiga de cevada: haste, 3 pares de grãos CHEIOS + 1 no topo (`fill`/`stroke: none` no próprio caminho) e
+  barbas longas em traço fino (`stroke-width` 1,25 no caminho). `lupulo` = cone com as brácteas em losango, haste e folha.
+  Em 18 px o contorno de grão pequeno virava borrão; por isso grão cheio. `malte_min`/`lupulo_min` (Clean) = o mesmo
+  desenho (constantes `ESPIGA` e `CONE`). Atributo no caminho vale sobre o do `<svg>` e sobre o stroke-width do CSS.
 
 ## Lúpulos: total em destaque e sem a forma (25/11/2026, pedido do responsável; sem migração)
 - O título da seção Lúpulos mostra "N g · N IBU" em destaque (`destaque: true` no `secaoLinhas`, a mesma letra grande
