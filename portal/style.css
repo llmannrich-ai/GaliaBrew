@@ -190,6 +190,8 @@ button.inicio-menu { display: none; }
     background: var(--menu-fundo); color: var(--menu-tinta); box-shadow: 0 1px 6px rgba(0, 0, 0, .25);
   }
   .barra-movel .marca { color: var(--menu-tinta); font-size: 1.1rem; }
+  /* Logo "Gália" em creme na barra escura das outras telas (27/11/2026, pedido do responsável; antes copinho + "GaliaBrew"). */
+  .barra-movel .marca-logo { display: block; height: 2.5rem; width: auto; }
   body.na-inicio .barra-movel { display: none; }
   button.inicio-menu {
     display: inline-flex; align-items: center; justify-content: center; position: absolute; left: -.45rem; top: 50%;

@@ -255,7 +255,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261126d");
+    const m = await import("./fontes.js?v=20261127a");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -533,7 +533,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -601,7 +601,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -623,7 +623,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -733,7 +733,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1973,6 +1973,17 @@ const erros = [];
   verificar(temasIds.length === 9 && temasIds[0] === "auto" && await cel.isChecked('.tema-opcao[data-opcao="auto"] input'),
     "perfil: 9 temas, Automático marcado por padrão");
   verificar(await larguraSobra() <= 1, "320 px: temas do perfil sem rolagem para o lado");
+  // Barra escura das outras telas (27/11/2026): logo "Gália" em creme no lugar do copinho + "GaliaBrew".
+  await cel.evaluate(() => window.scrollTo(0, 0));
+  const bl = await cel.evaluate(() => {
+    const b = document.querySelector(".barra-movel"), img = b.querySelector(".marca .marca-logo"), r = img?.getBoundingClientRect();
+    const m = b.querySelector(".abrir-menu").getBoundingClientRect(), rb = b.getBoundingClientRect();
+    return img && { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, visivel: img.checkVisibility(), altura: Math.round(r.height),
+      dentro: r.top >= rb.top && r.bottom <= rb.bottom, separado: m.right <= r.left, texto: b.querySelector(".marca").textContent.trim(), copo: !!b.querySelector(".copo") };
+  });
+  verificar(bl && bl.src === "icones/logo-galia-escuro.png" && bl.visivel && bl.altura >= 36 && bl.altura <= 44 && bl.dentro && bl.separado && !bl.texto && !bl.copo,
+    `320 px: barra escura do perfil com a logo "Gália" em creme, sem copinho nem "GaliaBrew" (${JSON.stringify(bl)})`);
+  await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-barra-logo.png`, clip: { x: 0, y: 0, width: 320, height: 140 } });
   await cel.locator(".temas").first().evaluate((n) => n.scrollIntoView({ block: "start" }));
   await cel.screenshot({ path: `${SAIDA}/p6g-celular-320-temas.png` });
   await cel.setViewportSize({ width: 390, height: 844 });
