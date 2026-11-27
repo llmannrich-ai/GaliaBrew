@@ -1,28 +1,30 @@
 // icones.js — ícones do GaliaBrew, desenho próprio (grade 24 × 24, traço 1,75, pontas arredondadas, cor = texto).
 // Em JS (e não num arquivo .svg): saem pelo svg() do ui.js, sem requisição extra e dentro da CSP.
-import { svg } from "./ui.js?v=20261127b";
+import { svg } from "./ui.js?v=20261127c";
 
 // Cada ícone = lista de elementos [tag, atributos]. "c" = círculo, "p" = caminho, "e" = elipse.
+// Atributo no elemento vale sobre o do <svg> (ex.: fill/stroke de parte cheia, stroke-width de traço fino).
+const CHEIO = { fill: "currentColor", stroke: "none" };
+const ESPIGA = [
+  ["p", { d: "M12 23V9.3" }],
+  ["p", { ...CHEIO, d: "M11 20c.9-1.5.3-3-2-4.4-.4 2.6.3 4.1 2 4.4zM13 20c1.7-.3 2.4-1.8 2-4.4-2.3 1.4-2.9 2.9-2 4.4zM11 16c.9-1.5.3-3-2-4.4-.4 2.6.3 4.1 2 4.4zM13 16c1.7-.3 2.4-1.8 2-4.4-2.3 1.4-2.9 2.9-2 4.4zM11 12c.9-1.5.3-3-2-4.4-.4 2.6.3 4.1 2 4.4zM13 12c1.7-.3 2.4-1.8 2-4.4-2.3 1.4-2.9 2.9-2 4.4zM12 8.8c1.4-1.5 1.4-3.4 0-5-1.4 1.6-1.4 3.5 0 5z" }],
+  ["p", { "stroke-width": 1.25, d: "M12 3.8V1.4M9 7.6 8.4 1.3M15 7.6l.6-6.3M9 11.6 7.4 4.8M15 11.6l1.6-6.8" }],
+];
+const CONE = [
+  ["p", { d: "M12 4.8C8.8 5.4 6.6 8.2 6.6 11.8c0 4.2 2.4 7.6 5.4 9.8 3-2.2 5.4-5.6 5.4-9.8 0-3.6-2.2-6.4-5.4-7z" }],
+  ["p", { d: "M7.1 8.9c1 .7 1.8 1.6 2.3 2.7.6-1.1 1.5-2 2.6-2.6 1.1.6 2 1.5 2.6 2.6.5-1.1 1.3-2 2.3-2.7" }],
+  ["p", { d: "M9.4 11.6c.4 1.9 1.3 3.5 2.6 4.8 1.3-1.3 2.2-2.9 2.6-4.8M9.4 11.6c-.5 1.5-1.2 2.8-2.2 3.8M14.6 11.6c.5 1.5 1.2 2.8 2.2 3.8" }],
+  ["p", { d: "M12 16.4c-.6 1.2-1.4 2.2-2.5 2.9M12 16.4c.6 1.2 1.4 2.2 2.5 2.9" }],
+  ["p", { d: "M12 4.8V2.2" }],
+  ["p", { d: "M12 3.3c1-1.4 2.7-1.9 4.6-1.3-.8 1.8-2.6 2.4-4.6 1.3z" }],
+];
+
 export const DESENHOS = {
-  // espiga de cevada
-  malte: [
-    ["p", { d: "M12 22V6" }],
-    ["p", { d: "M12 9.5c-2.6-.2-4.2-1.8-4.4-4.4 2.6.2 4.2 1.8 4.4 4.4z" }],
-    ["p", { d: "M12 9.5c2.6-.2 4.2-1.8 4.4-4.4-2.6.2-4.2 1.8-4.4 4.4z" }],
-    ["p", { d: "M12 14c-2.6-.2-4.2-1.8-4.4-4.4 2.6.2 4.2 1.8 4.4 4.4z" }],
-    ["p", { d: "M12 14c2.6-.2 4.2-1.8 4.4-4.4-2.6.2-4.2 1.8-4.4 4.4z" }],
-    ["p", { d: "M12 18.5c-2.6-.2-4.2-1.8-4.4-4.4 2.6.2 4.2 1.8 4.4 4.4z" }],
-    ["p", { d: "M12 18.5c2.6-.2 4.2-1.8 4.4-4.4-2.6.2-4.2 1.8-4.4 4.4z" }],
-    ["p", { d: "M12 6V2.5" }],
-  ],
-  // flor de lúpulo (cone com escamas)
-  lupulo: [
-    ["p", { d: "M12 4.5c-3.4 1.9-5.3 4.9-5.3 8.6 0 3.9 2.2 6.6 5.3 8.4 3.1-1.8 5.3-4.5 5.3-8.4 0-3.7-1.9-6.7-5.3-8.6z" }],
-    ["p", { d: "M7.2 10.4c1.5 1.1 3.1 1.6 4.8 1.6s3.3-.5 4.8-1.6" }],
-    ["p", { d: "M6.8 14.6c1.6 1.2 3.4 1.8 5.2 1.8s3.6-.6 5.2-1.8" }],
-    ["p", { d: "M12 4.5V2.2" }],
-    ["p", { d: "M12 3.2c1.7-1.5 3.6-1.6 5.2-.6-1.2 1.7-3.1 2.2-5.2.6z" }],
-  ],
+  // espiga de cevada (27/11/2026, pedido do responsável: a anterior virava um borrão em 18 px): haste, grãos CHEIOS em
+  // 3 pares + 1 no topo (cheio lê melhor que contorno em tamanho pequeno) e barbas longas em traço fino (o que diz "cevada").
+  malte: ESPIGA,
+  // flor de lúpulo (27/11/2026, mesmo pedido): cone com as brácteas em losango, haste e folha.
+  lupulo: CONE,
   // levedura brotando
   levedura: [
     ["c", { cx: 10, cy: 14, r: 6.5 }],
@@ -81,10 +83,9 @@ export const DESENHOS = {
   ],
   // ---------- mínimos (layout Clean, 25/11/2026, pedido do responsável: no lugar do traço do título da seção) ----------
   // Um a três traços cada, para ler bem em 18 px sem círculo em volta. Mesmo nome da seção + "_min".
-  // grão de cevada
-  malte_min: [["p", { d: "M12 3c3.3 2.6 5 5.6 5 9s-1.7 6.4-5 9c-3.3-2.6-5-5.6-5-9s1.7-6.4 5-9z" }], ["p", { d: "M12 7.5v9" }]],
-  // cone de lúpulo
-  lupulo_min: [["p", { d: "M12 4.5c3.2 1.8 5 4.6 5 8 0 3.6-2.2 6.3-5 7.5-2.8-1.2-5-3.9-5-7.5 0-3.4 1.8-6.2 5-8z" }], ["p", { d: "M7.6 12c2.9 1.6 5.9 1.6 8.8 0" }], ["p", { d: "M12 4.5V2.5" }]],
+  // espiga e cone: o mesmo desenho do Completo (já feito para ler em 18 px; 27/11/2026)
+  malte_min: ESPIGA,
+  lupulo_min: CONE,
   // célula brotando
   levedura_min: [["c", { cx: 10.5, cy: 13.5, r: 6.5 }], ["p", { d: "M13.5 7.7A3 3 0 1 1 16.3 10.5" }]],
   // folha
