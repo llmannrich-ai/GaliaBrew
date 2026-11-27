@@ -396,7 +396,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   valendo. Consequência: aparelho que nunca escolheu tema/layout (inclusive quem já usava) passa a abrir em Pilsen + Clean.
 - Teste do navegador: contexto limpo no início confere o padrão e que a escolha salva vence; os demais contextos começam
   com Automático + Completo salvos (`SEMENTE_PREF`), porque as verificações antigas foram escritas sobre eles.
-, pedido do responsável; sem migração)
+
+## Parâmetros da receita (24/11/2026, pedido do responsável; sem migração)
 - Saiu o `<details>` "Parâmetros" que abria na página. Agora: seção `section.cartao.parametros` (`data-secao="parametros"`)
   com o nome do equipamento no título e SÓ os 3 números principais (Volume, Eficiência, Fervura; `.param-resumo`). São o
   mesmo `campoNumero`: no celular tocar abre a ROLETA direto (como a quantidade do malte/lúpulo; barra de números fina
