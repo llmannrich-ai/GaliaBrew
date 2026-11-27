@@ -189,6 +189,160 @@ export function corrigirDensimetro({ sg, tempC, calibracaoC = 20 }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Levedura: inoculação (pitch rate) e starter (27/11/2026). Células em BILHÕES; taxa em milhões de células por mL
+// por °Plato. Necessárias = taxa × litros × °P (o 1000 do mL e o 1000 de milhão → bilhão se anulam).
+// ---------------------------------------------------------------------------------------------------------------
+/** Taxas usuais (M células/mL/°P): ale 0,75, lager 1,5; acima de OG 1,060 (alta densidade) ale 1,0 e lager 2,0. */
+export const TAXA_INOCULACAO = { ALE: 0.75, ALE_FORTE: 1.0, LAGER: 1.5, LAGER_FORTE: 2.0 };
+export const OG_ALTA_DENSIDADE = 1.06;
+/** Premissas: levedura seca 15 bi/g (os fabricantes garantem ≥ 5-6, a contagem costuma dar 10-20; com 15, 1 sachê
+ *  de 11,5 g em 23 L de 1,050 = 81% do ideal, perto do mínimo que o fabricante indica: 50 g/hL), sachê de 11,5 g,
+ *  pacote líquido de 100 bi na fabricação, lama (fermento coletado) ~1 bi/mL, e a perda da líquida: 0,7% ao dia. */
+export const LEVEDURA_PADRAO = { bilhoes_g_seca: 15, sache_g: 11.5, bilhoes_pacote_liquido: 100, bilhoes_ml_lama: 1, perda_dia_pct: 0.7 };
+/** Starter: densidade usual 1,036; extrato seco de malte (DME) com ~4% de umidade. */
+export const STARTER_SG_PADRAO = 1.036;
+const DME_SOLIDOS = 0.96;
+
+/** Taxa padrão pelo tipo da levedura (lager ou o resto) e pela OG. */
+export function taxaInoculacaoPadrao(tipo, og) {
+  const forte = num(og) > OG_ALTA_DENSIDADE;
+  if (tipo === "LAGER") return forte ? TAXA_INOCULACAO.LAGER_FORTE : TAXA_INOCULACAO.LAGER;
+  return forte ? TAXA_INOCULACAO.ALE_FORTE : TAXA_INOCULACAO.ALE;
+}
+
+/** Bilhões de células para inocular `litros` de mosto na densidade `og` com a `taxa` (M/mL/°P). */
+export function celulasNecessarias({ og, litros, taxa }) {
+  return num(taxa) * num(litros) * Math.max(0, platoDeSg(num(og, 1)));
+}
+
+/** Viabilidade (%) da levedura líquida pela data de fabricação ("AAAA-MM-DD"); sem data = 100 (fresca). */
+export function viabilidadeLiquida(fabricacao, hoje = new Date()) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(fabricacao ?? ""));
+  if (!m) return { pct: 100, dias: null };
+  const h = hoje instanceof Date ? hoje : new Date(hoje);
+  const dias = Math.max(0, Math.floor((Date.UTC(h.getFullYear(), h.getMonth(), h.getDate()) - Date.UTC(+m[1], +m[2] - 1, +m[3])) / 86400000));
+  return { pct: Math.max(0, Math.min(100, 100 - LEVEDURA_PADRAO.perda_dia_pct * dias)), dias };
+}
+
+/**
+ * Bilhões de células de UMA levedura da receita pela forma e unidade; null = não dá para saber (slant, cultura em
+ * pacote, seca em mL). Viabilidade só na líquida/lama (a seca quase não perde se guardada fechada na geladeira).
+ */
+export function celulasDaLevedura(item, { viabilidadePct = 100, bilhoesPorGrama = LEVEDURA_PADRAO.bilhoes_g_seca } = {}) {
+  const q = num(item?.quantidade, NaN);
+  if (!(q > 0)) return 0;
+  const u = item.unidade ?? "PACOTE";
+  if (u === "BILHOES_CELULAS") return q;
+  const viab = Math.max(0, num(viabilidadePct, 100)) / 100;
+  const bpg = num(bilhoesPorGrama, LEVEDURA_PADRAO.bilhoes_g_seca) || LEVEDURA_PADRAO.bilhoes_g_seca;
+  if (item.forma === "SECA") {
+    if (u === "G") return q * bpg;
+    if (u === "PACOTE" || u === "UN") return q * LEVEDURA_PADRAO.sache_g * bpg;
+    return null;
+  }
+  if (u === "ML" || u === "G") return q * LEVEDURA_PADRAO.bilhoes_ml_lama * viab;
+  if (item.forma === "LIQUIDA" || item.forma == null) return q * LEVEDURA_PADRAO.bilhoes_pacote_liquido * viab;
+  return null;
+}
+
+/**
+ * Starter de um passo: `celulas` (bi) em `litros` de mosto a `sg`.
+ * AGITADOR (agitador magnético): modelo de Kai Troester (Braukaiser): até 1,4 bi por grama de extrato, cresce 1,4 bi/g;
+ *   acima disso, (2,33 − 0,67 × bi/g) bi por grama (nada a partir de ~3,5 bi/g).
+ * AGITAR (sem agitador, agitando de vez em quando): curva de Chris White pela concentração inicial (M células/mL),
+ *   fator de crescimento = 12,55 × x^−0,4595 − 1, limitado a 0-6.
+ * Devolve { final_bi, crescimento_bi, extrato_g, dme_g, agua_l }.
+ */
+export function crescimentoStarter({ celulas, litros, sg = STARTER_SG_PADRAO, metodo = "AGITADOR" }) {
+  const l = num(litros);
+  const c = Math.max(0, num(celulas));
+  const g = num(sg, STARTER_SG_PADRAO) > 1 ? num(sg, STARTER_SG_PADRAO) : STARTER_SG_PADRAO;
+  const massa = l * 1000 * g;                                // g de mosto
+  const extrato = (massa * Math.max(0, platoDeSg(g))) / 100;  // g de extrato dissolvido
+  let crescimento = 0;
+  if (l > 0 && c > 0) {
+    if (metodo === "AGITAR") {
+      const x = c / l;                                       // bi/L = M/mL
+      crescimento = c * Math.min(6, Math.max(0, 12.54793776 * x ** -0.4594858324 - 0.9994994906));
+    } else {
+      const porGrama = c / extrato;
+      crescimento = (porGrama < 1.4 ? 1.4 : Math.max(0, 2.33 - 0.67 * porGrama)) * extrato;
+    }
+  }
+  const dme = extrato / DME_SOLIDOS;
+  return { final_bi: c + crescimento, crescimento_bi: crescimento, extrato_g: extrato, dme_g: dme, agua_l: Math.max(0, (massa - dme) / 1000) };
+}
+
+/** Menor starter (0,5 a 5 L, de 0,25 em 0,25) que chega a `alvo` bi; 0 = não precisa; null = um passo não chega. */
+export function starterSugerido({ celulas, alvo, sg, metodo }) {
+  if (num(celulas) >= num(alvo)) return 0;
+  if (!(num(celulas) > 0)) return null;
+  for (let l = 0.5; l <= 5 + 1e-9; l += 0.25) {
+    if (crescimentoStarter({ celulas, litros: l, sg, metodo }).final_bi >= alvo) return l;
+  }
+  return null;
+}
+
+/**
+ * Inoculação da receita. `leveduras` = as da receita (contam as da fermentação primária); `cfg` = o que a pessoa
+ * escolheu (extras.inoculacao): { taxa, fabricacao, bilhoes_g, starter: NENHUM|AGITADOR|AGITAR, starter_l, starter_sg }.
+ * Campo vazio = padrão (taxa pelo tipo e OG; starter no tamanho sugerido).
+ */
+export function inoculacao({ leveduras = [], og, litros, cfg = {}, hoje = new Date() }) {
+  const lista = leveduras.filter((y) => (y.etapa ?? "PRIMARIA") === "PRIMARIA" && num(y.quantidade) > 0);
+  if (!lista.length) return null;
+  const tipo = lista.some((y) => y.tipo === "LAGER") ? "LAGER" : "ALE";
+  const taxaPadrao = taxaInoculacaoPadrao(tipo, og);
+  const taxa = num(cfg.taxa) > 0 ? num(cfg.taxa) : taxaPadrao;
+  const plato = Math.max(0, platoDeSg(num(og, 1)));
+  const necessarias = celulasNecessarias({ og, litros, taxa });
+  const liquida = lista.some((y) => y.forma !== "SECA" && y.unidade !== "BILHOES_CELULAS");
+  const seca = lista.some((y) => y.forma === "SECA" && y.unidade !== "BILHOES_CELULAS");
+  const viab = viabilidadeLiquida(cfg.fabricacao, hoje);
+  const bilhoesG = num(cfg.bilhoes_g) > 0 ? num(cfg.bilhoes_g) : LEVEDURA_PADRAO.bilhoes_g_seca;
+  const porItem = lista.map((y) => celulasDaLevedura(y, { viabilidadePct: viab.pct, bilhoesPorGrama: bilhoesG }));
+  const desconhecida = porItem.some((c) => c === null);
+  const tem = porItem.reduce((s, c) => s + (c ?? 0), 0);
+  const taxaDe = (bi) => (num(litros) > 0 && plato > 0 ? bi / (num(litros) * plato) : null);
+  const pctDe = (bi) => (necessarias > 0 ? (bi / necessarias) * 100 : null);
+
+  // Quantos pacotes/gramas bastam sem starter (uma levedura só, em pacote ou g).
+  let quantidadeIdeal = null;
+  if (lista.length === 1 && !desconhecida) {
+    const y = lista[0];
+    const um = celulasDaLevedura({ ...y, quantidade: 1 }, { viabilidadePct: viab.pct, bilhoesPorGrama: bilhoesG });
+    if (um > 0 && ["PACOTE", "UN"].includes(y.unidade ?? "PACOTE")) quantidadeIdeal = Math.max(1, Math.ceil(necessarias / um - 0.05));
+    else if (um > 0 && y.unidade === "G") quantidadeIdeal = Math.ceil(necessarias / um);
+  }
+
+  const metodo = cfg.starter === "AGITADOR" || cfg.starter === "AGITAR" ? cfg.starter : null;
+  const sg = num(cfg.starter_sg) > 1 ? num(cfg.starter_sg) : STARTER_SG_PADRAO;
+  const sugerido = starterSugerido({ celulas: tem, alvo: necessarias, sg, metodo: metodo ?? "AGITADOR" });
+  let starter = null;
+  if (metodo) {
+    const l = num(cfg.starter_l) > 0 ? num(cfg.starter_l) : sugerido || 0;
+    const s = crescimentoStarter({ celulas: tem, litros: l, sg, metodo });
+    starter = { metodo, litros: l, informado: num(cfg.starter_l) > 0, sg, ...s, taxa: taxaDe(s.final_bi), pct: pctDe(s.final_bi) };
+  }
+  const final = starter && starter.litros > 0 ? starter.final_bi : tem;
+  return {
+    tipo, og: num(og, 1), plato, litros: num(litros), taxa, taxa_padrao: taxaPadrao, taxa_informada: num(cfg.taxa) > 0,
+    necessarias_bi: necessarias, tem_bi: tem, desconhecida, liquida, seca, viabilidade_pct: viab.pct, dias: viab.dias,
+    bilhoes_g: bilhoesG, taxa_real: taxaDe(tem), pct: pctDe(tem), quantidade_ideal: quantidadeIdeal,
+    starter_sugerido_l: sugerido, starter, final_bi: final, final_pct: pctDe(final), situacao: situacaoInoculacao(pctDe(final)),
+  };
+}
+
+/** OK (90-250% do ideal), BAIXA (60-90%), MUITO_BAIXA (< 60%), ALTA (> 250%). */
+export function situacaoInoculacao(pct) {
+  if (pct == null) return null;
+  if (pct < 60) return "MUITO_BAIXA";
+  if (pct < 90) return "BAIXA";
+  if (pct > 250) return "ALTA";
+  return "OK";
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Química da água: sais e perfil de íons
 // ---------------------------------------------------------------------------------------------------------------
 export const IONS = ["calcio_ppm", "magnesio_ppm", "sodio_ppm", "sulfato_ppm", "cloreto_ppm", "bicarbonato_ppm"];

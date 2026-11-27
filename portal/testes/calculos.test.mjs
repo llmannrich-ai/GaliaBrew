@@ -522,3 +522,75 @@ test("Encaixe no estilo: quantos parâmetros cabem e quanto passa da faixa", () 
   assert.equal(parcial.total, 3);
   assert.equal(encaixeEstilo(null, { og: 1.05 }).total, 0);
 });
+
+test("inoculação: células necessárias, seca e líquida com viabilidade", async () => {
+  const c = await import("../calculos.js");
+  // 0,75 × 23 L × 12,39 °P = 213,7 bi
+  perto(c.celulasNecessarias({ og: 1.050, litros: 23, taxa: 0.75 }), 213.7, 0.1);
+  assert.equal(c.taxaInoculacaoPadrao("ALE", 1.050), 0.75);
+  assert.equal(c.taxaInoculacaoPadrao("ALE", 1.070), 1.0);
+  assert.equal(c.taxaInoculacaoPadrao("LAGER", 1.050), 1.5);
+  assert.equal(c.taxaInoculacaoPadrao("LAGER", 1.080), 2.0);
+  // Seca: sachê 11,5 g × 15 bi/g; 11 g × 15
+  assert.equal(c.celulasDaLevedura({ forma: "SECA", quantidade: 1, unidade: "PACOTE" }), 172.5);
+  assert.equal(c.celulasDaLevedura({ forma: "SECA", quantidade: 11, unidade: "G" }), 165);
+  assert.equal(c.celulasDaLevedura({ forma: "SECA", quantidade: 11, unidade: "ML" }), null);
+  // Líquida: 100 bi × viabilidade; 30 dias × 0,7% = 79%
+  const v = c.viabilidadeLiquida("2026-10-28", new Date(2026, 10, 27));
+  assert.deepEqual(v, { pct: 79, dias: 30 });
+  assert.equal(c.viabilidadeLiquida(null).pct, 100);
+  assert.equal(c.viabilidadeLiquida("2025-01-01", new Date(2026, 10, 27)).pct, 0);
+  assert.equal(c.celulasDaLevedura({ forma: "LIQUIDA", quantidade: 2, unidade: "PACOTE" }, { viabilidadePct: 79 }), 158);
+  assert.equal(c.celulasDaLevedura({ forma: "LIQUIDA", quantidade: 200, unidade: "ML" }), 200);
+  assert.equal(c.celulasDaLevedura({ forma: "SLANT", quantidade: 1, unidade: "UN" }), null);
+  assert.equal(c.celulasDaLevedura({ forma: "SLANT", quantidade: 50, unidade: "BILHOES_CELULAS" }), 50);
+});
+
+test("starter: agitador (Braukaiser), sem agitador (White) e tamanho sugerido", async () => {
+  const c = await import("../calculos.js");
+  // 1 L a 1,036: 1036 g × 9,02 °P = 93,5 g de extrato; 100 bi = 1,07 bi/g < 1,4 → +1,4 × 93,5 = 130,9
+  const a = c.crescimentoStarter({ celulas: 100, litros: 1, sg: 1.036, metodo: "AGITADOR" });
+  perto(a.extrato_g, 93.5, 0.1);
+  perto(a.final_bi, 230.9, 0.2);
+  perto(a.dme_g, 97.4, 0.2);
+  perto(a.agua_l, 0.94, 0.01);
+  // Muita levedura para o extrato: 400 bi em 1 L = 4,3 bi/g → não cresce
+  perto(c.crescimentoStarter({ celulas: 400, litros: 1 }).crescimento_bi, 0, 1e-9);
+  // White: 100 M/mL → fator 0,51; 2 L (50 M/mL) → 1,08
+  perto(c.crescimentoStarter({ celulas: 100, litros: 1, metodo: "AGITAR" }).final_bi, 151.3, 0.2);
+  perto(c.crescimentoStarter({ celulas: 100, litros: 2, metodo: "AGITAR" }).final_bi, 208.0, 0.2);
+  // Fator limitado a 6
+  perto(c.crescimentoStarter({ celulas: 1, litros: 5, metodo: "AGITAR" }).final_bi, 7, 1e-9);
+  assert.equal(c.starterSugerido({ celulas: 300, alvo: 200 }), 0);
+  assert.equal(c.starterSugerido({ celulas: 100, alvo: 230 }), 1);
+  assert.equal(c.starterSugerido({ celulas: 10, alvo: 2000 }), null);
+});
+
+test("inoculação da receita: tipo, sugestão de pacotes, starter e situação", async () => {
+  const c = await import("../calculos.js");
+  const hoje = new Date(2026, 10, 27);
+  const seca = c.inoculacao({ leveduras: [{ forma: "SECA", tipo: "ALE", quantidade: 1, unidade: "PACOTE", etapa: "PRIMARIA" }], og: 1.050, litros: 23, hoje });
+  perto(seca.pct, 80.7, 0.1);
+  assert.equal(seca.situacao, "BAIXA");
+  assert.equal(seca.quantidade_ideal, 2);
+  assert.equal(seca.starter, null);
+  // Lager líquida de 30 dias em 20 L: 371,6 bi; tem 79 → starter de 2,25 L no agitador
+  const lager = c.inoculacao({
+    leveduras: [{ forma: "LIQUIDA", tipo: "LAGER", quantidade: 1, unidade: "PACOTE" }, { forma: "SECA", tipo: "ALE", quantidade: 1, unidade: "PACOTE", etapa: "ENVASE" }],
+    og: 1.050, litros: 20, cfg: { starter: "AGITADOR", fabricacao: "2026-10-28" }, hoje,
+  });
+  assert.equal(lager.tipo, "LAGER");
+  perto(lager.necessarias_bi, 371.6, 0.1);
+  assert.equal(lager.tem_bi, 79);
+  assert.equal(lager.starter_sugerido_l, 2.25);
+  assert.equal(lager.starter.litros, 2.25);
+  assert.equal(lager.situacao, "OK");
+  // Starter informado e taxa informada
+  const inf = c.inoculacao({ leveduras: [{ forma: "LIQUIDA", tipo: "ALE", quantidade: 1, unidade: "PACOTE" }], og: 1.050, litros: 20, cfg: { taxa: 1, starter: "AGITAR", starter_l: 1 }, hoje });
+  assert.equal(inf.taxa, 1);
+  assert.equal(inf.starter.informado, true);
+  perto(inf.final_bi, 151.3, 0.2);
+  assert.equal(c.situacaoInoculacao(300), "ALTA");
+  assert.equal(c.situacaoInoculacao(50), "MUITO_BAIXA");
+  assert.equal(c.inoculacao({ leveduras: [], og: 1.05, litros: 20 }), null);
+});

@@ -1188,8 +1188,8 @@ button.ferramenta-botao:active { transform: scale(.985); }
 /* Janela da ferramenta: cabeça presa no topo (ícone, nome, × e o RESULTADO, que fica à vista enquanto a roleta ou o
    teclado mudam os números); campos; "Pronto" no pé. No celular é um cartão no meio da tela (como a janela do item);
    com a roleta aberta o roleta.js prende a janela onde está e ela rola por dentro. */
-dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela) { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
-dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela)[open] { display: flex; flex-direction: column; }
+dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela, .pitch-janela) { padding: 0; max-width: min(560px, 96vw); max-height: min(92vh, 900px); overscroll-behavior: contain; }
+dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela, .pitch-janela)[open] { display: flex; flex-direction: column; }
 .fj-cabeca { position: sticky; top: 0; z-index: 1; background: var(--fc, var(--painel)); }
 .fj-topo { display: flex; align-items: center; gap: .7rem; padding: .5rem .4rem .35rem .9rem; }
 .fj-topo .fb-icone { width: 2.5rem; height: 2.5rem; border-radius: 12px; }
@@ -1220,10 +1220,10 @@ dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela)[open] { display:
   position: sticky; bottom: 0; display: flex; justify-content: flex-end; padding: .55rem .9rem;
   background: var(--cartao); border-top: 1px solid var(--linha);
 }
-dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela):has(> .roleta) .fj-pe { position: static; }
+dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela, .pitch-janela):has(> .roleta) .fj-pe { position: static; }
 @media (max-width: 640px) {
   .ferramentas-menu { gap: .55rem; }
-  dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela) {
+  dialog:is(.ferramenta-janela, .parametros-janela, .lote-janela, .pitch-janela) {
     width: calc(100vw - 1rem); max-width: calc(100vw - 1rem); margin: auto; border: none; border-radius: 16px;
     max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
@@ -1262,11 +1262,37 @@ button.param-todos { flex: none; display: inline-flex; align-items: center; gap:
 .param-seta { font-size: 1.25rem; line-height: 1; }
 .param-equip { display: grid; gap: .2rem; }
 .param-equip select { width: 100%; }
-dialog:is(.parametros-janela, .lote-janela) .fj-metricas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+dialog:is(.parametros-janela, .lote-janela, .pitch-janela) .fj-metricas { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 /* Brassagem (lote): data e açúcar do priming ocupam 2 das 3 colunas; abaixo dos números, o que já se sabe do lote. */
 .param-largo { grid-column: span 2; }
 .param-largo .param-valor > :is(input, select) { flex: 1 1 auto; width: 0; min-width: 0; }
 .lote-medido { margin: .45rem 0 0; }
+/* Inoculação e starter (27/11/2026, pedido do responsável): resumo tocável no pé da seção Leveduras (rótulo, "Precisa X ·
+   tem Y", dica e o % do ideal num selo na cor do estado) e a janela no molde dos Parâmetros. */
+button.pitch-resumo {
+  display: flex; align-items: center; gap: .6rem; width: 100%; min-height: 3.25rem; margin-top: .7rem; padding: .55rem .7rem;
+  border: 0; border-radius: var(--raio-p); background: color-mix(in srgb, var(--destaque) 9%, transparent); color: var(--tinta);
+  font: inherit; text-align: left; white-space: normal; cursor: pointer; touch-action: manipulation;
+}
+button.pitch-resumo[hidden] { display: none; }
+.pitch-texto { flex: 1; min-width: 0; display: grid; gap: .1rem; overflow-wrap: anywhere; }
+.pitch-rot { font-size: var(--t-rotulo); font-weight: 750; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); }
+.pitch-linha { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pitch-dica { font-size: var(--t-p); color: var(--suave); }
+.pitch-dica[hidden] { display: none; }
+.pitch-selo {
+  --pitch-cor: var(--suave);
+  flex: none; padding: .1rem .5rem; border-radius: 999px; background: var(--pitch-cor); color: var(--cartao);
+  font-size: .8125rem; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.pitch-selo.estado-ok { --pitch-cor: var(--lupulo); }
+.pitch-selo.estado-perto { --pitch-cor: var(--ambar); }
+.pitch-selo.estado-fora { --pitch-cor: var(--fora); }
+.pitch-resumo .param-seta { flex: none; color: var(--suave); }
+.pitch-base { margin: 0 0 .6rem; }
+.pitch-detalhe { margin-top: .2rem; }
+p.pitch-aviso { margin: .45rem 0 0; padding-left: .55rem; border-left: 3px solid var(--ambar); color: var(--tinta); }
+.pitch-acoes:not(:empty) { margin-top: .7rem; }
 @media (max-width: 640px) {
   .param-resumo { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .param-resumo .param-rot { font-size: .75rem; }
@@ -1275,8 +1301,8 @@ dialog:is(.parametros-janela, .lote-janela) .fj-metricas { grid-template-columns
   .param-rot { font-size: .8rem; }
 }
 @media (max-width: 360px) {
-  dialog:is(.parametros-janela, .lote-janela) .fj-corpo { padding-left: .7rem; padding-right: .7rem; }
-  dialog:is(.parametros-janela, .lote-janela) .param-grade { column-gap: .45rem; }
+  dialog:is(.parametros-janela, .lote-janela, .pitch-janela) .fj-corpo { padding-left: .7rem; padding-right: .7rem; }
+  dialog:is(.parametros-janela, .lote-janela, .pitch-janela) .param-grade { column-gap: .45rem; }
   .param-rot { font-size: .75rem; }
   .param-rot button.info { margin-left: .1rem; }
 }
