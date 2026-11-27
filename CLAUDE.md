@@ -93,7 +93,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (40 testes, com os do pdf.js e das faixas da roleta). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (45 testes, com os do pdf.js, das faixas da roleta e do modulepreload). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  447 verificações: login, criar conta e esqueci a senha (celular 390/320 px), menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  450 verificações: login, criar conta e esqueci a senha (celular 390/320 px), menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127h.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127i.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -304,6 +304,22 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   style.css + linha no `TEMAS` do tema.js + reconferir o contraste.
 - Pendente (já existia antes do menu): editor estoura a largura entre 641 e ~850 px (iPad em pé): as linhas de
   ingrediente só ficam compactas até 640 px.
+
+## Carregamento mais rápido (27/11/2026, pedido do responsável: "carregamento lento" ao abrir o app e a receita; sem migração)
+- Causa: cada receita aberta baixava as 7 tabelas do catálogo com todas as colunas (~1,9 MB de JSON; ~920 kB eram notas
+  que o editor não mostra), sempre de novo; e os 21 módulos JS chegavam em cascata (5 níveis de import = 5 idas e voltas).
+- Catálogo do editor (`catalogoDoEditor` no cadastros.js): só as colunas usadas (`COLUNAS_EDITOR`: sem notas e sem datas;
+  o malte mantém as notas por causa do link da The Swaen no fontes.js), ~0,97 MB, UMA leitura por sessão guardada em
+  memória por 30 min. Gravar/excluir nos Cadastros apaga a cópia daquela tabela; sair/trocar de usuário apaga tudo.
+  Pré-carregado 1,2 s depois da 1ª tela (`preCarregarCatalogo` no app.js). A tela de Cadastros continua com `select *`
+  (`listarCadastro`). Ingrediente novo usado pelo editor = coluna nova no `COLUNAS_EDITOR`.
+- Paginação: o PostgREST do Supabase devolve no máximo 1.000 linhas (leveduras já são 897): `lerTudo` lê em páginas de
+  1.000 com `id` no fim da ordem. O Supabase simulado do navegador.cjs aplica offset/limit e o teto de 1.000.
+- `<link rel="modulepreload">` de todos os módulos no index.html (com o mesmo `?v=`): baixam juntos. Módulo novo = linha
+  nova lá; `portal/testes/modulos.test.mjs` falha se faltar ou sobrar.
+- Teste do navegador: "catálogo do editor baixado uma vez, sem notas e paginado". Não medido no iPhone real.
+- Próximo passo se a 1ª abertura ainda incomodar: guardar o catálogo no aparelho (IndexedDB) e/ou service worker para os
+  scripts (o GitHub Pages força cache de 10 min; depois disso cada abertura reconfere os arquivos).
 
 ## Barra de números limpa no celular (24/11/2026, pedido do responsável: "carregada, com bordas"; só style.css + vital.js)
 - Sem cartões, sem bordas e sem cantos arredondados: os 6 números ficam direto no papel da barra (`--painel`), que se
