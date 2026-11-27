@@ -3,8 +3,8 @@
 // mudando enquanto a roda gira). Cada roda é uma lista com rolagem nativa e "scroll-snap" (inércia do próprio
 // aparelho); o item no meio é o escolhido. O valor vai para o campo AO VIVO; "Cancelar" (ou Esc) volta ao de antes;
 // "OK", tocar fora ou Enter confirmam. "Digitar" fecha a roleta e abre o teclado no próprio campo.
-import { el, numeroBR } from "./ui.js?v=20261127e";
-import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261127e";
+import { el, numeroBR } from "./ui.js?v=20261127f";
+import { rodasDaFaixa, valorDasRodas, valorInicial, indicesDoValor } from "./faixas.js?v=20261127f";
 
 const ALTURA = 44;                 // altura de um item (alvo de toque); a roda mostra 5 (2 acima, 2 abaixo)
 let atual = null;                  // roleta aberta: { fechar(confirmar) }
