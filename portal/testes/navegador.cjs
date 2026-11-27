@@ -255,7 +255,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261126d");
+    const m = await import("./fontes.js?v=20261127a");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -305,8 +305,8 @@ const erros = [];
   verificar(await pagina.inputValue('input[aria-label="Volume no fermentador (L)"]') === "23,0", "equipamento único já preenche os parâmetros");
   await pagina.fill(".titulo-receita", "Pils da Galia");
   // Estilo: botão abre a busca; o código acha o estilo e Enter escolhe.
-  const botaoEstilo = 'button.escolha[aria-label="Estilo"]';
-  verificar((await pagina.textContent(botaoEstilo)).includes("sem estilo"), "receita nova começa sem estilo");
+  const botaoEstilo = 'button.estilo-botao';
+  verificar((await pagina.textContent(botaoEstilo)).includes("Escolher estilo"), "receita nova começa sem estilo");
   await pagina.click(botaoEstilo);
   await pagina.waitForSelector("dialog.busca");
   verificar(await pagina.textContent("dialog.busca h3") === "Escolher estilo", "estilo abre a janela de busca");
@@ -533,7 +533,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -601,7 +601,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -623,7 +623,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -733,7 +733,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261126d");
+    const m = await import("./calculos.js?v=20261127a");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -2421,6 +2421,29 @@ const erros = [];
   verificar(nomeLongo.linhas >= 2 && nomeLongo.linhas <= 3 && nomeLongo.cabe && nomeLongo.separado,
     `clean, 320 px: nome longo quebra em ${nomeLongo.linhas} linhas ao lado dos ícones, sem cortar`);
   await cel.fill(".topo-clean .titulo-receita", nomeAntes);
+  // Estilo em destaque (27/11/2026): cartão com selo do código + nome na mesma linha e o encaixe embaixo, em 320 e 390 px.
+  for (const largura of [320, 390]) {
+    await cel.setViewportSize({ width: largura, height: 844 });
+    await cel.evaluate(() => window.scrollTo(0, 0));
+    await cel.waitForTimeout(200);
+    const e = await cel.evaluate(() => {
+      const b = document.querySelector(".topo-clean button.estilo-botao"), r = b.getBoundingClientRect();
+      const q = (s) => b.querySelector(s).getBoundingClientRect();
+      const [cod, nome, enc] = [q(".estilo-codigo"), q(".estilo-nome"), q(".estilo-encaixe")];
+      const nm = document.querySelector(".topo-clean .titulo-receita").getBoundingClientRect();
+      return { alt: r.height, cabe: r.left >= 0 && r.right <= innerWidth, abaixoDoNome: r.top >= nm.bottom,
+        mesmaLinha: Math.abs((cod.top + cod.bottom) / 2 - (nome.top + nome.bottom) / 2) < 4 && cod.right <= nome.left,
+        encaixe: b.querySelector(".estilo-encaixe").textContent, encaixeAbaixo: enc.top >= nome.bottom - 1,
+        letraNome: parseFloat(getComputedStyle(b.querySelector(".estilo-nome")).fontSize),
+        letraEnc: parseFloat(getComputedStyle(b.querySelector(".estilo-encaixe")).fontSize),
+        letraTitulo: parseFloat(getComputedStyle(document.querySelector(".topo-clean .titulo-receita")).fontSize),
+        faixaCor: getComputedStyle(b.querySelector(".estilo-cor")).backgroundImage.includes("gradient") };
+    });
+    verificar(e.alt >= 44 && e.cabe && e.abaixoDoNome && e.mesmaLinha && /^\d de \d números no estilo$/.test(e.encaixe) && e.encaixeAbaixo
+      && e.letraNome >= 17 && e.letraNome < e.letraTitulo && e.letraEnc >= 12 && e.faixaCor,
+      `clean, ${largura} px: estilo em cartão (${Math.round(e.alt)} px, selo + nome ${e.letraNome} px, “${e.encaixe}”, faixa de cor)`);
+    await cel.screenshot({ path: `${SAIDA}/p7m-clean-estilo-${largura}.png`, clip: { x: 0, y: 0, width: largura, height: 330 } });
+  }
   await cel.setViewportSize({ width: 1366, height: 900 });
   await cel.waitForTimeout(200);
   const computador = await cel.evaluate(() => ({ sobra: document.documentElement.scrollWidth - innerWidth,
@@ -2465,14 +2488,24 @@ const erros = [];
         lupulo: razao(cor("--lupulo"), cartao), ambar: razao(cor("--ambar"), cartao), fora: razao(cor("--fora"), cartao),
         mais: razao(parse(mais.color), sobre(parse(mais.backgroundColor), cartao)), icone: razao(icone, cartao),
       };
+      // cartão do estilo no topo (fundo = 9% do destaque sobre o cartão; selo = destaque)
+      const eb = document.querySelector("button.estilo-botao");
+      const fundoE = sobre(parse(getComputedStyle(eb).backgroundColor), pagina);
+      const selo = getComputedStyle(eb.querySelector(".estilo-codigo"));
+      Object.assign(r, {
+        estilo_nome: razao(parse(getComputedStyle(eb.querySelector(".estilo-nome")).color), fundoE),
+        estilo_encaixe: razao(parse(getComputedStyle(eb.querySelector(".estilo-encaixe")).color), fundoE),
+        estilo_selo: razao(parse(selo.color), parse(selo.backgroundColor)),
+        estilo_seta: razao(parse(getComputedStyle(eb.querySelector(".escolha-seta")).color), fundoE),
+      });
       sonda.remove();
       return r;
     });
-    const minimo = { texto: 7, icone: 3 };
+    const minimo = { texto: 7, icone: 3, estilo_nome: 7, estilo_seta: 3 };
     for (const [k, v] of Object.entries(c)) if (!(v >= (minimo[k] ?? 4.5))) ruins.push(`${t} ${k} ${v}`);
   }
   await cel.evaluate(() => window.GaliaTema.aplicar("auto"));
-  verificar(ruins.length === 0, `clean K6: contraste nos ${temasClean.length} temas (texto ≥ 7; secundário, estados e “+” ≥ 4,5; ícone ≥ 3)${ruins.length ? ": " + ruins.join("; ") : ""}`);
+  verificar(ruins.length === 0, `clean K6: contraste nos ${temasClean.length} temas (texto ≥ 7; secundário, estados e “+” ≥ 4,5; ícone ≥ 3; cartão do estilo)${ruins.length ? ": " + ruins.join("; ") : ""}`);
   // Volta ao Completo para o resto do teste.
   await cel.evaluate(() => {
     window.GaliaTema.aplicar("auto"); window.GaliaTema.aplicarLayout("completo");

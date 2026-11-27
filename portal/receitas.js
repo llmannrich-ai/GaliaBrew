@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261126d";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261126d";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261126d";
-import { sb, sessao, preferencias } from "./estado.js?v=20261126d";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261126d";
-import { abrirBusca } from "./busca.js?v=20261126d";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261126d";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261126d";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261126d";
-import * as O from "./opcoes.js?v=20261126d";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261126d";
-import { icone } from "./icones.js?v=20261126d";
-import { abrirMenu } from "./menu.js?v=20261126d";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261126d";
-import { abrirRelatorio } from "./relatorio.js?v=20261126d";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261126d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127a";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127a";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261127a";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, encaixeEstilo, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127a";
+import { abrirBusca } from "./busca.js?v=20261127a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127a";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127a";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127a";
+import * as O from "./opcoes.js?v=20261127a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127a";
+import { icone } from "./icones.js?v=20261127a";
+import { abrirMenu } from "./menu.js?v=20261127a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261127a";
+import { abrirRelatorio } from "./relatorio.js?v=20261127a";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -362,6 +362,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     }
     for (const t of totais) t(res);
     const estilo = estiloAtual();
+    mostrarEstilo(res);
     vital.atualizar(res, estilo, { mudanca: montado && !leitura, campo: campo ?? document.activeElement });
     grist.atualizar(res, r.fermentaveis);
     tempo.atualizar(res, r.lupulos, r.fervura_min);
@@ -751,25 +752,54 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     leitura ? el("span", { class: "selo", text: "só leitura" }) : bDesfazerApp,
     leitura ? null : botaoSalvarApp);
 
-  // Estilo: botão que abre a busca (código, nome, termos em português, filtros, "Mais perto da receita").
-  const nomeEstilo = el("span", { class: "escolha-texto" });
-  const mostrarEstilo = () => {
+  // Estilo em destaque (27/11/2026, pedido do responsável): cartão que abre a busca, com a faixa de cor do estilo à
+  // esquerda (cor da cerveja do mínimo ao máximo), o código num selo, o nome grande e quantos números da receita estão
+  // na faixa (`encaixeEstilo`: OG, FG, ABV, IBU e cor; refeito a cada cálculo).
+  const estiloCor = el("span", { class: "estilo-cor", "aria-hidden": "true" });
+  const estiloCodigo = el("span", { class: "estilo-codigo" });
+  const estiloNome = el("span", { class: "estilo-nome" });
+  const estiloEncaixe = el("span", { class: "estilo-encaixe" });
+  let ultimoRes = null;
+  const mostrarEstilo = (res = ultimoRes) => {
+    ultimoRes = res;
     const e = estiloAtual();
-    nomeEstilo.textContent = e ? `${e.codigo ? e.codigo + " " : ""}${e.nome}${e.dono ? " (meu)" : ""}` : "— sem estilo —";
+    botaoEstilo.classList.toggle("vazio", !e);
+    estiloCodigo.hidden = !e?.codigo;
+    estiloCodigo.textContent = e?.codigo ?? "";
+    estiloNome.textContent = e ? `${e.nome}${e.dono ? " (meu)" : ""}` : des ? "Sem estilo" : "Escolher estilo";
+    const temCor = e && e.cor_srm_min != null && e.cor_srm_max != null;
+    estiloCor.hidden = !temCor;
+    estiloCor.style.background = temCor ? `linear-gradient(to bottom, ${corHexDeSrm(e.cor_srm_min)}, ${corHexDeSrm(e.cor_srm_max)})` : "";
+    const enc = e && res ? encaixeEstilo(e, res) : null;
+    estiloEncaixe.className = "estilo-encaixe";
+    if (!e) {
+      estiloEncaixe.hidden = des;
+      preencher(estiloEncaixe, "Compare a receita com as faixas do estilo");
+    } else {
+      estiloEncaixe.hidden = !enc?.total;
+      if (enc?.total) {
+        estiloEncaixe.classList.add(enc.dentro === enc.total ? "tudo" : enc.dentro >= enc.total - 1 ? "quase" : "longe");
+        preencher(estiloEncaixe, el("span", { class: "estilo-ponto", "aria-hidden": "true" }), `${enc.dentro} de ${enc.total} números no estilo`);
+      }
+    }
+    const nome = e ? `${e.codigo ? e.codigo + " " : ""}${e.nome}` : "sem estilo";
+    botaoEstilo.setAttribute("aria-label", `Estilo: ${nome}${enc?.total ? `, ${enc.dentro} de ${enc.total} números no estilo` : ""}`);
   };
   const trocarEstilo = (id) => {
     if (r.estilo_id !== id) { r.estilo_id = id; mostrarEstilo(); mudou(); }
     botaoEstilo.focus();
   };
   const botaoEstilo = el("button", {
-    type: "button", class: "escolha", disabled: des, "aria-label": "Estilo", "aria-haspopup": "dialog",
+    type: "button", class: "escolha estilo-botao", disabled: des, "aria-haspopup": "dialog",
     on: { click: () => abrirBusca({
       tipo: "estilos", itens: cat.estilos, contexto: calcularReceita(r), atualId: r.estilo_id,
       aoEscolher: (e) => trocarEstilo(e.id), aoLivre: () => trocarEstilo(null),
     }) },
-  }, nomeEstilo, el("span", { class: "escolha-seta", "aria-hidden": "true", text: "▾" }));
+  }, estiloCor,
+  el("span", { class: "estilo-corpo" }, el("span", { class: "estilo-linha1" }, estiloCodigo, " ", estiloNome), estiloEncaixe),
+  el("span", { class: "escolha-seta", "aria-hidden": "true", text: "›" }));
   mostrarEstilo();
-  const estiloCampo = el("div", { class: "estilo-topo" }, el("span", { class: "rotulo-campo", text: "Estilo" }), botaoEstilo);
+  const estiloCampo = el("div", { class: "estilo-topo" }, botaoEstilo);
 
   const geral = el("section", { class: "cartao", dataset: { secao: "geral" } },
     tituloSecao("geral", "Dados gerais"),
