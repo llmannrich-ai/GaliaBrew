@@ -16,14 +16,20 @@
   <link rel="icon" type="image/png" href="icones/icone-180.png">
   <link rel="manifest" href="manifest.webmanifest">
   <title>GaliaBrew</title>
-  <link rel="stylesheet" href="style.css?v=20261127h">
+  <link rel="stylesheet" href="style.css?v=20261127i">
   <!-- Sem defer: o tema entra antes da primeira pintura (não pisca a cor errada). -->
-  <script src="tema.js?v=20261127h"></script>
+  <script src="tema.js?v=20261127i"></script>
   <script src="vendor/supabase-2.119.2.js" integrity="sha256-iBavBNmRXbuhiC1vhPC0AtxAJoBjpj2cZtJPUvNxwmM=" defer></script>
-  <script type="module" src="app.js?v=20261127h"></script>
+  <script type="module" src="app.js?v=20261127i"></script>
 </head>
 <body>
-  <div id="app"><main class="centro"><p class="nota">Carregando…</p></main></div>
+  <!-- Tela de carregamento: o mesmo desenho do telaCarregando() do ui.js (logo atual, texto e barra). -->
+  <div id="app"><main class="centro"><div class="carregando" role="status" aria-live="polite">
+    <img class="carregando-logo logo-claro" src="icones/logo-galia.png" alt="" width="538" height="300">
+    <img class="carregando-logo logo-escuro" src="icones/logo-galia-escuro.png" alt="" width="538" height="300">
+    <p class="carregando-texto">Carregando…</p>
+    <div class="carregando-barra" aria-hidden="true"><i></i></div>
+  </div></main></div>
   <div id="avisos" aria-live="polite"></div>
   <noscript>O GaliaBrew precisa de JavaScript.</noscript>
 </body>

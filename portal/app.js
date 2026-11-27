@@ -1,11 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261127h";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261127h";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261127h";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261127h";
-import { telaFerramentas } from "./ferramentas.js?v=20261127h";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261127h";
-import { icone } from "./icones.js?v=20261127h";
+import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261127i";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261127i";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261127i";
+import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261127i";
+import { telaFerramentas } from "./ferramentas.js?v=20261127i";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261127i";
+import { icone } from "./icones.js?v=20261127i";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -260,6 +260,7 @@ async function rotear() {
     else { location.hash = "#/receitas"; return; }
   } catch (e) {
     console.error(e);
+    document.body.classList.remove("no-editor");   // o erro aparece com a barra do menu de volta
     preencher(conteudo, el("p", { class: "erro-form", text: mensagemErro(e) }));
   }
 }

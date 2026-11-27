@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127h.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127i.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -819,6 +819,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   `barra-app` é presa (cor `--cartao`). `theme-color` (Android/outros) = `--fundo` do tema (tema.js; padrão #ffffff no
   index.html e no manifest). Teste "toque: logo..." confere que nada preso cobre o meio do topo. O iOS só relê ao abrir:
   remover o ícone e "Adicionar à Tela de Início" de novo. Falta conferir no iPhone real.
+
+## Tela de carregamento (27/11/2026, pedido do responsável: "durante o carregamento da receita aparece a logo antiga")
+- Abrir a receita no celular mostrava a `barra-movel` escura (que o responsável chama de logo antiga) com "Carregando…"
+  até o editor montar. Agora `telaEditor` põe `no-editor` no body ANTES de buscar (a barra some já na espera; sai de
+  novo se a receita não existir ou der erro, no `rotear`) e mostra `telaCarregando()` do ui.js: logo Gália atual
+  (clara/escura pelo data-modo) no meio da tela, "Abrindo a receita…" (nova: "Preparando a receita…") e barra animada.
+  Surge depois de 150 ms (abertura rápida não pisca); com 10 s aparece a linha de demora com link de volta às receitas.
+  A abertura do app (`index.html`) usa o mesmo desenho. CSS no bloco "tela de carregamento" do style.css.
+- Teste do navegador: "toque: abrir a receita mostra a tela de carregamento..." (receita atrasada 1,5 s pelo
+  `atrasoReceita` do Supabase simulado). Captura `p6f2-celular-carregando-receita`.
 
 ## Ícones de fermentáveis e lúpulo redesenhados (27/11/2026, pedido do responsável: "muito ruim"; só icones.js)
 - `malte` = espiga de cevada: haste, 3 pares de grãos CHEIOS + 1 no topo (`fill`/`stroke: none` no próprio caminho) e

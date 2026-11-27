@@ -41,6 +41,7 @@ db.leveduras = Array.from({ length: 900 }, (_, i) => ({
   atenuacao_min_pct: 68 + (i % 12), atenuacao_max_pct: 72 + (i % 12),
 })).concat([{ id: "y-saf", dono: null, nome: "SafLager W-34/70 Fermentação baixa", produtor: "Fermentis", tipo: "LAGER", forma: "SECA", atenuacao_min_pct: 80, atenuacao_max_pct: 84, temp_min_c: 9, temp_max_c: 15 }]);
 const chamadas = [];
+let atrasoReceita = 0;
 const uuid = () => crypto.randomUUID();
 
 function filtrar(linhas, params) {
@@ -65,6 +66,8 @@ async function supabaseSimulado(rota) {
   if (url.pathname.startsWith("/storage/v1/")) return storageSimulado(rota, req, url, metodo);
   const corpo = req.postData() ? JSON.parse(req.postData()) : null;
   chamadas.push({ metodo, caminho: url.pathname + url.search, corpo });
+  // Rede lenta simulada só na leitura de UMA receita (teste da tela de carregamento).
+  if (atrasoReceita && metodo === "GET" && url.pathname === "/rest/v1/receitas" && url.searchParams.get("id")) await new Promise((ok) => setTimeout(ok, atrasoReceita));
 
   // ---- auth ----
   if (url.pathname === "/auth/v1/token") {
@@ -298,7 +301,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127h");
+    const m = await import("./fontes.js?v=20261127i");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -582,7 +585,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -650,7 +653,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -672,7 +675,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -782,7 +785,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1254,6 +1257,28 @@ const erros = [];
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
+  // Tela de carregamento da receita (27/11/2026, pedido do responsável: aparecia a barra escura antiga com "Carregando…"):
+  // sem a barra escura, logo atual visível e centrada, texto e barra animada; depois o editor.
+  atrasoReceita = 1500;
+  await cel.tap(".receita-cartao:has-text('Pils da Galia')");
+  await cel.waitForSelector(".carregando", { timeout: 3000 });
+  await cel.waitForTimeout(500);
+  const cg = await cel.evaluate(() => {
+    const img = [...document.querySelectorAll(".carregando-logo")].find((n) => n.checkVisibility());
+    const r = img?.getBoundingClientRect();
+    return { barra: document.querySelector(".barra-movel").checkVisibility(), logo: img?.getAttribute("src"), carregada: Boolean(img?.complete && img.naturalWidth > 0),
+      centro: r ? Math.round(Math.abs(r.left + r.width / 2 - window.innerWidth / 2)) : null, altura: r ? Math.round(r.height) : 0,
+      texto: document.querySelector(".carregando-texto")?.textContent, anima: Boolean(document.querySelector(".carregando-barra i")?.checkVisibility()),
+      opac: Number(getComputedStyle(document.querySelector(".carregando")).opacity) };
+  });
+  await cel.screenshot({ path: `${SAIDA}/p6f2-celular-carregando-receita.png` });
+  verificar(!cg.barra && cg.logo === "icones/logo-galia.png" && cg.carregada && cg.centro <= 2 && cg.altura >= 72 && cg.texto === "Abrindo a receita…" && cg.anima && cg.opac > 0.9,
+    `toque: abrir a receita mostra a tela de carregamento com a logo atual, sem a barra escura (${JSON.stringify(cg)})`);
+  await cel.waitForSelector(".barra-app", { timeout: 5000 });
+  atrasoReceita = 0;
+  verificar(await cel.locator(".carregando").count() === 0 && !(await cel.locator(".barra-movel").isVisible()), "toque: a tela de carregamento dá lugar ao editor");
+  await cel.evaluate(() => { location.hash = "#/receitas"; });
+  await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
   // Topo da tela de Receitas (25/11/2026): logo "Gália" grande e centrada sobre o fundo do tema, sem a barra escura;
   // o ≡ no canto abre o menu. Nenhum elemento preso no topo (o iOS 26 pinta a faixa do relógio com o fundo da página).
   const logoVisivel = () => cel.evaluate(() => {
