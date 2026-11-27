@@ -298,7 +298,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127h");
+    const m = await import("./fontes.js?v=20261127i");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -582,7 +582,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -634,7 +634,7 @@ const erros = [];
       && /^Cor da cerveja: \d+ EBC$/.test(await pagina.getAttribute(".grist-copo .copo", "aria-label")),
     "copo ao lado do grist na cor final da cerveja (igual ao da barra de números)");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .ing-sub') === "3,5 EBC", "fermentável mostra a cor (EBC) abaixo do nome");
-  verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .copo").count() === 1, "ícones nos títulos das seções e copo na marca");
+  verificar(await pagina.locator("section.cartao h3.titulo-secao .ico").count() >= 8 && await pagina.locator(".lateral .marca .marca-icone").count() === 1, "ícones nos títulos das seções e o livro da logo na marca do menu de ícones");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-secao') === "4,80 kg" && await pagina.textContent('[data-secao="lupulos"] .total-secao') === `60 g · ${br(esperado.ibu, 0)} IBU`,
     "totais no cabeçalho das seções");
   verificar(await pagina.textContent('[data-secao="fermentaveis"] .total-extra') === "3,8 L/kg água/malte" // 18 L informados ÷ 4,8 kg
@@ -650,7 +650,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -672,7 +672,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -782,7 +782,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127h");
+    const m = await import("./calculos.js?v=20261127i");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1135,6 +1135,21 @@ const erros = [];
     await pc.goto(`${ORIGEM}/`);
     await pc.waitForSelector("form.login");
     verificar(!(await pc.isVisible("text=Acesso só por convite")), "login sem a nota 'acesso só por convite'");
+    // Logo "Gália" no topo das telas de acesso (27/11/2026): a imagem do tema (creme no escuro), centrada, sem o texto antigo.
+    const logoAcesso = (onde) => pc.evaluate(() => {
+      const f = document.querySelector("form.login"), fr = f.getBoundingClientRect();
+      const vis = [...f.querySelectorAll(".login-logo img")].filter((i) => i.checkVisibility());
+      const i = vis[0], r = i?.getBoundingClientRect();
+      return i && { n: vis.length, src: i.getAttribute("src"), carregada: i.complete && i.naturalWidth > 0, altura: Math.round(r.height),
+        centro: Math.round(Math.abs((r.left + r.right) / 2 - (fr.left + fr.right) / 2)), dentro: r.left >= fr.left && r.right <= fr.right,
+        primeiro: f.firstElementChild.classList.contains("login-logo"), textoAntigo: f.textContent.includes("GaliaBrew") };
+    }).then((l) => verificar(l && l.n === 1 && l.carregada && l.altura >= 60 && l.centro <= 2 && l.dentro && l.primeiro && !l.textoAntigo
+      && l.src === `icones/logo-galia${onde.includes("escuro") ? "-escuro" : ""}.png`, `${onde}: logo "Gália" no topo, centrada, sem "GaliaBrew" (${JSON.stringify(l)})`));
+    await logoAcesso("login 390 px");
+    await pc.screenshot({ path: `${SAIDA}/p6c-celular-login-390.png` });
+    await pc.evaluate(() => document.documentElement.setAttribute("data-modo", "escuro"));
+    await logoAcesso("login 390 px escuro");
+    await pc.evaluate(() => document.documentElement.setAttribute("data-modo", "claro"));
     const alturaCriar = (await pc.locator("button.criar-conta").boundingBox()).height;
     verificar(alturaCriar >= 44, `toque: botão Criar conta com ≥ 44 px (${alturaCriar})`);
     // Esqueci a senha: sem e-mail pede o e-mail; com e-mail chama o /recover e responde igual exista ou não a conta.
@@ -1152,6 +1167,7 @@ const erros = [];
     await pc.waitForSelector("form.login.conta");
     verificar(await pc.inputValue('form.conta input[type="email"]') === "ninguem@teste.invalid", "criar conta: leva o e-mail que estava no login");
     verificar((await pc.textContent("form.conta")).includes("Não enviamos e-mail de confirmação"), "criar conta: explica que não há confirmação e pede e-mail real");
+    await logoAcesso("criar conta 390 px");
     await pc.screenshot({ path: `${SAIDA}/p6c-celular-criar-conta-390.png` });
     const largura390 = await pc.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     verificar(largura390 <= 0, "criar conta 390 px: nada passa da largura");
@@ -1178,6 +1194,7 @@ const erros = [];
     await pc.waitForTimeout(100);
     const largura320 = await pc.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     verificar(largura320 <= 0, "criar conta 320 px: nada passa da largura");
+    await logoAcesso("criar conta 320 px");
     await pc.screenshot({ path: `${SAIDA}/p6c-celular-criar-conta-320.png`, fullPage: true });
     await pc.setViewportSize({ width: 390, height: 844 });
     // Conta nova: entra direto, sem e-mail de confirmação, com o nome no perfil.
@@ -1291,7 +1308,7 @@ const erros = [];
   const ml = await cel.evaluate(() => {
     const img = document.querySelector(".lateral .marca .marca-logo"), r = img?.getBoundingClientRect(), f = document.querySelector(".lateral .fechar-menu").getBoundingClientRect();
     return img && { src: img.getAttribute("src"), carregada: img.complete && img.naturalWidth > 0, visivel: img.checkVisibility(), altura: Math.round(r.height),
-      copo: document.querySelector(".lateral .marca .copo").checkVisibility(), separado: r.right <= f.left };
+      copo: document.querySelector(".lateral .marca .marca-icone").checkVisibility(), separado: r.right <= f.left };
   });
   verificar(ml && ml.src === "icones/logo-galia-escuro.png" && ml.visivel && ml.altura >= 60 && !ml.copo && ml.separado,
     `toque: menu com a logo "Gália" em creme, sem o copinho (${JSON.stringify(ml)})`);
