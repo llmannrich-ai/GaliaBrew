@@ -292,7 +292,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   o `conferirLateral` do navegador.cjs arrasta o dedo para o lado e lista o que passa da borda (lista, editor,
   ferramentas, cadastros e perfil em 320 px).
 - Temas de cor (23/11/2026, pedido do responsável; sem migração): Meu perfil → Aparência, 9 opções em cartões com
-  miniatura do app: Automático (padrão: Clássico de dia, Adega à noite, segue o celular sem recarregar), Clássico, Adega,
+  miniatura do app: Automático (Clássico de dia, Adega à noite, segue o celular sem recarregar), Clássico, Adega,
   Pilsen, IPA, Red Ale (claros), Stout, Black IPA (escuros) e Sol forte (alto contraste para a brassagem ao ar livre:
   preto no branco, borda de campo 2 px, sem desenho de fundo). Escolha em `preferencias.tema` (localStorage: vale no
   aparelho). `tema.js` é script COMUM no `<head>`, sem defer (entra antes da 1ª pintura, não pisca): lista dos temas,
@@ -332,8 +332,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 
 ## Layout Clean da receita (24/11/2026, pedido do responsável; plano `docs/PLANO-CLEAN.md`; sem migração)
 - Opcional: Meu perfil → Aparência → "Layout da receita: Completo | Clean" (`preferencias.layout`, localStorage). O
-  `tema.js` põe `data-layout` no `<html>` antes da 1ª pintura (`GaliaTema.layouts/layout/aplicarLayout`). Padrão = Completo
-  (nada muda para quem não escolher). Vale com QUALQUER tema (decisão do responsável: sem tema novo).
+  `tema.js` põe `data-layout` no `<html>` antes da 1ª pintura (`GaliaTema.layouts/layout/aplicarLayout`). Padrão = Clean desde 27/11/2026 (ver "Padrão Pilsen + Clean"; antes Completo
+  ). Vale com QUALQUER tema (decisão do responsável: sem tema novo).
 - Decisões do responsável (24/11/2026, "Sim" às recomendações do plano): cores do tema sem decoração; números no topo +
   linha fina ao rolar (K2, a fazer); tocar na quantidade abre a roleta direto; se o Clean for aprovado em ~2 semanas,
   vira o padrão e o Completo sai (não manter dois layouts para sempre).
@@ -390,7 +390,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (ações ao lado do nome), `p7h` (passo com roleta), `p7i` (levedura em linha),
   `p7j`/`p7j2` (Água: blocos e concentração final), `p7k` (+ da lavagem), `p7k2` (sal novo na roleta), `p7k3` (Água 320 px).
 
-## Parâmetros da receita (24/11/2026, pedido do responsável; sem migração)
+## Padrão Pilsen + Clean (27/11/2026, pedido do responsável; só tema.js)
+- Quem abre o app sem escolha salva no aparelho começa no tema PILSEN e no layout CLEAN (`TEMA_PADRAO`/`LAYOUT_PADRAO` no
+  tema.js; valor desconhecido também cai no padrão). Escolha feita no perfil (`preferencias.tema`/`layout`) continua
+  valendo. Consequência: aparelho que nunca escolheu tema/layout (inclusive quem já usava) passa a abrir em Pilsen + Clean.
+- Teste do navegador: contexto limpo no início confere o padrão e que a escolha salva vence; os demais contextos começam
+  com Automático + Completo salvos (`SEMENTE_PREF`), porque as verificações antigas foram escritas sobre eles.
+, pedido do responsável; sem migração)
 - Saiu o `<details>` "Parâmetros" que abria na página. Agora: seção `section.cartao.parametros` (`data-secao="parametros"`)
   com o nome do equipamento no título e SÓ os 3 números principais (Volume, Eficiência, Fervura; `.param-resumo`). São o
   mesmo `campoNumero`: no celular tocar abre a ROLETA direto (como a quantidade do malte/lúpulo; barra de números fina
