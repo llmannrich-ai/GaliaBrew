@@ -18,7 +18,9 @@ const CSP = headersTxt.match(/Content-Security-Policy: (.*)/)[1];
 const USUARIO = { id: "11111111-1111-1111-1111-111111111111", email: "leo@teste.invalid", aud: "authenticated", role: "authenticated", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
 const SENHA = "senha-correta-123";
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
-const jwt = () => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: USUARIO.id, role: "authenticated", aud: "authenticated", exp: Math.floor(Date.now() / 1000) + 3600, email: USUARIO.email })}.assinatura`;
+const jwt = (u = USUARIO) => `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: u.id, role: "authenticated", aud: "authenticated", exp: Math.floor(Date.now() / 1000) + 3600, email: u.email })}.assinatura`;
+// Contas criadas pela tela "Criar conta" (sem confirmação de e-mail: o signup já devolve a sessão).
+const contasNovas = [];
 
 const db = {
   perfis: [{ user_id: USUARIO.id, nome: "Leo", papel: "usuario" }],
@@ -71,6 +73,16 @@ async function supabaseSimulado(rota) {
     }
     return responder(rota, 400, { code: 400, error_code: "invalid_credentials", msg: "Invalid login credentials" });
   }
+  if (url.pathname === "/auth/v1/signup") {
+    if (corpo.email === USUARIO.email || contasNovas.some((u) => u.email === corpo.email)) {
+      return responder(rota, 422, { code: 422, error_code: "user_already_exists", msg: "User already registered" });
+    }
+    const u = { ...USUARIO, id: uuid(), email: corpo.email, user_metadata: corpo.data || {}, email_confirmed_at: new Date().toISOString() };
+    contasNovas.push(u);
+    db.perfis.push({ user_id: u.id, nome: corpo.data?.nome || corpo.email.split("@")[0], papel: "usuario" }); // gatilho perfis_criar
+    return responder(rota, 200, { access_token: jwt(u), token_type: "bearer", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: "r-novo", user: u });
+  }
+  if (url.pathname === "/auth/v1/recover") return responder(rota, 200, {});
   if (url.pathname === "/auth/v1/user") return responder(rota, 200, USUARIO);
   if (url.pathname === "/auth/v1/logout") return responder(rota, 204);
 
@@ -255,7 +267,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127f");
+    const m = await import("./fontes.js?v=20261127g");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -539,7 +551,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127f");
+    const m = await import("./calculos.js?v=20261127g");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -607,7 +619,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127f");
+    const m = await import("./calculos.js?v=20261127g");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -629,7 +641,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127f");
+    const m = await import("./calculos.js?v=20261127g");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -739,7 +751,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127f");
+    const m = await import("./calculos.js?v=20261127g");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1079,6 +1091,84 @@ const erros = [];
   await pagina.waitForSelector("form.login");
   verificar(aviso.includes("não salvas"), "sair com receita nova não salva pede confirmação");
   verificar(true, "sair volta para o login");
+
+  // ---- Criar conta sem confirmação de e-mail e "Esqueci a senha" (27/11/2026), no celular 390 e 320 px ----
+  {
+    const ctxConta = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    await ctxConta.route(`${SB}/**`, supabaseSimulado);
+    await ctxConta.route(`${ORIGEM}/**`, site);
+    const pc = await ctxConta.newPage();
+    pc.on("console", (m) => { if (["error", "warning"].includes(m.type())) erros.push(`${m.type()}: ${m.text()}`); });
+    pc.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
+    const toqueEm = async (sel) => { const b = await pc.locator(sel).first().boundingBox(); await pc.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2); };
+    await pc.goto(`${ORIGEM}/`);
+    await pc.waitForSelector("form.login");
+    verificar(!(await pc.isVisible("text=Acesso só por convite")), "login sem a nota 'acesso só por convite'");
+    const alturaCriar = (await pc.locator("button.criar-conta").boundingBox()).height;
+    verificar(alturaCriar >= 44, `toque: botão Criar conta com ≥ 44 px (${alturaCriar})`);
+    // Esqueci a senha: sem e-mail pede o e-mail; com e-mail chama o /recover e responde igual exista ou não a conta.
+    await toqueEm("button.esqueci");
+    await pc.waitForSelector("text=Digite acima o e-mail da sua conta.");
+    await pc.fill('input[type="email"]', "ninguem@teste.invalid");
+    const antesRec = chamadas.length;
+    await toqueEm("button.esqueci");
+    await pc.waitForSelector(".ok-form >> text=Se este e-mail tiver conta");
+    const rec = chamadas.slice(antesRec).find((c) => c.caminho.startsWith("/auth/v1/recover"));
+    verificar(rec?.corpo?.email === "ninguem@teste.invalid", "esqueci a senha: pede o link ao Supabase com o e-mail digitado");
+    verificar((await pc.textContent(".ok-form")).includes("e-mail cadastrado for real"), "esqueci a senha: avisa que só chega a e-mail real");
+    // Criar conta: leva o e-mail digitado; valida nome, senha curta e senhas diferentes antes de chamar o Supabase.
+    await toqueEm("button.criar-conta");
+    await pc.waitForSelector("form.login.conta");
+    verificar(await pc.inputValue('form.conta input[type="email"]') === "ninguem@teste.invalid", "criar conta: leva o e-mail que estava no login");
+    verificar((await pc.textContent("form.conta")).includes("Não enviamos e-mail de confirmação"), "criar conta: explica que não há confirmação e pede e-mail real");
+    await pc.screenshot({ path: `${SAIDA}/p6c-celular-criar-conta-390.png` });
+    const largura390 = await pc.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    verificar(largura390 <= 0, "criar conta 390 px: nada passa da largura");
+    const antesSign = chamadas.filter((c) => c.caminho.startsWith("/auth/v1/signup")).length;
+    await pc.fill('form.conta input[autocomplete="name"]', "Amiga do Leo");
+    await pc.fill('form.conta input[type="email"]', USUARIO.email);
+    const senhas = pc.locator('form.conta input[type="password"]');
+    await senhas.nth(0).fill("curta");
+    await senhas.nth(1).fill("curta");
+    await pc.locator('form.conta button[type="submit"]').click();
+    await pc.waitForSelector("text=A senha precisa de pelo menos 10 caracteres.");
+    await senhas.nth(0).fill("senha-nova-1234");
+    await senhas.nth(1).fill("senha-nova-9999");
+    await pc.locator('form.conta button[type="submit"]').click();
+    await pc.waitForSelector("text=As duas senhas não conferem.");
+    verificar(chamadas.filter((c) => c.caminho.startsWith("/auth/v1/signup")).length === antesSign, "criar conta: senha curta e senhas diferentes barradas no aparelho");
+    // E-mail que já tem conta: mensagem em português (o 422 é de propósito).
+    await senhas.nth(1).fill("senha-nova-1234");
+    await pc.locator('form.conta button[type="submit"]').click();
+    await pc.waitForSelector("text=Este e-mail já tem conta.");
+    verificar(true, "criar conta: e-mail já cadastrado mostra mensagem em português");
+    // 320 px: cabe
+    await pc.setViewportSize({ width: 320, height: 640 });
+    await pc.waitForTimeout(100);
+    const largura320 = await pc.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    verificar(largura320 <= 0, "criar conta 320 px: nada passa da largura");
+    await pc.screenshot({ path: `${SAIDA}/p6c-celular-criar-conta-320.png`, fullPage: true });
+    await pc.setViewportSize({ width: 390, height: 844 });
+    // Conta nova: entra direto, sem e-mail de confirmação, com o nome no perfil.
+    await pc.fill('form.conta input[type="email"]', "amiga@teste.invalid");
+    await pc.locator('form.conta button[type="submit"]').click();
+    await pc.waitForSelector("form.login", { state: "detached" });
+    await pc.waitForSelector("header.inicio-topo");
+    const sign = chamadas.filter((c) => c.caminho.startsWith("/auth/v1/signup")).pop();
+    verificar(sign.corpo.email === "amiga@teste.invalid" && sign.corpo.password === "senha-nova-1234" && sign.corpo.data?.nome === "Amiga do Leo",
+      "criar conta: grava e-mail, senha e o nome (metadado que o gatilho perfis_criar usa)");
+    verificar(true, "criar conta: entra no app na hora, sem confirmação de e-mail");
+    // Voltar ao login pela tela de criar conta
+    await pc.evaluate(() => localStorage.clear());
+    await pc.goto(`${ORIGEM}/`);
+    await pc.waitForSelector("form.login");
+    await toqueEm("button.criar-conta");
+    await pc.waitForSelector("form.conta");
+    await toqueEm("button.voltar-entrar");
+    await pc.waitForSelector("form.login:not(.conta)");
+    verificar(true, "criar conta: botão Entrar volta ao login");
+    await ctxConta.close();
+  }
 
   // ================= Celular de verdade: tela de toque (isMobile + hasTouch), 390 px e 320 px =================
   const ctxCel = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
@@ -2629,9 +2719,11 @@ const erros = [];
   await ctxCel.close();
 
   // O 400 é o da senha errada, testada de propósito (uma vez só).
+  // O 422 é o do e-mail já cadastrado em "Criar conta", também de propósito (uma vez só).
   const esperados = erros.filter((e) => /status of 400/.test(e));
-  const relevantes = erros.filter((e) => !/favicon/.test(e) && !/status of 400/.test(e));
-  verificar(esperados.length === 1, "único erro de rede = o login com senha errada");
+  const repetido = erros.filter((e) => /status of 422/.test(e));
+  const relevantes = erros.filter((e) => !/favicon/.test(e) && !/status of (400|422)/.test(e));
+  verificar(esperados.length === 1 && repetido.length === 1, "únicos erros de rede = o login com senha errada e a conta repetida");
   console.log(ok.map((x) => `ok - ${x}`).join("\n"));
   console.log(relevantes.length ? `\nERROS NO CONSOLE:\n${relevantes.join("\n")}` : "\nsem erros no console (CSP ativa)");
   await navegador.close();
