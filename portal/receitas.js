@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261126d";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261126d";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261126d";
-import { sb, sessao, preferencias } from "./estado.js?v=20261126d";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261126d";
-import { abrirBusca } from "./busca.js?v=20261126d";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261126d";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261126d";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261126d";
-import * as O from "./opcoes.js?v=20261126d";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261126d";
-import { icone } from "./icones.js?v=20261126d";
-import { abrirMenu } from "./menu.js?v=20261126d";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261126d";
-import { abrirRelatorio } from "./relatorio.js?v=20261126d";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261126d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127a";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127a";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261127a";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127a";
+import { abrirBusca } from "./busca.js?v=20261127a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127a";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127a";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127a";
+import * as O from "./opcoes.js?v=20261127a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127a";
+import { icone } from "./icones.js?v=20261127a";
+import { abrirMenu } from "./menu.js?v=20261127a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261127a";
+import { abrirRelatorio } from "./relatorio.js?v=20261127a";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -124,7 +124,7 @@ const PADRAO = () => ({
   relacao_agua_grao_l_kg: 3, perda_tina_l: 0, temp_grao_c: 20, publica: false, notas: "",
   lote_numero: null, data_brassagem: null, og_medida: null, fg_medida: null, volume_final_l: null, co2_alvo_vol: null, priming_acucar: null,
   agua_origem: null, agua_alvo: null, agua_diluicao_pct: null, agua_mostura_l: null, agua_lavagem_l: null, sais: [], acidos: [],
-  fermentaveis: [], lupulos: [], leveduras: [], outros: [],
+  fermentaveis: [], lupulos: [], leveduras: [], outros: [], extras: {},
   mostura: [{ nome: "Rampa 1", tipo: "TEMPERATURA", temperatura_c: 66, tempo_min: 60 }],
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
 });
@@ -208,6 +208,8 @@ function copiaDe(o, cat) {
     sais: (o.sais ?? []).map((x) => ({ ...x })),
     acidos: (o.acidos ?? []).map((x) => ({ ...x })),
     fermentacao: o.fermentacao.map(sem),
+    // Inoculação: a escolha (taxa, starter...) vai junto; a data de fabricação é do pacote deste lote, não.
+    extras: o.extras?.inoculacao ? { inoculacao: Object.fromEntries(Object.entries(o.extras.inoculacao).filter(([k]) => k !== "fabricacao")) } : {},
   };
 }
 
@@ -271,7 +273,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   /** Ação inteira (adicionar, remover, mover, ajuste automático) = um passo próprio. */
   function acao(fn) { registrar(); fn(); registrar(); }
   function irPara(estado) {
-    for (const d of document.querySelectorAll("dialog.parametros-janela, dialog.lote-janela")) d.close();   // mostrariam os números de antes
+    for (const d of document.querySelectorAll("dialog.parametros-janela, dialog.lote-janela, dialog.pitch-janela")) d.close();   // mostrariam os números de antes
     const antes = calcularReceita(r);
     Object.assign(r, structuredClone(estado));
     t.base = structuredClone(r);
@@ -908,7 +910,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   let janelaParam = null;     // janela aberta: { aoCalcular(res) } (volumes ao vivo)
 
   function abrirParametros() {
-    if (document.querySelector("dialog.parametros-janela, dialog.lote-janela")) return;
+    if (document.querySelector("dialog.parametros-janela, dialog.lote-janela, dialog.pitch-janela")) return;
     const grade = el("div", { class: "param-grade" });
     const desenharGrade = () => {
       preencher(grade, CAMPOS_PARAM.map((c) => campoParam(c, { ajuda: true })));
@@ -973,7 +975,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   let janelaLote = null;
 
   function abrirLote() {
-    if (document.querySelector("dialog.parametros-janela, dialog.lote-janela")) return;
+    if (document.querySelector("dialog.parametros-janela, dialog.lote-janela, dialog.pitch-janela")) return;
     // Grade de 3 colunas: Nº | Data (2) · OG | FG | Volume · CO₂ | Açúcar do priming (2).
     const data = el("input", {
       type: "date", value: r.data_brassagem ?? "", disabled: des, "aria-label": "Data da brassagem",
@@ -1388,6 +1390,170 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       };
     },
   });
+
+  // ---------- inoculação (pitch rate) e starter, dentro da seção Leveduras (27/11/2026, pedido do responsável) ----------
+  // Resumo tocável no pé da seção ("Precisa 214 bi · tem 173 bi" + % do ideal) e a JANELA (molde dos Parâmetros):
+  // taxa (vazia = pela levedura e OG), fabricação da líquida (viabilidade), bi/g da seca, starter (agitador ou não),
+  // volume (vazio = o menor que chega) e densidade do starter. Fica em extras.inoculacao (sem migração); o cálculo é o
+  // inoculacao() do calculos.js. OG e volume: os medidos no lote, se houver; senão os planejados.
+  const cfgInoc = () => {
+    if (!r.extras || typeof r.extras !== "object") r.extras = {};
+    if (!r.extras.inoculacao || typeof r.extras.inoculacao !== "object") r.extras.inoculacao = {};
+    return r.extras.inoculacao;
+  };
+  const calcInoc = (res) => inoculacao({
+    leveduras: r.leveduras,
+    og: Number(r.og_medida) > 1 ? Number(r.og_medida) : res.og,
+    litros: Number(r.volume_final_l) > 0 ? Number(r.volume_final_l) : res.volumes.lote_l,
+    cfg: r.extras?.inoculacao ?? {},
+  });
+  const bi = (x) => `${numeroBR(x, 0)} bi`;
+  const litrosTxt = (l) => numeroBR(l, 2).replace(/,?0+$/, "");
+  const SITUACAO_INOC = { OK: ["ok", "Na medida"], BAIXA: ["perto", "Um pouco abaixo"], MUITO_BAIXA: ["fora", "Abaixo"], ALTA: ["perto", "Acima"] };
+  const METODO_STARTER = [["AGITADOR", "Agitador magnético"], ["AGITAR", "Sem agitador"]];
+  /** Levedura que a sugestão "Usar N pacotes" muda: a única da primária com quantidade. */
+  const levPrimaria = () => {
+    const l = r.leveduras.filter((y) => (y.etapa ?? "PRIMARIA") === "PRIMARIA" && Number(y.quantidade) > 0);
+    return l.length === 1 ? l[0] : null;
+  };
+  const qtdIdealTxt = (inoc) => {
+    const y = levPrimaria();
+    if (!y || inoc.quantidade_ideal == null) return null;
+    return qtdLevedura({ ...y, quantidade: inoc.quantidade_ideal });
+  };
+  /** Dica curta do resumo: o que fazer para chegar ao ideal. */
+  const dicaInoc = (inoc) => {
+    if (inoc.desconhecida) return "Informe a quantidade em bi células para calcular";
+    if (inoc.starter && inoc.starter.litros > 0) return `Starter de ${litrosTxt(inoc.starter.litros)} L · ${numeroBR(inoc.starter.dme_g, 0)} g de DME`;
+    if (inoc.situacao === "OK" || inoc.situacao === "ALTA") return null;
+    const ideal = qtdIdealTxt(inoc);
+    if (inoc.seca) return ideal ? `Use ${ideal}` : null;
+    const st = inoc.starter_sugerido_l ? `starter de ${litrosTxt(inoc.starter_sugerido_l)} L` : null;
+    return [st ? `Faça um ${st}` : null, ideal ? `use ${ideal}` : null].filter(Boolean).join(" ou ").replace(/^use/, "Use") || null;
+  };
+  const pitchLinha = el("span", { class: "pitch-linha" });
+  const pitchDica = el("span", { class: "pitch-dica" });
+  const pitchSelo = el("span", { class: "pitch-selo" });
+  const bPitch = el("button", {
+    type: "button", class: "pitch-resumo", "aria-haspopup": "dialog", title: "Calcular a inoculação e o starter",
+    on: { click: () => abrirPitch() },
+  },
+  el("span", { class: "pitch-texto" }, el("span", { class: "pitch-rot", text: "Inoculação e starter" }), pitchLinha, pitchDica),
+  pitchSelo, el("span", { class: "param-seta", "aria-hidden": "true", text: "›" }));
+  function atualizarPitch(res) {
+    const inoc = calcInoc(res);
+    bPitch.hidden = !inoc;
+    if (!inoc) return;
+    const comStarter = inoc.starter && inoc.starter.litros > 0;
+    pitchLinha.textContent = inoc.desconhecida && !inoc.tem_bi
+      ? `Precisa ${bi(inoc.necessarias_bi)}`
+      : `Precisa ${bi(inoc.necessarias_bi)} · ${comStarter ? "com o starter" : "tem"} ${bi(inoc.final_bi)}`;
+    const dica = dicaInoc(inoc);
+    pitchDica.textContent = dica ?? "";
+    pitchDica.hidden = !dica;
+    const [estado, texto] = SITUACAO_INOC[inoc.situacao] ?? ["", ""];
+    pitchSelo.className = `pitch-selo estado-${estado || "nenhum"}`;
+    pitchSelo.textContent = inoc.final_pct != null && !(inoc.desconhecida && !inoc.tem_bi) ? `${numeroBR(inoc.final_pct, 0)}%` : "—";
+    bPitch.setAttribute("aria-label", `Inoculação e starter: ${pitchLinha.textContent}${texto ? ", " + texto.toLowerCase() : ""}${dica ? ". " + dica : ""}`);
+  }
+  leveduras.append(bPitch);
+  aoRecalcular.push((res) => { atualizarPitch(res); janelaPitch?.aoCalcular(res); });
+  let janelaPitch = null;
+
+  function abrirPitch() {
+    if (document.querySelector("dialog.parametros-janela, dialog.lote-janela, dialog.pitch-janela")) return;
+    const cfg = leitura ? { ...(r.extras?.inoculacao ?? {}) } : cfgInoc();
+    const base = el("p", { class: "nota pitch-base" });
+    const grade = el("div", { class: "param-grade pitch-grade" });
+    const detalhe = el("div", { class: "pitch-detalhe", "aria-live": "polite" });
+    const acoes = el("div", { class: "pitch-acoes" });
+    const celula = (curto, ajuda, input, un, largo = false) => el("label", { class: largo ? "param param-largo" : "param" }, rotParam(curto, ajuda),
+      el("span", { class: "param-valor" }, input, un ? el("span", { class: "unidade", text: un, "aria-hidden": "true" }) : null));
+    const sgConv = { de: (x) => x, para: (v) => (v >= 900 ? v / 1000 : v > 2 && v < 200 ? 1 + v / 1000 : v) };
+    let campos = {};
+    const desenharGrade = () => {
+      const inoc = calcInoc(calcularReceita(r));
+      campos = {
+        taxa: campoNumero(cfg, "taxa", { casas: 2, desabilitado: des, rotulo: "Taxa de inoculação (milhões de células por mL por °Plato)", classe: "num param-num",
+          roleta: { min: 0.25, max: 3, passo: 0.05, inicial: () => calcInoc(calcularReceita(r))?.taxa_padrao ?? 0.75, vazio: "Automática" }, aoMudar: () => mudou(campos.taxa) }),
+        bilhoes_g: campoNumero(cfg, "bilhoes_g", { casas: 0, desabilitado: des, rotulo: "Células da levedura seca (bilhões por grama)", classe: "num param-num",
+          roleta: { min: 4, max: 25, passo: 1, inicial: 15, vazio: "Usar 15" }, aoMudar: () => mudou(campos.bilhoes_g) }),
+        starter_l: campoNumero(cfg, "starter_l", { casas: 2, desabilitado: des, rotulo: "Volume do starter (L)", classe: "num param-num",
+          roleta: { min: 0.25, max: 5, passo: 0.25, inicial: () => calcInoc(calcularReceita(r))?.starter_sugerido_l || 1, vazio: "Usar a sugestão" }, aoMudar: () => mudou(campos.starter_l) }),
+        starter_sg: campoNumero(cfg, "starter_sg", { casas: 3, ...sgConv, desabilitado: des, rotulo: "Densidade do starter", classe: "num param-num", placeholder: "1,036",
+          roleta: { min: 1.02, max: 1.05, passo: 0.002, inicial: 1.036, vazio: "Usar 1,036" }, aoMudar: () => mudou(campos.starter_sg) }),
+      };
+      const fab = el("input", {
+        type: "date", value: cfg.fabricacao ?? "", disabled: des, "aria-label": "Data de fabricação da levedura líquida",
+        on: { change: (e) => { cfg.fabricacao = e.target.value || null; mudou(); } },
+      });
+      const metodo = campoSelect(cfg, "starter", METODO_STARTER, {
+        desabilitado: des, vazio: "Sem starter", rotulo: "Starter",
+        aoMudar: () => { desenharGrade(); mudou(); grade.querySelector('select[aria-label="Starter"]')?.focus({ preventScroll: true }); },
+      });
+      const comStarter = cfg.starter === "AGITADOR" || cfg.starter === "AGITAR";
+      preencher(grade,
+        celula("Taxa (M/mL/°P)", "Milhões de células por mL de mosto por °Plato. Vazio = automática: ale 0,75, lager 1,5; acima de OG 1,060, ale 1,0 e lager 2,0.", campos.taxa),
+        inoc?.liquida ? celula("Fabricação", "Data no pacote da levedura líquida. A viabilidade cai cerca de 0,7% por dia (100 bilhões de células por pacote na fabricação). Vazio = fresca.", fab, null, true) : null,
+        inoc?.seca ? celula("Seca", "Bilhões de células por grama da levedura seca (sachê de 11,5 g). Os fabricantes garantem ao menos 5-6; a contagem costuma dar 10-20. Vazio = 15.", campos.bilhoes_g, "bi/g") : null,
+        celula("Starter", "Agitador magnético: modelo de Kai Troester (Braukaiser). Sem agitador (agitar de vez em quando): curva de Chris White. Estimativa de um passo, com a levedura que a receita tem.", metodo, null, true),
+        comStarter ? celula("Volume", "Volume final do starter. Vazio = o menor que chega ao número de células da receita.", campos.starter_l, "L") : null,
+        comStarter ? celula("Densidade", "Densidade do mosto do starter. Vazio = 1,036 (cerca de 100 g de DME por litro).", campos.starter_sg) : null);
+      atualizarCorpo(calcularReceita(r));
+    };
+    function atualizarCorpo(res) {
+      const inoc = calcInoc(res);
+      if (!inoc) { preencher(base, "Sem levedura na fermentação primária."); preencher(detalhe); preencher(acoes); return; }
+      const tipo = inoc.tipo === "LAGER" ? "lager" : "ale";
+      preencher(base, [`OG ${numeroBR(inoc.og, 3)} (${numeroBR(inoc.plato, 1)} °P)`, `${numeroBR(inoc.litros, 1)} L`, tipo,
+        inoc.liquida ? `viabilidade ${numeroBR(inoc.viabilidade_pct, 0)}%${inoc.dias != null ? ` (${inoc.dias} ${inoc.dias === 1 ? "dia" : "dias"})` : ""}` : null].filter(Boolean).join(" · "));
+      if (campos.taxa) campos.taxa.placeholder = numeroBR(inoc.taxa_padrao, 2);
+      if (campos.starter_l) campos.starter_l.placeholder = inoc.starter_sugerido_l ? numeroBR(inoc.starter_sugerido_l, 2) : "—";
+      if (campos.bilhoes_g) campos.bilhoes_g.placeholder = "15";
+      const st = inoc.starter;
+      const linhas = [linha("Levedura da receita", inoc.desconhecida && !inoc.tem_bi ? "—" : bi(inoc.tem_bi)),
+        linha("Taxa sem starter", inoc.taxa_real != null && !inoc.desconhecida ? numeroBR(inoc.taxa_real, 2) : "—")];
+      if (st && st.litros > 0) {
+        linhas.push(
+          linha("DME no starter", `${numeroBR(st.dme_g, 0)} g + ${numeroBR(st.agua_l, 2)} L de água`),
+          linha("O starter cresce", `+${bi(st.crescimento_bi)} → ${bi(st.final_bi)}`),
+          linha("Taxa com o starter", st.taxa != null ? numeroBR(st.taxa, 2) : "—"));
+      }
+      const avisos = [];
+      if (inoc.desconhecida) avisos.push("Slant, cultura ou seca em mL: informe a quantidade em “bi células” na levedura para contar.");
+      else if (st && inoc.starter_sugerido_l === null) avisos.push("Um starter só não chega: faça em duas etapas ou use mais levedura.");
+      if (st && inoc.seca && !inoc.liquida) avisos.push("Levedura seca costuma ir sem starter: mais um sachê sai mais barato.");
+      preencher(detalhe, ...linhas, ...avisos.map((a) => el("p", { class: "nota pitch-aviso", text: a })));
+      const y = levPrimaria();
+      const ideal = inoc.quantidade_ideal;
+      const usar = !leitura && y && ideal != null && Number(y.quantidade) !== ideal && !(st && st.litros > 0)
+        ? el("button", { type: "button", class: "secundario pequeno pitch-usar", text: `Usar ${qtdLevedura({ ...y, quantidade: ideal })}`,
+          on: { click: () => acao(() => { y.quantidade = ideal; secoes.leveduras(); mudou(); }) } })
+        : null;
+      preencher(acoes, usar);
+    }
+    desenharGrade();
+    const j = abrirJanelaCampos({
+      classe: "pitch-janela", titulo: "Inoculação e starter", iconeNome: "levedura",
+      corpo: [base, grade, detalhe, acoes],
+      resultados: (res) => {
+        const inoc = calcInoc(res);
+        if (!inoc) return [["Precisa", "—"], ["Tem", "—"], ["Do ideal", "—"]];
+        const comSt = inoc.starter && inoc.starter.litros > 0;
+        const sem = inoc.desconhecida && !inoc.tem_bi;
+        return [["Precisa", bi(inoc.necessarias_bi)], [comSt ? "Com o starter" : "Tem", sem ? "—" : bi(inoc.final_bi)],
+          ["Do ideal", sem || inoc.final_pct == null ? "—" : `${numeroBR(inoc.final_pct, 0)}%`]];
+      },
+      aoFechar: () => {
+        janelaPitch = null;
+        // Nada escolhido: não deixa um objeto vazio em extras.
+        if (r.extras?.inoculacao && !Object.values(r.extras.inoculacao).some((v) => v != null && v !== "")) delete r.extras.inoculacao;
+        atualizarPitch(calcularReceita(r));
+        if (bPitch.isConnected) bPitch.focus({ preventScroll: true });
+      },
+    });
+    janelaPitch = { aoCalcular: (res) => { j.aoCalcular(res); atualizarCorpo(res); } };
+  }
 
   // ---------- água: base, alvo, sais e perfil final (diluição fora da tela desde 24/11/2026) ----------
   function secaoAgua() {
@@ -2086,6 +2252,17 @@ function validar(r) {
   return p;
 }
 
+/** extras da receita como vão ao banco: o que já havia (ex.: brewfather_id) + inoculação sem campos vazios. */
+function extrasParaGravar(extras) {
+  const e = { ...(extras && typeof extras === "object" ? extras : {}) };
+  if (e.inoculacao) {
+    const i = Object.fromEntries(Object.entries(e.inoculacao).filter(([, v]) => v != null && v !== ""));
+    if (Object.keys(i).length) e.inoculacao = i;
+    else delete e.inoculacao;
+  }
+  return e;
+}
+
 function montarPayload(r, res) {
   const so = (obj, chaves) => Object.fromEntries(chaves.map((k) => [k, typeof obj[k] === "string" ? obj[k].trim() : obj[k] ?? null]));
   const arred = (v, c) => (Number.isFinite(v) ? Number(v.toFixed(c)) : null);
@@ -2094,6 +2271,7 @@ function montarPayload(r, res) {
       "perda_panela_l", "absorcao_grao_l_kg", "relacao_agua_grao_l_kg", "perda_tina_l", "temp_grao_c", "publica", "notas",
       "lote_numero", "data_brassagem", "og_medida", "fg_medida", "volume_final_l", "co2_alvo_vol", "priming_acucar",
       "agua_origem", "agua_alvo", "agua_diluicao_pct", "agua_mostura_l", "agua_lavagem_l"]),
+    extras: extrasParaGravar(r.extras),
     sais: (r.sais ?? []).map((x) => ({ sal: x.sal, gramas: x.gramas, etapa: etapaSal(x) })),
     acidos: (r.acidos ?? []).map((x) => ({ acido: x.acido, ml: x.ml })),
     fervura_min: Math.round(r.fervura_min ?? 60),
