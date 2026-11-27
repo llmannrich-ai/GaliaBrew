@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127c.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127e.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -858,3 +858,28 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   estrangeiras, nenhuma receita usava) NÃO aparecem em nenhum dos dois seletores; seguem no banco e em Cadastros → Águas.
 - Receita antiga com base do catálogo continua com a cópia (opção "__atual"). Teste "água: base só com as águas
   cadastradas pela pessoa...".
+
+## Inoculação e starter na seção Leveduras (27/11/2026, pedido do responsável; sem migração)
+- `calculos.js`: `inoculacao({ leveduras, og, litros, cfg })` (testes em calculos.test.mjs). Células em BILHÕES; necessárias
+  = taxa (M células/mL/°P) × litros × °P. Taxa automática (`taxaInoculacaoPadrao`): ale 0,75, lager 1,5; OG > 1,060: ale
+  1,0, lager 2,0 (lager = alguma levedura LAGER na primária). Contam só as leveduras da fermentação PRIMÁRIA.
+  `celulasDaLevedura`: seca 15 bi/g (ajustável; sachê 11,5 g), líquida 100 bi/pacote × viabilidade (0,7% ao dia desde a
+  fabricação, `viabilidadeLiquida`), mL/g de líquida = lama 1 bi/mL, "bi células" direto; slant/cultura em pacote = não dá
+  para saber (pede a quantidade em bi células). `crescimentoStarter`: AGITADOR = modelo de Kai Troester (Braukaiser: 1,4
+  bi/g de extrato abaixo de 1,4 bi/g; acima, 2,33 − 0,67 × bi/g), AGITAR = curva de Chris White (12,55 × x^−0,4595 − 1,
+  limitada a 0-6); DME = extrato ÷ 0,96; água = massa − DME. `starterSugerido` = menor de 0,5 a 5 L (0,25 L) que chega;
+  null = um passo não chega. Situação: OK 90-250% do ideal, BAIXA 60-90, MUITO_BAIXA < 60, ALTA > 250. Estimativa.
+- Dados em `receitas.extras.inoculacao` = { taxa, fabricacao, bilhoes_g, starter (AGITADOR|AGITAR), starter_l, starter_sg }
+  (campos vazios não vão; `extrasParaGravar` no montarPayload mantém o resto do extras, ex.: brewfather_id). "Nova a
+  partir desta" copia a escolha, menos a data de fabricação (é do pacote do lote). OG e volume: os medidos no lote, se houver.
+- Tela: botão `.pitch-resumo` no pé da seção Leveduras (Completo e Clean): "INOCULAÇÃO E STARTER", "Precisa 411 bi · tem
+  173 bi" (ou "com o starter"), dica ("Use 3 pacotes", "Faça um starter de 1,5 L ou use 2 pacotes", "Starter de 2 L · 195 g
+  de DME") e o % do ideal num selo na cor do estado. Some sem levedura na primária. Tocar abre `dialog.pitch-janela`
+  (`abrirPitch`, mesmo `abrirJanelaCampos` dos Parâmetros): cabeça Precisa | Tem/Com o starter | Do ideal ao vivo; linha
+  OG · L · ale/lager · viabilidade; campos Taxa (vazia = automática no fundo), Fabricação (só líquida), Seca bi/g (só seca),
+  Starter (Sem starter | Agitador magnético | Sem agitador), Volume (vazio = sugestão) e Densidade (vazia = 1,036); linhas
+  Levedura da receita, Taxa sem starter, DME no starter, O starter cresce, Taxa com o starter; botão "Usar N pacotes" (1
+  passo do desfazer; só com uma levedura na primária e sem starter). Desfazer fecha a janela.
+- Teste do navegador (celular): resumo, janela = resumo, taxa automática, starter no agitador ≥ 100%, roleta do volume
+  em popover, 390/320 px sem passar da largura, Pronto/foco, ↶. Capturas `p6q2` (resumo), `p6q3` (janela 390), `p6q4`
+  (janela 320), `p6q5` (resumo 320). Falta: relatório em PDF não mostra o starter; conferir no iPhone real.

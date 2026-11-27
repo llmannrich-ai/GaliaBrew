@@ -255,7 +255,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127d");
+    const m = await import("./fontes.js?v=20261127e");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -539,7 +539,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127d");
+    const m = await import("./calculos.js?v=20261127e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -607,7 +607,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127d");
+    const m = await import("./calculos.js?v=20261127e");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -629,7 +629,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127d");
+    const m = await import("./calculos.js?v=20261127e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -739,7 +739,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127d");
+    const m = await import("./calculos.js?v=20261127e");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1587,6 +1587,68 @@ const erros = [];
   }
   await cel.setViewportSize({ width: 390, height: 844 });
   await cel.waitForTimeout(150);
+
+  // Inoculação e starter (27/11/2026): resumo tocável no pé das Leveduras e a janela com a taxa, o starter e o resultado ao vivo.
+  {
+    const resumo = '[data-secao="leveduras"] button.pitch-resumo';
+    await cel.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), resumo);
+    const rs = await cel.evaluate((s) => {
+      const b = document.querySelector(s), q = b.getBoundingClientRect();
+      return { linha: b.querySelector(".pitch-linha").textContent, dica: b.querySelector(".pitch-dica").textContent,
+        selo: b.querySelector(".pitch-selo").textContent, h: q.height, passa: q.right > innerWidth + 0.5 };
+    }, resumo);
+    verificar(/^Precisa \d+ bi · tem \d+ bi$/.test(rs.linha) && /^\d+%$/.test(rs.selo) && rs.h >= 44 && !rs.passa,
+      `inoculação: resumo na seção Leveduras ("${rs.linha}", ${rs.selo}${rs.dica ? ", " + rs.dica : ""}; ${Math.round(rs.h)} px)`);
+    await cel.screenshot({ path: `${SAIDA}/p6q2-inoculacao-resumo.png` });
+    await tocar(resumo);
+    await cel.waitForSelector("dialog.pitch-janela[open]");
+    await cel.waitForTimeout(150);
+    const metricas = () => cel.$$eval("dialog.pitch-janela .fj-metricas .metrica", (ns) => ns.map((n) => [n.querySelector(".rot").textContent, n.querySelector(".val").textContent]));
+    const m0 = await metricas();
+    verificar(m0.length === 3 && rs.linha.startsWith(`Precisa ${m0[0][1]}`) && m0[2][1] === rs.selo && !(await cel.locator(".roleta").count()),
+      `inoculação: janela com Precisa/Tem/Do ideal iguais ao resumo, sem abrir roleta (${JSON.stringify(m0)})`);
+    // Taxa vazia = automática (placeholder); escolher o starter mostra volume e densidade, DME e o crescimento.
+    const taxaPh = await cel.getAttribute('dialog.pitch-janela input[aria-label^="Taxa de inoculação"]', "placeholder");
+    verificar(/^(0,75|1,00|1,50|2,00)$/.test(taxaPh), `inoculação: taxa automática no fundo do campo (${taxaPh})`);
+    await cel.selectOption('dialog.pitch-janela select[aria-label="Starter"]', "AGITADOR");
+    await cel.waitForTimeout(100);
+    const m1 = await metricas();
+    const det = await cel.textContent("dialog.pitch-janela .pitch-detalhe");
+    const volPh = await cel.getAttribute('dialog.pitch-janela input[aria-label="Volume do starter (L)"]', "placeholder");
+    verificar(m1[1][0] === "Com o starter" && /DME no starter\d+ g \+ [\d,]+ L de água/.test(det) && /O starter cresce\+\d+ bi → \d+ bi/.test(det)
+      && /^[\d,]+$/.test(volPh) && Number(m1[2][1].replace("%", "")) >= 100,
+      `inoculação: starter no agitador com o menor volume que chega (${volPh} L; ${JSON.stringify(m1)})`);
+    await tocar('dialog.pitch-janela input[aria-label="Volume do starter (L)"]');
+    await cel.waitForSelector("dialog.pitch-janela .roleta");
+    await cel.waitForTimeout(250);
+    verificar(await cel.evaluate(() => document.querySelector("dialog.pitch-janela .roleta").matches(":popover-open")),
+      "inoculação: a roleta do volume do starter abre dentro da janela (camada do topo)");
+    await tocar(".roleta-cancelar");
+    await cel.screenshot({ path: `${SAIDA}/p6q3-inoculacao-janela-390.png` });
+    for (const w of [390, 320]) {
+      await cel.setViewportSize({ width: w, height: w === 390 ? 844 : 568 });
+      await cel.waitForTimeout(150);
+      const j = await cel.evaluate(() => {
+        const d = document.querySelector("dialog.pitch-janela"), b = d.getBoundingClientRect();
+        const passa = [...d.querySelectorAll("*")].filter((n) => n.getClientRects().length && n.getBoundingClientRect().right > b.right + 0.5).map((n) => n.className || n.tagName);
+        return { cabe: b.left >= 0 && b.right <= innerWidth && d.scrollWidth <= d.clientWidth, passa };
+      });
+      verificar(j.cabe && !j.passa.length, `inoculação ${w} px: janela cabe na largura${j.passa.length ? " (passam: " + j.passa.slice(0, 5).join(", ") + ")" : ""}`);
+    }
+    await cel.screenshot({ path: `${SAIDA}/p6q4-inoculacao-janela-320.png` });
+    await tocar("dialog.pitch-janela .item-pronto");
+    await cel.waitForSelector("dialog.pitch-janela", { state: "detached" });
+    const rs2 = await cel.evaluate((s) => [document.querySelector(s + " .pitch-linha").textContent, document.querySelector(s + " .pitch-dica").textContent], resumo);
+    verificar(/com o starter \d+ bi/.test(rs2[0]) && /^Starter de [\d,]+ L · \d+ g de DME$/.test(rs2[1]) && await cel.evaluate(() => document.activeElement?.classList.contains("pitch-resumo")),
+      `inoculação: Pronto fecha, o resumo mostra o starter e o foco volta a ele (${rs2.join(" | ")})`);
+    await conferirLateral("320 px, inoculação");
+    await cel.evaluate((s) => document.querySelector(s).scrollIntoView({ block: "center" }), resumo);
+    await cel.screenshot({ path: `${SAIDA}/p6q5-inoculacao-resumo-320.png` });
+    await cel.setViewportSize({ width: 390, height: 844 });
+    await cel.waitForTimeout(150);
+    await tocar(".barra-app .app-desfazer");
+    verificar(/ · tem \d+ bi$/.test(await cel.textContent(`${resumo} .pitch-linha`)), "inoculação: ↶ desfaz a escolha do starter");
+  }
 
   // Busca de ingrediente no celular: sem filtros, a lista começa logo abaixo do campo.
   await tocar('[data-secao="fermentaveis"] button.adicionar');
