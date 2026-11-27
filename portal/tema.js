@@ -29,15 +29,23 @@
   function lerPreferencia(chave) {
     try { return (JSON.parse(localStorage.getItem(PREF) || "{}") || {})[chave || "tema"]; } catch (e) { return undefined; }
   }
+  // Padrão de quem nunca escolheu (27/11/2026, pedido do responsável): tema Pilsen + layout Clean. Quem já escolheu
+  // no perfil segue com a escolha salva.
+  var TEMA_PADRAO = "pilsen";
+  var LAYOUT_PADRAO = "clean";
   function aplicarLayout(id) {
-    layout = id === "clean" ? "clean" : "completo";
+    layout = id === "completo" || id === "clean" ? id : LAYOUT_PADRAO;
     document.documentElement.setAttribute("data-layout", layout);
   }
-  var layout = "completo";
+  var layout = LAYOUT_PADRAO;
   aplicarLayout(lerPreferencia("layout"));
   function achar(id) {
-    for (var i = 0; i < TEMAS.length; i++) if (TEMAS[i].id === id) return TEMAS[i];
-    return TEMAS[0];
+    var padrao = TEMAS[0];
+    for (var i = 0; i < TEMAS.length; i++) {
+      if (TEMAS[i].id === id) return TEMAS[i];
+      if (TEMAS[i].id === TEMA_PADRAO) padrao = TEMAS[i];
+    }
+    return padrao;
   }
   function modoDe(tema) {
     if (tema.modo !== "auto") return tema.modo;
@@ -60,7 +68,7 @@
       if (cor) meta.setAttribute("content", cor);
     }
   }
-  var atual = lerPreferencia() || "auto";
+  var atual = lerPreferencia() || TEMA_PADRAO;
   aplicar(atual);
   // No "auto", acompanha o celular quando ele troca de claro para escuro (sem recarregar).
   if (escuroSistema) {

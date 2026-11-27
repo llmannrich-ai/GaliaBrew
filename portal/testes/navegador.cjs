@@ -229,18 +229,49 @@ async function site(rota) {
   return rota.fulfill({ status: 200, contentType: TIPOS[path.extname(p)] || "application/octet-stream", headers: { "content-security-policy": CSP }, body: fs.readFileSync(p) });
 }
 
+// Os testes abaixo foram escritos sobre Automático + Completo. Desde 27/11/2026 o padrão de quem nunca escolheu é
+// Pilsen + Clean (tema.js); estes contextos começam como um aparelho que já escolheu Automático + Completo (só se ainda
+// não houver preferência salva, para não desfazer as escolhas feitas no meio do teste). O padrão novo tem bloco próprio.
+const SEMENTE_PREF = () => {
+  if (!localStorage.getItem("galiabrew.preferencias")) {
+    localStorage.setItem("galiabrew.preferencias", JSON.stringify({ tema: "auto", layout: "completo" }));
+  }
+};
+
 const ok = [];
 const erros = [];
 (async () => {
   const navegador = await chromium.launch();
+  const verificar = (cond, msg) => { if (!cond) throw new Error(`FALHOU: ${msg}`); ok.push(msg); };
+
+  // Padrão de quem abre o app pela 1ª vez (27/11/2026): tema Pilsen + layout Clean, no celular, sem preferência salva.
+  {
+    const ctxNovo = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+    await ctxNovo.route(`${SB}/**`, supabaseSimulado);
+    await ctxNovo.route(`${ORIGEM}/**`, site);
+    const novo = await ctxNovo.newPage();
+    novo.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
+    await novo.goto(`${ORIGEM}/`);
+    await novo.waitForSelector("form.login");
+    const h = await novo.evaluate(() => [document.documentElement.dataset.tema, document.documentElement.dataset.modo,
+      document.documentElement.dataset.layout, window.GaliaTema.atual(), window.GaliaTema.layout()].join("/"));
+    verificar(h === "pilsen/claro/clean/pilsen/clean", `1ª vez no aparelho: tema Pilsen e layout Clean (${h})`);
+    // Escolha feita no perfil continua valendo: Completo + Stout salvos = Completo + Stout ao abrir.
+    await novo.evaluate(() => localStorage.setItem("galiabrew.preferencias", JSON.stringify({ tema: "stout", layout: "completo" })));
+    await novo.reload();
+    await novo.waitForSelector("form.login");
+    const h2 = await novo.evaluate(() => document.documentElement.dataset.tema + "/" + document.documentElement.dataset.layout);
+    verificar(h2 === "stout/completo", `escolha salva no perfil vale sobre o padrão (${h2})`);
+    await ctxNovo.close();
+  }
+
   const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
+  await ctx.addInitScript(SEMENTE_PREF);
   const pagina = await ctx.newPage();
   pagina.on("console", (m) => { if (["error", "warning"].includes(m.type())) erros.push(`${m.type()}: ${m.text()}`); });
   pagina.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
   await ctx.route(`${SB}/**`, supabaseSimulado);
   await ctx.route(`${ORIGEM}/**`, site);
-
-  const verificar = (cond, msg) => { if (!cond) throw new Error(`FALHOU: ${msg}`); ok.push(msg); };
 
   await pagina.goto(`${ORIGEM}/`);
   await pagina.waitForSelector("form.login");
@@ -1172,6 +1203,7 @@ const erros = [];
 
   // ================= Celular de verdade: tela de toque (isMobile + hasTouch), 390 px e 320 px =================
   const ctxCel = await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  await ctxCel.addInitScript(SEMENTE_PREF);
   await ctxCel.route(`${SB}/**`, supabaseSimulado);
   await ctxCel.route(`${ORIGEM}/**`, site);
   const cel = await ctxCel.newPage();
@@ -2129,7 +2161,7 @@ const erros = [];
   await cel.waitForSelector(".tema-opcao");
   const temasIds = await cel.$$eval("fieldset.temas:not(.layouts) .tema-opcao", (ls) => ls.map((l) => l.dataset.opcao));
   verificar(temasIds.length === 9 && temasIds[0] === "auto" && await cel.isChecked('.tema-opcao[data-opcao="auto"] input'),
-    "perfil: 9 temas, Automático marcado por padrão");
+    "perfil: 9 temas, marcado o salvo no aparelho (Automático)");
   verificar(await larguraSobra() <= 1, "320 px: temas do perfil sem rolagem para o lado");
   // Barra escura das outras telas (27/11/2026): logo "Gália" em creme no lugar do copinho + "GaliaBrew".
   await cel.evaluate(() => window.scrollTo(0, 0));
@@ -2224,7 +2256,7 @@ const erros = [];
   await cel.evaluate(() => { window.GaliaTema.aplicar("auto"); location.hash = "#/perfil"; });
   await cel.waitForSelector(".layouts .tema-opcao");
   verificar(await cel.isChecked('.layouts .tema-opcao[data-opcao="completo"] input') && await cel.evaluate(() => document.documentElement.dataset.layout) === "completo",
-    "clean: o layout Completo é o padrão");
+    "clean: marcado o layout salvo no aparelho (Completo)");
   await tocar('.tema-opcao[data-opcao="auto"]');          // capturas no tema padrão (o Stout ficou salvo acima)
   await tocar('.layouts .tema-opcao[data-opcao="clean"]');
   verificar(await cel.evaluate(() => document.documentElement.dataset.layout + "/" + JSON.parse(localStorage.getItem("galiabrew.preferencias")).layout) === "clean/clean",
