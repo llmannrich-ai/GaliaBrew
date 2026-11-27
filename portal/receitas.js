@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127h";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127h";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127h";
-import { sb, sessao, preferencias } from "./estado.js?v=20261127h";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127h";
-import { abrirBusca } from "./busca.js?v=20261127h";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127h";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127h";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127h";
-import * as O from "./opcoes.js?v=20261127h";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127h";
-import { icone } from "./icones.js?v=20261127h";
-import { abrirMenu } from "./menu.js?v=20261127h";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261127h";
-import { abrirRelatorio } from "./relatorio.js?v=20261127h";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127h";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info, telaCarregando } from "./ui.js?v=20261127i";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127i";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127i";
+import { sb, sessao, preferencias } from "./estado.js?v=20261127i";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127i";
+import { abrirBusca } from "./busca.js?v=20261127i";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127i";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127i";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127i";
+import * as O from "./opcoes.js?v=20261127i";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127i";
+import { icone } from "./icones.js?v=20261127i";
+import { abrirMenu } from "./menu.js?v=20261127i";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261127i";
+import { abrirRelatorio } from "./relatorio.js?v=20261127i";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127i";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -157,8 +157,10 @@ async function carregarReceita(id) {
 /** Rotas: #/receita/<id>, #/receita/nova (em branco) e #/receita/nova/<id da receita de origem>. */
 export async function telaEditor(conteudo, id, origemId) {
   editor.sujo = false;
-  preencher(conteudo, el("p", { class: "nota", text: "Carregando…" }));
   const nova = !id || id === "nova";
+  // Celular: a barra escura das outras telas já sai aqui (como no editor), em vez de aparecer só durante a espera.
+  document.body.classList.add("no-editor");
+  preencher(conteudo, telaCarregando(nova && !origemId ? "Preparando a receita…" : "Abrindo a receita…", { voltar: ["#/receitas", "volte às receitas"] }));
   const buscar = nova ? origemId : id;
   const [cat, rec] = await Promise.all([
     Promise.all(["estilos", "equipamentos", "fermentaveis", "lupulos", "leveduras", "outros", "aguas"].map((t) => listarCadastro(t)))
@@ -166,6 +168,7 @@ export async function telaEditor(conteudo, id, origemId) {
     buscar ? carregarReceita(buscar) : Promise.resolve(null),
   ]);
   if (buscar && !rec) {
+    document.body.classList.remove("no-editor");
     preencher(conteudo, el("p", { class: "erro-form", text: "Receita não encontrada (ou sem acesso)." }), el("a", { href: "#/receitas", text: "Voltar às receitas" }));
     return;
   }

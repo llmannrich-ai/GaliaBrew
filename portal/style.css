@@ -1146,9 +1146,32 @@ dialog form { display: grid; gap: .9rem; }
   .vital.com-teclado .vital-val, .vital.com-teclado button.vital-val.ajustavel { font-size: .875rem; letter-spacing: -.02em; }
 }
 
+/* ---------- tela de carregamento (27/11/2026, pedido do responsável) ----------
+   Abrir a receita mostrava a barra escura antiga com "Carregando…". Agora: logo Gália atual no fundo do tema, texto e
+   barra animada, no meio da tela. Surge depois de 150 ms (abertura rápida não pisca). telaCarregando() no ui.js e o
+   mesmo HTML no index.html. */
+.carregando {
+  min-height: calc(100vh - 6rem); min-height: calc(100dvh - 6rem);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .9rem;
+  padding: 1rem; text-align: center; animation: carregando-surge .25s ease-out .15s both;
+}
+.centro > .carregando { min-height: 0; }
+.carregando-logo { display: block; height: 5rem; width: auto; max-width: 70vw; object-fit: contain; }
+.carregando .logo-escuro, [data-modo="escuro"] .carregando .logo-claro { display: none; }
+[data-modo="escuro"] .carregando .logo-escuro { display: block; }
+.carregando-texto { margin: .2rem 0 0; color: var(--suave); font-size: 1rem; font-weight: 600; }
+.carregando-barra { position: relative; width: 10rem; height: 4px; border-radius: 2px; background: var(--trilho); overflow: hidden; }
+.carregando-barra i { position: absolute; inset: 0 auto 0 0; width: 40%; border-radius: inherit; background: var(--destaque); animation: carregando-vai 1.1s ease-in-out infinite; }
+.carregando-demora { display: none; max-width: 18rem; margin: .4rem 0 0; color: var(--suave); font-size: var(--t-p); line-height: 1.45; }
+.carregando.demorando .carregando-demora { display: block; }
+.carregando-demora a { color: var(--destaque-escuro, var(--destaque)); font-weight: 600; }
+@keyframes carregando-surge { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes carregando-vai { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+@media (prefers-reduced-motion: reduce) { .carregando-barra i { width: 100%; opacity: .55; } }
 
 /* ---------- ícone de informação (ⓘ) ---------- */
 .info-wrap { display: inline; }

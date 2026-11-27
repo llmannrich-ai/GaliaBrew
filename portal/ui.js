@@ -1,6 +1,6 @@
 // ui.js — utilidades de tela. Texto do usuário entra SEMPRE como texto (textContent), nunca como HTML.
-import { abrirRoleta } from "./roleta.js?v=20261127h";
-import { FAIXAS } from "./faixas.js?v=20261127h";
+import { abrirRoleta } from "./roleta.js?v=20261127i";
+import { FAIXAS } from "./faixas.js?v=20261127i";
 
 /** Cria um elemento. attrs: class, text, on: {evento: fn}, dataset, e demais atributos. Filhos: nós ou textos. */
 export function el(tag, attrs = {}, ...filhos) {
@@ -50,6 +50,24 @@ export function preencher(n, ...filhos) {
     if (f === null || f === undefined || f === false) continue;
     n.append(f instanceof Node ? f : document.createTextNode(String(f)));
   }
+  return n;
+}
+
+/**
+ * Tela de carregamento (27/11/2026, pedido do responsável: ao abrir a receita aparecia a barra escura antiga com
+ * "Carregando…"). Logo Gália atual (clara/escura pelo data-modo), texto e barra animada; só aparece depois de 150 ms
+ * (abertura rápida não pisca). Se passar de 10 s, mostra a linha de demora com o link de volta. O mesmo HTML está no
+ * index.html (abertura do app).
+ */
+export function telaCarregando(texto = "Carregando…", { voltar } = {}) {
+  const logo = (v) => el("img", { class: `carregando-logo logo-${v}`, src: `icones/logo-galia${v === "escuro" ? "-escuro" : ""}.png`, alt: "", width: 538, height: 300, decoding: "async" });
+  const n = el("div", { class: "carregando", role: "status", "aria-live": "polite" },
+    logo("claro"), logo("escuro"),
+    el("p", { class: "carregando-texto", text: texto }),
+    el("div", { class: "carregando-barra", "aria-hidden": "true" }, el("i")),
+    el("p", { class: "carregando-demora" }, "Está demorando mais que o normal. Confira a conexão",
+      voltar ? [" ou ", el("a", { href: voltar[0], text: voltar[1] })] : null, "."));
+  setTimeout(() => n.classList.add("demorando"), 10000);
   return n;
 }
 
