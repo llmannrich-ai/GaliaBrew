@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  415 verificações: login, menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  447 verificações: login, criar conta e esqueci a senha (celular 390/320 px), menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127f.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127g.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -717,6 +717,14 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Para recuperação de senha de todos (ou religar a confirmação): SMTP próprio (Authentication → Emails → SMTP; ex.:
   Resend ou Brevo, plano gratuito).
 - Site URL e Redirect URLs = https://llmannrich-ai.github.io/GaliaBrew/ (feito pelo responsável em 22/11/2026).
+- Tela "Criar conta" (27/11/2026, pedido do responsável; `telaCriarConta` no app.js, sem migração): no login, "Ainda não
+  tem conta? Criar conta" (a nota "Acesso só por convite" saiu). Nome, e-mail, senha (≥ 10, conferida no aparelho) e
+  repetir; `sb.auth.signUp` com `data.nome` (o gatilho `perfis_criar` usa). Sem confirmação de e-mail a conta ENTRA NA
+  HORA (o onAuthStateChange abre o app); se um dia a confirmação for religada, a tela avisa para abrir o link do e-mail.
+  Aviso na tela: "use um e-mail real: é só por ele que dá para recuperar a senha". E-mail repetido = mensagem em
+  português (`mensagemErro`). "Esqueci a senha" responde igual exista ou não a conta (não revela quem tem cadastro) e
+  avisa que só chega a e-mail real. LIMITE: com o SMTP padrão do Supabase o link só chega a e-mails da org Versa; para os
+  amigos receberem, SMTP próprio (Resend/Brevo) no painel. Teste no navegador: bloco "criar conta" (capturas `p6c`).
 - Primeiro admin: depois de criar o próprio login, `update perfis set papel = 'admin' where user_id = ...` por SQL.
 
 ## Situação em 22/11/2026 (fim da 1ª sessão)

@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127f";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127f";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127f";
-import { sb, sessao, preferencias } from "./estado.js?v=20261127f";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127f";
-import { abrirBusca } from "./busca.js?v=20261127f";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127f";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127f";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127f";
-import * as O from "./opcoes.js?v=20261127f";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127f";
-import { icone } from "./icones.js?v=20261127f";
-import { abrirMenu } from "./menu.js?v=20261127f";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261127f";
-import { abrirRelatorio } from "./relatorio.js?v=20261127f";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127f";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127g";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127g";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127g";
+import { sb, sessao, preferencias } from "./estado.js?v=20261127g";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127g";
+import { abrirBusca } from "./busca.js?v=20261127g";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127g";
+import { listarCadastro, amostraCor } from "./cadastros.js?v=20261127g";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127g";
+import * as O from "./opcoes.js?v=20261127g";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127g";
+import { icone } from "./icones.js?v=20261127g";
+import { abrirMenu } from "./menu.js?v=20261127g";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261127g";
+import { abrirRelatorio } from "./relatorio.js?v=20261127g";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127g";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;

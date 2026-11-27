@@ -252,6 +252,14 @@ button.inicio-menu { display: none; }
 .nota.alerta { color: var(--alerta); font-weight: 600; }
 .erro-form { color: var(--erro); margin: .3rem 0; min-height: 0; font-weight: 600; }
 .erro-form:empty { display: none; }
+.ok-form { color: var(--ok); margin: .3rem 0; font-weight: 600; }
+.ok-form:empty { display: none; }
+/* Login e criar conta (27/11/2026): troca de tela embaixo, com toque de 44 px. */
+.login-conta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .2rem .6rem;
+  border-top: 1px solid var(--linha); padding-top: .8rem; margin-top: .2rem; color: var(--suave); }
+.login-conta button { min-height: 44px; touch-action: manipulation; }
+.login button.link.esqueci { min-height: 44px; touch-action: manipulation; }
+.login .login-aviso { margin: -.3rem 0 0; }
 .titulo-linha { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
 .titulo-linha h2, .titulo-linha h3 { margin: 0; }
 .acoes-sais { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }

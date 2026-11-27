@@ -1,6 +1,6 @@
 // opcoes.js — listas de valores (iguais aos CHECK do banco) e conversão de cor para a tela.
-import { preferencias } from "./estado.js?v=20261127f";
-import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261127f";
+import { preferencias } from "./estado.js?v=20261127g";
+import { ebcDeSrm, srmDeEbc } from "./calculos.js?v=20261127g";
 
 export const TIPO_FERMENTAVEL = [
   ["GRAO", "Grão / malte"], ["EXTRATO", "Extrato líquido"], ["EXTRATO_SECO", "Extrato seco"], ["ACUCAR", "Açúcar"],
