@@ -267,7 +267,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261127g");
+    const m = await import("./fontes.js?v=20261127h");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -551,7 +551,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127g");
+    const m = await import("./calculos.js?v=20261127h");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -619,7 +619,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127g");
+    const m = await import("./calculos.js?v=20261127h");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -641,7 +641,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127g");
+    const m = await import("./calculos.js?v=20261127h");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -751,7 +751,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261127g");
+    const m = await import("./calculos.js?v=20261127h");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1876,6 +1876,18 @@ const erros = [];
   // Investigado sem sucesso: captura do ponteiro, redesenho da lista, foco, rolagem suave, toque duplo, ritmo do arrasto.
   // Aqui, um toque neutro (título da seção) encerra a sequência antes de seguir.
   await tocar('[data-secao="lupulos"] .titulo-linha h3');
+  // Nome do malte inteiro (27/11/2026, pedido do responsável): o nome longo quebra em linhas, sem reticências e sem
+  // passar da linha. O texto é trocado só na tela (o teste confere o CSS).
+  const NOME_LONGO = "Weyermann Malte Pilsner Boêmio Maltado em Piso";
+  const nomeMalteInteiro = () => cel.evaluate((nome) => {
+    const li = document.querySelector('[data-secao="fermentaveis"] li.ing');
+    const t = li.querySelector(".ing-nome-txt");
+    t.textContent = nome;
+    const b = t.getBoundingClientRect(), lib = li.getBoundingClientRect(), alt = parseFloat(getComputedStyle(t).lineHeight);
+    li.scrollIntoView({ block: "center" });
+    return { inteiro: t.scrollWidth <= t.clientWidth + 1 && getComputedStyle(t).textOverflow !== "ellipsis",
+      linhas: Math.round(b.height / alt), dentro: b.right <= lib.right + 1 && b.right <= innerWidth + 1 };
+  }, NOME_LONGO);
   // Lúpulo em 2 linhas (24/11/2026, pedido do responsável): etapa e tempo à direita do nome, quantidade embaixo.
   const lupuloEmDuasLinhas = (larg) => cel.evaluate((larg) => [...document.querySelectorAll('[data-secao="lupulos"] li.ing')].map((li) => {
     const b = (q) => li.querySelector(q).getBoundingClientRect();
@@ -1891,6 +1903,14 @@ const erros = [];
   verificar(await lupuloEmDuasLinhas(320) && await larguraSobra() <= 1, "toque 320 px: etapa e tempo do lúpulo à direita do nome, sem passar da largura");
   await cel.evaluate(() => { document.querySelector('[data-secao="lupulos"]').scrollIntoView(); window.scrollBy(0, -20); });
   await cel.screenshot({ path: `${SAIDA}/p6l-celular-lupulos-320.png` });
+  for (const larg of [320, 390]) {
+    await cel.setViewportSize({ width: larg, height: larg === 320 ? 568 : 844 });
+    await cel.waitForTimeout(150);
+    const nm = await nomeMalteInteiro();
+    verificar(nm.inteiro && nm.linhas >= 2 && nm.linhas <= 3 && nm.dentro && await larguraSobra() <= 1,
+      `toque ${larg} px: nome longo do malte aparece inteiro, quebrado em ${nm.linhas} linhas, sem passar da largura`);
+    await cel.screenshot({ path: `${SAIDA}/p6n2-celular-nome-malte-${larg}.png` });
+  }
   await cel.setViewportSize({ width: 390, height: 844 });
   await cel.waitForTimeout(200);
   // Janela "Chegar à OG" cabe na tela.
@@ -2551,6 +2571,11 @@ const erros = [];
   verificar((await cel.textContent('.editor-corpo > [data-secao="notas"]')).includes("Moagem 1,1 mm. Dry hop no 3º dia."),
     "clean K5: nota escrita na janela aparece no resumo");
   await cel.screenshot({ path: `${SAIDA}/p7a-clean-receita.png` });
+  {
+    const nm = await nomeMalteInteiro();
+    verificar(nm.inteiro && nm.linhas >= 2 && nm.dentro, `clean ${await cel.evaluate(() => innerWidth)} px: nome longo do malte inteiro na ficha (${nm.linhas} linhas)`);
+    await cel.screenshot({ path: `${SAIDA}/p7n-clean-nome-malte.png` });
+  }
   const levClean = await cel.evaluate(() => {
     const li = document.querySelector('[data-secao="leveduras"] li.ing.ficha');
     li?.scrollIntoView({ block: "center" });

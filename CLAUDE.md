@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127g.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127h.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -677,7 +677,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   todos com `dono` nulo e a origem em `extras.fonte`. O próprio banco baixou os arquivos do Brewtarget travados no
   commit 6d9e69d (md5 conferido) pela extensão `http`; o conteúdo não está no repositório.
 - Só números e nomes dos estilos (texto do BJCP tem direitos autorais). Notas só de fonte CC BY-SA (beer-analytics.com);
-  leveduras de outras fontes levam só "Indicada para". Nomes de ingredientes ficaram no original (marcas e produtos).
+  leveduras de outras fontes levam só "Indicada para". Nomes de ingredientes: em português desde a 0012 (ver abaixo).
 - Dado consertado na carga: X2 IPA Argenta vinha com densidade em pontos (1055) → 1,055. Atenuação acima de 100% → 100;
   temperatura impossível → em branco.
 - A 1ª tentativa parou numa confirmação do Supabase por causa de "drop" no script (a confirmação não aparece para o
@@ -904,3 +904,20 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador (celular): resumo, janela = resumo, taxa automática, starter no agitador ≥ 100%, roleta do volume
   em popover, 390/320 px sem passar da largura, Pronto/foco, ↶. Capturas `p6q2` (resumo), `p6q3` (janela 390), `p6q4`
   (janela 320), `p6q5` (resumo 320). Falta: relatório em PDF não mostra o starter; conferir no iPhone real.
+
+## Catálogo em português e nome do malte inteiro (0012, aplicada em 27/11/2026, pedido do responsável)
+- 309 fermentáveis do catálogo (dono nulo) com nome em português ("Malte Pilsner", "Weyermann Malte de Trigo Escuro",
+  "Cevada Torrada", "Aveia em Flocos", "Malte Caramelo/Cristal – 60L", frutas e açúcares); 13 lúpulos com a origem em
+  português ("Magnum (Alemanha)", "Saaz (Tchéquia)"); 7 águas "Torneira — <cidade>" (Munique, Nova York...).
+  O nome em inglês fica em `extras.nome_original`: a busca do editor (`busca.js`, fermentáveis/lúpulos/outros) e a
+  lista dos Cadastros acham pelos dois ("crystal", "roasted barley").
+- FICARAM no original (decisão desta tarefa, explicada ao responsável): marca e nome de produto (Carafa, Caramunich,
+  CaraHell, Special B®, Biscuit, Mroost, Maris Otter, Golden Promise, Golden Naked Oats, apelidos da Pauls Malt e da Uma
+  Malta), nomes de estilo usados assim no Brasil (Pilsner, Pilsen, Pale Ale, Munich, Vienna, Abbey, Stout), variedades
+  de lúpulo e "Lupulin Pellets" (linha da Hopsteiner), e as 897 leveduras (nome comercial do pacote: US-05, London Ale III).
+- Receitas antigas NÃO mudam (guardam cópia do nome, regra 5); só ingrediente adicionado depois vem em português.
+- `classificarMalte` (pH) já reconhece os nomes novos (acid → acidificado; torrad/preto; cara/crist); conferido nos 309.
+- Teste `supabase/testes/0012_catalogo_portugues.sql`: 9 ok. O 0009 passou a buscar "Weyermann Malte Pilsner" (8 ok).
+- Nome do malte/lúpulo INTEIRO na linha da receita (Completo e Clean, celular e computador): `.ing-nome-txt` quebra em
+  linhas (2-3), sem reticências. Levedura segue numa linha só (nome cortado; inteiro na janela do item). Teste "nome
+  longo do malte aparece inteiro" (390/320 px e clean); capturas `p6n2-celular-nome-malte-390/320`, `p7n-clean-nome-malte`.
