@@ -1,10 +1,10 @@
 // graficos.js — gráficos do editor, desenhados para o celular primeiro (largura total, toque).
 // Barra do grist: proporção de cada malte no peso, na cor do próprio malte.
 // Linha do tempo da fervura: quando cada lúpulo entra (tamanho = gramas); tocar leva à linha do lúpulo.
-import { el, preencher, numeroBR } from "./ui.js?v=20261126d";
-import { corHexDeMalte, corHexDeSrm } from "./calculos.js?v=20261126d";
-import * as O from "./opcoes.js?v=20261126d";
-import { copo } from "./vital.js?v=20261126d";
+import { el, preencher, numeroBR } from "./ui.js?v=20261127a";
+import { corHexDeMalte, corHexDeSrm } from "./calculos.js?v=20261127a";
+import * as O from "./opcoes.js?v=20261127a";
+import { copo } from "./vital.js?v=20261127a";
 
 const nomeDe = (x) => String(x.nome ?? "").trim() || "(sem nome)";
 
