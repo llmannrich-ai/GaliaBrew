@@ -1,6 +1,6 @@
 // ui.js — utilidades de tela. Texto do usuário entra SEMPRE como texto (textContent), nunca como HTML.
-import { abrirRoleta } from "./roleta.js?v=20261127i";
-import { FAIXAS } from "./faixas.js?v=20261127i";
+import { abrirRoleta } from "./roleta.js?v=20261128a";
+import { FAIXAS } from "./faixas.js?v=20261128a";
 
 /** Cria um elemento. attrs: class, text, on: {evento: fn}, dataset, e demais atributos. Filhos: nós ou textos. */
 export function el(tag, attrs = {}, ...filhos) {
@@ -276,16 +276,20 @@ export function avisar(msg, tipo = "ok") {
   setTimeout(() => n.remove(), tipo === "erro" ? 8000 : 3500);
 }
 
+/** Mínimo de caracteres da senha. Pedido do responsável (27/11/2026): só o mínimo, sem outras regras. O Supabase
+ * Auth não aceita menos de 6 (é o piso do servidor), por isso 6 e não 4. Tem de bater com o painel do Supabase. */
+export const SENHA_MIN = 6;
+
 /** Traduz erros comuns do Supabase/Postgres. */
 export function mensagemErro(e) {
   const m = String(e?.message ?? e ?? "Erro desconhecido");
   if (/Invalid login credentials/i.test(m)) return "E-mail ou senha incorretos.";
   if (/Email not confirmed/i.test(m)) return "E-mail ainda não confirmado. Veja a mensagem enviada para você.";
-  if (/Password should be at least/i.test(m)) return "Senha curta demais (mínimo 10 caracteres).";
+  if (/Password should be at least/i.test(m)) return `Senha curta demais (mínimo ${SENHA_MIN} caracteres).`;
   if (/already registered|already been registered|user_already_exists/i.test(m)) return "Este e-mail já tem conta. Entre com a senha ou use \"Esqueci a senha\".";
   if (/Signups not allowed|signup.*disabled/i.test(m)) return "Cadastro de contas novas desligado no momento.";
   if (/Unable to validate email|invalid format|email.*invalid/i.test(m)) return "E-mail inválido. Confira o endereço.";
-  if (/weak password|pwned|known to be weak/i.test(m)) return "Senha fraca demais. Escolha outra, mais longa.";
+  if (/weak password|pwned|known to be weak/i.test(m)) return `O servidor recusou a senha. Confira no painel do Supabase se a regra de senha está só no mínimo de ${SENHA_MIN} caracteres.`;
   if (/sending recovery email|sending.*email|not authorized/i.test(m)) return "Não foi possível enviar o e-mail de recuperação agora. Tente mais tarde ou fale com o administrador.";
   if (/rate limit|too many/i.test(m)) return "Muitas tentativas. Espere alguns minutos.";
   if (/JWT expired|invalid JWT|session/i.test(m)) return "Sua sessão expirou. Entre de novo.";
