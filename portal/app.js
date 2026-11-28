@@ -1,11 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, SENHA_MIN, campoTexto, campoNumero } from "./ui.js?v=20261128c";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261128c";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261128c";
-import { telaCadastros, CADASTROS, esquecerCatalogo, preCarregarCatalogo } from "./cadastros.js?v=20261128c";
-import { telaFerramentas } from "./ferramentas.js?v=20261128c";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261128c";
-import { icone } from "./icones.js?v=20261128c";
+import { el, $, limpar, preencher, avisar, mensagemErro, SENHA_MIN, campoTexto, campoNumero } from "./ui.js?v=20261128d";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261128d";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261128d";
+import { telaCadastros, CADASTROS, esquecerCatalogo, preCarregarCatalogo } from "./cadastros.js?v=20261128d";
+import { telaFerramentas } from "./ferramentas.js?v=20261128d";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261128d";
+import { icone } from "./icones.js?v=20261128d";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -17,6 +17,11 @@ const campoEmail = (dados, autocomplete) => el("label", {}, "E-mail", el("input"
   type: "email", autocomplete, inputmode: "email", autocapitalize: "none", spellcheck: "false", required: true, value: dados.email,
   on: { input: (e) => { dados.email = e.target.value; } },
 }));
+
+/** Logo "Gália" das telas de acesso (27/11/2026, pedido do responsável; era o texto "GaliaBrew"): as mesmas duas imagens
+ *  da tela de Receitas, a creme nos temas escuros. `tag` = h1 no login (a logo é o título) ou div nas outras telas. */
+const logoAcesso = (tag = "div") => el(tag, { class: "login-logo" },
+  ["", "-escuro"].map((v) => el("img", { class: v ? "logo-escuro" : "logo-claro", src: `icones/logo-galia${v}.png`, alt: "Gália", width: 538, height: 300, decoding: "async" })));
 
 function telaEntrar(mensagem, email = "") {
   const dados = { email, senha: "" };
@@ -36,7 +41,7 @@ function telaEntrar(mensagem, email = "") {
       },
     },
   },
-  el("h1", { text: "GaliaBrew" }),
+  logoAcesso("h1"),
   el("p", { class: "sub", text: "Receitas de cerveja" }),
   campoEmail(dados, "username"),
   el("label", {}, "Senha", el("input", { type: "password", autocomplete: "current-password", required: true, on: { input: (e) => { dados.senha = e.target.value; } } })),
@@ -95,8 +100,8 @@ function telaCriarConta(email = "") {
       },
     },
   },
+  logoAcesso(),
   el("h1", { text: "Criar conta" }),
-  el("p", { class: "sub", text: "GaliaBrew · receitas de cerveja" }),
   el("label", {}, "Nome", el("input", { type: "text", autocomplete: "name", autocapitalize: "words", maxlength: 80, required: true, on: { input: (e) => { dados.nome = e.target.value; } } })),
   campoEmail(dados, "email"),
   el("p", { class: "nota login-aviso", text: "Não enviamos e-mail de confirmação: a conta já entra. Use um e-mail real que você lê: é só por ele que dá para recuperar a senha." }),
@@ -132,7 +137,8 @@ function telaDefinirSenha(tipo) {
       },
     },
   },
-  el("h1", { text: tipo === "invite" ? "Bem-vindo ao GaliaBrew" : "Nova senha" }),
+  logoAcesso(),
+  el("h1", { text: tipo === "invite" ? "Bem-vindo ao Gália" : "Nova senha" }),
   el("p", { class: "sub", text: `Defina a sua senha (mínimo ${SENHA_MIN} caracteres).` }),
   el("label", {}, "Senha", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.senha = e.target.value; } } })),
   el("label", {}, "Repita a senha", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.repetir = e.target.value; } } })),

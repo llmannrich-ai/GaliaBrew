@@ -1,9 +1,8 @@
 // menu.js — menu lateral do portal: recolhível no computador, gaveta no celular.
-// Ícones do icones.js; marca = copo do vital.js; arte do pé (lúpulo e cevada) desenhada aqui, em traço fino.
-import { el, svg } from "./ui.js?v=20261128c";
-import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261128c";
-import { icone } from "./icones.js?v=20261128c";
-import { copo } from "./vital.js?v=20261128c";
+// Ícones do icones.js; marca = logo "Gália" (menu de ícones: o livro da logo); arte do pé (lúpulo e cevada) em traço fino.
+import { el, svg } from "./ui.js?v=20261128d";
+import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261128d";
+import { icone } from "./icones.js?v=20261128d";
 
 const LARGURA_CELULAR = "(max-width: 959px)";
 const LARGURA_EDITOR_ESTREITO = 1180;
@@ -17,12 +16,8 @@ const LINKS = [
   ["#/perfil", "Perfil", "perfil", "perfil"],
 ];
 
-/** Copinho da marca (o mesmo desenho do copo da barra vital, na cor âmbar). */
-function marcaCopo() {
-  const c = copo();
-  c.cerveja.setAttribute("fill", "#d08a2a");
-  return c;
-}
+/** Marca do menu de ícones (recolhido / 960–1180 px): o livro da logo, o mesmo do ícone do app (27/11/2026; era o copinho). */
+const marcaIcone = () => el("img", { class: "marca-icone", src: "icones/icone-180.png", alt: "", width: 180, height: 180, decoding: "async" });
 
 /** Arte do pé do menu: cone de lúpulo com folha e espiga de cevada. Decorativa. */
 function arte() {
@@ -107,7 +102,7 @@ export function montarCasca({ sair }) {
 
   const lateral = el("aside", { class: "lateral", id: "menu-lateral" },
     el("div", { class: "lateral-topo" },
-      el("a", { href: "#/receitas", class: "marca", title: "Gália", "aria-label": "Gália: receitas" }, marcaCopo(),
+      el("a", { href: "#/receitas", class: "marca", title: "Gália", "aria-label": "Gália: receitas" }, marcaIcone(),
         el("img", { class: "marca-logo", src: "icones/logo-galia-escuro.png", alt: "", width: 538, height: 300, decoding: "async" })),
       el("button", { type: "button", class: "fechar-menu", "aria-label": "Fechar menu", title: "Fechar menu", on: { click: fecharMenu } }, icone("fechar"))),
     el("nav", { "aria-label": "Menu principal" },

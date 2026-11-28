@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128c.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128d.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -820,7 +820,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   e o ≡ (`button.abrir-menu.inicio-menu`, chama `abrirMenu` do menu.js) fica no canto esquerdo, no meio da altura da logo
   (26/11/2026: 56 px de toque, ícone de 34 px); no computador só a logo. Menu lateral/gaveta (26/11/2026, pedido do
   responsável): a marca é a logo em creme (`img.marca-logo` = `logo-galia-escuro.png`, 4rem; o menu é sempre escuro); só no
-  menu de ícones (recolhido/960–1180 px) volta o copinho. A `barra-movel` (barra escura das outras telas no
+  menu de ícones (recolhido/960–1180 px) entra o livro da logo (27/11/2026; era o copinho). A `barra-movel` (barra escura das outras telas no
   celular) também mostra a logo em creme (`.barra-movel .marca-logo`, 2,5rem; 27/11/2026, pedido do responsável; teste
   "320 px: barra escura do perfil com a logo...", captura `p6g-celular-320-barra-logo`).
   Testes "toque: ≡ do topo maior..." e "toque: menu com a logo..."; captura `p6f-celular-menu-logo`. Dois arquivos em `icones/` (538 × 300, RGBA,
@@ -839,6 +839,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   `barra-app` é presa (cor `--cartao`). `theme-color` (Android/outros) = `--fundo` do tema (tema.js; padrão #ffffff no
   index.html e no manifest). Teste "toque: logo..." confere que nada preso cobre o meio do topo. O iOS só relê ao abrir:
   remover o ícone e "Adicionar à Tela de Início" de novo. Falta conferir no iPhone real.
+
+## Logo "Gália" nas telas de acesso e no menu de ícones (27/11/2026, pedido do responsável; sem migração)
+- Login, Criar conta e Nova senha/convite: a logo (`logoAcesso` no app.js, as mesmas `logo-galia.png` / `-escuro.png` da
+  tela de Receitas, trocadas pelo `data-modo`) no topo do cartão, 5rem, centrada. No login ela é o `h1` (alt "Gália");
+  nas outras o título ("Criar conta", "Nova senha", "Bem-vindo ao Gália") vem abaixo. O texto "GaliaBrew" saiu dessas
+  telas. Teste `logoAcesso` no bloco "criar conta" (390 px claro e escuro, 320 px); captura `p6c-celular-login-390`.
+- Menu de ícones (recolhido / 960–1180 px, só computador): o copinho saiu; a marca é o livro da logo (`icone-180.png`,
+  `img.marca-icone`, cantos arredondados). Não há mais copinho como marca em lugar nenhum.
+- Continua "GaliaBrew" (nome técnico, não é logo): título da aba, nome do app na Tela de Início (manifest) e o rodapé /
+  nome do arquivo do relatório em PDF.
 
 ## Ícones de fermentáveis e lúpulo redesenhados (27/11/2026, pedido do responsável: "muito ruim"; só icones.js)
 - `malte` = espiga de cevada: haste, 3 pares de grãos CHEIOS + 1 no topo (`fill`/`stroke: none` no próprio caminho) e
