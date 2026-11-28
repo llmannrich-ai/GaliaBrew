@@ -30,7 +30,7 @@ begin
   where (nome like '% Lupulin Pellets' or nome like '% (Brasil)') and (dono is not null or alfa_pct is null or extras ->> 'url' is null);
   res := res || format(E'\n04 todo lúpulo novo é do sistema, com alfa e fonte: %s', case when n = 0 then 'ok' else 'FALHOU (' || n || ')' end);
 
-  select id into f_id from public.fermentaveis where dono is null and nome = 'Weyermann Pilsner Malt';
+  select id into f_id from public.fermentaveis where dono is null and nome = 'Weyermann Malte Pilsner';   -- era 'Weyermann Pilsner Malt' até a 0012
   select id into h_id from public.lupulos where dono is null and nome = 'Lotus Lupulin Pellets';
 
   -- Usuário comum logado
@@ -49,7 +49,7 @@ begin
     'fermentaveis', jsonb_build_array(jsonb_build_object('fermentavel_id', f_id, 'quantidade_kg', 5)),
     'lupulos', jsonb_build_array(jsonb_build_object('lupulo_id', h_id, 'quantidade_g', 10, 'tempo_min', 60))));
   select concat_ws('|', nome, rendimento_pct, cor_srm, umidade_pct) into txt from public.receita_fermentaveis where receita_id = r1;
-  res := res || format(E'\n07 receita copia o malte de marca: %s', case when txt = 'Weyermann Pilsner Malt|80.5|1.78|5' then 'ok' else 'FALHOU (' || txt || ')' end);
+  res := res || format(E'\n07 receita copia o malte de marca: %s', case when txt = 'Weyermann Malte Pilsner|80.5|1.78|5' then 'ok' else 'FALHOU (' || txt || ')' end);
   select concat_ws('|', nome, alfa_pct) into txt from public.receita_lupulos where receita_id = r1;
   res := res || format(E'\n08 receita copia o lúpulo em lupulina: %s', case when txt = 'Lotus Lupulin Pellets|24.5' then 'ok' else 'FALHOU (' || txt || ')' end);
   reset role;
