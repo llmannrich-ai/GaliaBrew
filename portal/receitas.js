@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261128a";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261128a";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261128a";
-import { sb, sessao, preferencias } from "./estado.js?v=20261128a";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261128a";
-import { abrirBusca } from "./busca.js?v=20261128a";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261128a";
-import { listarCadastro, amostraCor } from "./cadastros.js?v=20261128a";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261128a";
-import * as O from "./opcoes.js?v=20261128a";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261128a";
-import { icone } from "./icones.js?v=20261128a";
-import { abrirMenu } from "./menu.js?v=20261128a";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261128a";
-import { abrirRelatorio } from "./relatorio.js?v=20261128a";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261128a";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261128b";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261128b";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261128b";
+import { sb, sessao, preferencias } from "./estado.js?v=20261128b";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261128b";
+import { abrirBusca } from "./busca.js?v=20261128b";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261128b";
+import { catalogoDoEditor, TABELAS_EDITOR, amostraCor } from "./cadastros.js?v=20261128b";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261128b";
+import * as O from "./opcoes.js?v=20261128b";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261128b";
+import { icone } from "./icones.js?v=20261128b";
+import { abrirMenu } from "./menu.js?v=20261128b";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261128b";
+import { abrirRelatorio } from "./relatorio.js?v=20261128b";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261128b";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -172,7 +172,7 @@ export async function telaEditor(conteudo, id, origemId) {
   const nova = !id || id === "nova";
   const buscar = nova ? origemId : id;
   const [cat, rec] = await Promise.all([
-    Promise.all(["estilos", "equipamentos", "fermentaveis", "lupulos", "leveduras", "outros", "aguas"].map((t) => listarCadastro(t)))
+    Promise.all(TABELAS_EDITOR.map((t) => catalogoDoEditor(t)))
       .then(([estilos, equipamentos, fermentaveis, lupulos, leveduras, outros, aguas]) => ({ estilos, equipamentos, fermentaveis, lupulos, leveduras, outros, aguas })),
     buscar ? carregarReceita(buscar) : Promise.resolve(null),
   ]);

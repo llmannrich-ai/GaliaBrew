@@ -1,11 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, SENHA_MIN, campoTexto, campoNumero } from "./ui.js?v=20261128a";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261128a";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261128a";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261128a";
-import { telaFerramentas } from "./ferramentas.js?v=20261128a";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261128a";
-import { icone } from "./icones.js?v=20261128a";
+import { el, $, limpar, preencher, avisar, mensagemErro, SENHA_MIN, campoTexto, campoNumero } from "./ui.js?v=20261128b";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261128b";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261128b";
+import { telaCadastros, CADASTROS, esquecerCatalogo, preCarregarCatalogo } from "./cadastros.js?v=20261128b";
+import { telaFerramentas } from "./ferramentas.js?v=20261128b";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261128b";
+import { icone } from "./icones.js?v=20261128b";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -305,6 +305,7 @@ sb.auth.onAuthStateChange((evento, s) => {
     if (evento === "PASSWORD_RECOVERY") { sessao.usuario = s?.user ?? null; telaDefinirSenha("recovery"); return; }
     if (!s?.user) {
       sessao.usuario = null; sessao.perfil = null; sessao.admin = false; iniciado = false;
+      esquecerCatalogo();
       telaEntrar(linkRecebido.erro ? "O link expirou ou já foi usado. Peça um novo." : "");
       linkRecebido.erro = null;
       return;
@@ -313,10 +314,13 @@ sb.auth.onAuthStateChange((evento, s) => {
     sessao.usuario = s.user;
     if (evento === "TOKEN_REFRESHED" || (iniciado && !mudouUsuario)) return;
     iniciado = true;
+    if (mudouUsuario) esquecerCatalogo();
     await carregarPerfil();
     if (linkRecebido.tipo === "invite" || linkRecebido.tipo === "recovery") { telaDefinirSenha(linkRecebido.tipo); return; }
     montarApp();
     if (!location.hash.startsWith("#/")) location.hash = "#/receitas";
     else rotear();
+    // Catálogo do editor em segundo plano, depois da 1ª tela (não disputa a rede com a lista de receitas).
+    setTimeout(preCarregarCatalogo, 1200);
   }, 0);
 });
