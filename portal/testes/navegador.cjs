@@ -302,7 +302,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261128a");
+    const m = await import("./fontes.js?v=20261128b");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -586,7 +586,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128a");
+    const m = await import("./calculos.js?v=20261128b");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -654,7 +654,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128a");
+    const m = await import("./calculos.js?v=20261128b");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -676,7 +676,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128a");
+    const m = await import("./calculos.js?v=20261128b");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -786,7 +786,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128a");
+    const m = await import("./calculos.js?v=20261128b");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1171,14 +1171,14 @@ const erros = [];
     await senhas.nth(0).fill("curta");
     await senhas.nth(1).fill("curta");
     await pc.locator('form.conta button[type="submit"]').click();
-    await pc.waitForSelector("text=A senha precisa de pelo menos 10 caracteres.");
-    await senhas.nth(0).fill("senha-nova-1234");
-    await senhas.nth(1).fill("senha-nova-9999");
+    await pc.waitForSelector("text=A senha precisa de pelo menos 6 caracteres.");
+    await senhas.nth(0).fill("abc123");
+    await senhas.nth(1).fill("abc999");
     await pc.locator('form.conta button[type="submit"]').click();
     await pc.waitForSelector("text=As duas senhas não conferem.");
-    verificar(chamadas.filter((c) => c.caminho.startsWith("/auth/v1/signup")).length === antesSign, "criar conta: senha curta e senhas diferentes barradas no aparelho");
+    verificar(chamadas.filter((c) => c.caminho.startsWith("/auth/v1/signup")).length === antesSign, "criar conta: senha abaixo de 6 e senhas diferentes barradas no aparelho; 6 caracteres sem outras regras passa");
     // E-mail que já tem conta: mensagem em português (o 422 é de propósito).
-    await senhas.nth(1).fill("senha-nova-1234");
+    await senhas.nth(1).fill("abc123");
     await pc.locator('form.conta button[type="submit"]').click();
     await pc.waitForSelector("text=Este e-mail já tem conta.");
     verificar(true, "criar conta: e-mail já cadastrado mostra mensagem em português");
@@ -1195,7 +1195,7 @@ const erros = [];
     await pc.waitForSelector("form.login", { state: "detached" });
     await pc.waitForSelector("header.inicio-topo");
     const sign = chamadas.filter((c) => c.caminho.startsWith("/auth/v1/signup")).pop();
-    verificar(sign.corpo.email === "amiga@teste.invalid" && sign.corpo.password === "senha-nova-1234" && sign.corpo.data?.nome === "Amiga do Leo",
+    verificar(sign.corpo.email === "amiga@teste.invalid" && sign.corpo.password === "abc123" && sign.corpo.data?.nome === "Amiga do Leo",
       "criar conta: grava e-mail, senha e o nome (metadado que o gatilho perfis_criar usa)");
     verificar(true, "criar conta: entra no app na hora, sem confirmação de e-mail");
     // Voltar ao login pela tela de criar conta

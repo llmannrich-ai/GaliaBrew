@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128a.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128b.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -736,12 +736,16 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - DECIDIDO (22/11/2026): cadastro ABERTO ("Allow new users to sign up" ligado), para testes com amigos. A RLS protege
   os dados. Confirmação de e-mail DESLIGADA (o e-mail padrão do Supabase só entrega para membros da org Versa, então
   amigos não conseguiriam confirmar). Consequência: recuperação de senha só funciona para membros da org.
-  Senha mínima 10 caracteres.
+  Senha (27/11/2026, pedido do responsável: tirar as restrições, só o mínimo): só 6 caracteres, sem exigir tipo de
+  caractere. O pedido foi 4, mas o Supabase Auth não aceita menos de 6 (piso do servidor). Constante `SENHA_MIN` no
+  ui.js (cadastro, nova senha, trocar senha no perfil e mensagem de erro). O painel do Supabase JÁ estava em 6
+  (conferido pelo responsável em 28/11/2026); os 10 caracteres eram só do portal. Lição: configuração do painel não se
+  vê daqui (sem token de administração); não afirmar o valor dela a partir desta anotação, perguntar ao responsável.
 - Para recuperação de senha de todos (ou religar a confirmação): SMTP próprio (Authentication → Emails → SMTP; ex.:
   Resend ou Brevo, plano gratuito).
 - Site URL e Redirect URLs = https://llmannrich-ai.github.io/GaliaBrew/ (feito pelo responsável em 22/11/2026).
 - Tela "Criar conta" (27/11/2026, pedido do responsável; `telaCriarConta` no app.js, sem migração): no login, "Ainda não
-  tem conta? Criar conta" (a nota "Acesso só por convite" saiu). Nome, e-mail, senha (≥ 10, conferida no aparelho) e
+  tem conta? Criar conta" (a nota "Acesso só por convite" saiu). Nome, e-mail, senha (≥ `SENHA_MIN` = 6, conferida no aparelho) e
   repetir; `sb.auth.signUp` com `data.nome` (o gatilho `perfis_criar` usa). Sem confirmação de e-mail a conta ENTRA NA
   HORA (o onAuthStateChange abre o app); se um dia a confirmação for religada, a tela avisa para abrir o link do e-mail.
   Aviso na tela: "use um e-mail real: é só por ele que dá para recuperar a senha". E-mail repetido = mensagem em
