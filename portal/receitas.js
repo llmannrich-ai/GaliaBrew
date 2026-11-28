@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261127i";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261127i";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261127i";
-import { sb, sessao, preferencias } from "./estado.js?v=20261127i";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261127i";
-import { abrirBusca } from "./busca.js?v=20261127i";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261127i";
-import { catalogoDoEditor, TABELAS_EDITOR, amostraCor } from "./cadastros.js?v=20261127i";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261127i";
-import * as O from "./opcoes.js?v=20261127i";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261127i";
-import { icone } from "./icones.js?v=20261127i";
-import { abrirMenu } from "./menu.js?v=20261127i";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261127i";
-import { abrirRelatorio } from "./relatorio.js?v=20261127i";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261127i";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261128a";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261128a";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261128a";
+import { sb, sessao, preferencias } from "./estado.js?v=20261128a";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261128a";
+import { abrirBusca } from "./busca.js?v=20261128a";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261128a";
+import { catalogoDoEditor, TABELAS_EDITOR, amostraCor } from "./cadastros.js?v=20261128a";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261128a";
+import * as O from "./opcoes.js?v=20261128a";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261128a";
+import { icone } from "./icones.js?v=20261128a";
+import { abrirMenu } from "./menu.js?v=20261128a";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261128a";
+import { abrirRelatorio } from "./relatorio.js?v=20261128a";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261128a";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -129,6 +129,17 @@ const PADRAO = () => ({
   fermentacao: [{ nome: "Primária", temperatura_c: 19, dias: 14 }],
 });
 
+/**
+ * Fermentáveis do maior para o menor em quantidade (27/11/2026, pedido do responsável). Ordem estável: empate e
+ * itens sem quantidade (novo, ainda sem kg) mantêm a ordem entre si; sem quantidade vai para o fim. Devolve true se mudou.
+ */
+function ordenarFermentaveis(lista) {
+  const kg = (f) => (Number(f.quantidade_kg) > 0 ? Number(f.quantidade_kg) : -1);
+  const antes = [...lista];
+  lista.sort((a, b) => kg(b) - kg(a));
+  return lista.some((f, i) => f !== antes[i]);
+}
+
 const PARAMETROS_EQUIPAMENTO = ["volume_lote_l", "eficiencia_pct", "evaporacao_l_h", "perda_panela_l", "perda_tina_l", "absorcao_grao_l_kg", "relacao_agua_grao_l_kg"];
 
 async function carregarReceita(id) {
@@ -178,6 +189,7 @@ export async function telaEditor(conteudo, id, origemId) {
     if (!rec && cat.equipamentos.length === 1) aplicarEquipamento(r, cat.equipamentos[0]);
   }
   const leitura = !nova && rec.dono !== sessao.usuario.id;
+  ordenarFermentaveis(r.fermentaveis);
   // Tentativas: histórico para desfazer/refazer. Vive enquanto a receita está aberta
   // (inclusive depois de salvar uma receita que já existia); não vai para o banco.
   const t = { passado: [], futuro: [], base: structuredClone(r), timer: null, atalhos: null };
@@ -255,6 +267,9 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   function registrar() {
     clearTimeout(t.timer);
     t.timer = null;
+    // A quantidade mudou na linha (±, roleta): o malte vai para o lugar dele quando o passo fecha, no mesmo passo do
+    // desfazer. A base também fica na ordem (todo estado aparece ordenado), para não sobrar um passo "só de ordem".
+    if (!leitura) { ordenarFermentaveis(t.base.fermentaveis); reordenar.fermentaveis?.(); }
     if (!leitura && !igual(r, t.base)) {
       t.passado.push(t.base);
       if (t.passado.length > HISTORICO_MAX) t.passado.shift();
@@ -276,6 +291,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     for (const d of document.querySelectorAll("dialog.parametros-janela, dialog.lote-janela, dialog.pitch-janela")) d.close();   // mostrariam os números de antes
     const antes = calcularReceita(r);
     Object.assign(r, structuredClone(estado));
+    ordenarFermentaveis(r.fermentaveis);
     t.base = structuredClone(r);
     editor.sujo = true;
     const y = window.scrollY;
@@ -329,6 +345,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
     on: { click: () => abrirLote() },
   });
   const secoes = {};
+  const reordenar = {};           // seções de ordem automática (fermentáveis): põe na ordem quando a mudança termina
   const des = leitura;
   let montado = false;            // antes de montar, os cálculos não contam como "mudança" (sem diferença na barra)
 
@@ -1037,7 +1054,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
   const dado = (rot, val, classe) => el("div", { class: `ing-dado ${classe}` }, el("span", { class: "ing-dado-rot", text: rot }), val);
   const passo = (k, padrao) => (Number(preferencias[k]) > 0 ? Number(preferencias[k]) : padrao);
 
-  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico, editarAoAdicionar = true }) {
+  function secaoLinhas(chave, titulo, { classe, vazio, adicionar, ferramenta, total, extra, destaque, montarLinha, iconeSecao, grafico, editarAoAdicionar = true, ordenar = null }) {
     const lista = el("ol", { class: `linhas-ing ${classe}` });
     const totalEl = el("span", { class: destaque ? "total-secao destaque" : "total-secao" });
     // extra: dado complementar ao lado do total (ex.: água/malte nos fermentáveis); some quando não há valor.
@@ -1074,7 +1091,8 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
         "aria-label": `Detalhes de ${nomeItem}`,
         on: { click: () => abrirItem(item) },
       }, el("span", { class: "ing-nome-linha" }, nome, el("span", { class: "ing-seta", "aria-hidden": "true", text: "›" })), sub ?? null);
-      const alca = leitura ? el("span", { class: "ing-alca", "aria-hidden": "true" }) : el("button", {
+      // ordenar: a seção tem ordem automática (fermentáveis: maior quantidade em cima), sem alça nem ↑ ↓.
+      const alca = ordenar ? null : leitura ? el("span", { class: "ing-alca", "aria-hidden": "true" }) : el("button", {
         type: "button", class: "ing-alca", text: "⠿", title: "Arraste para mudar a ordem (ou use as setas ↑ ↓)",
         "aria-label": `Mover ${String(item.nome ?? "").trim() || "item"}, posição ${i + 1} de ${r[chave].length} (setas ↑ ↓)`,
         on: {
@@ -1093,7 +1111,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           partes.visual ?? el("span", { class: "ing-cor ficha-ponto", "aria-hidden": "true" }),
           botaoNome,
           el("div", { class: "ficha-num" }, fixo ?? [pega("ing-qtd"), pega("d1"), pega("d2")]))
-        : el("li", { class: "ing" }, alca, partes.visual ?? null, botaoNome, fixo ?? partes.colunas);
+        : el("li", { class: "ing" }, alca ?? null, partes.visual ?? null, botaoNome, fixo ?? partes.colunas);
       // Tocar fora dos campos (amostra de cor, números calculados) também abre os detalhes.
       li.addEventListener("click", (e) => {
         if (e.target.closest("input, select, textarea, button, a, label, .ing-qtd, .ing-quando")) return;
@@ -1163,7 +1181,7 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
           el("div", { class: "grade-form" }, detalhes.filter((n) => n !== fonteEl)),
           fonte),
         el("div", { class: "item-acoes" },
-          leitura ? null : [bSubir, bDescer, el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: () => {
+          leitura ? null : [ordenar ? null : [bSubir, bDescer], el("button", { type: "button", class: "perigo pequeno", text: "Remover", on: { click: () => {
             acao(() => { r[chave].splice(posicao(), 1); desenhar(); mudou(); });
             fechar();
           } } })],
@@ -1210,17 +1228,39 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       else d.querySelector(".item-fechar").focus({ preventScroll: true });
     }
 
-    function desenhar() {
+    /** manterFoco: o campo em foco na lista (digitando a quantidade) volta ao mesmo item na linha refeita. */
+    function desenhar({ manterFoco = false } = {}) {
+      const ativo = manterFoco ? document.activeElement : null;
+      const liAtivo = ativo && lista.contains(ativo) ? ativo.closest("li.ing") : null;
+      const itemAtivo = liAtivo ? r[chave][[...lista.children].indexOf(liAtivo)] : null;
+      const rotuloAtivo = ativo?.getAttribute?.("aria-label");
+      if (ordenar) ordenar(r[chave]);
       limpar(lista);
       if (!r[chave].length) lista.append(el("li", { class: "nota ing-vazio", text: vazio }));
       r[chave].forEach((item, i) => lista.append(linha(item, i)));
+      if (itemAtivo && rotuloAtivo) {
+        const k = r[chave].indexOf(itemAtivo);
+        const campo = k >= 0 ? lista.children[k]?.querySelector(`[aria-label="${CSS.escape(rotuloAtivo)}"]`) : null;
+        campo?.focus({ preventScroll: true });
+      }
       atualizarResultados();
     }
     secoes[chave] = desenhar;
+    if (ordenar) {
+      // Reordena se preciso; com a quantidade sendo DIGITADA (computador), espera o campo perder o foco.
+      reordenar[chave] = () => {
+        const a = document.activeElement;
+        if (a && lista.contains(a) && a.matches("input:not([readonly]), select, textarea")) return;
+        if (ordenar([...r[chave]])) desenhar({ manterFoco: true });
+      };
+      lista.addEventListener("focusout", (e) => {
+        if (!lista.contains(e.relatedTarget)) setTimeout(() => { if (!roletaAberta() && lista.isConnected) reordenar[chave](); }, 0);
+      });
+    }
     /** Depois de adicionar, abre a janela do item (24/11/2026, pedido do responsável): do cadastro → na quantidade;
      *  item livre → no nome. */
     // editarAoAdicionar = false (leveduras: a quantidade já vem 1 pacote): abre a janela sem a roleta.
-    focos[chave] = (livre) => abrirItem(r[chave].at(-1), livre ? { focarNome: true } : { editarQtd: editarAoAdicionar });
+    focos[chave] = (item, livre) => abrirItem(item, livre ? { focarNome: true } : { editarQtd: editarAoAdicionar });
     desenhar();
     return sec;
   }
@@ -1231,13 +1271,13 @@ function montarEditor(conteudo, r, cat, leitura, t, { resAnterior = null, origem
       secoes[chave]();
       mudou();
     });
-    focos[chave]?.(livre);
+    focos[chave]?.(item, livre);
   };
 
   const cor = { de: O.corParaTela, para: O.corDaTela };
   const fermentaveis = secaoLinhas("fermentaveis", "Fermentáveis", {
     iconeSecao: "malte", grafico: grist.elemento,
-    classe: "ferm",
+    classe: "ferm", ordenar: ordenarFermentaveis,
     vazio: "Nenhum fermentável. Toque em “+” para adicionar.",
     total: (res) => `${numeroBR(res.volumes.fermentaveis_kg, 2)} kg`,
     destaque: true,
