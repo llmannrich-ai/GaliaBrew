@@ -219,7 +219,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128e.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128f.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -844,14 +844,26 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   remover o ícone e "Adicionar à Tela de Início" de novo. Falta conferir no iPhone real.
 
 ## Logo "Gália" nas telas de acesso e no menu de ícones (27/11/2026, pedido do responsável; sem migração)
-- Login, Criar conta e Nova senha/convite: a logo (`logoAcesso` no app.js, as mesmas `logo-galia.png` / `-escuro.png` da
-  tela de Receitas, trocadas pelo `data-modo`) no topo do cartão, 5rem, centrada. No login ela é o `h1` (alt "Gália");
-  nas outras o título ("Criar conta", "Nova senha", "Bem-vindo ao Gália") vem abaixo. O texto "GaliaBrew" saiu dessas
-  telas. Teste `logoAcesso` no bloco "criar conta" (390 px claro e escuro, 320 px); captura `p6c-celular-login-390`.
+- Login, Criar conta e Nova senha/convite: a logo (`logoAcesso` no app.js) no topo; no login ela é o `h1` (alt "Gália");
+  nas outras o título vem no formulário. O texto "GaliaBrew" saiu dessas telas. Desde 28/11/2026 ver "Telas de acesso".
 - Menu de ícones (recolhido / 960–1180 px, só computador): o copinho saiu; a marca é o livro da logo (`icone-180.png`,
   `img.marca-icone`, cantos arredondados). Não há mais copinho como marca em lugar nenhum.
 - Continua "GaliaBrew" (nome técnico, não é logo): título da aba, nome do app na Tela de Início (manifest) e o rodapé /
   nome do arquivo do relatório em PDF.
+
+## Telas de acesso no molde do copo (28/11/2026, pedido do responsável: login "mais moderno e robusto"; sem migração)
+- Entrar, Criar conta e Nova senha usam `telaAcesso(form, logoTag, compacta)` (app.js): `main.acesso` = ESPUMA em cima
+  (`header.acesso-espuma`: logo + lema "Receitas de cerveja"; sempre a logo de cores da arte, porque a espuma é clara nos
+  dois modos) e CERVEJA embaixo (`.acesso-cerveja`: degradê, 14 bolhas subindo em CSS, colarinho = a máscara
+  `--espuma-forma` do editor virada, 44 px) com o formulário (`form.login`, 400 px no máximo). Modo claro = Pilsen
+  dourada; escuro = Stout com espuma bege. Cores próprias `--ac-*` (a tela vem antes da escolha de tema); contraste
+  conferido: texto ≥ 9,5:1, rótulos ≥ 7:1, borda de campo ≥ 4:1, erro/aviso ≥ 7:1 numa caixa clara (o --erro não
+  passava no dourado). "Reduzir movimento" = bolhas paradas. Fundo da página = cor da espuma (barra de status do iPhone).
+- Robustez: senha com o olho de mostrar/esconder (`campoSenha`, `aria-pressed`, ícones `olho`/`olho_fechado`), botão
+  principal com espera ("Entrando…", `aria-busy`, `esperando`), `enterkeyhint`, campos de 52 px, toques ≥ 44 px, sem
+  realce azul de toque. Criar conta e Nova senha = espuma `compacta` (logo menor, sem lema). A classe `.centro` saiu.
+- Teste do navegador (bloco "criar conta"): logo na espuma, molde, olho, caixa de erro, compacta, 390/320 px. Capturas
+  `p6c-celular-login-390`, `-390-escuro`, `-erro-390`, `-320`, `p6c-celular-criar-conta-390/320`. Falta conferir no iPhone.
 
 ## Ícones de fermentáveis e lúpulo redesenhados (27/11/2026, pedido do responsável: "muito ruim"; só icones.js)
 - `malte` = espiga de cevada: haste, 3 pares de grãos CHEIOS + 1 no topo (`fill`/`stroke: none` no próprio caminho) e
