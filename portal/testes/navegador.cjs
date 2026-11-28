@@ -302,7 +302,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261128d");
+    const m = await import("./fontes.js?v=20261128e");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -586,7 +586,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -654,7 +654,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -676,7 +676,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -786,7 +786,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1080,7 +1080,7 @@ const erros = [];
   await pagina.setViewportSize({ width: 1366, height: 900 });
   await pagina.goto(`${ORIGEM}/#/receitas`);
   await pagina.waitForSelector("td >> text=Pils da Galia");
-  await pagina.click(".segmentos >> text=Públicas de outros");
+  await pagina.click(".segmentos >> text=Públicas");
   await pagina.click("td >> text=IPA do Vizinho");
   await pagina.waitForSelector("text=Somente leitura");
   verificar(await pagina.isDisabled('input[aria-label="Qtd (kg)"]'), "receita de outro abre só para leitura");
@@ -1280,6 +1280,25 @@ const erros = [];
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
+  // "Públicas" (28/11/2026, pedido do responsável; era "Públicas de outros"): todas as públicas, as minhas também, com o
+  // selo "minha"; receita minha que não é pública fica fora.
+  {
+    const minhaPub = { id: "r-minha-pub", dono: USUARIO.id, nome: "Minha Pública", tipo: "ALL_GRAIN", publica: true, lote_numero: null, og_calc: 1.05, atualizado_em: new Date().toISOString() };
+    db.receitas.push(minhaPub);
+    await cel.reload();
+    await cel.waitForSelector(".receita-cartao >> text=Minha Pública");
+    await tocar(".segmentos button:has-text('Públicas')");
+    await cel.waitForSelector(".receita-cartao >> text=IPA do Vizinho");
+    const pub = await cel.evaluate(() => [...document.querySelectorAll(".receita-cartao")].map((c) => [c.querySelector(".rc-nome").textContent, c.querySelector(".selo")?.textContent ?? ""]));
+    const nomes = pub.map(([n]) => n);
+    verificar(await cel.textContent(".segmentos") === "MinhasPúblicas" && nomes.includes("Minha Pública") && nomes.includes("IPA do Vizinho")
+      && !nomes.includes("Pils da Galia") && pub.every(([n, sl]) => sl === (n === "Minha Pública" ? "minha" : "")) && await larguraSobra() <= 1,
+      `toque: "Públicas" lista as públicas de todos, as minhas com o selo "minha" (${pub.map((x) => x.join("/")).join(", ")})`);
+    await cel.screenshot({ path: `${SAIDA}/p6f2-celular-publicas.png` });
+    db.receitas.splice(db.receitas.indexOf(minhaPub), 1);
+    await cel.reload();
+    await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  }
   // Topo da tela de Receitas (25/11/2026): logo "Gália" grande e centrada sobre o fundo do tema, sem a barra escura;
   // o ≡ no canto abre o menu. Nenhum elemento preso no topo (o iOS 26 pinta a faixa do relógio com o fundo da página).
   const logoVisivel = () => cel.evaluate(() => {
