@@ -465,7 +465,10 @@ button.ing-nome:hover, button.ing-nome:active { background: transparent; border:
 .ing-nome-linha { display: flex; align-items: baseline; gap: .35rem; min-width: 0; max-width: 100%; }
 .ing-seta { flex: none; color: var(--suave); font-weight: 700; line-height: 1; transition: transform .15s; }
 .ing-cor, .ing-dado { cursor: pointer; }
-.ing-nome-txt { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Nome inteiro (27/11/2026, pedido do responsável): o nome longo quebra em até 2-3 linhas, nunca corta com reticências. */
+.ing-nome-txt { font-weight: 650; white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
+/* Levedura segue numa linha só (24/11/2026: linha de valores fixos; o nome inteiro está na janela do item). */
+.linhas-ing.lev .ing-nome-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ing-sub { font-size: .8rem; color: var(--suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ing-dado { display: grid; justify-items: end; line-height: 1.15; }
 .ing-dado-rot { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--suave); }
@@ -963,7 +966,6 @@ dialog form { display: grid; gap: .9rem; }
   .linhas-ing.lup .ing-quando { flex-wrap: wrap; justify-content: flex-end; align-self: center; gap: .3rem; }
   .linhas-ing.lup .ing-quando select.etapa { width: 6.4rem; min-width: 0; }
   .linhas-ing.lup .ing-quando input.num.curto { width: 2.9rem; }
-  .linhas-ing.lup .ing-nome-txt { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; }
   .ing-alca { grid-area: alca; height: 2.75rem; }
   .ing-cor { grid-area: cor; }
   .ing-nome { grid-area: nome; }

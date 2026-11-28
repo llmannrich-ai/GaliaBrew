@@ -4,10 +4,10 @@
 // Teclado: ↑/↓ escolhe, Enter adiciona, Esc fecha.
 // Estilos (23/11/2026): mesma janela, busca por código (21A), nome, categoria e termos em português (trigo, defumada,
 // azeda, belga...); "Mais perto da receita" pelos números do editor.
-import { el, preencher, numeroBR } from "./ui.js?v=20261128c";
-import { corHexDeSrm, corHexDeMalte, encaixeEstilo } from "./calculos.js?v=20261128c";
-import * as O from "./opcoes.js?v=20261128c";
-import { fonteDados, seloFonte } from "./fontes.js?v=20261128c";
+import { el, preencher, numeroBR } from "./ui.js?v=20261128d";
+import { corHexDeSrm, corHexDeMalte, encaixeEstilo } from "./calculos.js?v=20261128d";
+import * as O from "./opcoes.js?v=20261128d";
+import { fonteDados, seloFonte } from "./fontes.js?v=20261128d";
 
 const LIMITE = 60;                       // resultados desenhados por vez (o resto: refinar a busca)
 const MAX_RECENTES = 8;
@@ -89,7 +89,7 @@ export const TIPOS_BUSCA = {
   fermentaveis: {
     titulo: "Adicionar fermentável",
     nome: (x) => x.nome,
-    texto: (x) => [x.nome, x.produtor, x.origem, r(O.TIPO_FERMENTAVEL, x.tipo), r(O.GRUPO_FERMENTAVEL, x.grupo)],
+    texto: (x) => [x.nome, x.extras?.nome_original, x.produtor, x.origem, r(O.TIPO_FERMENTAVEL, x.tipo), r(O.GRUPO_FERMENTAVEL, x.grupo)],
     resumo: (x) => [r(O.TIPO_FERMENTAVEL, x.tipo), r(O.GRUPO_FERMENTAVEL, x.grupo),
       x.cor_srm != null ? `${numeroBR(O.corParaTela(Number(x.cor_srm)), 0)} ${O.unidadeCor()}` : null,
       x.rendimento_pct != null ? `rend. ${numeroBR(x.rendimento_pct, 0)}%` : null, x.produtor],
@@ -99,7 +99,7 @@ export const TIPOS_BUSCA = {
   lupulos: {
     titulo: "Adicionar lúpulo",
     nome: (x) => x.nome,
-    texto: (x) => [x.nome, x.produtor, x.origem, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso)],
+    texto: (x) => [x.nome, x.extras?.nome_original, x.produtor, x.origem, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso)],
     resumo: (x) => [x.alfa_pct != null ? `alfa ${numeroBR(x.alfa_pct, 1)}%` : null, r(O.FORMA_LUPULO, x.forma), r(O.USO_LUPULO, x.uso), x.origem],
   },
   leveduras: {
@@ -113,7 +113,7 @@ export const TIPOS_BUSCA = {
   outros: {
     titulo: "Adicionar outro ingrediente",
     nome: (x) => x.nome,
-    texto: (x) => [x.nome, x.uso_para, r(O.TIPO_OUTRO, x.tipo)],
+    texto: (x) => [x.nome, x.extras?.nome_original, x.uso_para, r(O.TIPO_OUTRO, x.tipo)],
     resumo: (x) => [r(O.TIPO_OUTRO, x.tipo), x.uso_para],
   },
   estilos: {
