@@ -1,11 +1,11 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261128a";
-import { sb, sessao } from "./estado.js?v=20261128a";
-import * as O from "./opcoes.js?v=20261128a";
-import { faixaCor } from "./faixas.js?v=20261128a";
-import { corHexDeSrm, corHexDeMalte } from "./calculos.js?v=20261128a";
-import { buscarItens, ordemCodigo } from "./busca.js?v=20261128a";
-import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261128a";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261128c";
+import { sb, sessao } from "./estado.js?v=20261128c";
+import * as O from "./opcoes.js?v=20261128c";
+import { faixaCor } from "./faixas.js?v=20261128c";
+import { corHexDeSrm, corHexDeMalte } from "./calculos.js?v=20261128c";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261128c";
+import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261128c";
 
 // Cadastros de ingrediente: mostram de onde vêm os dados (fabricante, genérico, análise, meu).
 const INGREDIENTES = new Set(["fermentaveis", "lupulos", "leveduras", "outros"]);
@@ -140,14 +140,61 @@ function faixa(a, b, casas, suf = "") {
   return `${numeroBR(a, casas)}–${numeroBR(b, casas)}${suf}`;
 }
 
-/** Lista (sistema + do usuário) de um cadastro, para os selects do editor de receita. */
-export async function listarCadastro(tabela) {
+// O Supabase devolve no máximo 1.000 linhas por pedido (as leveduras já são 897): lê em páginas, com o id no fim da
+// ordem para a paginação não pular nem repetir linha.
+const PAGINA = 1000;
+async function lerTudo(tabela, colunas) {
   const ordem = CADASTROS[tabela]?.ordem ?? ["nome"];
-  let q = sb.from(tabela).select("*");
-  for (const c of ordem) q = q.order(c, { ascending: true, nullsFirst: false });
-  const { data, error } = await q.range(0, 4999);
-  if (error) throw error;
-  return data;
+  const todas = [];
+  for (let ini = 0; ; ini += PAGINA) {
+    let q = sb.from(tabela).select(colunas);
+    for (const c of ordem) q = q.order(c, { ascending: true, nullsFirst: false });
+    const { data, error } = await q.order("id", { ascending: true }).range(ini, ini + PAGINA - 1);
+    if (error) throw error;
+    todas.push(...data);
+    if (data.length < PAGINA) return todas;
+  }
+}
+
+/** Lista completa (sistema + do usuário) de um cadastro, para a tela de Cadastros (o formulário edita as notas). */
+export function listarCadastro(tabela) {
+  return lerTudo(tabela, "*");
+}
+
+// Catálogo do EDITOR de receita (27/11/2026, carregamento lento): antes cada receita aberta baixava as 7 tabelas
+// inteiras (~1,9 MB, quase metade de notas que o editor não mostra). Agora: só as colunas que o editor usa (sem notas
+// nem datas; o malte guarda as notas porque o link da ficha da The Swaen está nelas, ver fontes.js) e uma leitura por
+// sessão, guardada em memória por 30 min. Gravar/excluir nos Cadastros e trocar de usuário apagam a cópia.
+const COLUNAS_EDITOR = {
+  estilos: "id,dono,guia,categoria,codigo,nome,tipo,og_min,og_max,fg_min,fg_max,ibu_min,ibu_max,cor_srm_min,cor_srm_max,abv_min_pct,abv_max_pct,co2_min_vol,co2_max_vol,extras",
+  fermentaveis: "id,dono,nome,tipo,grupo,produtor,origem,rendimento_pct,cor_srm,fermentavel_pct,precisa_mostura,max_lote_pct,umidade_pct,notas,extras",
+  lupulos: "id,dono,nome,produtor,origem,ano,forma,alfa_pct,beta_pct,uso,oleo_ml_100g,substitutos,extras",
+  leveduras: "id,dono,nome,produtor,codigo_produto,tipo,forma,temp_min_c,temp_max_c,atenuacao_min_pct,atenuacao_max_pct,floculacao,tolerancia_alcool_pct,pof,extras",
+  outros: "id,dono,nome,tipo,uso_para,extras",
+};
+const VALIDADE_MS = 30 * 60 * 1000;
+const guardado = new Map(); // tabela → { quando, promessa }
+
+/** Lista de um cadastro para o editor de receita (da memória, se ainda vale). */
+export function catalogoDoEditor(tabela) {
+  const g = guardado.get(tabela);
+  if (g && Date.now() - g.quando < VALIDADE_MS) return g.promessa;
+  const promessa = lerTudo(tabela, COLUNAS_EDITOR[tabela] ?? "*");
+  guardado.set(tabela, { quando: Date.now(), promessa });
+  promessa.catch(() => { if (guardado.get(tabela)?.promessa === promessa) guardado.delete(tabela); });
+  return promessa;
+}
+
+/** Apaga a cópia do catálogo do editor (uma tabela ou todas). */
+export function esquecerCatalogo(tabela) {
+  if (tabela) guardado.delete(tabela); else guardado.clear();
+}
+
+export const TABELAS_EDITOR = ["estilos", "equipamentos", "fermentaveis", "lupulos", "leveduras", "outros", "aguas"];
+
+/** Começa a baixar o catálogo do editor em segundo plano (a 1ª receita aberta já o encontra pronto). */
+export function preCarregarCatalogo() {
+  for (const t of TABELAS_EDITOR) catalogoDoEditor(t).catch(() => {});
 }
 
 const podeEditar = (item) => item.dono === sessao.usuario.id || (item.dono === null && sessao.admin);
@@ -246,6 +293,7 @@ function abrirFormulario(chave, item, aoSalvar) {
           }
           if (resp.error) { msg.textContent = mensagemErro(resp.error); return; }
           if (!resp.data?.length) { msg.textContent = "Não foi possível salvar (sem permissão)."; return; }
+          esquecerCatalogo(chave);
           d.close();
           avisar("Salvo.");
           aoSalvar();
@@ -273,6 +321,7 @@ function abrirFormulario(chave, item, aoSalvar) {
             const { error, data } = await sb.from(chave).delete().eq("id", item.id).select("id");
             if (error) { msg.textContent = mensagemErro(error); return; }
             if (!data?.length) { msg.textContent = "Não foi possível excluir (sem permissão)."; return; }
+            esquecerCatalogo(chave);
             d.close();
             avisar("Excluído.");
             aoSalvar();

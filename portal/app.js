@@ -1,11 +1,11 @@
 // app.js — entrada do portal: login, menu, rotas (#/...) e perfil.
-import { el, $, limpar, preencher, avisar, mensagemErro, campoTexto, campoNumero } from "./ui.js?v=20261128a";
-import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261128a";
-import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261128a";
-import { telaCadastros, CADASTROS } from "./cadastros.js?v=20261128a";
-import { telaFerramentas } from "./ferramentas.js?v=20261128a";
-import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261128a";
-import { icone } from "./icones.js?v=20261128a";
+import { el, $, limpar, preencher, avisar, mensagemErro, SENHA_MIN, campoTexto, campoNumero } from "./ui.js?v=20261128c";
+import { sb, sessao, preferencias, salvarPreferencias, linkRecebido } from "./estado.js?v=20261128c";
+import { telaReceitas, telaEditor, haAlteracoes } from "./receitas.js?v=20261128c";
+import { telaCadastros, CADASTROS, esquecerCatalogo, preCarregarCatalogo } from "./cadastros.js?v=20261128c";
+import { telaFerramentas } from "./ferramentas.js?v=20261128c";
+import { montarCasca, marcarMenu, fecharMenu } from "./menu.js?v=20261128c";
+import { icone } from "./icones.js?v=20261128c";
 
 // ---------- estrutura ----------
 const raiz = () => $("#app");
@@ -86,7 +86,7 @@ function telaCriarConta(email = "") {
         msg.textContent = ""; info.textContent = "";
         const nome = dados.nome.trim();
         if (!nome) { msg.textContent = "Digite o seu nome."; return; }
-        if (dados.senha.length < 10) { msg.textContent = "A senha precisa de pelo menos 10 caracteres."; return; }
+        if (dados.senha.length < SENHA_MIN) { msg.textContent = `A senha precisa de pelo menos ${SENHA_MIN} caracteres.`; return; }
         if (dados.senha !== dados.repetir) { msg.textContent = "As duas senhas não conferem."; return; }
         botao.disabled = true;
         const { data, error } = await sb.auth.signUp({
@@ -105,7 +105,7 @@ function telaCriarConta(email = "") {
   el("label", {}, "Nome", el("input", { type: "text", autocomplete: "name", autocapitalize: "words", maxlength: 80, required: true, on: { input: (e) => { dados.nome = e.target.value; } } })),
   campoEmail(dados, "email"),
   el("p", { class: "nota login-aviso", text: "Não enviamos e-mail de confirmação: a conta já entra. Use um e-mail real que você lê: é só por ele que dá para recuperar a senha." }),
-  el("label", {}, "Senha (mínimo 10 caracteres)", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.senha = e.target.value; } } })),
+  el("label", {}, `Senha (mínimo ${SENHA_MIN} caracteres)`, el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.senha = e.target.value; } } })),
   el("label", {}, "Repita a senha", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.repetir = e.target.value; } } })),
   msg,
   info,
@@ -125,7 +125,7 @@ function telaDefinirSenha(tipo) {
     on: {
       submit: async (e) => {
         e.preventDefault();
-        if (dados.senha.length < 10) { msg.textContent = "Use pelo menos 10 caracteres."; return; }
+        if (dados.senha.length < SENHA_MIN) { msg.textContent = `Use pelo menos ${SENHA_MIN} caracteres.`; return; }
         if (dados.senha !== dados.repetir) { msg.textContent = "As duas senhas não conferem."; return; }
         const { error } = await sb.auth.updateUser({ password: dados.senha });
         if (error) { msg.textContent = mensagemErro(error); return; }
@@ -139,7 +139,7 @@ function telaDefinirSenha(tipo) {
   },
   logoAcesso(),
   el("h1", { text: tipo === "invite" ? "Bem-vindo ao Gália" : "Nova senha" }),
-  el("p", { class: "sub", text: "Defina a sua senha (mínimo 10 caracteres)." }),
+  el("p", { class: "sub", text: `Defina a sua senha (mínimo ${SENHA_MIN} caracteres).` }),
   el("label", {}, "Senha", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.senha = e.target.value; } } })),
   el("label", {}, "Repita a senha", el("input", { type: "password", autocomplete: "new-password", required: true, on: { input: (e) => { dados.repetir = e.target.value; } } })),
   msg,
@@ -233,7 +233,7 @@ function telaPerfil(conteudo) {
         on: {
           click: async () => {
             msgSenha.textContent = "";
-            if (senha.nova.length < 10) { msgSenha.textContent = "Use pelo menos 10 caracteres."; return; }
+            if (senha.nova.length < SENHA_MIN) { msgSenha.textContent = `Use pelo menos ${SENHA_MIN} caracteres.`; return; }
             if (senha.nova !== senha.repetir) { msgSenha.textContent = "As duas senhas não conferem."; return; }
             const { error } = await sb.auth.updateUser({ password: senha.nova });
             if (error) { msgSenha.textContent = mensagemErro(error); return; }
@@ -311,6 +311,7 @@ sb.auth.onAuthStateChange((evento, s) => {
     if (evento === "PASSWORD_RECOVERY") { sessao.usuario = s?.user ?? null; telaDefinirSenha("recovery"); return; }
     if (!s?.user) {
       sessao.usuario = null; sessao.perfil = null; sessao.admin = false; iniciado = false;
+      esquecerCatalogo();
       telaEntrar(linkRecebido.erro ? "O link expirou ou já foi usado. Peça um novo." : "");
       linkRecebido.erro = null;
       return;
@@ -319,10 +320,13 @@ sb.auth.onAuthStateChange((evento, s) => {
     sessao.usuario = s.user;
     if (evento === "TOKEN_REFRESHED" || (iniciado && !mudouUsuario)) return;
     iniciado = true;
+    if (mudouUsuario) esquecerCatalogo();
     await carregarPerfil();
     if (linkRecebido.tipo === "invite" || linkRecebido.tipo === "recovery") { telaDefinirSenha(linkRecebido.tipo); return; }
     montarApp();
     if (!location.hash.startsWith("#/")) location.hash = "#/receitas";
     else rotear();
+    // Catálogo do editor em segundo plano, depois da 1ª tela (não disputa a rede com a lista de receitas).
+    setTimeout(preCarregarCatalogo, 1200);
   }, 0);
 });
