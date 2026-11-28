@@ -93,7 +93,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste `supabase/testes/0001_rls.sql`: 18 verificações ok em 22/11/2026 (refeito após a 0002).
 
 ## Cálculos (`portal/calculos.js`, 22/11/2026, migração 0002)
-- Testes: `node --test portal/testes/*.test.mjs` (45 testes, com os do pdf.js, das faixas da roleta e do modulepreload). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
+- Testes: `node --test portal/testes/*.test.mjs` (46 testes, com os do pdf.js, das faixas da roleta, do modulepreload e das imagens de abertura). OG e FG batem com o Brewtarget (±0,0005) nas 28 receitas
   de exemplo do banco padrão dele (`portal/testes/gabarito-brewtarget.json`; a Rauchbier ficou fora: o OG gravado lá
   não confere com os próprios ingredientes). IBU pela tabela de Tinseth; ABV pela tabela do HMRC.
 - Regras: açúcar = kg × rendimento × (1 − umidade); grão/adjunto na mostura leva a eficiência; extrato, açúcar, mel,
@@ -137,7 +137,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
-  454 verificações: login, criar conta e esqueci a senha (celular 390/320 px), menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
+  464 verificações: abertura, login, criar conta e esqueci a senha (celular 390/320 px), menu lateral (recolher, só ícones no tablet, gaveta no celular, linhas de ingrediente dentro do
   cartão em 1024/1280/1366/1440 px), cadastros com vírgula, busca (acento, teclado, sem filtros, recentes, 901 leveduras), ±/setas,
   arrastar e mover pelo teclado, detalhes/remover, desfazer/refazer, chegar à OG/IBU, sem cadeado, referência, barra vital x calculos.js, estados do estilo, diferença após
   mudança, barra à vista com a página rolada (1366 px e celular 390 px), tablet 1024 px, modo escuro, salvar/reabrir,
@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128e.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -320,6 +320,24 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador: "catálogo do editor baixado uma vez, sem notas e paginado". Não medido no iPhone real.
 - Próximo passo se a 1ª abertura ainda incomodar: guardar o catálogo no aparelho (IndexedDB) e/ou service worker para os
   scripts (o GitHub Pages força cache de 10 min; depois disso cada abertura reconfere os arquivos).
+
+## Telas de carregamento (28/11/2026, pedido do responsável: "página de carregamento ainda aparece logo antiga"; sem migração)
+- Abertura (index.html, antes dos scripts): `main.abertura` = logo Gália no MEIO da tela (largura min(70vw, 18rem); fundo
+  CSS `background-image`, para baixar só a versão do modo: `logo-galia.png` claro / `-escuro.png` escuro) + três pontos
+  animados (`.carregando-pontos`, cor `--destaque`) + "Carregando…" só para leitor de tela. Depois de 10 s o CSS mostra
+  "Está demorando. Confira a internet e abra o app de novo." (`.abertura-demora`; a CSP não aceita script na página).
+- iPhone (app da Tela de Início): 14 imagens `icones/abertura-<L>x<A>.png` (fundo branco + a mesma logo no mesmo lugar)
+  com `<link rel="apple-touch-startup-image" media=...>` por tela (iPhone SE 1ª ger. ao 17 Pro Max/Air, retrato).
+  Geradas com PIL (script fora do repositório: logo a min(0,7 × largura, 288) px CSS, centrada; PNG de 64 cores,
+  ~40 kB). Só versão clara (padrão Pilsen). O iOS só lê ícone e imagem de abertura ao "Adicionar à Tela de Início":
+  quem já tinha o app precisa REMOVER o ícone e adicionar de novo (senão continua vendo o ícone/abertura antigos).
+  Teste `portal/testes/abertura.test.mjs`: cada link aponta para PNG que existe com largura × altura × densidade certas.
+- Dentro do app: `carregando(texto)` do ui.js (pontos + texto, centrado em 40vh) no lugar do "Carregando…" solto:
+  lista ("Carregando as receitas…"), editor ("Abrindo a receita…" / "Preparando a receita…") e Cadastros.
+- Logos e ícones (`logo-galia*.png`, `icone-180/512.png`) recomprimidos em paleta de 256 cores, sem diferença visível:
+  99 → 11 kB, 72 → 14 kB, 89 → 14 kB, 18 → 4 kB.
+- Teste do navegador: abertura em 390 (claro e escuro) e 320 px com o app.js preso (logo no meio com a largura certa,
+  pontos embaixo, sem aviso de demora, logo do modo, sem rolagem lateral). Capturas `p6a-abertura-390/-320/-390-escuro`.
 
 ## Barra de números limpa no celular (24/11/2026, pedido do responsável: "carregada, com bordas"; só style.css + vital.js)
 - Sem cartões, sem bordas e sem cantos arredondados: os 6 números ficam direto no papel da barra (`--painel`), que se

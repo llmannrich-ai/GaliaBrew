@@ -269,6 +269,35 @@ const erros = [];
     await ctxNovo.close();
   }
 
+  // Tela de abertura (28/11/2026): enquanto os scripts não chegam, a logo Gália no meio + três pontos; o aviso de
+  // demora só depois de ~10 s. app.js fica preso para a abertura não sumir.
+  for (const [w, h, modo] of [[390, 844, "claro"], [320, 568, "claro"], [390, 844, "escuro"]]) {
+    const ctxA = await navegador.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    if (modo === "escuro") await ctxA.addInitScript(() => localStorage.setItem("galiabrew.preferencias", JSON.stringify({ tema: "stout", layout: "clean" })));
+    await ctxA.route(`${ORIGEM}/app.js*`, () => {}); // nunca responde
+    await ctxA.route(`${ORIGEM}/**`, (rota) => (/\/app\.js/.test(rota.request().url()) ? rota.fallback() : site(rota)));
+    const ab = await ctxA.newPage();
+    ab.on("pageerror", (e) => erros.push(`pageerror: ${e.message}`));
+    await ab.goto(`${ORIGEM}/`, { waitUntil: "commit" }); // "load"/"domcontentloaded" esperam o app.js, que não vem
+    await ab.waitForSelector(".abertura-logo");
+    const a = await ab.evaluate(() => {
+      const logo = document.querySelector(".abertura-logo").getBoundingClientRect();
+      const pontos = document.querySelector(".abertura .carregando-pontos").getBoundingClientRect();
+      const demora = getComputedStyle(document.querySelector(".abertura-demora")).opacity;
+      const fundo = getComputedStyle(document.querySelector(".abertura-logo")).backgroundImage;
+      return { cx: logo.left + logo.width / 2, cy: logo.top + logo.height / 2, lw: logo.width, pontosAbaixo: pontos.top > logo.bottom,
+        demora, fundo, rolagem: document.documentElement.scrollWidth - innerWidth };
+    });
+    const centro = Math.abs(a.cx - w / 2) < 2 && Math.abs(a.cy - h / 2) < 4;
+    const largura = Math.abs(a.lw - Math.min(0.7 * w, 288)) < 2;
+    const versao = modo === "escuro" ? /logo-galia-escuro\.png/.test(a.fundo) : /logo-galia\.png/.test(a.fundo);
+    verificar(centro && largura && a.pontosAbaixo && a.demora === "0" && versao && a.rolagem <= 0,
+      `abertura ${w} px (${modo}): logo no meio (${Math.round(a.cx)},${Math.round(a.cy)}; ${Math.round(a.lw)} px), pontos embaixo, sem aviso de demora, logo do modo`);
+    await ab.waitForTimeout(400);
+    await ab.screenshot({ path: `${SAIDA}/p6a-abertura-${w}${modo === "escuro" ? "-escuro" : ""}.png` });
+    await ctxA.close();
+  }
+
   const ctx = await navegador.newContext({ viewport: { width: 1366, height: 900 }, deviceScaleFactor: 1 });
   await ctx.addInitScript(SEMENTE_PREF);
   const pagina = await ctx.newPage();
@@ -302,7 +331,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261128d");
+    const m = await import("./fontes.js?v=20261128e");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -586,7 +615,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -654,7 +683,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -676,7 +705,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -786,7 +815,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });

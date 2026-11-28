@@ -1,6 +1,6 @@
 // ui.js — utilidades de tela. Texto do usuário entra SEMPRE como texto (textContent), nunca como HTML.
-import { abrirRoleta } from "./roleta.js?v=20261128d";
-import { FAIXAS } from "./faixas.js?v=20261128d";
+import { abrirRoleta } from "./roleta.js?v=20261128e";
+import { FAIXAS } from "./faixas.js?v=20261128e";
 
 /** Cria um elemento. attrs: class, text, on: {evento: fn}, dataset, e demais atributos. Filhos: nós ou textos. */
 export function el(tag, attrs = {}, ...filhos) {
@@ -20,6 +20,13 @@ export function el(tag, attrs = {}, ...filhos) {
     n.append(f instanceof Node ? f : document.createTextNode(String(f)));
   }
   return n;
+}
+
+/** Indicador de carregamento das telas (lista, receita, cadastros): três pontos na cor de destaque + texto. */
+export function carregando(texto = "Carregando…") {
+  return el("div", { class: "carregando", role: "status" },
+    el("span", { class: "carregando-pontos", "aria-hidden": "true" }, el("i"), el("i"), el("i")),
+    el("span", { class: "carregando-texto", text: texto }));
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg";

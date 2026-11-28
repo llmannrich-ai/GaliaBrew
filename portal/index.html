@@ -15,39 +15,62 @@
   <link rel="apple-touch-icon" href="icones/icone-180.png">
   <link rel="icon" type="image/png" href="icones/icone-180.png">
   <link rel="manifest" href="manifest.webmanifest">
+  <!-- Abertura do app da Tela de Início no iPhone (o iOS só lê ao "Adicionar à Tela de Início"): uma imagem por tela. -->
+  <link rel="apple-touch-startup-image" href="icones/abertura-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1080x2340.png" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1260x2736.png" media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="icones/abertura-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
   <title>GaliaBrew</title>
-  <link rel="stylesheet" href="style.css?v=20261128d">
+  <link rel="stylesheet" href="style.css?v=20261128e">
   <!-- Sem defer: o tema entra antes da primeira pintura (não pisca a cor errada). -->
-  <script src="tema.js?v=20261128d"></script>
+  <script src="tema.js?v=20261128e"></script>
   <script src="vendor/supabase-2.119.2.js" integrity="sha256-iBavBNmRXbuhiC1vhPC0AtxAJoBjpj2cZtJPUvNxwmM=" defer></script>
-  <script type="module" src="app.js?v=20261128d"></script>
+  <script type="module" src="app.js?v=20261128e"></script>
   <!-- Todos os módulos de uma vez (27/11/2026, carregamento lento): sem isto o navegador só descobre cada import depois
        de baixar o arquivo que o pede (app → receitas → ui → roleta → faixas = 5 idas e voltas no 4G). A lista é
        conferida pelo teste portal/testes/modulos.test.mjs. -->
-  <link rel="modulepreload" href="app.js?v=20261128d">
-  <link rel="modulepreload" href="ui.js?v=20261128d">
-  <link rel="modulepreload" href="estado.js?v=20261128d">
-  <link rel="modulepreload" href="config.js?v=20261128d">
-  <link rel="modulepreload" href="receitas.js?v=20261128d">
-  <link rel="modulepreload" href="cadastros.js?v=20261128d">
-  <link rel="modulepreload" href="ferramentas.js?v=20261128d">
-  <link rel="modulepreload" href="menu.js?v=20261128d">
-  <link rel="modulepreload" href="icones.js?v=20261128d">
-  <link rel="modulepreload" href="calculos.js?v=20261128d">
-  <link rel="modulepreload" href="opcoes.js?v=20261128d">
-  <link rel="modulepreload" href="faixas.js?v=20261128d">
-  <link rel="modulepreload" href="roleta.js?v=20261128d">
-  <link rel="modulepreload" href="busca.js?v=20261128d">
-  <link rel="modulepreload" href="alvos.js?v=20261128d">
-  <link rel="modulepreload" href="fontes.js?v=20261128d">
-  <link rel="modulepreload" href="vital.js?v=20261128d">
-  <link rel="modulepreload" href="graficos.js?v=20261128d">
-  <link rel="modulepreload" href="relatorio.js?v=20261128d">
-  <link rel="modulepreload" href="pdf.js?v=20261128d">
-  <link rel="modulepreload" href="fotos.js?v=20261128d">
+  <link rel="modulepreload" href="app.js?v=20261128e">
+  <link rel="modulepreload" href="ui.js?v=20261128e">
+  <link rel="modulepreload" href="estado.js?v=20261128e">
+  <link rel="modulepreload" href="config.js?v=20261128e">
+  <link rel="modulepreload" href="receitas.js?v=20261128e">
+  <link rel="modulepreload" href="cadastros.js?v=20261128e">
+  <link rel="modulepreload" href="ferramentas.js?v=20261128e">
+  <link rel="modulepreload" href="menu.js?v=20261128e">
+  <link rel="modulepreload" href="icones.js?v=20261128e">
+  <link rel="modulepreload" href="calculos.js?v=20261128e">
+  <link rel="modulepreload" href="opcoes.js?v=20261128e">
+  <link rel="modulepreload" href="faixas.js?v=20261128e">
+  <link rel="modulepreload" href="roleta.js?v=20261128e">
+  <link rel="modulepreload" href="busca.js?v=20261128e">
+  <link rel="modulepreload" href="alvos.js?v=20261128e">
+  <link rel="modulepreload" href="fontes.js?v=20261128e">
+  <link rel="modulepreload" href="vital.js?v=20261128e">
+  <link rel="modulepreload" href="graficos.js?v=20261128e">
+  <link rel="modulepreload" href="relatorio.js?v=20261128e">
+  <link rel="modulepreload" href="pdf.js?v=20261128e">
+  <link rel="modulepreload" href="fotos.js?v=20261128e">
 </head>
 <body>
-  <div id="app"><main class="centro"><p class="nota">Carregando…</p></main></div>
+  <!-- Tela de abertura (28/11/2026, pedido do responsável): a logo Gália no meio, na mesma posição das imagens de
+       abertura do iPhone (icones/abertura-*.png), e três pontos. Só HTML + CSS: aparece antes de qualquer script. Se
+       passar de ~10 s, o próprio CSS mostra o aviso de demora (a CSP não deixa script na página). -->
+  <div id="app"><main class="abertura" aria-busy="true">
+    <span class="abertura-logo" role="img" aria-label="Gália"></span>
+    <span class="carregando-pontos" aria-hidden="true"><i></i><i></i><i></i></span>
+    <p class="abertura-texto" role="status">Carregando…</p>
+    <p class="abertura-demora">Está demorando. Confira a internet e abra o app de novo.</p>
+  </main></div>
   <div id="avisos" aria-live="polite"></div>
   <noscript>O GaliaBrew precisa de JavaScript.</noscript>
 </body>

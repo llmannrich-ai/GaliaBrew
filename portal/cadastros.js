@@ -1,11 +1,11 @@
 // cadastros.js — telas de cadastro (ingredientes, estilos, águas, equipamentos), todas pelo mesmo formulário.
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info } from "./ui.js?v=20261128d";
-import { sb, sessao } from "./estado.js?v=20261128d";
-import * as O from "./opcoes.js?v=20261128d";
-import { faixaCor } from "./faixas.js?v=20261128d";
-import { corHexDeSrm, corHexDeMalte } from "./calculos.js?v=20261128d";
-import { buscarItens, ordemCodigo } from "./busca.js?v=20261128d";
-import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261128d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, info, carregando } from "./ui.js?v=20261128e";
+import { sb, sessao } from "./estado.js?v=20261128e";
+import * as O from "./opcoes.js?v=20261128e";
+import { faixaCor } from "./faixas.js?v=20261128e";
+import { corHexDeSrm, corHexDeMalte } from "./calculos.js?v=20261128e";
+import { buscarItens, ordemCodigo } from "./busca.js?v=20261128e";
+import { fonteDados, seloFonte, blocoFonte } from "./fontes.js?v=20261128e";
 
 // Cadastros de ingrediente: mostram de onde vêm os dados (fabricante, genérico, análise, meu).
 const INGREDIENTES = new Set(["fermentaveis", "lupulos", "leveduras", "outros"]);
@@ -204,7 +204,7 @@ export async function telaCadastros(conteudo, chave) {
   const filtro = { texto: "" };
   const abas = el("nav", { class: "abas" },
     Object.entries(CADASTROS).map(([k, d]) => el("a", { href: `#/cadastros/${k}`, class: k === chave ? "ativo" : "", text: d.titulo })));
-  const corpo = el("div", { class: "tabela-rolagem" }, el("p", { class: "nota", text: "Carregando…" }));
+  const corpo = el("div", { class: "tabela-rolagem" }, carregando());
   preencher(conteudo, 
     el("h2", { text: "Cadastros" }), abas,
     el("div", { class: "barra" },

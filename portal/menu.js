@@ -1,8 +1,8 @@
 // menu.js — menu lateral do portal: recolhível no computador, gaveta no celular.
 // Ícones do icones.js; marca = logo "Gália" (menu de ícones: o livro da logo); arte do pé (lúpulo e cevada) em traço fino.
-import { el, svg } from "./ui.js?v=20261128d";
-import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261128d";
-import { icone } from "./icones.js?v=20261128d";
+import { el, svg } from "./ui.js?v=20261128e";
+import { sessao, preferencias, salvarPreferencias } from "./estado.js?v=20261128e";
+import { icone } from "./icones.js?v=20261128e";
 
 const LARGURA_CELULAR = "(max-width: 959px)";
 const LARGURA_EDITOR_ESTREITO = 1180;

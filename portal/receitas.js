@@ -1,20 +1,20 @@
 // receitas.js — lista de receitas e editor com cálculo ao vivo (calculos.js).
-import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info } from "./ui.js?v=20261128d";
-import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261128d";
-import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261128d";
-import { sb, sessao, preferencias } from "./estado.js?v=20261128d";
-import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261128d";
-import { abrirBusca } from "./busca.js?v=20261128d";
-import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261128d";
-import { catalogoDoEditor, TABELAS_EDITOR, amostraCor } from "./cadastros.js?v=20261128d";
-import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261128d";
-import * as O from "./opcoes.js?v=20261128d";
-import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261128d";
-import { icone } from "./icones.js?v=20261128d";
-import { abrirMenu } from "./menu.js?v=20261128d";
-import { barraGrist, linhaFervura } from "./graficos.js?v=20261128d";
-import { abrirRelatorio } from "./relatorio.js?v=20261128d";
-import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261128d";
+import { el, limpar, preencher, avisar, mensagemErro, confirmar, numeroBR, campoNumero, campoTexto, campoSelect, campoQuantidade, editarCampo, info, carregando } from "./ui.js?v=20261128e";
+import { roletaAberta, fecharRoleta } from "./roleta.js?v=20261128e";
+import { FAIXAS_LUGAR, faixaCor, presetFermentavel, presetLupulo } from "./faixas.js?v=20261128e";
+import { sb, sessao, preferencias } from "./estado.js?v=20261128e";
+import { calcularReceita, platoDeSg, corHexDeSrm, corHexDeMalte, TEMPERATURA_WHIRLPOOL_PADRAO_C, IONS, inoculacao, SAIS, leituraSulfatoCloreto, perfilAgua, etapaSal, separarSaisAntigos } from "./calculos.js?v=20261128e";
+import { abrirBusca } from "./busca.js?v=20261128e";
+import { abrirAlvoOG, abrirAlvoIBU } from "./alvos.js?v=20261128e";
+import { catalogoDoEditor, TABELAS_EDITOR, amostraCor } from "./cadastros.js?v=20261128e";
+import { fonteNaReceita, blocoFonte } from "./fontes.js?v=20261128e";
+import * as O from "./opcoes.js?v=20261128e";
+import { criarBarraVital, manterAcimaDaBarra, copo } from "./vital.js?v=20261128e";
+import { icone } from "./icones.js?v=20261128e";
+import { abrirMenu } from "./menu.js?v=20261128e";
+import { barraGrist, linhaFervura } from "./graficos.js?v=20261128e";
+import { abrirRelatorio } from "./relatorio.js?v=20261128e";
+import { blocoFotos, apagarFotosDaReceita } from "./fotos.js?v=20261128e";
 
 const editor = { sujo: false };
 export const haAlteracoes = () => editor.sujo;
@@ -27,7 +27,7 @@ const PARTES = "receita_fermentaveis(*), receita_lupulos(*), receita_leveduras(*
 export async function telaReceitas(conteudo) {
   editor.sujo = false;
   const filtro = { quais: "minhas", texto: "" };
-  const corpo = el("div", { class: "tabela-rolagem" }, el("p", { class: "nota", text: "Carregando…" }));
+  const corpo = el("div", { class: "tabela-rolagem" }, carregando("Carregando as receitas…"));
   // Topo da página principal (25/11/2026, pedido do responsável): logo "Gália" grande, centrada, sobre o fundo do tema,
   // no lugar da barra escura (que some nesta tela no celular; o ≡ do menu fica no canto). Duas versões da logo: letras
   // verdes nos temas claros, creme nos escuros (o CSS mostra uma pelo data-modo).
@@ -168,7 +168,7 @@ async function carregarReceita(id) {
 /** Rotas: #/receita/<id>, #/receita/nova (em branco) e #/receita/nova/<id da receita de origem>. */
 export async function telaEditor(conteudo, id, origemId) {
   editor.sujo = false;
-  preencher(conteudo, el("p", { class: "nota", text: "Carregando…" }));
+  preencher(conteudo, carregando(id && id !== "nova" ? "Abrindo a receita…" : "Preparando a receita…"));
   const nova = !id || id === "nova";
   const buscar = nova ? origemId : id;
   const [cat, rec] = await Promise.all([
