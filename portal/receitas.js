@@ -41,7 +41,7 @@ export async function telaReceitas(conteudo) {
       el("a", { href: "#/receita/nova", class: "botao", text: "Nova receita" })),
     el("div", { class: "barra" },
       el("div", { class: "segmentos", role: "group", "aria-label": "Quais receitas" },
-        [["minhas", "Minhas"], ["publicas", "Públicas de outros"]].map(([v, t]) => el("button", {
+        [["minhas", "Minhas"], ["publicas", "Públicas"]].map(([v, t]) => el("button", {
           type: "button", class: v === filtro.quais ? "ativo" : "", text: t, dataset: { v },
           on: { click: (e) => { filtro.quais = v; for (const b of e.target.parentNode.children) b.classList.toggle("ativo", b.dataset.v === v); desenhar(); } },
         }))),
@@ -56,13 +56,18 @@ export async function telaReceitas(conteudo) {
 
   function desenhar() {
     const t = filtro.texto.trim().toLowerCase();
-    const lista = receitas.filter((r) => (filtro.quais === "minhas" ? r.dono === sessao.usuario.id : r.dono !== sessao.usuario.id))
+    // "Públicas" (28/11/2026, pedido do responsável; era "Públicas de outros"): todas as públicas, as minhas também.
+    const minha = (r) => r.dono === sessao.usuario.id;
+    const lista = receitas.filter((r) => (filtro.quais === "minhas" ? minha(r) : r.publica === true))
       .filter((r) => !t || `${r.lote_numero ?? ""} ${r.nome} ${r.estilo?.nome ?? ""} ${r.estilo?.codigo ?? ""}`.toLowerCase().includes(t));
     if (!lista.length) {
-      preencher(corpo, el("p", { class: "nota", text: filtro.quais === "minhas" ? (t ? "Nada encontrado." : "Nenhuma receita ainda. Use “Nova receita”.") : "Nenhuma receita pública de outros usuários." }));
+      preencher(corpo, el("p", { class: "nota", text: filtro.quais === "minhas" ? (t ? "Nada encontrado." : "Nenhuma receita ainda. Use “Nova receita”.") : t ? "Nada encontrado." : "Nenhuma receita pública." }));
       return;
     }
     const abrir = (r) => { location.hash = `#/receita/${r.id}`; };
+    // Selo ao lado do nome: em "Minhas", "pública"; em "Públicas", "minha" (as dos outros ficam sem selo).
+    const selo = (r) => (filtro.quais === "minhas" ? (r.publica ? el("span", { class: "selo", text: "pública" }) : null)
+      : minha(r) ? el("span", { class: "selo", text: "minha" }) : null);
     const estiloTxt = (r) => (r.estilo ? `${r.estilo.codigo ? r.estilo.codigo + " " : ""}${r.estilo.nome}` : "");
 
     // Celular: cartões (copo na cor da cerveja, nº e nome, estilo e data, números principais). Computador: tabela.
@@ -85,7 +90,7 @@ export async function telaReceitas(conteudo) {
           el("div", { class: "rc-topo" },
             r.lote_numero ? el("span", { class: "rc-num", text: `#${r.lote_numero}` }) : null,
             el("strong", { class: "rc-nome", text: r.nome }),
-            r.publica ? el("span", { class: "selo", text: "pública" }) : null),
+            selo(r)),
           el("div", { class: "rc-sub", text: [estiloTxt(r), dataDoDia(r.data_brassagem)].filter(Boolean).join(" · ") }),
           numeros ? el("div", { class: "rc-numeros", text: numeros }) : null));
       })));
@@ -99,7 +104,7 @@ export async function telaReceitas(conteudo) {
       },
       el("td", {}, amostraCor(r.cor_srm_calc ?? 0)),
       el("td", { class: "num", text: r.lote_numero ?? "" }),
-      el("td", {}, el("strong", { text: r.nome }), r.publica ? el("span", { class: "selo", text: "pública" }) : null),
+      el("td", {}, el("strong", { text: r.nome }), selo(r)),
       el("td", { text: estiloTxt(r) }),
       el("td", { text: dataDoDia(r.data_brassagem) }),
       el("td", { class: "num", text: numeroBR(r.og_calc, 3) }),

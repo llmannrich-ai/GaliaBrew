@@ -134,6 +134,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Excluir receita (23/11/2026, pedido do responsável): SÓ dentro da receita (botão "Excluir receita" em `.acoes-receita`,
   ao lado de "Nova a partir desta"; receita salva e do próprio usuário; confirmação com o nome; volta à lista). A lista
   (cartões e tabela) não tem botão de excluir.
+- Lista de receitas, botão "Públicas" (28/11/2026, pedido do responsável; era "Públicas de outros"): mostra TODAS as
+  receitas públicas, as do próprio usuário também (selo "minha"; as dos outros sem selo). Em "Minhas" segue o selo
+  "pública". Teste "toque: Públicas lista as públicas de todos..." (captura `p6f2-celular-publicas`).
 - Receita de outro usuário (pública) abre só para leitura; "Duplicar para mim" grava cópia nova, privada, sem a
   ligação com cadastro/equipamento que a pessoa não enxerga (os dados copiados vão junto).
 - Teste no navegador: `node portal/testes/navegador.cjs` (Chromium + Supabase simulado em memória + CSP do _headers;
@@ -216,7 +219,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128d.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128e.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).

@@ -1080,7 +1080,7 @@ const erros = [];
   await pagina.setViewportSize({ width: 1366, height: 900 });
   await pagina.goto(`${ORIGEM}/#/receitas`);
   await pagina.waitForSelector("td >> text=Pils da Galia");
-  await pagina.click(".segmentos >> text=Públicas de outros");
+  await pagina.click(".segmentos >> text=Públicas");
   await pagina.click("td >> text=IPA do Vizinho");
   await pagina.waitForSelector("text=Somente leitura");
   verificar(await pagina.isDisabled('input[aria-label="Qtd (kg)"]'), "receita de outro abre só para leitura");
@@ -1315,6 +1315,25 @@ const erros = [];
   verificar((await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-sub")).includes("20/04/2026") && (await cel.textContent(".receita-cartao:has-text('Pils da Galia') .rc-numeros")).startsWith("OG "),
     "toque: cartão mostra estilo, data e números");
   await cel.screenshot({ path: `${SAIDA}/p6f-celular-lista.png` });
+  // "Públicas" (28/11/2026, pedido do responsável; era "Públicas de outros"): todas as públicas, as minhas também, com o
+  // selo "minha"; receita minha que não é pública fica fora.
+  {
+    const minhaPub = { id: "r-minha-pub", dono: USUARIO.id, nome: "Minha Pública", tipo: "ALL_GRAIN", publica: true, lote_numero: null, og_calc: 1.05, atualizado_em: new Date().toISOString() };
+    db.receitas.push(minhaPub);
+    await cel.reload();
+    await cel.waitForSelector(".receita-cartao >> text=Minha Pública");
+    await tocar(".segmentos button:has-text('Públicas')");
+    await cel.waitForSelector(".receita-cartao >> text=IPA do Vizinho");
+    const pub = await cel.evaluate(() => [...document.querySelectorAll(".receita-cartao")].map((c) => [c.querySelector(".rc-nome").textContent, c.querySelector(".selo")?.textContent ?? ""]));
+    const nomes = pub.map(([n]) => n);
+    verificar(await cel.textContent(".segmentos") === "MinhasPúblicas" && nomes.includes("Minha Pública") && nomes.includes("IPA do Vizinho")
+      && !nomes.includes("Pils da Galia") && pub.every(([n, sl]) => sl === (n === "Minha Pública" ? "minha" : "")) && await larguraSobra() <= 1,
+      `toque: "Públicas" lista as públicas de todos, as minhas com o selo "minha" (${pub.map((x) => x.join("/")).join(", ")})`);
+    await cel.screenshot({ path: `${SAIDA}/p6f2-celular-publicas.png` });
+    db.receitas.splice(db.receitas.indexOf(minhaPub), 1);
+    await cel.reload();
+    await cel.waitForSelector(".receita-cartao >> text=Pils da Galia");
+  }
   // Topo da tela de Receitas (25/11/2026): logo "Gália" grande e centrada sobre o fundo do tema, sem a barra escura;
   // o ≡ no canto abre o menu. Nenhum elemento preso no topo (o iOS 26 pinta a faixa do relógio com o fundo da página).
   const logoVisivel = () => cel.evaluate(() => {
