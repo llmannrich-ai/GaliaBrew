@@ -722,8 +722,9 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   amigos não conseguiriam confirmar). Consequência: recuperação de senha só funciona para membros da org.
   Senha (27/11/2026, pedido do responsável: tirar as restrições, só o mínimo): só 6 caracteres, sem exigir tipo de
   caractere. O pedido foi 4, mas o Supabase Auth não aceita menos de 6 (piso do servidor). Constante `SENHA_MIN` no
-  ui.js (cadastro, nova senha, trocar senha no perfil e mensagem de erro); o painel do Supabase tem de ter o mesmo valor
-  (Authentication → Sign In / Providers → Email: Minimum password length = 6, Password requirements = sem requisito).
+  ui.js (cadastro, nova senha, trocar senha no perfil e mensagem de erro). O painel do Supabase JÁ estava em 6
+  (conferido pelo responsável em 28/11/2026); os 10 caracteres eram só do portal. Lição: configuração do painel não se
+  vê daqui (sem token de administração); não afirmar o valor dela a partir desta anotação, perguntar ao responsável.
 - Para recuperação de senha de todos (ou religar a confirmação): SMTP próprio (Authentication → Emails → SMTP; ex.:
   Resend ou Brevo, plano gratuito).
 - Site URL e Redirect URLs = https://llmannrich-ai.github.io/GaliaBrew/ (feito pelo responsável em 22/11/2026).
