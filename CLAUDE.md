@@ -216,7 +216,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   Cache do Pages: 10 min; o `?v=` resolve os scripts. Depois de publicar: Supabase → Authentication → URL
   Configuration → Site URL e Redirect URLs = esse endereço (senão convite/recuperação de senha volta para localhost).
 - iPhone: manifest.webmanifest + apple-touch-icon (`icones/`, desenho próprio) → "Adicionar à Tela de Início" abre
-  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261127h.
+  como app; topo respeita a área do entalhe (safe-area). Versão dos scripts: 20261128a.
 - Menu lateral (`menu.js`, 23/11/2026, substituiu o menu horizontal): sempre escuro (café + cobre no Clássico/Adega; cada tema tem o seu menu escuro);
   ícones do `icones.js`, copo da marca do `vital.js` e arte de lúpulo e cevada em traço fino no pé (SVG no JS, sem
   arquivo e sem style inline). ≥ 1181 px: completo, botão "Recolher" deixa só ícones (`preferencias.menu_recolhido`).
@@ -292,7 +292,7 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   o `conferirLateral` do navegador.cjs arrasta o dedo para o lado e lista o que passa da borda (lista, editor,
   ferramentas, cadastros e perfil em 320 px).
 - Temas de cor (23/11/2026, pedido do responsável; sem migração): Meu perfil → Aparência, 9 opções em cartões com
-  miniatura do app: Automático (padrão: Clássico de dia, Adega à noite, segue o celular sem recarregar), Clássico, Adega,
+  miniatura do app: Automático (Clássico de dia, Adega à noite, segue o celular sem recarregar), Clássico, Adega,
   Pilsen, IPA, Red Ale (claros), Stout, Black IPA (escuros) e Sol forte (alto contraste para a brassagem ao ar livre:
   preto no branco, borda de campo 2 px, sem desenho de fundo). Escolha em `preferencias.tema` (localStorage: vale no
   aparelho). `tema.js` é script COMUM no `<head>`, sem defer (entra antes da 1ª pintura, não pisca): lista dos temas,
@@ -332,8 +332,8 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 
 ## Layout Clean da receita (24/11/2026, pedido do responsável; plano `docs/PLANO-CLEAN.md`; sem migração)
 - Opcional: Meu perfil → Aparência → "Layout da receita: Completo | Clean" (`preferencias.layout`, localStorage). O
-  `tema.js` põe `data-layout` no `<html>` antes da 1ª pintura (`GaliaTema.layouts/layout/aplicarLayout`). Padrão = Completo
-  (nada muda para quem não escolher). Vale com QUALQUER tema (decisão do responsável: sem tema novo).
+  `tema.js` põe `data-layout` no `<html>` antes da 1ª pintura (`GaliaTema.layouts/layout/aplicarLayout`). Padrão = Clean desde 27/11/2026 (ver "Padrão Pilsen + Clean"; antes Completo).
+  Vale com QUALQUER tema (decisão do responsável: sem tema novo).
 - Decisões do responsável (24/11/2026, "Sim" às recomendações do plano): cores do tema sem decoração; números no topo +
   linha fina ao rolar (K2, a fazer); tocar na quantidade abre a roleta direto; se o Clean for aprovado em ~2 semanas,
   vira o padrão e o Completo sai (não manter dois layouts para sempre).
@@ -389,6 +389,13 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
   escuro, K2 topo/rolado); capturas `p7` (perfil), `p7a` (receita), `p7b` (roleta), `p7c` (320 px), `p7d` (escuro),
   `p7e` (números no topo), `p7f` (linha fina ao rolar), `p7g` (ações ao lado do nome), `p7h` (passo com roleta), `p7i` (levedura em linha),
   `p7j`/`p7j2` (Água: blocos e concentração final), `p7k` (+ da lavagem), `p7k2` (sal novo na roleta), `p7k3` (Água 320 px).
+
+## Padrão Pilsen + Clean (27/11/2026, pedido do responsável; só tema.js)
+- Quem abre o app sem escolha salva no aparelho começa no tema PILSEN e no layout CLEAN (`TEMA_PADRAO`/`LAYOUT_PADRAO` no
+  tema.js; valor desconhecido também cai no padrão). Escolha feita no perfil (`preferencias.tema`/`layout`) continua
+  valendo. Consequência: aparelho que nunca escolheu tema/layout (inclusive quem já usava) passa a abrir em Pilsen + Clean.
+- Teste do navegador: contexto limpo no início confere o padrão e que a escolha salva vence; os demais contextos começam
+  com Automático + Completo salvos (`SEMENTE_PREF`), porque as verificações antigas foram escritas sobre eles.
 
 ## Parâmetros da receita (24/11/2026, pedido do responsável; sem migração)
 - Saiu o `<details>` "Parâmetros" que abria na página. Agora: seção `section.cartao.parametros` (`data-secao="parametros"`)
@@ -904,6 +911,19 @@ uma anterior (cópia completa; a anterior não muda). Praticidade: só pedir o q
 - Teste do navegador (celular): resumo, janela = resumo, taxa automática, starter no agitador ≥ 100%, roleta do volume
   em popover, 390/320 px sem passar da largura, Pronto/foco, ↶. Capturas `p6q2` (resumo), `p6q3` (janela 390), `p6q4`
   (janela 320), `p6q5` (resumo 320). Falta: relatório em PDF não mostra o starter; conferir no iPhone real.
+
+## Fermentáveis do maior para o menor (27/11/2026, pedido do responsável; sem migração)
+- A seção Fermentáveis fica SEMPRE ordenada pela quantidade, da maior para a menor (`ordenarFermentaveis` no receitas.js;
+  estável: empate e malte sem quantidade mantêm a ordem entre si; sem quantidade vai para o fim). Vale nos dois layouts,
+  na barra do grist e no relatório em PDF (seguem a ordem de `r.fermentaveis`); ao salvar, a `ordem` gravada já é essa.
+- Sem ordem manual nos maltes: saíram a alça ⠿ da linha (Completo; a coluna dela saiu do grid no style.css) e o ↑ ↓ da
+  janela do item (`ordenar` no `secaoLinhas`). Lúpulos, leveduras e passos seguem com ordem manual.
+- Quando reordena: ao abrir a receita (sem marcar alteração), ao redesenhar a seção (adicionar, remover, fechar a janela,
+  Chegar à OG) e quando o passo do desfazer fecha (`registrar`: ±, roleta). Digitando a quantidade no computador, espera
+  o campo perder o foco (a linha não pula no meio da digitação). A base do histórico também é ordenada: um ↶ desfaz a
+  quantidade e a ordem juntas, sem passo "só de ordem". Item novo: a janela abre pelo próprio item (`focos[chave](item)`).
+- Teste do navegador (celular 390 px, Completo): abre ordenada sem alça e sem "pendente"; + 250 g leva o Cristal para
+  cima do Munique; janela sem ↑ ↓; um ↶ desfaz. Captura `p6o-celular-ordem-maltes`.
 
 ## Catálogo em português e nome do malte inteiro (0012, aplicada em 27/11/2026, pedido do responsável)
 - 309 fermentáveis do catálogo (dono nulo) com nome em português ("Malte Pilsner", "Weyermann Malte de Trigo Escuro",
