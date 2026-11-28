@@ -1,6 +1,6 @@
 // icones.js — ícones do GaliaBrew, desenho próprio (grade 24 × 24, traço 1,75, pontas arredondadas, cor = texto).
 // Em JS (e não num arquivo .svg): saem pelo svg() do ui.js, sem requisição extra e dentro da CSP.
-import { svg } from "./ui.js?v=20261128d";
+import { svg } from "./ui.js?v=20261128e";
 
 // Cada ícone = lista de elementos [tag, atributos]. "c" = círculo, "p" = caminho, "e" = elipse.
 // Atributo no elemento vale sobre o do <svg> (ex.: fill/stroke de parte cheia, stroke-width de traço fino).
@@ -161,6 +161,9 @@ export const DESENHOS = {
   // nova a partir desta: duas folhas
   copiar: [["p", { d: "M8.5 8.5h10v12h-10z" }], ["p", { d: "M15.5 8.5V3.5h-10v12h3" }]],
   // informações: círculo com "i"
+  // Mostrar/esconder a senha nas telas de acesso (28/11/2026).
+  olho: [["p", { d: "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" }], ["c", { cx: 12, cy: 12, r: 3 }]],
+  olho_fechado: [["p", { d: "M4.5 9.5C6.3 11.6 8.9 13 12 13s5.7-1.4 7.5-3.5" }], ["p", { d: "M6.2 11.5L4.5 14M10 12.9l-.6 3M14 12.9l.6 3M17.8 11.5l1.7 2.5" }]],
   info: [["c", { cx: 12, cy: 12, r: 8.75 }], ["p", { d: "M12 11v5.5" }], ["c", { cx: 12, cy: 7.9, r: .6 }]],
   // excluir: lixeira
   lixeira: [["p", { d: "M4.5 6.5h15" }], ["p", { d: "M9.5 6.5V4h5v2.5" }], ["p", { d: "M6.5 6.5l1 14h9l1-14" }], ["p", { d: "M10.2 10.5v6.5M13.8 10.5v6.5" }]],

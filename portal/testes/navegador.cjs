@@ -302,7 +302,7 @@ const erros = [];
     "formulário do malte mostra a fonte dos dados e o link da ficha");
   await pagina.click('dialog button:has-text("Fechar")');
   const fontes = await pagina.evaluate(async () => {
-    const m = await import("./fontes.js?v=20261128d");
+    const m = await import("./fontes.js?v=20261128e");
     return [
       { extras: { fonte: "beer-analytics.com, CC BY-SA 4.0 (via Brewtarget)" } },
       { extras: { fonte: "fontes públicas (via Brewtarget)" } },
@@ -586,7 +586,7 @@ const erros = [];
 
   // Confere o painel com o calculos.js
   const esperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     return m.calcularReceita({
       volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3, absorcao_grao_l_kg: 1, relacao_agua_grao_l_kg: 3, perda_tina_l: 0,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }],
@@ -654,7 +654,7 @@ const erros = [];
   const textoPainel = await pagina.textContent(".painel-lote");
   const textoAgua = await pagina.textContent("section:has(h3:text('Água'))");
   const esperadoAgua = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     const litros = (rot) => Number(document.querySelector(".painel-lote").textContent.match(new RegExp(rot + "[^0-9]*?([0-9]+,[0-9]) L"))[1].replace(",", "."));
     const o = { sulfato_ppm: 10, cloreto_ppm: 15 };
     const mostura = m.perfilAgua({ origem: o, sais: [{ sal: "GESSO", gramas: 6 }], litros: litros("Água da mostura") }).ions;
@@ -676,7 +676,7 @@ const erros = [];
   await qtd.fill("5,3");
   await pagina.waitForSelector('.vital [data-metrica="og"] .vital-delta.visivel');
   const esperado53 = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     const f = (kg) => m.calcularReceita({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: kg, etapa: "MOSTURA" }] }).og;
     return Number(f(5.3).toFixed(3)) - Number(f(4.8).toFixed(3));
@@ -786,7 +786,7 @@ const erros = [];
   await pagina.click('dialog.alvo button:has-text("Aplicar")');
   const kgOG = Number((await qtd.inputValue()).replace(",", "."));
   const kgEsperado = await pagina.evaluate(async () => {
-    const m = await import("./calculos.js?v=20261128d");
+    const m = await import("./calculos.js?v=20261128e");
     return m.ajustarParaOG({ volume_lote_l: 23, perda_panela_l: 2, eficiencia_pct: 72, fervura_min: 60, evaporacao_l_h: 3,
       fermentaveis: [{ tipo: "GRAO", rendimento_pct: 81, umidade_pct: 4, cor_srm: 1.8, fermentavel_pct: 100, quantidade_kg: 4.8, etapa: "MOSTURA" }] }, 1.047).quantidades[0];
   });
@@ -1144,26 +1144,54 @@ const erros = [];
     await pc.goto(`${ORIGEM}/`);
     await pc.waitForSelector("form.login");
     verificar(!(await pc.isVisible("text=Acesso só por convite")), "login sem a nota 'acesso só por convite'");
-    // Logo "Gália" no topo das telas de acesso (27/11/2026): a imagem do tema (creme no escuro), centrada, sem o texto antigo.
+    // Logo "Gália" no topo das telas de acesso (27/11/2026). Desde 28/11/2026 fica na "espuma" (clara nos dois modos:
+    // sempre a versão de cores da arte), acima do formulário, centrada na tela.
     const logoAcesso = (onde) => pc.evaluate(() => {
-      const f = document.querySelector("form.login"), fr = f.getBoundingClientRect();
-      const vis = [...f.querySelectorAll(".login-logo img")].filter((i) => i.checkVisibility());
-      const i = vis[0], r = i?.getBoundingClientRect();
+      const m = document.querySelector("main.acesso"), esp = m?.querySelector(".acesso-espuma");
+      const vis = [...(esp?.querySelectorAll(".login-logo img") || [])].filter((i) => i.checkVisibility());
+      const i = vis[0], r = i?.getBoundingClientRect(), f = document.querySelector("form.login").getBoundingClientRect();
       return i && { n: vis.length, src: i.getAttribute("src"), carregada: i.complete && i.naturalWidth > 0, altura: Math.round(r.height),
-        centro: Math.round(Math.abs((r.left + r.right) / 2 - (fr.left + fr.right) / 2)), dentro: r.left >= fr.left && r.right <= fr.right,
-        primeiro: f.firstElementChild.classList.contains("login-logo"), textoAntigo: f.textContent.includes("GaliaBrew") };
-    }).then((l) => verificar(l && l.n === 1 && l.carregada && l.altura >= 60 && l.centro <= 2 && l.dentro && l.primeiro && !l.textoAntigo
-      && l.src === `icones/logo-galia${onde.includes("escuro") ? "-escuro" : ""}.png`, `${onde}: logo "Gália" no topo, centrada, sem "GaliaBrew" (${JSON.stringify(l)})`));
+        centro: Math.round(Math.abs((r.left + r.right) / 2 - window.innerWidth / 2)), acimaDoForm: r.bottom <= f.top,
+        textoAntigo: m.textContent.includes("GaliaBrew") };
+    }).then((l) => verificar(l && l.n === 1 && l.carregada && l.altura >= 50 && l.centro <= 2 && l.acimaDoForm && !l.textoAntigo
+      && l.src === "icones/logo-galia.png", `${onde}: logo "Gália" no topo, centrada, sem "GaliaBrew" (${JSON.stringify(l)})`));
     await logoAcesso("login 390 px");
     await pc.screenshot({ path: `${SAIDA}/p6c-celular-login-390.png` });
     await pc.evaluate(() => document.documentElement.setAttribute("data-modo", "escuro"));
     await logoAcesso("login 390 px escuro");
+    await pc.screenshot({ path: `${SAIDA}/p6c-celular-login-390-escuro.png` });
     await pc.evaluate(() => document.documentElement.setAttribute("data-modo", "claro"));
+    // Molde do copo (28/11/2026): espuma em cima, cerveja com bolhas embaixo; campos e botão grandes para o dedo.
+    const molde = await pc.evaluate(() => {
+      const alt = (s) => Math.round(document.querySelector(s).getBoundingClientRect().height);
+      const esp = document.querySelector(".acesso-espuma").getBoundingClientRect(), cer = document.querySelector(".acesso-cerveja").getBoundingClientRect();
+      return { bolhas: document.querySelectorAll(".acesso-cerveja .bolhas i").length, ordem: esp.bottom <= cer.top + 1,
+        cheia: Math.round(cer.bottom) >= window.innerHeight, campo: alt('form.login input[type="email"]'), entrar: alt("button.acesso-principal"),
+        olho: alt("button.ver-senha"), esqueci: alt("button.esqueci") };
+    });
+    verificar(molde.bolhas === 14 && molde.ordem && molde.cheia && molde.campo >= 48 && molde.entrar >= 48 && molde.olho >= 44 && molde.esqueci >= 44,
+      `login: espuma em cima, cerveja até o fim da tela, campos/botão ≥ 48 px e toques ≥ 44 px (${JSON.stringify(molde)})`);
+    // Mostrar/esconder a senha
+    await pc.fill('form.login input[autocomplete="current-password"]', "abc123");
+    await toqueEm("button.ver-senha");
+    const visivel = await pc.evaluate(() => ({ tipo: document.querySelector('input[autocomplete="current-password"]').type,
+      pressionado: document.querySelector("button.ver-senha").getAttribute("aria-pressed"), rotulo: document.querySelector("button.ver-senha").getAttribute("aria-label") }));
+    await toqueEm("button.ver-senha");
+    const escondida = await pc.evaluate(() => document.querySelector('input[autocomplete="current-password"]').type);
+    verificar(visivel.tipo === "text" && visivel.pressionado === "true" && visivel.rotulo === "Esconder a senha" && escondida === "password",
+      `login: o olho mostra e esconde a senha (${JSON.stringify(visivel)}, depois ${escondida})`);
+    await pc.fill('form.login input[autocomplete="current-password"]', "");
+    const lateral390 = await pc.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    verificar(lateral390 <= 0, "login 390 px: nada passa da largura");
     const alturaCriar = (await pc.locator("button.criar-conta").boundingBox()).height;
     verificar(alturaCriar >= 44, `toque: botão Criar conta com ≥ 44 px (${alturaCriar})`);
     // Esqueci a senha: sem e-mail pede o e-mail; com e-mail chama o /recover e responde igual exista ou não a conta.
     await toqueEm("button.esqueci");
     await pc.waitForSelector("text=Digite acima o e-mail da sua conta.");
+    const caixa = await pc.evaluate(() => { const e = document.querySelector(".acesso .erro-form"), c = getComputedStyle(e);
+      return { fundo: c.backgroundColor, cor: c.color }; });
+    verificar(caixa.fundo !== "rgba(0, 0, 0, 0)", `login: mensagem de erro numa caixa clara sobre a cerveja (${JSON.stringify(caixa)})`);
+    await pc.screenshot({ path: `${SAIDA}/p6c-celular-login-erro-390.png` });
     await pc.fill('input[type="email"]', "ninguem@teste.invalid");
     const antesRec = chamadas.length;
     await toqueEm("button.esqueci");
@@ -1205,6 +1233,7 @@ const erros = [];
     verificar(largura320 <= 0, "criar conta 320 px: nada passa da largura");
     await logoAcesso("criar conta 320 px");
     await pc.screenshot({ path: `${SAIDA}/p6c-celular-criar-conta-320.png`, fullPage: true });
+    verificar(await pc.evaluate(() => document.querySelector("main.acesso").classList.contains("compacta")), "criar conta: espuma do topo mais baixa (compacta)");
     await pc.setViewportSize({ width: 390, height: 844 });
     // Conta nova: entra direto, sem e-mail de confirmação, com o nome no perfil.
     await pc.fill('form.conta input[type="email"]', "amiga@teste.invalid");
@@ -1224,6 +1253,12 @@ const erros = [];
     await toqueEm("button.voltar-entrar");
     await pc.waitForSelector("form.login:not(.conta)");
     verificar(true, "criar conta: botão Entrar volta ao login");
+    await pc.setViewportSize({ width: 320, height: 568 });
+    await pc.waitForTimeout(100);
+    await logoAcesso("login 320 px");
+    const lateral320 = await pc.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    verificar(lateral320 <= 0, "login 320 px: nada passa da largura");
+    await pc.screenshot({ path: `${SAIDA}/p6c-celular-login-320.png` });
     await ctxConta.close();
   }
 
